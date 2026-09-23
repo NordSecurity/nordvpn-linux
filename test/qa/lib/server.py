@@ -6,29 +6,19 @@ from urllib.parse import quote
 import requests
 from . import login
 
-TECH_OPENVPN_UDP_OBFUSCATION_ON = 15
-TECH_OPENVPN_UDP_OBFUSCATION_OFF = 3
-TECH_OPENVPN_TCP_OBFUSCATION_ON = 17
-TECH_OPENVPN_TCP_OBFUSCATION_OFF = 5
+TECH_OPENVPN_UDP = 3
+TECH_OPENVPN_TCP = 5
 TECH_OPENVPN_LIST = [
-    TECH_OPENVPN_UDP_OBFUSCATION_ON,
-    TECH_OPENVPN_UDP_OBFUSCATION_OFF,
-    TECH_OPENVPN_TCP_OBFUSCATION_ON,
-    TECH_OPENVPN_TCP_OBFUSCATION_OFF,
+    TECH_OPENVPN_UDP,
+    TECH_OPENVPN_TCP,
 ]
 TECH_NORDLYNX = 35
 TECH_NORDWHISPER = 51
 
 TECH_IDS = {
     "openvpn": {
-        "udp": {
-            "on": TECH_OPENVPN_UDP_OBFUSCATION_ON,
-            "off": TECH_OPENVPN_UDP_OBFUSCATION_OFF,
-        },
-        "tcp": {
-            "on": TECH_OPENVPN_TCP_OBFUSCATION_ON,
-            "off": TECH_OPENVPN_TCP_OBFUSCATION_OFF,
-        },
+        "udp": TECH_OPENVPN_UDP,
+        "tcp": TECH_OPENVPN_TCP,
     },
     "nordlynx": TECH_NORDLYNX,
     "nordwhisper": TECH_NORDWHISPER,
@@ -90,14 +80,14 @@ def _exclude_dedicated_ip_servers(servers: list[dict]) -> list[dict]:
     return non_dip_servers
 
 
-def get_hostname_by(technology="", protocol="", obfuscated="", group_name="", exclude_dip=False):
+def get_hostname_by(technology="", protocol="", group_name="", exclude_dip=False):
     """
     Returns server name and hostname from core API.
 
     If exclude_dip is True, skips Dedicated_IP servers.
     """
 
-    (tech_id, group_id) = get_request_parameters(technology, protocol, obfuscated, group_name)
+    (tech_id, group_id) = get_request_parameters(technology, protocol, group_name)
 
     # api limits
     time.sleep(2)
@@ -173,22 +163,19 @@ def get_dedicated_ip():
     return ServerInfo(server_info=server_info)
 
 
-def get_request_parameters(technology="", protocol="", obfuscated="", group_name=""):
-    """Returns (endpoint, technology id, group id) for the core API."""
+def get_request_parameters(technology="", protocol="", group_name=""):
+    """Returns (technology id, group id) for the core API."""
     tech_id = None
     group_id = 0
 
     if technology != "":
         if protocol != "":
-            tech_id = TECH_IDS.get(technology, {}).get(protocol, {}).get(obfuscated, None)
+            tech_id = TECH_IDS.get(technology, {}).get(protocol)
         else:
             tech_id = TECH_IDS.get(technology)
 
     if group_name != "":
         group_id = GROUP_IDS.get(group_name, GROUP_STANDARD_VPN_SERVERS)
-    elif tech_id in [TECH_OPENVPN_UDP_OBFUSCATION_ON, TECH_OPENVPN_TCP_OBFUSCATION_ON]:
-        # If the technology requires obfuscated servers we must also specify it in the group id
-        group_id = GROUP_OBFUSCATED_SERVERS
     else:
         # If group_id is empty, the API will default it to 11, GROUP_STANDARD_VPN_SERVERS
         # So let's just set it to standard if there is no other group specifications

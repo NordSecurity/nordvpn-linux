@@ -39,10 +39,10 @@ def test_allowlist_incoming_connection():
     ssh_client.exec_command("nordvpn set killswitch off")
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
 # This doesn't directly test meshnet, but it uses it
-def test_set_defaults_when_logged_in_2nd_set(tech, proto, obfuscated):
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+def test_set_defaults_when_logged_in_2nd_set(tech, proto):
+    lib.set_technology_and_protocol(tech, proto)
 
     sh_no_tty.nordvpn.set.fwmark("0xe2f2")
     sh_no_tty.nordvpn.set.killswitch("on")
@@ -57,20 +57,15 @@ def test_set_defaults_when_logged_in_2nd_set(tech, proto, obfuscated):
     assert settings.is_autoconnect_enabled(), "Autoconnect should be enabled"
     assert settings.is_lan_discovery_enabled(), "LAN discovery should be enabled"
 
-    if obfuscated == "on":
-        assert settings.is_obfuscated_enabled(), "Obfuscation should be enabled when set to on"
-    else:
-        assert not settings.is_obfuscated_enabled(), "Obfuscation should be disabled when set to off"
-
     assert "Settings were successfully restored to defaults." in  sh_no_tty.nordvpn.set.defaults("--logout"), "Settings restore should show success message"
 
     assert settings.app_has_defaults_settings(True), "App should have default settings after restore"
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
 # This doesn't directly test meshnet, but it uses it
-def test_set_defaults_when_logged_out_1st_set(tech, proto, obfuscated):
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+def test_set_defaults_when_logged_out_1st_set(tech, proto):
+    lib.set_technology_and_protocol(tech, proto)
 
     sh_no_tty.nordvpn.set.fwmark("0xe2f2")
     sh_no_tty.nordvpn.set.killswitch("on")
@@ -84,11 +79,6 @@ def test_set_defaults_when_logged_out_1st_set(tech, proto, obfuscated):
     assert settings.is_lan_discovery_enabled(), "LAN discovery should be enabled"
     assert settings.is_user_consent_declared(), "User consent should be declared"
     assert settings.is_tpl_enabled(), "TPL should be enabled"
-
-    if obfuscated == "on":
-        assert settings.is_obfuscated_enabled(), "Obfuscation should be enabled when set to on"
-    else:
-        assert not settings.is_obfuscated_enabled(), "Obfuscation should be disabled when set to off"
 
     sh_no_tty.nordvpn.logout("--persist-token")
 

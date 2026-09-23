@@ -94,7 +94,6 @@ func (ovpn *OpenVPN) Start(
 	err := setOpenVPNConfig(
 		serverData.Protocol,
 		serverData.IP,
-		serverData.Obfuscated,
 		serverData.OpenVPNVersion,
 	)
 	if err != nil {
@@ -126,12 +125,6 @@ func (ovpn *OpenVPN) Start(
 		"--dev-type", interfaceType,
 		"--dev", InterfaceName,
 		"--auth-nocache",
-	}
-
-	// Kernel DCO is attempted by default and OpenVPN drops it by itself whenever it cannot work,
-	// e.g. no kernel module, an unsupported cipher, compression -> back to the userspace.
-	if serverData.Obfuscated {
-		args = append(args, "--disable-dco")
 	}
 
 	// #nosec G204 -- input is properly sanitized

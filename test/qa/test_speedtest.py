@@ -139,7 +139,7 @@ def test_speed_thresholds(speedtest_results_path):
     :raises AssertionError: If ping latency exceeds MAX_PING_MS.
     """
     tech = "nordlynx"
-    lib.set_technology_and_protocol(tech, "", "")
+    lib.set_technology_and_protocol(tech, "")
 
     with lib.Defer(sh.nordvpn.disconnect):
         sh.nordvpn.connect()
@@ -187,7 +187,7 @@ def test_speed_degradation(speedtest_results_path):
     baseline_data = _run_speedtest()
 
     tech = "nordlynx"
-    lib.set_technology_and_protocol(tech, "", "")
+    lib.set_technology_and_protocol(tech, "")
 
     with lib.Defer(sh.nordvpn.disconnect):
         sh.nordvpn.connect()

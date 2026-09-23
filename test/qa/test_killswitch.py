@@ -31,11 +31,11 @@ MSG_KILLSWITCH_ON = "Kill Switch has been successfully set to 'enabled'."
 MSG_KILLSWITCH_OFF = "Kill Switch has been successfully set to 'disabled'."
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_killswitch_on_disconnected(tech, proto, obfuscated):
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_killswitch_on_disconnected(tech, proto):
     """Manual TC: LVPN-419"""
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
     assert network.is_available(), "Network should be available"
 
     assert MSG_KILLSWITCH_ON in sh.nordvpn.set.killswitch("on"), "Kill switch enable message should be shown"
@@ -49,11 +49,11 @@ def test_killswitch_on_disconnected(tech, proto, obfuscated):
     assert network.is_available(), "Network should be available"
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_killswitch_on_connect(tech, proto, obfuscated):
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_killswitch_on_connect(tech, proto):
     """Manual TC: LVPN-8707"""
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
     assert network.is_available(), "Network should be available"
 
     assert MSG_KILLSWITCH_ON in sh.nordvpn.set.killswitch("on"), "Kill switch enable message should be shown"
@@ -78,11 +78,11 @@ def test_killswitch_on_connect(tech, proto, obfuscated):
     assert network.is_available(), "Network should be available"
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_killswitch_on_connected(tech, proto, obfuscated):
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_killswitch_on_connected(tech, proto):
     """Manual TC: LVPN-1394"""
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
     assert network.is_available(), "Network should be available"
 
     with lib.Defer(sh.nordvpn.disconnect):
@@ -101,11 +101,11 @@ def test_killswitch_on_connected(tech, proto, obfuscated):
     assert network.is_available(), "Network should be available"
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_killswitch_off_connected(tech, proto, obfuscated):
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_killswitch_off_connected(tech, proto):
     """Manual TC: LVPN-2195"""
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
     assert network.is_available(), "Network should be available"
 
     assert MSG_KILLSWITCH_ON in sh.nordvpn.set.killswitch("on"), "Kill switch enable message should be shown"
@@ -128,19 +128,19 @@ def test_killswitch_off_connected(tech, proto, obfuscated):
 
 @dynamic_parametrize(
     [
-        "tech_from", "proto_from", "obfuscated_from",
-        "tech_to", "proto_to", "obfuscated_to",
+        "tech_from", "proto_from",
+        "tech_to", "proto_to",
     ],
     ordered_source=[lib.TECHNOLOGIES],
     randomized_source=[lib.TECHNOLOGIES],
     generate_all=IS_NIGHTLY,
-    id_pattern="{tech_from}-{proto_from}-{obfuscated_from}-"
-               "{tech_to}-{proto_to}-{obfuscated_to}",
+    id_pattern="{tech_from}-{proto_from}-"
+               "{tech_to}-{proto_to}",
 )
-def test_killswitch_reconnect(tech_from, proto_from, obfuscated_from, tech_to, proto_to, obfuscated_to):
+def test_killswitch_reconnect(tech_from, proto_from, tech_to, proto_to):
     """Manual TC: LVPN-8716"""
 
-    lib.set_technology_and_protocol(tech_from, proto_from, obfuscated_from)
+    lib.set_technology_and_protocol(tech_from, proto_from)
     assert network.is_available(), "Network should be available"
 
     assert MSG_KILLSWITCH_ON in sh.nordvpn.set.killswitch("on"), "Kill switch enable message should be shown"
@@ -154,7 +154,7 @@ def test_killswitch_reconnect(tech_from, proto_from, obfuscated_from, tech_to, p
             print(output)
             assert network.is_connected(), "Network should be connected"
 
-            lib.set_technology_and_protocol(tech_to, proto_to, obfuscated_to)
+            lib.set_technology_and_protocol(tech_to, proto_to)
             assert network.is_connected(), "Network should be connected after changing protocol"
             output = sh.nordvpn.connect()
             print(output)

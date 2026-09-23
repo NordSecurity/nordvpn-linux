@@ -17,11 +17,11 @@ CIDR_32 = "/32"
 
 
 @pytest.mark.parametrize("subnet", lib.SUBNETS)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_allowlist_does_not_create_new_routes_when_adding_deleting_subnets_disconnected(tech, proto, obfuscated, subnet):
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_allowlist_does_not_create_new_routes_when_adding_deleting_subnets_disconnected(tech, proto, subnet):
     """Manual TC: LVPN-8789"""
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
 
     output_before_add = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     allowlist.add_subnet_to_allowlist([subnet])
@@ -36,11 +36,11 @@ def test_allowlist_does_not_create_new_routes_when_adding_deleting_subnets_disco
     assert output_after_add == output_after_delete, "Route table should not change after removing subnet"
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_connect_allowlist_subnet(tech, proto, obfuscated):
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_connect_allowlist_subnet(tech, proto):
     """Manual TC: LVPN-801"""
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
 
     my_ip = network.get_external_device_ip()
 
@@ -58,11 +58,11 @@ def test_connect_allowlist_subnet(tech, proto, obfuscated):
     assert not firewall.is_active(), "Subnet should not be active when disconnected"
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_allowlist_subnet_connect(tech, proto, obfuscated):
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_allowlist_subnet_connect(tech, proto):
     """Manual TC: LVPN-8785"""
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
 
     my_ip = network.get_external_device_ip()
 
@@ -81,11 +81,11 @@ def test_allowlist_subnet_connect(tech, proto, obfuscated):
 
 
 @pytest.mark.parametrize("subnet", lib.SUBNETS)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_allowlist_subnet_twice_disconnected(tech, proto, obfuscated, subnet):
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_allowlist_subnet_twice_disconnected(tech, proto, subnet):
     """Manual TC: LVPN-3766"""
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
 
     allowlist.add_subnet_to_allowlist([subnet])
 
@@ -99,11 +99,11 @@ def test_allowlist_subnet_twice_disconnected(tech, proto, obfuscated, subnet):
 
 
 @pytest.mark.parametrize("subnet", lib.SUBNETS)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_allowlist_subnet_twice_connected(tech, proto, obfuscated, subnet):
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_allowlist_subnet_twice_connected(tech, proto, subnet):
     """Manual TC: LVPN-8786"""
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
 
     sh.nordvpn.connect()
 
@@ -121,11 +121,11 @@ def test_allowlist_subnet_twice_connected(tech, proto, obfuscated, subnet):
     assert not firewall.is_active(), "Firewall is not active after VPN disconnect"
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_allowlist_subnet_and_remove_disconnected(tech, proto, obfuscated):
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_allowlist_subnet_and_remove_disconnected(tech, proto):
     """Manual TC: LVPN-8788"""
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
 
     ip_provider_addresses = socket.gethostbyname_ex(urlparse(lib.API_EXTERNAL_IP).netloc)[2]
     ip_addresses_with_subnet = [ip + CIDR_32 for ip in ip_provider_addresses]
@@ -137,14 +137,14 @@ def test_allowlist_subnet_and_remove_disconnected(tech, proto, obfuscated):
     assert not firewall.is_active(), "Firewall is not configured"
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_allowlist_subnet_and_remove_connected(tech, proto, obfuscated):
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_allowlist_subnet_and_remove_connected(tech, proto):
     """Manual TC: LVPN-786"""
 
     # TODO: remove conditional timeout, once LVPN-10169 gets fixed
     timeout = 30 if tech.lower() == "nordwhisper" else 5
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
 
     my_ip = network.get_external_device_ip(timeout)
 
@@ -163,12 +163,12 @@ def test_allowlist_subnet_and_remove_connected(tech, proto, obfuscated):
     assert my_ip != network.get_external_device_ip(timeout), "IP is not the real IP address"
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
 @pytest.mark.parametrize("subnet", lib.SUBNETS)
-def test_allowlist_subnet_remove_nonexistent_disconnected(tech, proto, obfuscated, subnet):
+def test_allowlist_subnet_remove_nonexistent_disconnected(tech, proto, subnet):
     """Manual TC: LVPN-3768"""
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn("allowlist", "remove", "subnet", subnet)
@@ -177,12 +177,12 @@ def test_allowlist_subnet_remove_nonexistent_disconnected(tech, proto, obfuscate
     assert expected_message in ex.value.stdout.decode("utf-8"), "Error message should indicate subnet remove failed"
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
 @pytest.mark.parametrize("subnet", lib.SUBNETS)
-def test_allowlist_subnet_remove_nonexistent_connected(tech, proto, obfuscated, subnet):
+def test_allowlist_subnet_remove_nonexistent_connected(tech, proto, subnet):
     """Manual TC: LVPN-8787"""
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
 
     sh.nordvpn.connect()
 
