@@ -406,7 +406,6 @@ func TestEffectiveGroups(t *testing.T) {
 			got := EffectiveGroups(server, test.tech)
 
 			assert.Equal(t, test.expected, got)
-			// the server itself is never modified
 			assert.Equal(t, test.groups, server.Groups)
 		})
 	}

@@ -93,6 +93,10 @@ type (
 	mooseSetUserPrefServerGroupFunc   func(moose.NordvpnappServerGroup) uint32
 	mooseSetConnectionPreferenceFunc  func(moose.NordvpnappConnectionPreference) uint32
 	mooseSetAutoConnectTypeFunc       func(moose.NordvpnappVpnAutoConnectType) uint32
+	// technology / protocol context setters (user preference and current state)
+	mooseSetTechnologyFunc         func(moose.NordvpnappVpnConnectionTechnology) uint32
+	mooseSetProtocolFunc           func(moose.NordvpnappVpnConnectionProtocol) uint32
+	mooseSetObfuscationEnabledFunc func(bool) uint32
 )
 
 type mooseFunctions struct {
@@ -125,6 +129,12 @@ type mooseFunctions struct {
 	setUserPrefServerGroup          mooseSetUserPrefServerGroupFunc
 	setUserPrefConnectionPreference mooseSetConnectionPreferenceFunc
 	setUserPrefAutoConnectType      mooseSetAutoConnectTypeFunc
+	// technology / protocol
+	setTechnologyUserPreference         mooseSetTechnologyFunc
+	setTechnologyCurrentState           mooseSetTechnologyFunc
+	setProtocolUserPreference           mooseSetProtocolFunc
+	setProtocolCurrentState             mooseSetProtocolFunc
+	setObfuscationEnabledUserPreference mooseSetObfuscationEnabledFunc
 }
 
 // Subscriber listen events, send to moose engine
@@ -140,12 +150,16 @@ type Subscriber struct {
 	connectionStartTime              time.Time
 	connectionToMeshnetPeer          bool
 	connectionToSensitiveServerGroup bool
-	initialHeartbeatSent             bool
-	mooseFuncs                       mooseFunctions
-	httpClient                       *http.Client
-	mux                              sync.RWMutex
-	isInitialized                    atomic.Bool
-	configChangeHandlers             []configChangeHandler
+	// configuredTechProto is what the settings tell the next connect will use.
+	// connectedTechProto is what the live VPN tunnel uses. Zero while disconnected.
+	configuredTechProto  techProto
+	connectedTechProto   techProto
+	initialHeartbeatSent bool
+	mooseFuncs           mooseFunctions
+	httpClient           *http.Client
+	mux                  sync.RWMutex
+	isInitialized        atomic.Bool
+	configChangeHandlers []configChangeHandler
 }
 
 func NewSubscriber(
@@ -168,35 +182,40 @@ func NewSubscriber(
 		clientAPI:    clientAPI,
 		httpClient:   httpClient,
 		mooseFuncs: mooseFunctions{
-			setAppConsentLevel:              moose.MooseNordvpnappSetConsentLevel,
-			setConsentUserPreference:        moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesConsentLevel,
-			setTokenRenewDateCurrentState:   moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateTokenRenewDateValue,
-			setTPLiteUserPreference:         moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesThreatProtectionLiteEnabledValue,
-			setTPLiteCurrentState:           moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue,
-			unsetTPLiteCurrentState:         moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue,
-			setCustomDNSMeta:                moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesCustomDnsEnabledMeta,
-			setCustomDNSValue:               moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesCustomDnsEnabledValue,
-			unsetServerDomainCurrentState:   moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateServerDomainValue,
-			setServerDomainCurrentState:     moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerDomainValue,
-			setServerCityCurrentState:       moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerCityValue,
-			unsetServerCityCurrentState:     moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateServerCityValue,
-			unsetRecommendationUuid:         moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateRecommendationUuid,
-			setRecommendationUuid:           moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateRecommendationUuid,
-			setServerCountryCurrentState:    moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerCountryValue,
-			setServerGroupCurrentState:      moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerGroupValue,
-			unsetServerGroupCurrentState:    moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateServerGroupValue,
-			setIsOnVpnCurrentState:          moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateIsOnVpnValue,
-			sendConnect:                     moose.NordvpnappSendServiceQualityServersConnect,
-			sendDisconnect:                  moose.NordvpnappSendServiceQualityServersDisconnect,
-			setDSIsActive:                   moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStateDedicatedServerIsActive,
-			unsetDSIsActive:                 moose.NordvpnappUnsetContextUserNordvpnappSubscriptionCurrentStateDedicatedServerIsActive,
-			setDSEnabled:                    moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateDedicatedServerEnabled,
-			unsetDSEnabled:                  moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateDedicatedServerEnabled,
-			setUserPrefServerCountry:        moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesServerCountry,
-			setUserPrefServerCity:           moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesServerCity,
-			setUserPrefServerGroup:          moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesServerGroup,
-			setUserPrefConnectionPreference: moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesConnectionPreference,
-			setUserPrefAutoConnectType:      moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesAutoConnectTypeValue,
+			setAppConsentLevel:                  moose.MooseNordvpnappSetConsentLevel,
+			setConsentUserPreference:            moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesConsentLevel,
+			setTokenRenewDateCurrentState:       moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateTokenRenewDateValue,
+			setTPLiteUserPreference:             moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesThreatProtectionLiteEnabledValue,
+			setTPLiteCurrentState:               moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue,
+			unsetTPLiteCurrentState:             moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue,
+			setCustomDNSMeta:                    moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesCustomDnsEnabledMeta,
+			setCustomDNSValue:                   moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesCustomDnsEnabledValue,
+			unsetServerDomainCurrentState:       moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateServerDomainValue,
+			setServerDomainCurrentState:         moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerDomainValue,
+			setServerCityCurrentState:           moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerCityValue,
+			unsetServerCityCurrentState:         moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateServerCityValue,
+			unsetRecommendationUuid:             moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateRecommendationUuid,
+			setRecommendationUuid:               moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateRecommendationUuid,
+			setServerCountryCurrentState:        moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerCountryValue,
+			setServerGroupCurrentState:          moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerGroupValue,
+			unsetServerGroupCurrentState:        moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateServerGroupValue,
+			setIsOnVpnCurrentState:              moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateIsOnVpnValue,
+			sendConnect:                         moose.NordvpnappSendServiceQualityServersConnect,
+			sendDisconnect:                      moose.NordvpnappSendServiceQualityServersDisconnect,
+			setDSIsActive:                       moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStateDedicatedServerIsActive,
+			unsetDSIsActive:                     moose.NordvpnappUnsetContextUserNordvpnappSubscriptionCurrentStateDedicatedServerIsActive,
+			setDSEnabled:                        moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateDedicatedServerEnabled,
+			unsetDSEnabled:                      moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateDedicatedServerEnabled,
+			setUserPrefServerCountry:            moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesServerCountry,
+			setUserPrefServerCity:               moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesServerCity,
+			setUserPrefServerGroup:              moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesServerGroup,
+			setUserPrefConnectionPreference:     moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesConnectionPreference,
+			setUserPrefAutoConnectType:          moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesAutoConnectTypeValue,
+			setTechnologyUserPreference:         moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesTechnologyValue,
+			setTechnologyCurrentState:           moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateTechnologyValue,
+			setProtocolUserPreference:           moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesProtocolValue,
+			setProtocolCurrentState:             moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateProtocolValue,
+			setObfuscationEnabledUserPreference: moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesObfuscationEnabledValue,
 		},
 	}
 	// Add more handlers here as needed
@@ -396,17 +415,12 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 		return fmt.Errorf("unsetting initial server group: %w", err)
 	}
 
-	sub := &Subscriber{}
-	if err := sub.NotifyFirewall(true); err != nil {
+	if err := s.NotifyFirewall(true); err != nil {
 		return fmt.Errorf("setting moose firewall: %w", err)
 	}
 
-	if err := sub.NotifyProtocol(cfg.AutoConnectData.Protocol); err != nil {
-		return fmt.Errorf("setting moose protocol: %w", err)
-	}
-
-	if err := sub.NotifyTechnology(cfg.Technology); err != nil {
-		return fmt.Errorf("setting moose technology: %w", err)
+	if err := s.initTechProto(cfg); err != nil {
+		return err
 	}
 
 	if err := s.response(moose.NordvpnappSetContextDeviceCpuArchitecture(s.buildTarget.Architecture)); err != nil {
@@ -772,13 +786,6 @@ func (s *Subscriber) NotifyMeshnet(data bool) error {
 	return nil
 }
 
-func (s *Subscriber) NotifyObfuscate(data bool) error {
-	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesObfuscationEnabledValue(data)); err != nil {
-		return fmt.Errorf("setting obfuscation preference (enabled=%v): %w", data, err)
-	}
-	return nil
-}
-
 func (s *Subscriber) NotifyPeerUpdate([]string) error { return nil }
 
 func (s *Subscriber) NotifyThreatProtectionLite(isTPLiteEnabled bool) error {
@@ -816,17 +823,6 @@ func (s *Subscriber) setTPLite(isTPLiteEnabled bool) error {
 	return errors.Join(errs...)
 }
 
-func (s *Subscriber) NotifyProtocol(data config.Protocol) error {
-	protocol := connectionProtocolToInternalType(data)
-	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateProtocolValue(protocol)); err != nil {
-		return fmt.Errorf("setting protocol current state (%v): %w", data, err)
-	}
-	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesProtocolValue(protocol)); err != nil {
-		return fmt.Errorf("setting protocol user preference (%v): %w", data, err)
-	}
-	return nil
-}
-
 func (s *Subscriber) NotifyAllowlist(data events.DataAllowlist) error {
 	enabled := len(data.UDPPorts) != 0 || len(data.TCPPorts) != 0 || len(data.Subnets) != 0
 	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesSplitTunnelingEnabledMeta(
@@ -837,21 +833,6 @@ func (s *Subscriber) NotifyAllowlist(data events.DataAllowlist) error {
 	}
 	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesSplitTunnelingEnabledValue(enabled)); err != nil {
 		return fmt.Errorf("setting allowlist enabled value (enabled=%v): %w", enabled, err)
-	}
-	return nil
-}
-
-func (s *Subscriber) NotifyTechnology(data config.Technology) error {
-	if data == config.Technology_UNKNOWN_TECHNOLOGY {
-		return errors.New("unknown technology")
-	}
-
-	technology := connectionTechnologyToInternalType(data)
-	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateTechnologyValue(technology)); err != nil {
-		return fmt.Errorf("setting technology current state (%v): %w", data, err)
-	}
-	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesTechnologyValue(technology)); err != nil {
-		return fmt.Errorf("setting technology user preference (%v): %w", data, err)
 	}
 	return nil
 }
@@ -878,6 +859,7 @@ func hasSensitiveServerGroup(groups []config.ServerGroup) bool {
 func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 	sensitive := hasSensitiveServerGroup(data.ServerGroups)
 
+	var connected techProto
 	s.mux.Lock()
 	// Track sensitivity on every server-connect event (not just success) so
 	// that a failed connect attempt to a sensitive group still prevents from leaking
@@ -888,6 +870,11 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 	if data.EventStatus == events.StatusSuccess {
 		s.connectionStartTime = time.Now()
 		s.connectionToMeshnetPeer = data.IsMeshnetPeer
+		if !data.IsMeshnetPeer {
+			// the event carries what the tunnel really uses, not the current settings
+			s.connectedTechProto = techProto{technology: data.Technology, protocol: data.Protocol}
+			connected = s.connectedTechProto
+		}
 	}
 	s.mux.Unlock()
 
@@ -991,6 +978,10 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 			return fmt.Errorf("setting TP Lite current state after successful connect (enabled=%v): %w", data.ThreatProtectionLite, err)
 		}
 
+		if err := s.reportEffectiveConnection(connected); err != nil {
+			return fmt.Errorf("setting technology/protocol current state after successful connect: %w", err)
+		}
+
 		if err := s.response(s.mooseFuncs.setIsOnVpnCurrentState(true)); err != nil {
 			return fmt.Errorf("setting is-on-VPN current state after successful connect: %w", err)
 		}
@@ -1020,6 +1011,8 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 		connectionDuration = -1
 	}
 	s.connectionStartTime = time.Time{}
+	s.connectedTechProto = techProto{}
+	configured := s.configuredTechProto
 	wasSensitive := s.connectionToSensitiveServerGroup
 	s.connectionToSensitiveServerGroup = false
 	s.mux.Unlock()
@@ -1116,6 +1109,12 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 
 	if err := s.response(s.mooseFuncs.setIsOnVpnCurrentState(false)); err != nil {
 		return fmt.Errorf("setting is-on-VPN current state after disconnect: %w", err)
+	}
+
+	// Once disconnected, the configured technology/protocol takes effect on the next
+	// connection. This also reports changes made while the tunnel was up.
+	if err := s.reportEffectiveConnection(configured); err != nil {
+		return fmt.Errorf("setting technology/protocol current state after disconnect: %w", err)
 	}
 
 	return nil

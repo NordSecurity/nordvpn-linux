@@ -908,7 +908,6 @@ func Test_determineServerSelectionRule(t *testing.T) {
 	}
 }
 
-// nordWhisperServer returns an online server reachable over NordWhisper with the given groups.
 func nordWhisperServer(groups ...core.Group) core.Server {
 	return core.Server{
 		Status:       core.Online,
@@ -926,9 +925,8 @@ func Test_determineServerGroup(t *testing.T) {
 		name   string
 		server core.Server
 		params serverpicker.ServerParameters
-		// tech defaults to UNKNOWN_TECHNOLOGY, i.e. a non-obfuscating technology
-		tech config.Technology
-		want config.ServerGroup
+		tech   config.Technology
+		want   config.ServerGroup
 	}{
 		{
 			name:   "NordWhisper with no requested group is attributed to Obfuscated",
@@ -1102,7 +1100,7 @@ func Test_determineServerGroup(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := determineTargetServerGroup(&tt.server, tt.params, tt.tech); got != tt.want {
+			if got := determineTargetServerGroup(serverpicker.EffectiveGroups(tt.server, tt.tech), tt.params); got != tt.want {
 				t.Errorf("determineServerGroup() = %v, want %v", got, tt.want)
 			}
 		})
@@ -1486,51 +1484,16 @@ func TestDedicatedServers_ForceRegistration(t *testing.T) {
 		"Key used to connect to the VPN server should be equal to newly registered key.")
 }
 
-func Test_serverGroupIDs_ExtractsAllIDs(t *testing.T) {
-	category.Set(t, category.Unit)
-	server := core.Server{Groups: []core.Group{
-		{ID: config.ServerGroup_DEDICATED_IP, Title: "Dedicated IP"},
-		{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
-	}}
-
-	got := determineServerGroupIDs(&server, config.Technology_NORDLYNX)
-
-	want := []config.ServerGroup{
-		config.ServerGroup_DEDICATED_IP,
-		config.ServerGroup_STANDARD_VPN_SERVERS,
-	}
-	assert.Equal(t, want, got)
-}
-
-func Test_serverGroupIDs_NordWhisper_IncludesObfuscated(t *testing.T) {
+func Test_offeredGroups_NordWhisper_ContainTargetGroup(t *testing.T) {
 	category.Set(t, category.Unit)
 	server := nordWhisperServer(
 		core.Group{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 	)
 
-	got := determineServerGroupIDs(&server, config.Technology_NORDWHISPER)
+	offered := serverpicker.EffectiveGroups(server, config.Technology_NORDWHISPER)
 
-	// the target group attributed to the same connection is contained in the offered groups
-	assert.Equal(t, []config.ServerGroup{config.ServerGroup_STANDARD_VPN_SERVERS, config.ServerGroup_OBFUSCATED}, got)
-	assert.Contains(t, got, determineTargetServerGroup(&server, serverpicker.ServerParameters{}, config.Technology_NORDWHISPER))
-}
-
-func Test_serverGroupIDs_EmptyGroups_ReturnsEmptySlice(t *testing.T) {
-	category.Set(t, category.Unit)
-	server := core.Server{Groups: []core.Group{}}
-
-	got := determineServerGroupIDs(&server, config.Technology_NORDLYNX)
-
-	assert.Equal(t, 0, len(got))
-}
-
-func Test_serverGroupIDs_NilGroups_ReturnsEmptySlice(t *testing.T) {
-	category.Set(t, category.Unit)
-	server := core.Server{}
-
-	got := determineServerGroupIDs(&server, config.Technology_NORDLYNX)
-
-	assert.Equal(t, 0, len(got))
+	assert.Equal(t, []config.ServerGroup{config.ServerGroup_STANDARD_VPN_SERVERS, config.ServerGroup_OBFUSCATED}, offered.IDs())
+	assert.Contains(t, offered.IDs(), determineTargetServerGroup(offered, serverpicker.ServerParameters{}))
 }
 
 func TestReconnectOnServerMaintenance(t *testing.T) {

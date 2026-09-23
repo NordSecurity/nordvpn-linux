@@ -24,7 +24,6 @@ func (*dummyAnalytics) NotifyThreatProtectionLite(bool) error          { return 
 func (*dummyAnalytics) NotifyProtocol(config.Protocol) error           { return nil }
 func (*dummyAnalytics) NotifyAllowlist(events.DataAllowlist) error     { return nil }
 func (*dummyAnalytics) NotifyTechnology(config.Technology) error       { return nil }
-func (*dummyAnalytics) NotifyObfuscate(bool) error                     { return nil }
 func (*dummyAnalytics) NotifyFirewall(bool) error                      { return nil }
 func (*dummyAnalytics) NotifyRouting(bool) error                       { return nil }
 func (*dummyAnalytics) NotifyNotify(bool) error                        { return nil }
