@@ -8,7 +8,6 @@ import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/internal/scaler_responsive_box.dart';
 import 'package:nordvpn/theme/popup_theme.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
-import 'package:nordvpn/widgets/rich_text_markdown_links.dart';
 
 // Base class providing "template" for popups.
 abstract class Popup extends ConsumerWidget {
@@ -110,15 +109,13 @@ abstract class Popup extends ConsumerWidget {
   // Accessible name of the popup, read by the screen reader when it opens.
   // Subclasses override it when their visible heading is not [title].
   @protected
-  String semanticLabel(WidgetRef ref) => joinSemanticLabel(title, message(ref));
+  String semanticLabel(WidgetRef ref) =>
+      joinSemanticLabel(title, metadata.semanticsMessage(ref));
 
   @protected
   String joinSemanticLabel(String heading, String body) => body.isEmpty
       ? heading
-      : t.a11y.popupWithContent(
-          title: heading,
-          message: dropURLLinkFromPopupMessage(body),
-        );
+      : t.a11y.popupWithContent(title: heading, message: body);
 
   Widget? get leadingIcon => null;
   Widget buildContent(BuildContext context, WidgetRef ref);

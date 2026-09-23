@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:nordvpn/internal/markdown_text.dart';
 
 // Base class for popups metadata, specifies `id`, optional `title`
 // and popup `message`.
@@ -16,6 +17,12 @@ sealed class PopupMetadata {
     this.title,
     this.onShown,
   });
+
+  
+  // Provides parsed message in a form that's a11y friendly
+  // (e.g. in-line links are stripped from their URLs, labels remained untouched)
+  String semanticsMessage(WidgetRef ref) =>
+      MarkdownText.parse(message(ref)).semanticsText;
 
   @override
   bool operator ==(Object other) {
@@ -66,6 +73,19 @@ final class InfoPopupMetadata extends PopupMetadata {
     this.onLinkTaps,
     super.onShown,
   });
+
+  MarkdownText? _parsedMessage;
+
+  MarkdownText parsedMessage(WidgetRef ref) {
+    final raw = message(ref);
+    final parsed = _parsedMessage;
+    if (parsed != null && parsed.raw == raw) return parsed;
+
+    return _parsedMessage = MarkdownText.parse(raw);
+  }
+
+  @override
+  String semanticsMessage(WidgetRef ref) => parsedMessage(ref).semanticsText;
 }
 
 // Metadata for popups containing styled `header`, `image` and single action
