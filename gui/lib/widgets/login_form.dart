@@ -4,6 +4,7 @@ import 'package:nordvpn/config.dart';
 import 'package:nordvpn/data/models/app_settings.dart';
 import 'package:nordvpn/data/providers/account_controller.dart';
 import 'package:nordvpn/data/providers/vpn_settings_controller.dart';
+import 'package:nordvpn/widgets/accessible_item.dart';
 
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/service_locator.dart';
@@ -105,19 +106,26 @@ class _LoginFormState extends ConsumerState<LoginForm> {
   }
 
   Widget _killSwitchCheckbox(WidgetRef ref) {
-    return LoadingCheckbox(
-      value: _checkboxValue,
-      text: t.ui.turnOffKillSwitch,
-      onChanged: (value) async {
-        setState(() {
-          _checkboxValue = value;
-          _killSwitchTurnedOffViaGui = value;
-        });
-        await ref
-            .read(vpnSettingsControllerProvider.notifier)
-            .setKillSwitch(!value);
-      },
+    return AccessibleItem(
+      toggled: _checkboxValue,
+      label: t.ui.turnOffKillSwitch,
+      onActivate: () => _toggleKillSwitch(ref, !_checkboxValue),
+      child: LoadingCheckbox(
+        value: _checkboxValue,
+        text: t.ui.turnOffKillSwitch,
+        onChanged: (value) => _toggleKillSwitch(ref, value),
+      ),
     );
+  }
+
+  Future<void> _toggleKillSwitch(WidgetRef ref, bool value) async {
+    setState(() {
+      _checkboxValue = value;
+      _killSwitchTurnedOffViaGui = value;
+    });
+    await ref
+        .read(vpnSettingsControllerProvider.notifier)
+        .setKillSwitch(!value);
   }
 
   Widget _checkboxDescription(LoginFormTheme theme) {
