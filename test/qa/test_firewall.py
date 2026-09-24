@@ -26,7 +26,7 @@ def setup_module(module):  # noqa: ARG001
 
 @pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
 def test_connected_firewall_disable(tech, proto):
-    """Manual TC: LVPN-688"""
+    """Manual TC: LVPN-693"""
 
     with lib.Defer(sh.nordvpn.disconnect):
         lib.set_technology_and_protocol(tech, proto)
@@ -196,7 +196,7 @@ def test_firewall_05_allowlist_subnet(tech, proto, subnet):
 
 @pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
 def test_firewall_06_with_killswitch(tech, proto):
-    """Manual TC: LVPN-8726"""
+    """Manual TC: LVPN-8727"""
 
     with lib.Defer(sh.nordvpn.set.killswitch.off):
         lib.set_technology_and_protocol(tech, proto)

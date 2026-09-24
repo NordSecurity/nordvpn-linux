@@ -34,7 +34,7 @@ def test_set_technology(tech, proto):  # noqa: ARG001
 
 @pytest.mark.parametrize(("tech", "proto"), lib.OVPN_STANDARD_TECHNOLOGIES)
 def test_protocol_in_settings(tech, proto):
-    """Manual TC: LVPN-8793"""
+    """Manual TC: LVPN-601"""
 
     lib.set_technology_and_protocol(tech, proto)
     assert proto.upper() in sh.nordvpn.settings(), "Protocol should appear in settings"
@@ -43,7 +43,7 @@ def test_protocol_in_settings(tech, proto):
 @pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
 def test_technology_set_options(tech, proto):
     """
-    Manual TC: LVPN-6816.
+    Manual TC: LVPN-601.
 
     Only OpenVPN offers `nordvpn set protocol`.
     """
@@ -265,7 +265,7 @@ def test_set_defaults_no_logout(tech, proto):
 
 
 def test_set_analytics_off_on():
-    """Manual TC: LVPN-510"""
+    """Manual TC: LVPN-509"""
 
     assert "Analytics has been successfully set to 'disabled'." in sh.nordvpn.set.analytics("off"), "Analytics should be successfully disabled"
     assert not settings.is_user_consent_granted(), "User consent should not be granted when analytics is disabled"
@@ -338,7 +338,7 @@ def test_set_post_quantum_on_open_vpn(tech, proto):
 
 @pytest.mark.parametrize(("tech", "proto"), lib.NORDWHISPER_TECHNOLOGY)
 def test_set_post_quantum_on_nordwhisper(tech, proto):
-    """Manual TC: LVPN-8445"""
+    """Manual TC: LVPN-5787"""
 
     lib.set_technology_and_protocol(tech, proto)
 
@@ -348,7 +348,7 @@ def test_set_post_quantum_on_nordwhisper(tech, proto):
     assert "Post-quantum encryption is not compatible with NordWhisper. Switch to NordLynx to use this encryption." in ex.value.stdout.decode("utf-8")
 
 def test_set_technology_openvpn_post_quantum_enabled():
-    """Manual TC: LVPN-8536"""
+    """Manual TC: LVPN-6835"""
 
     sh.nordvpn.set(settings.get_pq_alias(), "on")
 

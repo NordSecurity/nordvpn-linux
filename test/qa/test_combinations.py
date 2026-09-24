@@ -50,7 +50,7 @@ def test_reconnect_matrix(
         source_proto,
         target_proto,
 ):
-    """Manual TC: LVPN-8674, LVPN-8694"""
+    """Manual TC: LVPN-8674, LVPN-8694, LVPN-676"""
     lib.set_technology_and_protocol(source_tech, source_proto)
     connect_base_test()
 
@@ -110,7 +110,7 @@ def test_status_change_technology_and_protocol(
         source_proto,
         target_proto,
 ):
-    """Manual TC: LVPN-666"""
+    """Manual TC: LVPN-676"""
 
     lib.set_technology_and_protocol(source_tech, source_proto)
 

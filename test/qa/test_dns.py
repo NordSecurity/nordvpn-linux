@@ -93,7 +93,7 @@ def test_set_tpl_off_and_connect(tech, proto):
     id_pattern="{tech}-{proto}-{nameserver}",
 )
 def test_tpl_on_set_custom_dns_disconnected(tech, proto, nameserver):
-    """Manual TC: LVPN-6803"""
+    """Manual TC: LVPN-6802"""
 
     nameserver = nameserver.split(" ")
 
@@ -261,7 +261,7 @@ def test_set_custom_dns_off_connected(tech, proto, nameserver):
 @pytest.mark.parametrize(("nameserver", "expected_error"), dns.DNS_CASES_ERROR)
 @pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
 def test_custom_dns_errors_disconnected(tech, proto, nameserver, expected_error):
-    """Manual TC: LVPN-6799"""
+    """Manual TC: LVPN-6798"""
 
     lib.set_technology_and_protocol(tech, proto)
 
@@ -303,7 +303,7 @@ def test_custom_dns_errors_connected(tech, proto, nameserver, expected_error):
     id_pattern="{tech}-{proto}-{nameserver}",
 )
 def test_custom_dns_already_set_disconnected(tech, proto, nameserver):
-    """Manual TC: LVPN-8755"""
+    """Manual TC: LVPN-8754"""
 
     nameserver = nameserver.split(" ")
     lib.set_technology_and_protocol(tech, proto)
@@ -356,7 +356,7 @@ def test_custom_dns_already_set_connected(tech, proto, nameserver):
 
 @pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
 def test_custom_dns_already_disabled_disconnected(tech, proto):
-    """Manual TC: LVPN-8757"""
+    """Manual TC: LVPN-8756"""
 
     lib.set_technology_and_protocol(tech, proto)
 

@@ -38,7 +38,7 @@ def test_allowlist_does_not_create_new_routes_when_adding_deleting_subnets_disco
 
 @pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
 def test_connect_allowlist_subnet(tech, proto):
-    """Manual TC: LVPN-801"""
+    """Manual TC: LVPN-786"""
 
     lib.set_technology_and_protocol(tech, proto)
 
@@ -60,7 +60,7 @@ def test_connect_allowlist_subnet(tech, proto):
 
 @pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
 def test_allowlist_subnet_connect(tech, proto):
-    """Manual TC: LVPN-8785"""
+    """Manual TC: LVPN-8788"""
 
     lib.set_technology_and_protocol(tech, proto)
 
@@ -166,7 +166,7 @@ def test_allowlist_subnet_and_remove_connected(tech, proto):
 @pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
 @pytest.mark.parametrize("subnet", lib.SUBNETS)
 def test_allowlist_subnet_remove_nonexistent_disconnected(tech, proto, subnet):
-    """Manual TC: LVPN-3768"""
+    """Manual TC: LVPN-3766"""
 
     lib.set_technology_and_protocol(tech, proto)
 
@@ -180,7 +180,7 @@ def test_allowlist_subnet_remove_nonexistent_disconnected(tech, proto, subnet):
 @pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
 @pytest.mark.parametrize("subnet", lib.SUBNETS)
 def test_allowlist_subnet_remove_nonexistent_connected(tech, proto, subnet):
-    """Manual TC: LVPN-8787"""
+    """Manual TC: LVPN-8786"""
 
     lib.set_technology_and_protocol(tech, proto)
 
