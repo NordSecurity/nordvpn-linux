@@ -302,6 +302,7 @@ func main() {
 		daemonEvents.Service.Connect,
 		httpGlobalCtx,
 		Environment,
+		fsystem,
 	)
 
 	cdnAPI := core.NewCDNAPI(

@@ -203,7 +203,7 @@ func (c *Client) createClientOptions(
 
 	// Resolve hostname to IPs using resolver with fwmark (bypasses killswitch).
 	// Add each IP as a separate broker - MQTT library will try them sequentially.
-	ips, resolveErr := c.resolver.Resolve(hostname)
+	ips, resolveErr := c.resolver.Resolve(hostname, ctx)
 	if resolveErr == nil && len(ips) > 0 {
 		for _, ip := range ips {
 			if ip.Is6() {

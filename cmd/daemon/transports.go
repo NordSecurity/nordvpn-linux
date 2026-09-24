@@ -11,9 +11,11 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"time"
 
+	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/kernel"
@@ -46,11 +48,113 @@ func SetBufferSizeForHTTP3() error {
 	return nil
 }
 
+// resolverWrapper wraps a network.DNSResolver with a self-managing backoff
+// mechanism for internal DNS resolution.
+type resolverWrapper struct {
+	resolver                   network.DNSResolver
+	configManager              config.Manager
+	nextInternalDNSAttemptUnix atomic.Int64
+	internalDNSBackoffMinutes  atomic.Int64
+}
+
+func newResolverWrapper(resolver network.DNSResolver, configManager config.Manager) *resolverWrapper {
+	return &resolverWrapper{
+		resolver:      resolver,
+		configManager: configManager,
+	}
+}
+
+func (r *resolverWrapper) isInBackoffMode() bool {
+	return time.Now().Before(time.Unix(r.nextInternalDNSAttemptUnix.Load(), 0))
+}
+
+// setBackoff sets the new backoff based on the previous backoff:
+//  1. initial backoff is 5 minutes long
+//  2. subsequent backoff is 30 minutes long
+//  3. all backoffs after that are 60 minutes long
+func (r *resolverWrapper) setBackoff() {
+	currentBackoff := r.internalDNSBackoffMinutes.Load()
+
+	var nextBackoff int64
+	switch currentBackoff {
+	case 0:
+		nextBackoff = 5
+	case 5:
+		nextBackoff = 30
+	default:
+		nextBackoff = 60
+	}
+
+	log.Info("backing off from internal DNS resolution for", nextBackoff, "minutes")
+
+	r.internalDNSBackoffMinutes.Store(nextBackoff)
+	r.nextInternalDNSAttemptUnix.Store(time.Now().Add(time.Minute * time.Duration(nextBackoff)).Unix())
+}
+
+func (r *resolverWrapper) unsetBackoff() {
+	r.internalDNSBackoffMinutes.Store(0)
+	r.nextInternalDNSAttemptUnix.Store(0)
+}
+
+// resolveDomainName resolves domain via the internal resolver, applying the
+// backoff and killswitch rules:
+//   - a backoff of 5 => 30 => 60 will be set after DNS resolution failures
+//   - if killswitch is on, internal resolver will always be used
+//   - if killswitch is off and the internal resolver fails or backoff is on, domain will be returned as is to be
+//     resolved by the OS resolver
+func (r *resolverWrapper) resolveDomainName(domain string, ctx context.Context) (string, error) {
+	var cfg config.Config
+	if cfgLoadErr := r.configManager.Load(&cfg); cfgLoadErr != nil {
+		log.Error("loading config to determine if internal DNS resolution can be skipped:", cfgLoadErr)
+		// assume killswitch is on upon config load failure
+		cfg.KillSwitch = true
+	}
+
+	inBackoff := r.isInBackoffMode()
+
+	if inBackoff && !cfg.KillSwitch {
+		return domain, nil
+	}
+
+	addr, err := r.resolver.Resolve(domain, ctx)
+	if err != nil {
+		// only set backoff if it was not set(or the previous backoff has expired) so that it won't be saturated by
+		// multiple failed DNS calls.
+		if !inBackoff {
+			r.setBackoff()
+		}
+
+		if !cfg.KillSwitch {
+			return domain, nil
+		}
+
+		return "", fmt.Errorf("resolving domain name: %w", err)
+	}
+
+	r.unsetBackoff()
+
+	if len(addr) == 0 {
+		return "", fmt.Errorf("no resolved addresses")
+	}
+
+	var resolvedAddress string
+	if ip := addr[0]; ip.Is6() {
+		resolvedAddress = fmt.Sprintf("[%s]", ip.String())
+	} else {
+		resolvedAddress = ip.String()
+	}
+
+	return resolvedAddress, nil
+}
+
 func createH1Transport(
 	resolver network.DNSResolver,
 	fwmark uint32,
 	environment string,
+	configManager config.Manager,
 ) func() http.RoundTripper {
+	resolverWrapper := newResolverWrapper(resolver, configManager)
+
 	return func() http.RoundTripper {
 		dialer := &net.Dialer{
 			Control: network.NewFwmarkControlFn(fwmark),
@@ -64,20 +168,17 @@ func createH1Transport(
 					return nil, fmt.Errorf("malformed address: %s", addr)
 				}
 
-				ips, err := resolver.Resolve(domain)
+				// resolverWrapper will return unresolved address if DNS resolution fails and killswitch is off.
+				// In such cases this address will be resolved by the OS resolver when it's passed on to the dialer.
+				resolvedAddr, err := resolverWrapper.resolveDomainName(domain, ctx)
 				if err != nil {
 					return nil, err
 				}
-				var newAddr string
-				if ip := ips[0]; ip.Is6() {
-					newAddr = fmt.Sprintf("[%s]", ip.String())
-				} else {
-					newAddr = ip.String()
-				}
+
 				return dialer.DialContext(
 					ctx,
 					netw,
-					strings.ReplaceAll(addr, domain, newAddr),
+					strings.ReplaceAll(addr, domain, resolvedAddr),
 				)
 			},
 			TLSHandshakeTimeout: request.TransportTimeout,
@@ -151,7 +252,7 @@ func createH3Transport(resolver network.DNSResolver, fwmark uint32) func() http.
 					if err != nil {
 						return nil, fmt.Errorf("port conversion failed: %s", portStr)
 					}
-					ips, err := resolver.Resolve(domain)
+					ips, err := resolver.Resolve(domain, ctx)
 					if err != nil {
 						return nil, err
 					}
@@ -226,6 +327,7 @@ func createTimedOutTransport(
 	connectSubject events.PublishSubcriber[events.DataConnect],
 	ctx context.Context,
 	environment string,
+	configManager config.Manager,
 ) http.RoundTripper {
 	transportsStr := os.Getenv(envHTTPTransportsKey)
 	log.Info("http transports to use (environment):", transportsStr)
@@ -243,7 +345,7 @@ func createTimedOutTransport(
 			1,
 			1,
 			"HTTP/1.1",
-			createH1Transport(resolver, fwmark, environment),
+			createH1Transport(resolver, fwmark, environment, configManager),
 			nil,
 			transportNeedsRecreate,
 		)

@@ -25,7 +25,7 @@ type mockResolver struct {
 	err error
 }
 
-func (m *mockResolver) Resolve(domain string) ([]netip.Addr, error) {
+func (m *mockResolver) Resolve(domain string, ctx context.Context) ([]netip.Addr, error) {
 	return m.ips, m.err
 }
 

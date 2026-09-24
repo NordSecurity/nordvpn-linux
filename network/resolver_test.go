@@ -1,6 +1,7 @@
 package network
 
 import (
+	"context"
 	"fmt"
 	"net/netip"
 	"os/exec"
@@ -99,12 +100,12 @@ func TestResolver(t *testing.T) {
 	assert.True(t, ok)
 
 	dnsRequestAreBlocked := func() {
-		_, err := resolver.resolveWithNameservers(domainName, []string{dnsAddr}, "udp")
+		_, err := resolver.resolveWithNameservers(domainName, []string{dnsAddr}, "udp", context.Background())
 		assert.Error(t, err, "check that nft blocks all")
 	}
 
 	dnsRequestWork := func() {
-		ips, err := resolver.resolveWithNameservers(domainName, []string{dnsAddr}, "udp")
+		ips, err := resolver.resolveWithNameservers(domainName, []string{dnsAddr}, "udp", context.Background())
 		assert.NoError(t, err, "response received when fwmark is used")
 		assert.Equal(t, ipAddress, ips[0])
 	}
