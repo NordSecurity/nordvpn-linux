@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
@@ -177,4 +178,106 @@ func TestMigrateLegacyAllowlist_RewritesConfigFile(t *testing.T) {
 	saved, _ := filesystem.ReadFile(location)
 	assert.Assert(t, strings.Contains(string(saved), `"allowlist":`))
 	assert.Assert(t, !strings.Contains(string(saved), `"whitelist"`))
+}
+
+func TestMigrateDeprecatedAutoconnectToSpecificServer(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	testServerTag := "ts123"
+	testCountryName := "Test Country"
+	testCityName := "Test City"
+
+	testServerLocation := core.Locations{
+		core.Location{
+			Country: core.Country{
+				Name: testCountryName,
+				City: core.City{
+					Name: testCityName,
+				},
+			},
+		},
+	}
+
+	testServer := core.Server{
+		Hostname:  testServerTag + ".nordvpn.com",
+		Locations: testServerLocation,
+	}
+
+	testServersList := core.Servers{testServer}
+
+	tests := []struct {
+		name                string
+		serversList         core.Servers
+		currentServerTag    string
+		expectedTag         string
+		expectedCountryName string
+		expectedCityName    string
+	}{
+		{
+			name:                "server set to specific, fallback to country",
+			currentServerTag:    testServerTag,
+			serversList:         testServersList,
+			expectedTag:         strings.ToLower(testCityName),
+			expectedCountryName: testCountryName,
+			expectedCityName:    testCityName,
+		},
+		{
+			name:             "server set to country, no fallback",
+			currentServerTag: strings.ToLower(testCountryName),
+			serversList:      testServersList,
+			expectedTag:      strings.ToLower(testCountryName),
+		},
+		{
+			name:             "server set to city, no fallback",
+			currentServerTag: strings.ToLower(testCityName),
+			serversList:      testServersList,
+			expectedTag:      strings.ToLower(testCityName),
+		},
+		{
+			name:             "server tag empty, no fallback",
+			currentServerTag: "",
+			serversList:      testServersList,
+		},
+		{
+			name:             "server set to specific, server not found, fallback to fastest",
+			currentServerTag: testServerTag,
+			serversList:      core.Servers{},
+			expectedTag:      "ts",
+		},
+		{
+			name:             "server set to specific, server tag invalid format, fallback to fastest",
+			currentServerTag: "tttt111",
+			serversList:      core.Servers{},
+			expectedTag:      "",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			dataManager := DataManager{}
+			dataManager.serversData = ServersData{
+				Servers: test.serversList,
+			}
+
+			cfg := config.Config{
+				AutoConnectData: config.AutoConnectData{
+					ServerTag: test.currentServerTag,
+				},
+			}
+
+			configManager := newMockConfigManager()
+			configManager.c = cfg
+
+			MigrateDeprecatedAutoconnectToSpecificServer(configManager, &dataManager)
+
+			cfgAfterFallback := configManager.c
+
+			assert.Equal(t, test.expectedTag, cfgAfterFallback.AutoConnectData.ServerTag,
+				"Invalid server tag saved in local config after fallback.")
+			assert.Equal(t, test.expectedCountryName, cfgAfterFallback.AutoConnectData.Country,
+				"Invalid country saved in local config after fallback.")
+			assert.Equal(t, test.expectedCityName, cfgAfterFallback.AutoConnectData.City,
+				"Invalid city saved in local config after fallback.")
+		})
+	}
 }
