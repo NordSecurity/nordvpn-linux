@@ -34,6 +34,10 @@ type Mock struct {
 	ProvidedServerData vpn.ServerData
 	ActiveServerData   *vpn.ServerData
 	CancelConnectingFn func(error) bool
+
+	FirewallDisabled    bool
+	EnableFirewallCalls int
+	KillSwitchApplied   bool
 }
 
 func (m *Mock) Start(
@@ -71,10 +75,19 @@ func (m *Mock) IsVPNActive() bool {
 	return m.VpnActive || m.ConnectRetries > 5
 }
 
-func (*Mock) EnableFirewall() error  { return nil }
-func (*Mock) DisableFirewall() error { return nil }
-func (*Mock) EnableRouting()         {}
-func (*Mock) DisableRouting()        {}
+func (m *Mock) EnableFirewall() error {
+	m.EnableFirewallCalls++
+	m.FirewallDisabled = false
+	return nil
+}
+
+func (m *Mock) DisableFirewall() error {
+	m.FirewallDisabled = true
+	return nil
+}
+
+func (*Mock) EnableRouting()  {}
+func (*Mock) DisableRouting() {}
 
 func (m *Mock) SetAllowlist(allowlist config.Allowlist) error {
 	if m.SetAllowlistErr != nil {
@@ -101,8 +114,17 @@ func (m *Mock) IsMeshnetActive() bool {
 	m.MeshnetRetries++
 	return m.MeshActive || m.MeshnetRetries > 5
 }
-func (*Mock) SetKillSwitch() error   { return nil }
-func (*Mock) UnsetKillSwitch() error { return nil }
+
+func (m *Mock) SetKillSwitch() error {
+	m.KillSwitchApplied = !m.FirewallDisabled
+	return nil
+}
+
+func (m *Mock) UnsetKillSwitch() error {
+	m.KillSwitchApplied = false
+	return nil
+}
+
 func (*Mock) SetVPN(vpn.VPN)         {}
 func (*Mock) LastServerName() string { return "" }
 
