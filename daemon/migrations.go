@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/features"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
@@ -54,6 +55,26 @@ func ConfigCleanup(c config.Config) config.Config {
 	c.AutoConnectData.Allowlist.NormalizeSubnets(func(removed, reason string) {
 		log.Warn("On start, allowlist remove subnet:", removed, "; reason:", reason)
 	})
+
+	return migrateObfuscatedSettingsToNordWhisper(c, features.NordWhisperEnabled)
+}
+
+func migrateObfuscatedSettingsToNordWhisper(c config.Config, isNordWhisperEnabled bool) config.Config {
+	if !c.AutoConnectData.Obfuscate {
+		return c
+	}
+
+	log.Info("migrating user settings to NordWhisper")
+
+	c.AutoConnectData.Obfuscate = false
+
+	if isNordWhisperEnabled {
+		c.Technology = config.Technology_NORDWHISPER
+		c.AutoConnectData.Protocol = config.Protocol_Webtunnel
+	} else if c.AutoConnectData.Group == config.ServerGroup_OBFUSCATED {
+		// for open source builds change the group to non obfuscated
+		c.AutoConnectData.Group = config.ServerGroup_UNDEFINED
+	}
 
 	return c
 }
