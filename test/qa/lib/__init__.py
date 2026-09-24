@@ -84,13 +84,11 @@ ADDITIONAL_GROUPS = [
     "Double_VPN",
     "Onion_Over_VPN",
     "Standard_VPN_Servers",
-    "P2P",
 ]
 
 # Used for test parametrization with NordWhisper, since other additional groups are not supported with this technology.
 ADDITIONAL_GROUPS_NORDWHISPER = [
     "Standard_VPN_Servers",
-    "P2P",
 ]
 
 # Used for test parametrization, when the tested functionality only works with non-obfuscated OPENVPN.

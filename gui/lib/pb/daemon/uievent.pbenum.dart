@@ -159,8 +159,6 @@ class UIEvent_ItemValue extends $pb.ProtobufEnum {
       UIEvent_ItemValue._(6, _omitEnumNames ? '' : 'ONION_OVER_VPN');
   static const UIEvent_ItemValue DOUBLE_VPN =
       UIEvent_ItemValue._(7, _omitEnumNames ? '' : 'DOUBLE_VPN');
-  static const UIEvent_ItemValue P2P =
-      UIEvent_ItemValue._(8, _omitEnumNames ? '' : 'P2P');
 
   /// values for handling pause functionality analytics
   static const UIEvent_ItemValue PAUSE_5_MIN =
@@ -189,7 +187,6 @@ class UIEvent_ItemValue extends $pb.ProtobufEnum {
     OBFUSCATED,
     ONION_OVER_VPN,
     DOUBLE_VPN,
-    P2P,
     PAUSE_5_MIN,
     PAUSE_15_MIN,
     PAUSE_30_MIN,
