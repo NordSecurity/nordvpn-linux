@@ -56,8 +56,18 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.P
 		}, nil
 	}
 
+	firewallWasEnabled := cfg.Firewall
 	if err := r.cm.Load(&cfg); err != nil {
 		log.Error(err)
+	}
+
+	// sync the networker state with config otherwise firewall
+	// configurations (e.g. killswitch) are skipped
+	if !firewallWasEnabled && cfg.Firewall {
+		if err := r.netw.EnableFirewall(); err != nil {
+			log.Error("enabling firewall after reset:", err)
+			return &pb.Payload{Type: internal.CodeFailure}, nil
+		}
 	}
 
 	v, err := r.factory(cfg.Technology)
