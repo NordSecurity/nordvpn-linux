@@ -346,7 +346,7 @@ func main() {
 	stopLevelWatcher := log.SetupLogger(
 		internal.UserLogOutput(internal.NorduserdLogFileName, internal.MaxUserLogSizeMB),
 		internal.LogLevelFile,
-		log.DefaultLevel(),
+		log.DefaultLevel(internal.IsDevEnv(Environment)),
 	)
 	defer stopLevelWatcher()
 

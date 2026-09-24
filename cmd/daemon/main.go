@@ -138,7 +138,7 @@ func main() {
 	stopLevelWatcher := log.SetupLogger(
 		os.Stdout,
 		internal.LogLevelFile,
-		log.DefaultLevel(),
+		log.DefaultLevel(internal.IsDevEnv(Environment)),
 	)
 	defer stopLevelWatcher()
 

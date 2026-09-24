@@ -66,7 +66,10 @@ type CancelFunc func()
 
 var level atomic.Uint32
 
-func DefaultLevel() logLevel {
+func DefaultLevel(isDev bool) logLevel {
+	if isDev {
+		return levelTrace
+	}
 	return levelDebug
 }
 
