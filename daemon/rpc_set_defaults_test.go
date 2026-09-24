@@ -90,7 +90,7 @@ func TestResetToDefaults_PauseVariants(t *testing.T) {
 			}
 
 			if test.isDataDisconnectExpected {
-				//simulate pause is activated
+				// simulate pause is activated
 				connectionInfo.Pause(time.Now(), time.Second*60*5)
 			}
 			// actual response code is not relevant for this test
@@ -245,6 +245,53 @@ func TestSetDefaults_Logout(t *testing.T) {
 			} else {
 				assert.True(t, netw.LanDiscovery, "settings were reset despite a failed logout")
 			}
+		})
+	}
+}
+
+func TestSetDefaults_SyncsNetworkerFirewallState(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name                        string
+		firewallDisabledBeforeReset bool
+		expectedEnableFirewallCalls int
+	}{
+		{
+			name:                        "firewall disabled before reset is re-enabled and killswitch is applied",
+			firewallDisabledBeforeReset: true,
+			expectedEnableFirewallCalls: 1,
+		},
+		{
+			name:                        "firewall enabled before reset is not enabled again and killswitch is applied",
+			firewallDisabledBeforeReset: false,
+			expectedEnableFirewallCalls: 0,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			netw := &networker.Mock{}
+			rpc := testRPC()
+			rpc.netw = netw
+
+			if test.firewallDisabledBeforeReset {
+				resp, err := rpc.SetFirewall(context.Background(), &pb.SetGenericRequest{Enabled: false})
+				assert.NoError(t, err)
+				assert.Equal(t, internal.CodeSuccess, resp.Type)
+				assert.True(t, netw.FirewallDisabled)
+			}
+
+			resp, err := rpc.SetDefaults(context.Background(), &pb.SetDefaultsRequest{NoLogout: true})
+			assert.NoError(t, err)
+			assert.Equal(t, internal.CodeSuccess, resp.Type)
+			assert.False(t, netw.FirewallDisabled)
+			assert.Equal(t, test.expectedEnableFirewallCalls, netw.EnableFirewallCalls)
+
+			resp, err = rpc.SetKillSwitch(context.Background(), &pb.SetKillSwitchRequest{KillSwitch: true})
+			assert.NoError(t, err)
+			assert.Equal(t, internal.CodeSuccess, resp.Type)
+			assert.True(t, netw.KillSwitchApplied)
 		})
 	}
 }
