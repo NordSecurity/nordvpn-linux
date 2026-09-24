@@ -595,6 +595,10 @@ func main() {
 	)
 	daemonEvents.User.Logout.Subscribe(dm.NotifyLogout)
 
+	if err := daemon.MigrateDeprecatedAutoconnectToSpecificServer(fsystem, dm); err != nil {
+		log.Warn("failed to migrate autoconnect to a specific server:", err)
+	}
+
 	pauseEvents := daemonevents.NewPauseEvents()
 	pauseEvents.Subscribe(statePublisher)
 

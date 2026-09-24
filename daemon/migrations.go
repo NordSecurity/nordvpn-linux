@@ -2,8 +2,13 @@ package daemon
 
 import (
 	"fmt"
+	"regexp"
+	"slices"
+	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/core"
+	"github.com/NordSecurity/nordvpn-linux/daemon/serverpicker"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
@@ -47,4 +52,65 @@ func ConfigCleanup(c config.Config) config.Config {
 	})
 
 	return c
+}
+
+// MigrateDeprecatedAutoconnectToSpecificServer checks if autoconnect target is a specific server. If it is, it sets the target to it's
+// country/city.
+//
+// Autconnect to a specific server was deprecated in version 6.0.0.
+func MigrateDeprecatedAutoconnectToSpecificServer(configManager config.Manager, dataManager *DataManager) error {
+	var cfg config.Config
+	if err := configManager.Load(&cfg); err != nil {
+		return fmt.Errorf("loading config: %w", err)
+	}
+
+	if cfg.AutoConnectData.ServerTag == "" {
+		return nil
+	}
+
+	if !serverpicker.IsServerTag(cfg.AutoConnectData.ServerTag) {
+		return nil
+	}
+
+	serversData := dataManager.GetServersData()
+	serverIndex := slices.IndexFunc(serversData.Servers, func(server core.Server) bool {
+		return serverpicker.MatchTagToHostname(cfg.AutoConnectData.ServerTag, server)
+	})
+
+	if serverIndex != -1 {
+		log.Info("autoconnection target set to a specific server tag, falling back to server's country/city")
+
+		server := serversData.Servers[serverIndex]
+		serversCountry := server.Country()
+
+		cfg.AutoConnectData.City = serversCountry.City.Name
+		cfg.AutoConnectData.Country = serversCountry.Name
+		cfg.AutoConnectData.CountryCode = serversCountry.Code
+		cfg.AutoConnectData.ServerTag = strings.ToLower(serversCountry.City.Name)
+	} else {
+		serverNameRegEx := regexp.MustCompile(`^([a-zA-Z]{2})(\d+)$`)
+		match := serverNameRegEx.FindStringSubmatch(cfg.AutoConnectData.ServerTag)
+		// it has 3 elements, [0] - full, [1] - country code, [2] - server number
+		if len(match) == 3 {
+			countryCode := match[1]
+			log.Warn(
+				"autoconnection target set to a specific server tag, server not found, falling back to server's country code:",
+				countryCode,
+			)
+			cfg.AutoConnectData.ServerTag = countryCode
+			cfg.AutoConnectData.CountryCode = strings.ToUpper(countryCode)
+		} else {
+			cfg.AutoConnectData.ServerTag = ""
+			log.Warn("failed to extract country code out of the server name, will fall back to fastest server")
+		}
+	}
+
+	if err := configManager.SaveWith(func(c config.Config) config.Config {
+		c.AutoConnectData = cfg.AutoConnectData
+		return c
+	}); err != nil {
+		return fmt.Errorf("saving migrated config: %w", err)
+	}
+
+	return nil
 }
