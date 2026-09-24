@@ -207,7 +207,7 @@ func TestResolveServerGroup(t *testing.T) {
 		},
 		{
 			input:         NewSearchParams("", "Obfuscated_servers", ""),
-			expectedGroup: config.ServerGroup_OBFUSCATED,
+			expectedGroup: config.ServerGroup_NW_OBFUSCATED,
 			err:           nil,
 		},
 	}
@@ -257,21 +257,21 @@ func TestSearchGroup(t *testing.T) {
 	}{
 		{
 			name:      "obfuscated over nordwhisper is searched as standard",
-			requested: config.ServerGroup_OBFUSCATED,
+			requested: config.ServerGroup_NW_OBFUSCATED,
 			tech:      config.Technology_NORDWHISPER,
 			expected:  config.ServerGroup_STANDARD_VPN_SERVERS,
 		},
 		{
 			name:      "obfuscated over nordlynx is left alone",
-			requested: config.ServerGroup_OBFUSCATED,
+			requested: config.ServerGroup_NW_OBFUSCATED,
 			tech:      config.Technology_NORDLYNX,
-			expected:  config.ServerGroup_OBFUSCATED,
+			expected:  config.ServerGroup_NW_OBFUSCATED,
 		},
 		{
 			name:      "obfuscated over openvpn is left alone",
-			requested: config.ServerGroup_OBFUSCATED,
+			requested: config.ServerGroup_NW_OBFUSCATED,
 			tech:      config.Technology_OPENVPN,
-			expected:  config.ServerGroup_OBFUSCATED,
+			expected:  config.ServerGroup_NW_OBFUSCATED,
 		},
 		{
 			name:      "other groups are never touched",

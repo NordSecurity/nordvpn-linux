@@ -215,7 +215,7 @@ func TestGroups_ObfuscatedIsListedOnlyUnderNordWhisper(t *testing.T) {
 		core.Groups{{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"}},
 		allTechs)
 	legacyXOR := getServer(3, "xor1", "Canada", "ca", "Toronto", false,
-		core.Groups{{ID: config.ServerGroup_OBFUSCATED, Title: "Obfuscated Servers"}},
+		core.Groups{{ID: config.ServerGroup_OVPN_OBFUSCATED, Title: "Obfuscated Servers"}},
 		[]core.ServerTechnology{core.OpenVPNUDPObfuscated, core.OpenVPNTCPObfuscated})
 
 	tests := []struct {

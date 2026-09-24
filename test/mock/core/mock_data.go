@@ -121,7 +121,7 @@ func ServersList() core.Servers {
 
 	obfuscatedGroups := core.Groups{
 		core.Group{
-			ID:    config.ServerGroup_OBFUSCATED,
+			ID:    config.ServerGroup_OVPN_OBFUSCATED,
 			Title: "Obfuscated Servers",
 		},
 	}

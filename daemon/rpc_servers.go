@@ -68,7 +68,7 @@ func withObfuscatedGroup(
 		return groups
 	}
 
-	return append(groups, config.ServerGroup_OBFUSCATED)
+	return append(groups, config.ServerGroup_NW_OBFUSCATED)
 }
 
 func serversListToServersMap(

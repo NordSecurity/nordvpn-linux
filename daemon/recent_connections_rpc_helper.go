@@ -34,7 +34,7 @@ func applyObfuscationToRecentModel(
 	cfg config.Config,
 ) recents.Model {
 	// Set group to OBFUSCATED for all obfuscated connections
-	model.Group = config.ServerGroup_OBFUSCATED
+	model.Group = config.ServerGroup_NW_OBFUSCATED
 
 	// Determine if city should be included based on connection type
 	cityExplicitlySpecified := model.ConnectionType == config.ServerSelectionRule_CITY ||

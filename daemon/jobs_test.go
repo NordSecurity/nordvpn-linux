@@ -194,7 +194,7 @@ func TestDoAutoConnect_ObfuscatedGroupNeedsNordWhisper(t *testing.T) {
 			rpc.serversAPI = core_test.NewMockServersAPI()
 			mockConfigManager := newMockConfigManager()
 			updateAutoconnectData(mockConfigManager, config.AutoConnectData{
-				Group:     config.ServerGroup_OBFUSCATED,
+				Group:     config.ServerGroup_OVPN_OBFUSCATED,
 				ServerTag: "obfuscated_servers",
 			})
 			mockConfigManager.c.Technology = tech

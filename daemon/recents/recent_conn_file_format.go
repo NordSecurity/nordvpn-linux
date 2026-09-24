@@ -54,7 +54,7 @@ func decode(data []byte) (recentsFile, error) {
 func migrateToVersion1(connections []Model) []Model {
 	noObfuscatedConn := []Model{}
 	for _, c := range connections {
-		if c.Group == config.ServerGroup_OBFUSCATED {
+		if c.Group == config.ServerGroup_OVPN_OBFUSCATED {
 			log.Recents.Debug("deleting obfuscated connection:", c.CountryCode)
 			continue
 		}

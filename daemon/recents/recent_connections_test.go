@@ -1271,7 +1271,7 @@ func TestRecentConnectionsStore_FileMigration(t *testing.T) {
 			ConnectionType: config.ServerSelectionRule_RECOMMENDED,
 		},
 		{
-			Group:          config.ServerGroup_OBFUSCATED,
+			Group:          config.ServerGroup_OVPN_OBFUSCATED,
 			ConnectionType: config.ServerSelectionRule_RECOMMENDED,
 		},
 	}

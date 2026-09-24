@@ -44,7 +44,7 @@ class MockRecentConnections {
             connectionType: ServerSelectionRule.COUNTRY,
             country: country.countryName,
             countryCode: country.countryCode,
-            group: cfg.ServerGroup.OBFUSCATED,
+            group: cfg.ServerGroup.NW_OBFUSCATED,
           ),
         );
       }
