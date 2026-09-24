@@ -57,6 +57,7 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.P
 	}
 
 	firewallWasEnabled := cfg.Firewall
+	routingWasEnabled := cfg.Routing.Get()
 	if err := r.cm.Load(&cfg); err != nil {
 		log.Error(err)
 	}
@@ -68,6 +69,12 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.P
 			log.Error("enabling firewall after reset:", err)
 			return &pb.Payload{Type: internal.CodeFailure}, nil
 		}
+	}
+
+	// sync the networker state with config otherwise routing
+	// stays disabled while config says it's enabled
+	if !routingWasEnabled && cfg.Routing.Get() {
+		r.netw.EnableRouting()
 	}
 
 	v, err := r.factory(cfg.Technology)
