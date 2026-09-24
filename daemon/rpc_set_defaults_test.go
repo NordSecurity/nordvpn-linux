@@ -72,7 +72,6 @@ func TestResetToDefaults_PauseVariants(t *testing.T) {
 						Allowlist:            &daemonevents.MockPublisherSubscriber[events.DataAllowlist]{},
 						Meshnet:              &daemonevents.MockPublisherSubscriber[bool]{},
 						Technology:           &daemonevents.MockPublisherSubscriber[config.Technology]{},
-						Obfuscate:            &daemonevents.MockPublisherSubscriber[bool]{},
 						Notify:               &daemonevents.MockPublisherSubscriber[bool]{},
 						LANDiscovery:         &daemonevents.MockPublisherSubscriber[bool]{},
 						VirtualLocation:      &daemonevents.MockPublisherSubscriber[bool]{},

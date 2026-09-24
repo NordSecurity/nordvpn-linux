@@ -21,15 +21,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/network"
 )
 
-// determineServerGroupIDs returns the IDs of every group the server belongs to.
-func determineServerGroupIDs(server *core.Server) []config.ServerGroup {
-	ids := make([]config.ServerGroup, 0, len(server.Groups))
-	for _, g := range server.Groups {
-		ids = append(ids, g.ID)
-	}
-	return ids
-}
-
 // Connect initiates and handles the VPN connection process
 func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retErr error) {
 	return r.executeConnect(srv, func(ctx context.Context) (bool, error) {
@@ -439,6 +430,7 @@ func (r *RPC) connect(
 	serverSelectionRule := determineServerSelectionRule(parameters)
 	r.connectionInfo.SetServerSelectionData(serverSelectionRule, serverSelection.Remote)
 
+	offeredGroups := serverpicker.EffectiveGroups(*serverSelection.Server, cfg.Technology)
 	event := events.DataConnect{
 		Protocol:                cfg.AutoConnectData.Protocol,
 		Technology:              cfg.Technology,
@@ -454,8 +446,8 @@ func (r *RPC) connect(
 		TargetServerCountry:     country.Name,
 		TargetServerCountryCode: country.Code,
 		TargetServerDomain:      serverSelection.Server.Hostname,
-		TargetServerGroupID:     determineTargetServerGroup(serverSelection.Server, parameters),
-		ServerGroups:            determineServerGroupIDs(serverSelection.Server),
+		TargetServerGroupID:     determineTargetServerGroup(offeredGroups, parameters),
+		ServerGroups:            offeredGroups.IDs(),
 		TargetServerIP:          subnet.Addr(),
 		TargetServerName:        serverSelection.Server.Name,
 		RecommendationUUID:      string(serverSelection.RecommendationUUID),
@@ -586,10 +578,13 @@ func getElapsedTime(startTime time.Time) int {
 }
 
 // determineTargetServerGroup returns the server group the connection should be attributed to in
-// telemetry, based on the selected server's groups and the requested parameters.
-func determineTargetServerGroup(server *core.Server, parameters serverpicker.ServerParameters) config.ServerGroup {
+// telemetry, based on the groups the selected server offers.
+func determineTargetServerGroup(
+	groups core.Groups,
+	parameters serverpicker.ServerParameters,
+) config.ServerGroup {
 	hasGroup := func(gid config.ServerGroup) bool {
-		return slices.ContainsFunc(server.Groups, func(g core.Group) bool { return g.ID == gid })
+		return slices.ContainsFunc(groups, core.ByGroup(gid))
 	}
 
 	if parameters.Group != config.ServerGroup_UNDEFINED && hasGroup(parameters.Group) {
