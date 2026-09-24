@@ -48,6 +48,9 @@ const (
 	labelPause30Min            = "Pause for 30 minutes"
 	labelPause1H               = "Pause for 1 hour"
 	labelPause24H              = "Pause for 24 hours"
+	labelSecured               = "Secured"
+	labelNotSecured            = "Not secured"
+	labelConnecting            = "Connecting…"
 
 	// Menu item tooltips
 	tooltipConnectionSelection = "Choose connection type"
@@ -227,12 +230,15 @@ func buildConnectionSection(ti *Instance) {
 	systray.AddSeparator()
 }
 
-func vpnStateToStatusLabel(state pb.ConnectionState) string {
+func vpnStateToStatusLabel(state pb.ConnectionState, groupLabel string) string {
 	switch state {
 	case pb.ConnectionState_CONNECTED:
-		return "Secured"
+		if groupLabel != "" {
+			return fmt.Sprintf("%s: %s", labelSecured, groupLabel)
+		}
+		return labelSecured
 	case pb.ConnectionState_CONNECTING:
-		return "Connecting…"
+		return labelConnecting
 	case pb.ConnectionState_UNKNOWN_STATE:
 		fallthrough
 	case pb.ConnectionState_PAUSED:
@@ -240,7 +246,7 @@ func vpnStateToStatusLabel(state pb.ConnectionState) string {
 	case pb.ConnectionState_DISCONNECTED:
 		fallthrough
 	default:
-		return "Not secured"
+		return labelNotSecured
 	}
 }
 
@@ -248,7 +254,7 @@ func buildVPNStatusLabel(ti *Instance) {
 	if ti == nil {
 		return
 	}
-	label := vpnStateToStatusLabel(ti.state.vpnStatus)
+	label := vpnStateToStatusLabel(ti.state.vpnStatus, ti.state.vpnGroupLabel)
 	mStatus := systray.AddMenuItem(label, label)
 	mStatus.Disable()
 }

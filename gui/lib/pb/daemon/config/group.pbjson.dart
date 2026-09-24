@@ -22,15 +22,15 @@ const ServerGroup$json = {
     {'1': 'UNDEFINED', '2': 0},
     {'1': 'DOUBLE_VPN', '2': 1},
     {'1': 'ONION_OVER_VPN', '2': 3},
-    {'1': 'ULTRA_FAST_TV', '2': 5},
-    {'1': 'ANTI_DDOS', '2': 7},
     {'1': 'DEDICATED_IP', '2': 9},
     {'1': 'STANDARD_VPN_SERVERS', '2': 11},
-    {'1': 'NETFLIX_USA', '2': 13},
     {'1': 'OBFUSCATED', '2': 17},
     {'1': 'DEDICATED_SERVER', '2': 99},
   ],
   '4': [
+    {'1': 5, '2': 5},
+    {'1': 7, '2': 7},
+    {'1': 13, '2': 13},
     {'1': 15, '2': 15},
     {'1': 19, '2': 19},
     {'1': 21, '2': 21},
@@ -38,6 +38,9 @@ const ServerGroup$json = {
     {'1': 25, '2': 25},
   ],
   '5': [
+    'ULTRA_FAST_TV',
+    'ANTI_DDOS',
+    'NETFLIX_USA',
     'P2P',
     'EUROPE',
     'THE_AMERICAS',
@@ -49,8 +52,8 @@ const ServerGroup$json = {
 /// Descriptor for `ServerGroup`. Decode as a `google.protobuf.EnumDescriptorProto`.
 final $typed_data.Uint8List serverGroupDescriptor = $convert.base64Decode(
     'CgtTZXJ2ZXJHcm91cBINCglVTkRFRklORUQQABIOCgpET1VCTEVfVlBOEAESEgoOT05JT05fT1'
-    'ZFUl9WUE4QAxIRCg1VTFRSQV9GQVNUX1RWEAUSDQoJQU5USV9ERE9TEAcSEAoMREVESUNBVEVE'
-    'X0lQEAkSGAoUU1RBTkRBUkRfVlBOX1NFUlZFUlMQCxIPCgtORVRGTElYX1VTQRANEg4KCk9CRl'
-    'VTQ0FURUQQERIUChBERURJQ0FURURfU0VSVkVSEGMiBAgPEA8iBAgTEBMiBAgVEBUiBAgXEBci'
-    'BAgZEBkqA1AyUCoGRVVST1BFKgxUSEVfQU1FUklDQVMqDEFTSUFfUEFDSUZJQyogQUZSSUNBX1'
-    'RIRV9NSURETEVfRUFTVF9BTkRfSU5ESUE=');
+    'ZFUl9WUE4QAxIQCgxERURJQ0FURURfSVAQCRIYChRTVEFOREFSRF9WUE5fU0VSVkVSUxALEg4K'
+    'Ck9CRlVTQ0FURUQQERIUChBERURJQ0FURURfU0VSVkVSEGMiBAgFEAUiBAgHEAciBAgNEA0iBA'
+    'gPEA8iBAgTEBMiBAgVEBUiBAgXEBciBAgZEBkqDVVMVFJBX0ZBU1RfVFYqCUFOVElfRERPUyoL'
+    'TkVURkxJWF9VU0EqA1AyUCoGRVVST1BFKgxUSEVfQU1FUklDQVMqDEFTSUFfUEFDSUZJQyogQU'
+    'ZSSUNBX1RIRV9NSURETEVfRUFTVF9BTkRfSU5ESUE=');
