@@ -16,7 +16,7 @@ func EffectiveGroups(s core.Server, tech config.Technology) core.Groups {
 func withoutRetiredGroups(groups core.Groups) core.Groups {
 	kept := make(core.Groups, 0, len(groups)+1)
 	for _, g := range groups {
-		if g.ID != config.ServerGroup_OBFUSCATED {
+		if g.ID != config.ServerGroup_OVPN_OBFUSCATED {
 			kept = append(kept, g)
 		}
 	}

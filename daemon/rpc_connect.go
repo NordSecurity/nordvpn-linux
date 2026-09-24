@@ -591,8 +591,8 @@ func determineTargetServerGroup(
 		return parameters.Group
 	}
 
-	if hasGroup(config.ServerGroup_OBFUSCATED) {
-		return config.ServerGroup_OBFUSCATED
+	if hasGroup(config.ServerGroup_NW_OBFUSCATED) {
+		return config.ServerGroup_NW_OBFUSCATED
 	}
 
 	if hasGroup(config.ServerGroup_STANDARD_VPN_SERVERS) {

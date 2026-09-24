@@ -18,7 +18,7 @@ func IsObfuscatedTech(tech config.Technology) bool {
 
 // searchGroup returns the group to look servers up by for the requested one.
 func searchGroup(requested config.ServerGroup, tech config.Technology) config.ServerGroup {
-	if requested == config.ServerGroup_OBFUSCATED && IsObfuscatedTech(tech) {
+	if requested == config.ServerGroup_NW_OBFUSCATED && IsObfuscatedTech(tech) {
 		return config.ServerGroup_STANDARD_VPN_SERVERS
 	}
 
@@ -37,7 +37,7 @@ func withObfuscatedAlias(groups core.Groups, s core.Server, tech config.Technolo
 	}
 
 	return append(groups, core.Group{
-		ID:    config.ServerGroup_OBFUSCATED,
+		ID:    config.ServerGroup_NW_OBFUSCATED,
 		Title: ObfuscatedServersGroupTitle,
 	})
 }

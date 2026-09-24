@@ -330,7 +330,7 @@ func TestAutoconnect_SavesCorrectAutoconnectData(t *testing.T) {
 			testName:    "for obfuscated servers over nordwhisper",
 			serverGroup: "obfuscated_servers",
 			technology:  config.Technology_NORDWHISPER,
-			expected:    config.AutoConnectData{Group: config.ServerGroup_OBFUSCATED},
+			expected:    config.AutoConnectData{Group: config.ServerGroup_NW_OBFUSCATED},
 		},
 		{
 			testName:    "for double_vpn",

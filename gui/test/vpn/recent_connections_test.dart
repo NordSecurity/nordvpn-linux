@@ -79,7 +79,7 @@ void main() {
           RecentConnectionModel(
             countryCode: "DE",
             city: "Berlin",
-            group: ServerGroup.OBFUSCATED,
+            group: ServerGroup.NW_OBFUSCATED,
           ),
         ),
         expected: (
@@ -91,7 +91,7 @@ void main() {
         model: RecentConnection.fromPb(
           RecentConnectionModel(
             countryCode: "DE",
-            group: ServerGroup.OBFUSCATED,
+            group: ServerGroup.NW_OBFUSCATED,
           ),
         ),
         expected: (
@@ -104,7 +104,7 @@ void main() {
           RecentConnectionModel(
             countryCode: "DE",
             city: "Berlin",
-            group: ServerGroup.OBFUSCATED,
+            group: ServerGroup.NW_OBFUSCATED,
           ),
         ),
         expected: (

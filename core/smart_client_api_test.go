@@ -1538,7 +1538,7 @@ func Test_PrepareRecommendedServersURL(t *testing.T) {
 		{
 			name:             "connect to specific country with specific group",
 			tag:              core.ServerTag{Action: core.ServerByCountry, ID: 123},
-			group:            config.ServerGroup_OBFUSCATED,
+			group:            config.ServerGroup_OVPN_OBFUSCATED,
 			shouldContain:    []string{"filters[country_id]=123", "filters[servers_groups]=17", filtersLimit, filtersTechnology, filtersLongitude, filtersLatitude},
 			shouldNotContain: []string{filtersCity},
 		},
@@ -1552,14 +1552,14 @@ func Test_PrepareRecommendedServersURL(t *testing.T) {
 		{
 			name:             "connect to specific city with specific group",
 			tag:              core.ServerTag{Action: core.ServerByCity, ID: 123},
-			group:            config.ServerGroup_OBFUSCATED,
+			group:            config.ServerGroup_OVPN_OBFUSCATED,
 			shouldContain:    []string{"filters[country_city_id]=123", "filters[servers_groups]=17", filtersLimit, filtersTechnology, filtersLongitude, filtersLatitude},
 			shouldNotContain: []string{filtersCountry},
 		},
 		{
 			name:             "connect to specific group",
 			tag:              core.ServerTag{Action: core.ServerByUnknown, ID: 0},
-			group:            config.ServerGroup_OBFUSCATED,
+			group:            config.ServerGroup_OVPN_OBFUSCATED,
 			shouldContain:    []string{"filters[servers_groups]=17", filtersLimit, filtersTechnology, filtersLongitude, filtersLatitude},
 			shouldNotContain: []string{filtersCountry, filtersCity},
 		},
@@ -1573,7 +1573,7 @@ func Test_PrepareRecommendedServersURL(t *testing.T) {
 		{
 			name:             "server by speed with specified group",
 			tag:              core.ServerTag{Action: core.ServerBySpeed, ID: 0},
-			group:            config.ServerGroup_OBFUSCATED,
+			group:            config.ServerGroup_OVPN_OBFUSCATED,
 			shouldContain:    []string{"filters[servers_groups]=17", filtersLimit, filtersTechnology, filtersLongitude, filtersLatitude},
 			shouldNotContain: []string{filtersCountry, filtersCity},
 		},

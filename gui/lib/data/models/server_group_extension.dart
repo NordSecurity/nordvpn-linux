@@ -12,7 +12,7 @@ extension Convert on ServerGroup {
       ServerGroup.DEDICATED_IP => ServerType.dedicatedIP,
       ServerGroup.P2P => ServerType.p2p,
       ServerGroup.STANDARD_VPN_SERVERS => ServerType.standardVpn,
-      ServerGroup.OBFUSCATED => ServerType.obfuscated,
+      ServerGroup.NW_OBFUSCATED => ServerType.obfuscated,
       _ => null,
     };
   }

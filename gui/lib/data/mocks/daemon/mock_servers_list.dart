@@ -80,7 +80,7 @@ final class MockServersList {
       config.ServerGroup.P2P,
       config.ServerGroup.STANDARD_VPN_SERVERS,
       if (technology == settings.Technology.NORDWHISPER)
-        config.ServerGroup.OBFUSCATED,
+        config.ServerGroup.NW_OBFUSCATED,
     ];
 
     final countries = <ServerCountry>[];
