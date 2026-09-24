@@ -164,8 +164,8 @@ func TestServers(t *testing.T) {
 					Title: "P2P",
 				},
 				{
-					ID:    config.ServerGroup_NETFLIX_USA,
-					Title: "Netflix USA",
+					ID:    config.ServerGroup_DEDICATED_SERVER,
+					Title: "Dedicated server",
 				},
 			},
 			[]core.ServerTechnology{
@@ -202,8 +202,8 @@ func TestServers(t *testing.T) {
 					Title: "Standard VPN",
 				},
 				{
-					ID:    config.ServerGroup_ANTI_DDOS,
-					Title: "Anti DDOS",
+					ID:    config.ServerGroup_DEDICATED_SERVER,
+					Title: "Dedicated server",
 				},
 			},
 			[]core.ServerTechnology{
@@ -227,12 +227,8 @@ func TestServers(t *testing.T) {
 					Title: "Obfuscated",
 				},
 				{
-					ID:    config.ServerGroup_NETFLIX_USA,
-					Title: "Anti DDOS",
-				},
-				{
-					ID:    config.ServerGroup_ANTI_DDOS,
-					Title: "Anti DDOS",
+					ID:    config.ServerGroup_DEDICATED_SERVER,
+					Title: "Dedicated server",
 				},
 			},
 			[]core.ServerTechnology{
@@ -259,12 +255,8 @@ func TestServers(t *testing.T) {
 					Title: "Obfuscated",
 				},
 				{
-					ID:    config.ServerGroup_NETFLIX_USA,
-					Title: "Anti DDOS",
-				},
-				{
-					ID:    config.ServerGroup_ANTI_DDOS,
-					Title: "Anti DDOS",
+					ID:    config.ServerGroup_DEDICATED_SERVER,
+					Title: "Dedicated server",
 				},
 			},
 			[]core.ServerTechnology{

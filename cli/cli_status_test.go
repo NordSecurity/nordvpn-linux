@@ -119,6 +119,69 @@ Uptime: 13 seconds
 `,
 		},
 		{
+			name: "connected to specialty group",
+			resp: &pb.StatusResponse{
+				State:      pb.ConnectionState_CONNECTED,
+				Technology: config.Technology_NORDLYNX,
+				Protocol:   config.Protocol_UDP,
+				Hostname:   "Verona",
+				Ip:         "127.0.0.1",
+				Country:    "Lithuania",
+				City:       "Vilnius",
+				Uptime:     13e9,
+				Parameters: &pb.ConnectionParameters{Group: config.ServerGroup_DOUBLE_VPN},
+			},
+			expected: `Status: Connected
+Hostname: Verona
+IP: 127.0.0.1
+Country: Lithuania
+City: Vilnius
+Group: Double VPN
+Current technology: NORDLYNX
+Current protocol: UDP
+Post-quantum VPN: Disabled
+Uptime: 13 seconds
+`,
+		},
+		{
+			name: "connected to non-specialty group hides group line",
+			resp: &pb.StatusResponse{
+				State:      pb.ConnectionState_CONNECTED,
+				Technology: config.Technology_NORDLYNX,
+				Protocol:   config.Protocol_UDP,
+				Hostname:   "Verona",
+				Uptime:     13e9,
+				Parameters: &pb.ConnectionParameters{Group: config.ServerGroup_STANDARD_VPN_SERVERS},
+			},
+			expected: `Status: Connected
+Hostname: Verona
+Current technology: NORDLYNX
+Current protocol: UDP
+Post-quantum VPN: Disabled
+Uptime: 13 seconds
+`,
+		},
+		{
+			name: "connected to obfuscated server",
+			resp: &pb.StatusResponse{
+				State:      pb.ConnectionState_CONNECTED,
+				Technology: config.Technology_NORDWHISPER,
+				Protocol:   config.Protocol_UDP,
+				Hostname:   "Verona",
+				Uptime:     13e9,
+				Obfuscated: true,
+			},
+			expected: `Status: Connected
+Hostname: Verona
+Group: Obfuscated Servers
+Current technology: NORDWHISPER
+Current protocol: UDP
+Post-quantum VPN: Disabled
+ECH: Disabled
+Uptime: 13 seconds
+`,
+		},
+		{
 			name: "disconnected",
 			resp: &pb.StatusResponse{
 				State:  pb.ConnectionState_DISCONNECTED,

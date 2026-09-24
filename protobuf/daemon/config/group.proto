@@ -5,17 +5,14 @@ package config;
 option go_package = "github.com/NordSecurity/nordvpn-linux/config";
 
 enum ServerGroup {
-	UNDEFINED = 0;
-	DOUBLE_VPN = 1;
-	ONION_OVER_VPN = 3;
-	ULTRA_FAST_TV = 5;
-	ANTI_DDOS = 7;
-	DEDICATED_IP = 9;
-	STANDARD_VPN_SERVERS = 11;
-	NETFLIX_USA = 13;
-	P2P = 15;
-	OBFUSCATED = 17;
-	DEDICATED_SERVER = 99;
-	reserved 19, 21, 23, 25;
-	reserved "EUROPE", "THE_AMERICAS", "ASIA_PACIFIC", "AFRICA_THE_MIDDLE_EAST_AND_INDIA";
+  UNDEFINED = 0;
+  DOUBLE_VPN = 1;
+  ONION_OVER_VPN = 3;
+  DEDICATED_IP = 9;
+  STANDARD_VPN_SERVERS = 11;
+  P2P = 15;
+  OBFUSCATED = 17;
+  DEDICATED_SERVER = 99;
+  reserved 5, 7, 13, 19, 21, 23, 25;
+  reserved "ULTRA_FAST_TV", "ANTI_DDOS", "NETFLIX_USA", "EUROPE", "THE_AMERICAS", "ASIA_PACIFIC", "AFRICA_THE_MIDDLE_EAST_AND_INDIA";
 }

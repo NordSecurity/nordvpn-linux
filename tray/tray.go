@@ -147,6 +147,7 @@ type trayState struct {
 	vpnHostname          string
 	vpnCity              string
 	vpnCountry           string
+	vpnGroupLabel        string
 	vpnIsMeshPeer        bool
 	initialSyncCompleted bool
 	connSelector         ConnectionSelector

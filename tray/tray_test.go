@@ -115,3 +115,41 @@ func Test_sortedConnections(t *testing.T) {
 		})
 	}
 }
+
+func Test_vpnStateToStatusLabel(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name       string
+		state      pb.ConnectionState
+		groupLabel string
+		want       string
+	}{
+		{name: "connected without group", state: pb.ConnectionState_CONNECTED, want: "Secured"},
+		{name: "connected with group", state: pb.ConnectionState_CONNECTED, groupLabel: "Double VPN", want: "Secured: Double VPN"},
+		{name: "connecting ignores group", state: pb.ConnectionState_CONNECTING, groupLabel: "Double VPN", want: "Connecting…"},
+		{name: "disconnected ignores group", state: pb.ConnectionState_DISCONNECTED, groupLabel: "Double VPN", want: "Not secured"},
+		{name: "paused ignores group", state: pb.ConnectionState_PAUSED, groupLabel: "Double VPN", want: "Not secured"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, vpnStateToStatusLabel(tt.state, tt.groupLabel))
+		})
+	}
+}
+
+func Test_setVpnStatus_GroupLabelChangeRebuildsMenu(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	ti := newTrayFixture(t).instance
+	connected := func(groupLabel string) bool {
+		return ti.setVpnStatus(pb.ConnectionState_CONNECTED, "lt1", "lt1.nordvpn.com", "Vilnius", "Lithuania", groupLabel, false, 0)
+	}
+
+	assert.True(t, connected(""), "first connection changes state")
+	assert.True(t, connected("Double VPN"), "group label change alone must rebuild the menu")
+	assert.Equal(t, "Double VPN", ti.state.vpnGroupLabel)
+	assert.False(t, connected("Double VPN"), "unchanged status must not rebuild the menu")
+	assert.True(t, connected(""), "clearing the group label must rebuild the menu")
+}
