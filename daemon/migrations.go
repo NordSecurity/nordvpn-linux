@@ -22,7 +22,7 @@ func MigrateDeprecatedRegionalAutoconnect(cm config.Manager) error {
 	return cm.SaveWith(func(c config.Config) config.Config {
 		c.AutoConnectData.Group = config.ServerGroup_UNDEFINED
 		if c.AutoConnectData.Country == "" && c.AutoConnectData.City == "" {
-			c.AutoConnectData.ServerTag = ""
+			c.AutoConnectData.CountryCode = ""
 		}
 		return c
 	})

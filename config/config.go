@@ -2,11 +2,13 @@
 package config
 
 import (
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
 
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
 const defaultFWMarkValue uint32 = 0xe1f1
@@ -72,15 +74,12 @@ func (c Config) withAnalyticsConsent(value AnalyticsConsent) Config {
 }
 
 type AutoConnectData struct {
-	ID int64 `json:"id,omitempty"`
-	// TODO: remove this in v4 and only use the country, city and group fields
-	ServerTag   string `json:"server_tag,omitempty"`
-	Country     string
-	CountryCode string
-	City        string
-	Group       ServerGroup
-	Protocol    Protocol `json:"protocol,omitempty"`
-	// TODO: rename json key when v6 comes out.
+	ID                 int64 `json:"id,omitempty"`
+	Country            string
+	CountryCode        string
+	City               string
+	Group              ServerGroup
+	Protocol           Protocol  `json:"protocol,omitempty"`
 	RealTimeProtection bool      `json:"realtimeprotection,omitempty"`
 	Obfuscate          bool      `json:"obfuscate,omitempty"`
 	DNS                DNS       `json:"dns,omitempty"`
@@ -139,4 +138,10 @@ func (ac AnalyticsConsent) String() string {
 	default:
 		return "ConsentUndefined"
 	}
+}
+
+func ServerTagFromAutoconnectData(data AutoConnectData) string {
+	country := internal.SnakeCase(data.Country)
+	city := internal.SnakeCase(data.City)
+	return strings.ToLower(strings.Join(strings.Fields(country+" "+city), " "))
 }

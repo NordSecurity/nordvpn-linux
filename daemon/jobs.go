@@ -332,7 +332,9 @@ func (r *RPC) fallbackDedicatedServer(cfg config.Config) config.Config {
 
 	if !serviceData.Active || !r.remoteConfigGetter.IsFeatureEnabled(remote.FeatureDedicatedServer) {
 		cfg.AutoConnectData.Group = config.ServerGroup_UNDEFINED
-		cfg.AutoConnectData.ServerTag = ""
+		cfg.AutoConnectData.Country = ""
+		cfg.AutoConnectData.CountryCode = ""
+		cfg.AutoConnectData.City = ""
 		if err := r.cm.SaveWith(func(c config.Config) config.Config {
 			c.AutoConnectData = cfg.AutoConnectData
 			return c
@@ -401,15 +403,13 @@ func (r *RPC) doAutoConnect() error {
 	server := connectServer{}
 
 	groupTag := ""
-	if cfg.AutoConnectData.Group != config.ServerGroup_UNDEFINED &&
-		cfg.AutoConnectData.ServerTag != strings.ToLower(cfg.AutoConnectData.Group.String()) &&
-		cfg.AutoConnectData.ServerTag != config.GroupTitleForId(cfg.AutoConnectData.Group) {
+	if cfg.AutoConnectData.Group != config.ServerGroup_UNDEFINED {
 		groupTag = cfg.AutoConnectData.Group.String()
 	}
 
 	err = r.executeConnect(&server, func(ctx context.Context) (bool, error) {
 		param := &pb.ConnectRequest{
-			ServerTag:   cfg.AutoConnectData.ServerTag,
+			ServerTag:   config.ServerTagFromAutoconnectData(cfg.AutoConnectData),
 			ServerGroup: groupTag,
 		}
 		return r.connectWithParameters(ctx, param, &server, pb.ConnectionSource_AUTO, "", events.VPNConnectionReasonAutoConnect)
