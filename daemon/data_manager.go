@@ -377,7 +377,7 @@ func (dm *DataManager) Groups(
 
 			// the obfuscated group is never taken from the server tags. Only the OVPN XOR servers
 			// carry that tag, and those are not connectable anymore.
-			if group.ID == config.ServerGroup_OBFUSCATED {
+			if group.ID == config.ServerGroup_OVPN_OBFUSCATED {
 				continue
 			}
 

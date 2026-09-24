@@ -248,7 +248,7 @@ func TestServers(t *testing.T) {
 					Title: "Standard VPN",
 				},
 				{
-					ID:    config.ServerGroup_OBFUSCATED,
+					ID:    config.ServerGroup_OVPN_OBFUSCATED,
 					Title: "Obfuscated",
 				},
 				{
@@ -281,7 +281,7 @@ func TestServers(t *testing.T) {
 					Title: "Standard VPN",
 				},
 				{
-					ID:    config.ServerGroup_OBFUSCATED,
+					ID:    config.ServerGroup_OVPN_OBFUSCATED,
 					Title: "Obfuscated",
 				},
 				{
@@ -308,7 +308,7 @@ func TestServers(t *testing.T) {
 			false,
 			core.Groups{
 				{
-					ID:    config.ServerGroup_OBFUSCATED,
+					ID:    config.ServerGroup_OVPN_OBFUSCATED,
 					Title: "Obfuscated",
 				},
 			},
@@ -500,7 +500,7 @@ func TestLegacyXORServersNeverSurface(t *testing.T) {
 		core.Groups{{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN"}},
 		[]core.ServerTechnology{core.OpenVPNTCP, core.OpenVPNUDP, core.WireguardTech, core.NordWhisperTech})
 	legacyXOR := getServer(2, "xor1", "Canada", "ca", "Toronto", false,
-		core.Groups{{ID: config.ServerGroup_OBFUSCATED, Title: "Obfuscated Servers"}},
+		core.Groups{{ID: config.ServerGroup_OVPN_OBFUSCATED, Title: "Obfuscated Servers"}},
 		[]core.ServerTechnology{core.OpenVPNUDPObfuscated, core.OpenVPNTCPObfuscated})
 
 	tests := []struct {
@@ -556,7 +556,7 @@ func TestObfuscatedGroupNeverComesFromAServerTag(t *testing.T) {
 	tagged := getServer(1, "tagged1", "Germany", "de", "Berlin", false,
 		core.Groups{
 			{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
-			{ID: config.ServerGroup_OBFUSCATED, Title: "Obfuscated Servers"},
+			{ID: config.ServerGroup_OVPN_OBFUSCATED, Title: "Obfuscated Servers"},
 		},
 		[]core.ServerTechnology{
 			core.OpenVPNTCP,
@@ -618,7 +618,7 @@ func TestObfuscatedGroupNeverComesFromAServerTag(t *testing.T) {
 				hostnamesInGroup(serversMap, config.ServerGroup_STANDARD_VPN_SERVERS),
 				"both servers are standard ones on every technology")
 
-			obfuscated := hostnamesInGroup(serversMap, config.ServerGroup_OBFUSCATED)
+			obfuscated := hostnamesInGroup(serversMap, config.ServerGroup_NW_OBFUSCATED)
 
 			if !test.expectObfuscated {
 				assert.Empty(t, obfuscated,
@@ -707,7 +707,7 @@ func TestObfuscatedGroupIsSynthesizedForGUI(t *testing.T) {
 
 			serversMap := resp.GetServers().GetServersByCountry()
 			standardServers := hostnamesInGroup(serversMap, config.ServerGroup_STANDARD_VPN_SERVERS)
-			obfuscatedServers := hostnamesInGroup(serversMap, config.ServerGroup_OBFUSCATED)
+			obfuscatedServers := hostnamesInGroup(serversMap, config.ServerGroup_NW_OBFUSCATED)
 
 			assert.NotEmpty(t, standardServers, "the standard servers are expected on every technology")
 

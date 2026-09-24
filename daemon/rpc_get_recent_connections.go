@@ -28,7 +28,7 @@ func (r *RPC) GetRecentConnections(
 	var rcValues []*pb.RecentConnectionModel
 	// filter by server technology used
 	for _, v := range values {
-		isObfuscated := v.Group == config.ServerGroup_OBFUSCATED
+		isObfuscated := v.Group == config.ServerGroup_NW_OBFUSCATED
 		if returnOnlyObfuscatedRecent != isObfuscated {
 			continue
 		}

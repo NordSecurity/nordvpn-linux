@@ -113,7 +113,7 @@ func (d *deterministicServersAPI) RecommendedServers(filter core.ServersFilter, 
 			config.ServerGroup_ANTI_DDOS,
 			config.ServerGroup_STANDARD_VPN_SERVERS,
 			config.ServerGroup_NETFLIX_USA,
-			config.ServerGroup_OBFUSCATED:
+			config.ServerGroup_OVPN_OBFUSCATED:
 
 			return getServersByID(allServers, 1), nil, nil
 		case config.ServerGroup_DEDICATED_SERVER:
@@ -753,7 +753,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 			name: "Country, country code, group set returns COUNTRY_WITH_GROUP",
 			params: serverpicker.ServerParameters{
 				Country:     "Lithuania",
-				Group:       config.ServerGroup_OBFUSCATED,
+				Group:       config.ServerGroup_NW_OBFUSCATED,
 				CountryCode: "LT",
 			},
 			want: config.ServerSelectionRule_COUNTRY_WITH_GROUP,
@@ -770,14 +770,14 @@ func Test_determineServerSelectionRule(t *testing.T) {
 			name: "ServerName set, group set returns SPECIFIC_SERVER_WITH_GROUP",
 			params: serverpicker.ServerParameters{
 				ServerName: "lt11",
-				Group:      config.ServerGroup_OBFUSCATED,
+				Group:      config.ServerGroup_NW_OBFUSCATED,
 			},
 			want: config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP,
 		},
 		{
 			name: "Group set returns GROUP",
 			params: serverpicker.ServerParameters{
-				Group: config.ServerGroup_OBFUSCATED,
+				Group: config.ServerGroup_NW_OBFUSCATED,
 			},
 			want: config.ServerSelectionRule_GROUP,
 		},
@@ -797,7 +797,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 			params: serverpicker.ServerParameters{
 				Country:     "Germany",
 				City:        "Berlin",
-				Group:       config.ServerGroup_OBFUSCATED,
+				Group:       config.ServerGroup_NW_OBFUSCATED,
 				CountryCode: "DE",
 				ServerName:  "de123",
 			},
@@ -843,7 +843,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 				Country:    "France",
 				City:       "Paris",
 				ServerName: "fr123",
-				Group:      config.ServerGroup_OBFUSCATED,
+				Group:      config.ServerGroup_NW_OBFUSCATED,
 			},
 			want: config.ServerSelectionRule_NONE,
 		},
@@ -937,10 +937,10 @@ func Test_determineServerGroup(t *testing.T) {
 			name: "Group is OBFUSCATED returns matching group",
 			server: core.Server{Groups: []core.Group{
 				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
-				{ID: config.ServerGroup_OBFUSCATED, Title: "Obfuscated"},
+				{ID: config.ServerGroup_NW_OBFUSCATED, Title: "Obfuscated"},
 			}},
-			params: serverpicker.ServerParameters{Group: config.ServerGroup_OBFUSCATED},
-			want:   config.ServerGroup_OBFUSCATED,
+			params: serverpicker.ServerParameters{Group: config.ServerGroup_NW_OBFUSCATED},
+			want:   config.ServerGroup_NW_OBFUSCATED,
 		},
 		{
 			name: "Group is DEDICATED_IP returns matching group",
@@ -996,10 +996,10 @@ func Test_determineServerGroup(t *testing.T) {
 		{
 			name: "Server has only one group, params group matches",
 			server: core.Server{Groups: []core.Group{
-				{ID: config.ServerGroup_OBFUSCATED, Title: "Obfuscated"},
+				{ID: config.ServerGroup_DOUBLE_VPN, Title: "Double VPN"},
 			}},
-			params: serverpicker.ServerParameters{Group: config.ServerGroup_OBFUSCATED},
-			want:   config.ServerGroup_OBFUSCATED,
+			params: serverpicker.ServerParameters{Group: config.ServerGroup_DOUBLE_VPN},
+			want:   config.ServerGroup_DOUBLE_VPN,
 		},
 		{
 			name: "Group is not set (zero value), server has multiple groups",

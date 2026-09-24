@@ -190,25 +190,7 @@ func TestMigrateObfuscatedSettingsToNordWhisper(t *testing.T) {
 				AutoConnectData: config.AutoConnectData{
 					Obfuscate: true,
 					Protocol:  config.Protocol_TCP,
-				},
-				Technology: config.Technology_OPENVPN,
-			},
-			isNordWhisperEnabled: false,
-			expected: config.Config{
-				AutoConnectData: config.AutoConnectData{
-					Obfuscate: false,
-					Protocol:  config.Protocol_TCP,
-				},
-				Technology: config.Technology_OPENVPN,
-			},
-		},
-		{
-			name: "migrate to OpenVPN with Obfuscated group, when NordWhisper is disabled",
-			cfg: config.Config{
-				AutoConnectData: config.AutoConnectData{
-					Obfuscate: true,
-					Protocol:  config.Protocol_TCP,
-					Group:     config.ServerGroup_OBFUSCATED,
+					Group:     config.ServerGroup_OVPN_OBFUSCATED,
 				},
 				Technology: config.Technology_OPENVPN,
 			},

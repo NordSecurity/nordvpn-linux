@@ -13,7 +13,7 @@ extension Conversions on ConnectRequest {
       case "p2p":
         return config.ServerGroup.P2P;
       case "Obfuscated_Servers":
-        return config.ServerGroup.OBFUSCATED;
+        return config.ServerGroup.NW_OBFUSCATED;
       default:
         return config.ServerGroup.STANDARD_VPN_SERVERS;
     }

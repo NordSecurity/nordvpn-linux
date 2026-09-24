@@ -7,7 +7,7 @@ var GroupMap = map[string]ServerGroup{
 	"dedicated_ip":         ServerGroup_DEDICATED_IP,
 	"standard_vpn_servers": ServerGroup_STANDARD_VPN_SERVERS,
 	"p2p":                  ServerGroup_P2P,
-	"obfuscated_servers":   ServerGroup_OBFUSCATED,
+	"obfuscated_servers":   ServerGroup_NW_OBFUSCATED,
 	"dedicated_server":     ServerGroup_DEDICATED_SERVER,
 }
 
