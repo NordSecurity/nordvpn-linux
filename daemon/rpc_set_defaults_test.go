@@ -166,3 +166,48 @@ func TestSetDefaults_SyncsNetworkerFirewallState(t *testing.T) {
 		})
 	}
 }
+
+func TestSetDefaults_SyncsNetworkerRoutingState(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name                       string
+		routingDisabledBeforeReset bool
+		expectedEnableRoutingCalls int
+	}{
+		{
+			name:                       "routing disabled before reset is re-enabled",
+			routingDisabledBeforeReset: true,
+			expectedEnableRoutingCalls: 1,
+		},
+		{
+			name:                       "routing enabled before reset is not enabled again",
+			routingDisabledBeforeReset: false,
+			expectedEnableRoutingCalls: 0,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			netw := &networker.Mock{}
+			rpc := testRPC()
+			rpc.netw = netw
+
+			if test.routingDisabledBeforeReset {
+				// routing cannot be disabled while meshnet is enabled
+				rpc.cm.(*mockConfigManager).c.Mesh = false
+
+				resp, err := rpc.SetRouting(context.Background(), &pb.SetGenericRequest{Enabled: false})
+				assert.NoError(t, err)
+				assert.Equal(t, internal.CodeSuccess, resp.Type)
+				assert.True(t, netw.RoutingDisabled)
+			}
+
+			resp, err := rpc.SetDefaults(context.Background(), &pb.SetDefaultsRequest{NoLogout: true})
+			assert.NoError(t, err)
+			assert.Equal(t, internal.CodeSuccess, resp.Type)
+			assert.False(t, netw.RoutingDisabled, "networker routing should be enabled after reset")
+			assert.Equal(t, test.expectedEnableRoutingCalls, netw.EnableRoutingCalls)
+		})
+	}
+}

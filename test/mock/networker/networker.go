@@ -37,6 +37,8 @@ type Mock struct {
 	FirewallDisabled    bool
 	EnableFirewallCalls int
 	KillSwitchApplied   bool
+	RoutingDisabled     bool
+	EnableRoutingCalls  int
 }
 
 func (m *Mock) Start(
@@ -85,8 +87,14 @@ func (m *Mock) DisableFirewall() error {
 	return nil
 }
 
-func (*Mock) EnableRouting()  {}
-func (*Mock) DisableRouting() {}
+func (m *Mock) EnableRouting() {
+	m.EnableRoutingCalls++
+	m.RoutingDisabled = false
+}
+
+func (m *Mock) DisableRouting() {
+	m.RoutingDisabled = true
+}
 
 func (m *Mock) SetAllowlist(allowlist config.Allowlist) error {
 	if m.SetAllowlistErr != nil {
