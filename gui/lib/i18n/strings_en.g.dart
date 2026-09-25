@@ -747,6 +747,12 @@ class Translations$cities$en {
 
 	/// en: 'Lome'
 	String get lome => 'Lome';
+
+	/// en: 'Calgary'
+	String get calgary => 'Calgary';
+
+	/// en: 'Saint John'
+	String get saint_john => 'Saint John';
 }
 
 // Path: countries
@@ -1630,9 +1636,6 @@ class Translations$ui$en {
 	/// en: 'Onion over VPN'
 	String get onionOverVpn => 'Onion over VPN';
 
-	/// en: 'P2P'
-	String get p2p => 'P2P';
-
 	/// en: 'Obfuscated'
 	String get obfuscated => 'Obfuscated';
 
@@ -1887,9 +1890,6 @@ class Translations$ui$en {
 
 	/// en: 'Use the Onion network with VPN protection'
 	String get onionOverVpnDesc => 'Use the Onion network with VPN protection';
-
-	/// en: 'Enjoy the best download speed'
-	String get p2pDesc => 'Enjoy the best download speed';
 
 	/// en: 'Save'
 	String get save => 'Save';
@@ -2452,6 +2452,8 @@ extension on Translations {
 			'cities.dodoma' => 'Dodoma',
 			'cities.sanaa' => 'Sanaa',
 			'cities.lome' => 'Lome',
+			'cities.calgary' => 'Calgary',
+			'cities.saint_john' => 'Saint John',
 			'countries.AL' => 'Albania',
 			'countries.DZ' => 'Algeria',
 			'countries.AD' => 'Andorra',
@@ -2734,11 +2736,10 @@ extension on Translations {
 			'ui.citiesAvailable' => ({required Object n}) => '${n} cities available',
 			'ui.dedicatedIp' => 'Dedicated IP',
 			'ui.dedicatedServer' => 'Dedicated Server',
-			'ui.doubleVpn' => 'Double VPN',
-			'ui.onionOverVpn' => 'Onion over VPN',
 			_ => null,
 		} ?? switch (path) {
-			'ui.p2p' => 'P2P',
+			'ui.doubleVpn' => 'Double VPN',
+			'ui.onionOverVpn' => 'Onion over VPN',
 			'ui.obfuscated' => 'Obfuscated',
 			'ui.obfuscatedServers' => 'Obfuscated Servers',
 			'ui.selectServerForDip' => 'Pick a location for your IP',
@@ -2824,7 +2825,6 @@ extension on Translations {
 			'ui.settingAutoconnectTo' => ({required Object target}) => 'Setting auto-connect to [${target}]...',
 			'ui.doubleVpnDesc' => 'Encrypt your traffic twice for extra security',
 			'ui.onionOverVpnDesc' => 'Use the Onion network with VPN protection',
-			'ui.p2pDesc' => 'Enjoy the best download speed',
 			'ui.save' => 'Save',
 			'ui.close' => 'Close',
 			'ui.to' => 'to',

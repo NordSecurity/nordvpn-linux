@@ -27,7 +27,9 @@ func TestAutoconnect(t *testing.T) {
 	tests := []struct {
 		testName                        string
 		server                          string
+		group                           string
 		config                          config.Config
+		disable                         bool
 		isDedicatedIPExpired            bool
 		isDedicatedServerExpired        bool
 		isDedicatedServerFeatureEnabled bool
@@ -234,6 +236,37 @@ func TestAutoconnect(t *testing.T) {
 			returnCode:                      internal.CodeDedicatedServersPq,
 			eventPublished:                  false,
 		},
+		{
+			testName:       "fails to connect using p2p server tag",
+			server:         "p2p",
+			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			returnCode:     internal.CodeP2PDeprecated,
+			eventPublished: false,
+		},
+		{
+			testName:       "fails to connect using p2p server group",
+			server:         "",
+			group:          "p2p",
+			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			returnCode:     internal.CodeP2PDeprecated,
+			eventPublished: false,
+		},
+		{
+			testName:       "works disabling autoconnect using p2p server tag",
+			server:         "p2p",
+			disable:        true,
+			config:         config.Config{AutoConnect: true, AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			returnCode:     internal.CodeSuccess,
+			eventPublished: true,
+		},
+		{
+			testName:       "works disabling autoconnect using p2p server group",
+			group:          "p2p",
+			disable:        true,
+			config:         config.Config{AutoConnect: true, AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			returnCode:     internal.CodeSuccess,
+			eventPublished: true,
+		},
 	}
 
 	for _, test := range tests {
@@ -274,9 +307,10 @@ func TestAutoconnect(t *testing.T) {
 				DedicatedServerRegistrationData: &devicekey.DedicatedServersConnectionData{},
 			},
 			remoteConfigGetter: mockRemoteConfig}
-		request := pb.SetAutoconnectRequest{Enabled: true}
+		request := pb.SetAutoconnectRequest{Enabled: !test.disable}
 
 		request.ServerTag = test.server
+		request.ServerGroup = test.group
 		mockConfigManager.c = test.config
 
 		t.Run(test.testName, func(t *testing.T) {
@@ -307,11 +341,6 @@ func TestAutoconnect_SavesCorrectAutoconnectData(t *testing.T) {
 			expected:    config.AutoConnectData{Group: config.ServerGroup_STANDARD_VPN_SERVERS},
 		},
 		{
-			testName:    "for p2p",
-			serverGroup: "p2p",
-			expected:    config.AutoConnectData{Group: config.ServerGroup_P2P},
-		},
-		{
 			testName:     "for obfuscated servers",
 			serverGroup:  "obfuscated_servers",
 			isObfuscated: true,
@@ -330,8 +359,8 @@ func TestAutoconnect_SavesCorrectAutoconnectData(t *testing.T) {
 		{
 			testName:    "group name is in tag",
 			serverGroup: "",
-			tag:         "p2p",
-			expected:    config.AutoConnectData{Group: config.ServerGroup_P2P, ServerTag: "p2p"},
+			tag:         "double_vpn",
+			expected:    config.AutoConnectData{Group: config.ServerGroup_DOUBLE_VPN, ServerTag: "double_vpn"},
 		},
 		{
 			testName: "for country name",
@@ -346,8 +375,8 @@ func TestAutoconnect_SavesCorrectAutoconnectData(t *testing.T) {
 		{
 			testName:    "for country code, city name and group",
 			tag:         "de berlin",
-			serverGroup: "p2p",
-			expected:    config.AutoConnectData{Group: config.ServerGroup_P2P, Country: "Germany", CountryCode: "DE", City: "Berlin", ServerTag: "de berlin"},
+			serverGroup: "double_vpn",
+			expected:    config.AutoConnectData{Group: config.ServerGroup_DOUBLE_VPN, Country: "Germany", CountryCode: "DE", City: "Berlin", ServerTag: "de berlin"},
 		},
 	}
 

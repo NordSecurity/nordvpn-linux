@@ -232,7 +232,6 @@ def get_unavailable_groups():
                   'Double_VPN',
                   'Obfuscated_Servers',
                   'Onion_Over_VPN',
-                  'P2P',
                   'Standard_VPN_Servers']
 
     current_groups = str(sh.nordvpn.groups(_tty_out=False)).strip().split()
