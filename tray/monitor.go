@@ -145,7 +145,7 @@ func (ti *Instance) updateLoginStatus() bool {
 
 		if ti.state.loggedIn && ti.state.vpnStatus == pb.ConnectionState_CONNECTED {
 			// reset the VPN info if the user logs out while connected to VPN
-			changedVpn := ti.setVpnStatus(pb.ConnectionState_DISCONNECTED, "", "", "", "", false, 0)
+			changedVpn := ti.setVpnStatus(pb.ConnectionState_DISCONNECTED, "", "", "", "", "", false, 0)
 			if changedVpn {
 				changed = true
 			}
@@ -193,7 +193,9 @@ func (ti *Instance) updateVpnStatus() bool {
 		vpnName = vpnHostname
 	}
 
-	changed := ti.setVpnStatus(vpnStatus, vpnName, vpnHostname, vpnCity, vpnCountry, resp.IsMeshPeer, resp.PauseRemainingDurationSec)
+	vpnGroupLabel := client.SpecialtyGroupLabel(resp)
+
+	changed := ti.setVpnStatus(vpnStatus, vpnName, vpnHostname, vpnCity, vpnCountry, vpnGroupLabel, resp.IsMeshPeer, resp.PauseRemainingDurationSec)
 	return changed
 }
 
@@ -483,6 +485,7 @@ func (ti *Instance) setVpnStatus(
 	vpnHostname string,
 	vpnCity string,
 	vpnCountry string,
+	vpnGroupLabel string,
 	isMeshPeer bool,
 	pauseRemainingDurationSec uint32,
 ) bool {
@@ -495,8 +498,10 @@ func (ti *Instance) setVpnStatus(
 
 		oldVpnStatus := ti.state.vpnStatus
 		oldServerName := ti.state.serverName()
+		oldGroupLabel := ti.state.vpnGroupLabel
 
 		ti.state.vpnName = vpnName
+		ti.state.vpnGroupLabel = vpnGroupLabel
 		ti.state.vpnCity = vpnCity
 		ti.state.vpnCountry = vpnCountry
 		ti.state.vpnHostname = vpnHostname
@@ -506,7 +511,7 @@ func (ti *Instance) setVpnStatus(
 
 		statusChanged := oldVpnStatus != vpnStatus
 		serverNameChanged := oldServerName != newServerName
-		changed = statusChanged || serverNameChanged
+		changed = statusChanged || serverNameChanged || oldGroupLabel != vpnGroupLabel
 
 		if statusChanged {
 			log.Systray.Infof("VPN status changed from %s to %s", oldVpnStatus, vpnStatus)

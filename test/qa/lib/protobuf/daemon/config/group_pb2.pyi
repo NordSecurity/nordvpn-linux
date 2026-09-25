@@ -9,22 +9,16 @@ class ServerGroup(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     UNDEFINED: _ClassVar[ServerGroup]
     DOUBLE_VPN: _ClassVar[ServerGroup]
     ONION_OVER_VPN: _ClassVar[ServerGroup]
-    ULTRA_FAST_TV: _ClassVar[ServerGroup]
-    ANTI_DDOS: _ClassVar[ServerGroup]
     DEDICATED_IP: _ClassVar[ServerGroup]
     STANDARD_VPN_SERVERS: _ClassVar[ServerGroup]
-    NETFLIX_USA: _ClassVar[ServerGroup]
     P2P: _ClassVar[ServerGroup]
     OBFUSCATED: _ClassVar[ServerGroup]
     DEDICATED_SERVER: _ClassVar[ServerGroup]
 UNDEFINED: ServerGroup
 DOUBLE_VPN: ServerGroup
 ONION_OVER_VPN: ServerGroup
-ULTRA_FAST_TV: ServerGroup
-ANTI_DDOS: ServerGroup
 DEDICATED_IP: ServerGroup
 STANDARD_VPN_SERVERS: ServerGroup
-NETFLIX_USA: ServerGroup
 P2P: ServerGroup
 OBFUSCATED: ServerGroup
 DEDICATED_SERVER: ServerGroup

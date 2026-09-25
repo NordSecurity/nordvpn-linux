@@ -109,10 +109,7 @@ func (d *deterministicServersAPI) RecommendedServers(filter core.ServersFilter, 
 		case config.ServerGroup_UNDEFINED,
 			config.ServerGroup_DOUBLE_VPN,
 			config.ServerGroup_ONION_OVER_VPN,
-			config.ServerGroup_ULTRA_FAST_TV,
-			config.ServerGroup_ANTI_DDOS,
 			config.ServerGroup_STANDARD_VPN_SERVERS,
-			config.ServerGroup_NETFLIX_USA,
 			config.ServerGroup_OBFUSCATED:
 
 			return getServersByID(allServers, 1), nil, nil
@@ -958,15 +955,6 @@ func Test_determineServerGroup(t *testing.T) {
 			want:   config.ServerGroup_DEDICATED_IP,
 		},
 		{
-			name: "Group is NETFLIX_USA returns matching group",
-			server: core.Server{Groups: []core.Group{
-				{ID: config.ServerGroup_NETFLIX_USA, Title: "Netflix USA"},
-				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
-			}},
-			params: serverpicker.ServerParameters{Group: config.ServerGroup_NETFLIX_USA},
-			want:   config.ServerGroup_NETFLIX_USA,
-		},
-		{
 			name: "Group is P2P returns matching group",
 			server: core.Server{Groups: []core.Group{
 				{ID: config.ServerGroup_P2P, Title: "P2P"},
@@ -974,24 +962,6 @@ func Test_determineServerGroup(t *testing.T) {
 			}},
 			params: serverpicker.ServerParameters{Group: config.ServerGroup_P2P},
 			want:   config.ServerGroup_P2P,
-		},
-		{
-			name: "Group is ULTRA_FAST_TV returns matching group",
-			server: core.Server{Groups: []core.Group{
-				{ID: config.ServerGroup_ULTRA_FAST_TV, Title: "Ultra Fast TV"},
-				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
-			}},
-			params: serverpicker.ServerParameters{Group: config.ServerGroup_ULTRA_FAST_TV},
-			want:   config.ServerGroup_ULTRA_FAST_TV,
-		},
-		{
-			name: "Group is ANTI_DDOS returns matching group",
-			server: core.Server{Groups: []core.Group{
-				{ID: config.ServerGroup_ANTI_DDOS, Title: "Anti DDoS"},
-				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
-			}},
-			params: serverpicker.ServerParameters{Group: config.ServerGroup_ANTI_DDOS},
-			want:   config.ServerGroup_ANTI_DDOS,
 		},
 		{
 			name:   "Server has no groups returns UNDEFINED",

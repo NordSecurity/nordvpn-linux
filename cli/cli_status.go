@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/NordSecurity/nordvpn-linux/client"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -76,6 +77,10 @@ func Status(resp *pb.StatusResponse) string {
 
 	if resp.City != "" {
 		b.WriteString(fmt.Sprintf("City: %s\n", resp.City))
+	}
+
+	if group := client.SpecialtyGroupLabel(resp); group != "" {
+		b.WriteString(fmt.Sprintf("Group: %s\n", group))
 	}
 
 	if resp.Uptime != -1 {

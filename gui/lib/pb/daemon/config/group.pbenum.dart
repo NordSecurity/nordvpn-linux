@@ -21,16 +21,10 @@ class ServerGroup extends $pb.ProtobufEnum {
       ServerGroup._(1, _omitEnumNames ? '' : 'DOUBLE_VPN');
   static const ServerGroup ONION_OVER_VPN =
       ServerGroup._(3, _omitEnumNames ? '' : 'ONION_OVER_VPN');
-  static const ServerGroup ULTRA_FAST_TV =
-      ServerGroup._(5, _omitEnumNames ? '' : 'ULTRA_FAST_TV');
-  static const ServerGroup ANTI_DDOS =
-      ServerGroup._(7, _omitEnumNames ? '' : 'ANTI_DDOS');
   static const ServerGroup DEDICATED_IP =
       ServerGroup._(9, _omitEnumNames ? '' : 'DEDICATED_IP');
   static const ServerGroup STANDARD_VPN_SERVERS =
       ServerGroup._(11, _omitEnumNames ? '' : 'STANDARD_VPN_SERVERS');
-  static const ServerGroup NETFLIX_USA =
-      ServerGroup._(13, _omitEnumNames ? '' : 'NETFLIX_USA');
   static const ServerGroup P2P = ServerGroup._(15, _omitEnumNames ? '' : 'P2P');
   static const ServerGroup OBFUSCATED =
       ServerGroup._(17, _omitEnumNames ? '' : 'OBFUSCATED');
@@ -41,11 +35,8 @@ class ServerGroup extends $pb.ProtobufEnum {
     UNDEFINED,
     DOUBLE_VPN,
     ONION_OVER_VPN,
-    ULTRA_FAST_TV,
-    ANTI_DDOS,
     DEDICATED_IP,
     STANDARD_VPN_SERVERS,
-    NETFLIX_USA,
     P2P,
     OBFUSCATED,
     DEDICATED_SERVER,
