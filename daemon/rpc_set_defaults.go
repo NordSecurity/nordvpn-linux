@@ -7,6 +7,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
+	"github.com/NordSecurity/nordvpn-linux/networker"
 )
 
 func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.Payload, error) {
@@ -56,25 +57,8 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.P
 		}, nil
 	}
 
-	firewallWasEnabled := cfg.Firewall
-	routingWasEnabled := cfg.Routing.Get()
 	if err := r.cm.Load(&cfg); err != nil {
 		log.Error(err)
-	}
-
-	// sync the networker state with config otherwise firewall
-	// configurations (e.g. killswitch) are skipped
-	if !firewallWasEnabled && cfg.Firewall {
-		if err := r.netw.EnableFirewall(); err != nil {
-			log.Error("enabling firewall after reset:", err)
-			return &pb.Payload{Type: internal.CodeFailure}, nil
-		}
-	}
-
-	// sync the networker state with config otherwise routing
-	// stays disabled while config says it's enabled
-	if !routingWasEnabled && cfg.Routing.Get() {
-		r.netw.EnableRouting()
 	}
 
 	v, err := r.factory(cfg.Technology)
@@ -86,16 +70,23 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.P
 	}
 	r.netw.SetVPN(v)
 
-	if err = r.netw.SetARPIgnore(cfg.ARPIgnore.Get()); err != nil {
-		log.Warn("resetting arp ignore failed:", err)
-	}
-	r.netw.SetLanDiscovery(cfg.LanDiscovery)
-	if err = r.netw.SetAllowlist(cfg.AutoConnectData.Allowlist); err != nil {
-		log.Warn("resetting allowlist failed:", err)
+	applyErr := r.netw.ApplySettings(networker.Settings{
+		Firewall:     cfg.Firewall,
+		Routing:      cfg.Routing.Get(),
+		LanDiscovery: cfg.LanDiscovery,
+		ARPIgnore:    cfg.ARPIgnore.Get(),
+		Allowlist:    cfg.AutoConnectData.Allowlist,
+	})
+	if applyErr != nil {
+		log.Error("applying default settings to networker:", applyErr)
 	}
 
 	r.events.Settings.Defaults.Publish(nil)
 	r.events.Settings.Publish(cfg)
+
+	if applyErr != nil {
+		return &pb.Payload{Type: internal.CodeFailure}, nil
+	}
 
 	return &pb.Payload{
 		Type: internal.CodeSuccess,

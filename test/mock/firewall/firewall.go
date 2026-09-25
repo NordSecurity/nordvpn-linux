@@ -7,9 +7,10 @@ import (
 // --- Firewall mock (firewall.Service) ---
 
 type Firewall struct {
-	enabled bool
-	config  firewall.Config
-	Err     error
+	enabled     bool
+	config      firewall.Config
+	Err         error
+	EnableCalls int
 }
 
 func NewFirewall() *Firewall {
@@ -18,6 +19,7 @@ func NewFirewall() *Firewall {
 
 // Enable firewall
 func (mf *Firewall) Enable() error {
+	mf.EnableCalls++
 	if mf.Err != nil {
 		return mf.Err
 	}
