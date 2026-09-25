@@ -338,44 +338,35 @@ func buildPauseMenu(ti *Instance) {
 }
 
 func buildPauseTimer(ti *Instance) {
-	initialValue := ti.state.pauseRemainingMin
-	if initialValue <= 0 {
+	// Read current time from goroutine's tracker, not from stale initial state
+	ti.pauseTimerMu.RLock()
+
+	if ti.pauseTimer == nil {
+		ti.pauseTimerMu.RUnlock()
 		return
 	}
 
-	timer := systray.AddMenuItem(
-		buildTimerString(initialValue), "",
+	// Use goroutine's current tracked value for accurate countdown
+	currentMin := ti.pauseTimer.lastDisplayedMin
+	ti.pauseTimerMu.RUnlock()
+
+	if currentMin <= 0 {
+		return
+	}
+
+	// Create menu item for this render cycle (systray.ResetMenu destroys all items each render)
+	menuItem := systray.AddMenuItem(
+		buildTimerString(currentMin), "",
 	)
-	timer.Disable()
+	menuItem.Disable()
 
-	go func() {
-		ticker := time.NewTicker(time.Minute)
-		defer ticker.Stop()
-
-		currentValue := initialValue
-		for currentValue > 0 {
-			select {
-			case _, open := <-timer.ClickedCh:
-				if !open {
-					return
-				}
-			case <-ticker.C:
-				ti.state.mu.Lock()
-
-				currentValue = ti.state.pauseRemainingMin
-				if currentValue > 0 {
-					currentValue--
-					ti.state.pauseRemainingMin = currentValue
-				}
-
-				ti.state.mu.Unlock()
-
-				timer.SetTitleQuiet(
-					buildTimerString(currentValue),
-				)
-			}
-		}
-	}()
+	// Update pauseTimer.menuItem reference so goroutine can use it to update the display
+	// The goroutine is already running (started by startPauseTimer) and will use this reference
+	ti.pauseTimerMu.Lock()
+	if ti.pauseTimer != nil {
+		ti.pauseTimer.menuItem = menuItem
+	}
+	ti.pauseTimerMu.Unlock()
 }
 
 func buildTimerString(remainingMin int) string {
