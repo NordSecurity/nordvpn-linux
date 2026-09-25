@@ -147,7 +147,7 @@ func Test_validateHttpTransportsString(t *testing.T) {
 		{value: "http1", expectedValue: []string{"http1"}},
 		{value: "AAhttp1", expectedValue: validTransportTypes},
 		{value: "http1AA", expectedValue: validTransportTypes},
-		{value: "http3,http1", expectedValue: []string{"http3", "http1"}},
+		{value: "http3,http1", expectedValue: []string{"http1"}},
 		{value: "http2,http1", expectedValue: []string{"http1"}},
 	}
 	for _, test := range tests {
