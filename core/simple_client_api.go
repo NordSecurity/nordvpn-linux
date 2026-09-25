@@ -49,7 +49,6 @@ type RawDedicatedServersAPI interface {
 type RawCombinedAPI interface {
 	RawInsightsAPI
 	Base() string
-	Plans() (*Plans, error)
 	CreateUser(email, password string) (*UserCreateResponse, error)
 }
 
@@ -151,25 +150,6 @@ func (api *SimpleClientAPI) do(req *http.Request, acceptedCode int) (*http.Respo
 	}
 
 	return resp, nil
-}
-
-func (api *SimpleClientAPI) Plans() (*Plans, error) {
-	var ret *Plans
-	req, err := request.NewRequest(http.MethodGet, api.agent, api.baseURL, PlanURL, "application/json", "", "gzip, deflate", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := api.doRequest(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if err = json.NewDecoder(resp.Body).Decode(&ret); err != nil {
-		return nil, err
-	}
-	return ret, nil
 }
 
 // ServiceCredentials returns service credentials

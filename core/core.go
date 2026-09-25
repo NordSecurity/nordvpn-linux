@@ -53,7 +53,6 @@ type ServersAPI interface {
 type CombinedAPI interface {
 	InsightsAPI
 	Base() string
-	Plans() (*Plans, error)
 	CreateUser(email, password string) (*UserCreateResponse, error)
 }
 
