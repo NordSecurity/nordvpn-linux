@@ -127,9 +127,17 @@ type Instance struct {
 	recentConnections   *recentConnectionsManager
 	checkboxSync        *CheckboxSynchronizer
 	openURI             URIOpener
+	pauseTimerMu        sync.RWMutex
+	pauseTimer          *pauseTimerState
 }
 
 type URIOpener func(string) error
+
+type pauseTimerState struct {
+	menuItem         *systray.MenuItem
+	stopChan         chan struct{}
+	lastDisplayedMin int
+}
 
 type trayState struct {
 	daemonAvailable      bool
@@ -147,7 +155,6 @@ type trayState struct {
 	vpnIsMeshPeer        bool
 	initialSyncCompleted bool
 	connSelector         ConnectionSelector
-	pauseRemainingMin    int
 	mu                   sync.RWMutex
 }
 
@@ -285,6 +292,95 @@ func (ti *Instance) Start() {
 	ti.initialDataLoadChan = make(chan struct{})
 
 	go ti.syncWithDaemon()
+}
+
+func (ti *Instance) startPauseTimer(initialDurationSec uint32) {
+	// Don't create timer for zero or near-zero duration (already expired)
+	if initialDurationSec == 0 {
+		return
+	}
+
+	ti.pauseTimerMu.Lock()
+
+	if ti.pauseTimer != nil {
+		ti.pauseTimerMu.Unlock()
+		return
+	}
+
+	stopChan := make(chan struct{})
+	ti.pauseTimer = &pauseTimerState{
+		menuItem:         nil, // Menu item will be set by buildPauseTimer on next render
+		stopChan:         stopChan,
+		lastDisplayedMin: (int(initialDurationSec) + 59) / 60,
+	}
+	ti.pauseTimerMu.Unlock()
+
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Systray.Errorf("Pause timer goroutine panicked: %v", r)
+			}
+			ti.pauseTimerMu.Lock()
+			ti.pauseTimer = nil
+			ti.pauseTimerMu.Unlock()
+		}()
+
+		ticker := time.NewTicker(time.Second)
+		defer ticker.Stop()
+
+		remainingSec := int(initialDurationSec)
+		for remainingSec > 0 {
+			select {
+			case <-stopChan:
+				return
+			case <-ticker.C:
+				remainingSec--
+				currentMin := (remainingSec + 59) / 60
+
+				ti.pauseTimerMu.RLock()
+				var lastMin int
+				if ti.pauseTimer != nil {
+					lastMin = ti.pauseTimer.lastDisplayedMin
+				}
+				ti.pauseTimerMu.RUnlock()
+
+				if currentMin != lastMin && currentMin >= 0 {
+					// Extract reference while holding lock
+					ti.pauseTimerMu.Lock()
+					var menuItem *systray.MenuItem
+					if ti.pauseTimer != nil && ti.pauseTimer.menuItem != nil {
+						menuItem = ti.pauseTimer.menuItem
+					}
+					ti.pauseTimerMu.Unlock()
+
+					// Update display outside lock (prevents deadlock on panic)
+					if menuItem != nil {
+						menuItem.SetTitleQuiet(buildTimerString(currentMin))
+					}
+
+					// Update tracking
+					ti.pauseTimerMu.Lock()
+					if ti.pauseTimer != nil {
+						ti.pauseTimer.lastDisplayedMin = currentMin
+					}
+					ti.pauseTimerMu.Unlock()
+				}
+			}
+		}
+
+		ti.pauseTimerMu.Lock()
+		ti.pauseTimer = nil
+		ti.pauseTimerMu.Unlock()
+	}()
+}
+
+func (ti *Instance) stopPauseTimer() {
+	ti.pauseTimerMu.Lock()
+	if ti.pauseTimer != nil {
+		close(ti.pauseTimer.stopChan)
+		ti.pauseTimer = nil
+	}
+	ti.pauseTimerMu.Unlock()
 }
 
 func (ti *Instance) OnExit() {
