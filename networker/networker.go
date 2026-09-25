@@ -1110,9 +1110,8 @@ func (netw *Combined) setMesh(
 		firewall.WithMeshnetInfo(firewall.NewMeshInfo(netw.cfg, netw.mesh.Tun().Interface().Name)),
 	)
 	// If nordlynx was used as vpnet, the interface will change IP, we refresh it here
-	tunnelIP, ok := netip.Addr{}, false
 	if netw.isVpnSet {
-		if tunnelIP, ok = netw.vpnet.Tun().IP(); ok {
+		if tunnelIP, ok := netw.vpnet.Tun().IP(); ok {
 			newCfg = newCfg.CopyWith(
 				firewall.WithTunnelIP(tunnelIP),
 			)
