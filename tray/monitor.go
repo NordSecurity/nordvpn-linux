@@ -514,10 +514,10 @@ func (ti *Instance) setVpnStatus(
 			case pb.ConnectionState_CONNECTED:
 				notificationText = labelConnectedFormat
 				notificationArg = newServerName
-				ti.state.pauseRemainingSec = 0
+				ti.stopPauseTimer()
 			case pb.ConnectionState_PAUSED:
 				if uint64(pauseRemainingDurationSec) < uint64(math.MaxInt) {
-					ti.state.pauseRemainingSec = int(pauseRemainingDurationSec)
+					ti.startPauseTimer(pauseRemainingDurationSec)
 				} else {
 					log.Error("Received pause remaining duration greater than MaxInt")
 				}
@@ -527,8 +527,11 @@ func (ti *Instance) setVpnStatus(
 					notificationText = labelDisconnectedFormat
 					notificationArg = oldServerName
 				}
+				if vpnStatus == pb.ConnectionState_DISCONNECTED {
+					ti.stopPauseTimer()
+				}
 			case pb.ConnectionState_UNKNOWN_STATE, pb.ConnectionState_CONNECTING:
-				ti.state.pauseRemainingSec = 0
+				ti.stopPauseTimer()
 			}
 		} else if serverNameChanged {
 			log.Systray.Infof("VPN server name changed from %s to %s", oldServerName, ti.state.serverName())
