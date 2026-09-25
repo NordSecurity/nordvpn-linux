@@ -10,6 +10,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/networker"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 )
 
@@ -33,6 +34,12 @@ type Mock struct {
 	ProvidedServerData vpn.ServerData
 	ActiveServerData   *vpn.ServerData
 	CancelConnectingFn func(error) bool
+
+	FirewallDisabled  bool
+	KillSwitchApplied bool
+	RoutingDisabled   bool
+	AppliedSettings   *networker.Settings
+	ApplySettingsErr  error
 }
 
 func (m *Mock) Start(
@@ -70,10 +77,23 @@ func (m *Mock) IsVPNActive() bool {
 	return m.VpnActive || m.ConnectRetries > 5
 }
 
-func (*Mock) EnableFirewall() error  { return nil }
-func (*Mock) DisableFirewall() error { return nil }
-func (*Mock) EnableRouting()         {}
-func (*Mock) DisableRouting()        {}
+func (m *Mock) EnableFirewall() error {
+	m.FirewallDisabled = false
+	return nil
+}
+
+func (m *Mock) DisableFirewall() error {
+	m.FirewallDisabled = true
+	return nil
+}
+
+func (m *Mock) EnableRouting() {
+	m.RoutingDisabled = false
+}
+
+func (m *Mock) DisableRouting() {
+	m.RoutingDisabled = true
+}
 
 func (m *Mock) SetAllowlist(allowlist config.Allowlist) error {
 	if m.SetAllowlistErr != nil {
@@ -100,8 +120,17 @@ func (m *Mock) IsMeshnetActive() bool {
 	m.MeshnetRetries++
 	return m.MeshActive || m.MeshnetRetries > 5
 }
-func (*Mock) SetKillSwitch() error   { return nil }
-func (*Mock) UnsetKillSwitch() error { return nil }
+
+func (m *Mock) SetKillSwitch() error {
+	m.KillSwitchApplied = !m.FirewallDisabled
+	return nil
+}
+
+func (m *Mock) UnsetKillSwitch() error {
+	m.KillSwitchApplied = false
+	return nil
+}
+
 func (*Mock) SetVPN(vpn.VPN)         {}
 func (*Mock) LastServerName() string { return "" }
 
@@ -124,6 +153,16 @@ func (m *Mock) GetConnectionParameters() (vpn.ServerData, bool) {
 }
 
 func (*Mock) SetARPIgnore(bool) error { return nil }
+
+func (m *Mock) ApplySettings(settings networker.Settings) error {
+	m.AppliedSettings = &settings
+	m.FirewallDisabled = !settings.Firewall
+	m.RoutingDisabled = !settings.Routing
+	m.LanDiscovery = settings.LanDiscovery
+	m.Allowlist = settings.Allowlist
+	return m.ApplySettingsErr
+}
+
 func (m *Mock) CancelConnecting(err error) bool {
 	if m.CancelConnectingFn == nil {
 		return true
@@ -168,6 +207,7 @@ func (Failing) Block(mesh.Machine) error                            { return moc
 func (Failing) SetVPN(vpn.VPN)                                      {}
 func (Failing) LastServerName() string                              { return "" }
 func (Failing) SetLanDiscoveryAndResetMesh(bool, mesh.MachinePeers) {}
+func (Failing) ApplySettings(networker.Settings) error              { return mock.ErrOnPurpose }
 func (Failing) SetLanDiscovery(bool)                                {}
 func (Failing) UnsetFirewall() error                                { return mock.ErrOnPurpose }
 func (Failing) GetConnectionParameters() (vpn.ServerData, bool)     { return vpn.ServerData{}, false }

@@ -15,6 +15,8 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
+	"github.com/NordSecurity/nordvpn-linux/internal"
+	netwpkg "github.com/NordSecurity/nordvpn-linux/networker"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	testcore "github.com/NordSecurity/nordvpn-linux/test/mock/core"
@@ -85,7 +87,7 @@ func TestResetToDefaults_PauseVariants(t *testing.T) {
 			}
 
 			if test.isDataDisconnectExpected {
-				//simulate pause is activated
+				// simulate pause is activated
 				connectionInfo.Pause(time.Now(), time.Second*60*5)
 			}
 			// actual response code is not relevant for this test
@@ -117,4 +119,132 @@ func TestSetDefaults_ResetsNetworkerLanDiscoveryAndAllowlist(t *testing.T) {
 	assert.NoError(t, err)
 	assert.False(t, netw.LanDiscovery)
 	assert.Equal(t, config.Allowlist{}, netw.Allowlist)
+}
+
+func TestSetDefaults_SyncsNetworkerFirewallState(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name                        string
+		firewallDisabledBeforeReset bool
+	}{
+		{
+			name:                        "firewall disabled before reset is re-enabled and killswitch is applied",
+			firewallDisabledBeforeReset: true,
+		},
+		{
+			name:                        "firewall enabled before reset stays enabled and killswitch is applied",
+			firewallDisabledBeforeReset: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			netw := &networker.Mock{}
+			rpc := testRPC()
+			rpc.netw = netw
+
+			if test.firewallDisabledBeforeReset {
+				resp, err := rpc.SetFirewall(context.Background(), &pb.SetGenericRequest{Enabled: false})
+				assert.NoError(t, err)
+				assert.Equal(t, internal.CodeSuccess, resp.Type)
+				assert.True(t, netw.FirewallDisabled)
+			}
+
+			resp, err := rpc.SetDefaults(context.Background(), &pb.SetDefaultsRequest{NoLogout: true})
+			assert.NoError(t, err)
+			assert.Equal(t, internal.CodeSuccess, resp.Type)
+			assert.False(t, netw.FirewallDisabled)
+
+			resp, err = rpc.SetKillSwitch(context.Background(), &pb.SetKillSwitchRequest{KillSwitch: true})
+			assert.NoError(t, err)
+			assert.Equal(t, internal.CodeSuccess, resp.Type)
+			assert.True(t, netw.KillSwitchApplied)
+		})
+	}
+}
+
+func TestSetDefaults_SyncsNetworkerRoutingState(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name                       string
+		routingDisabledBeforeReset bool
+	}{
+		{
+			name:                       "routing disabled before reset is re-enabled",
+			routingDisabledBeforeReset: true,
+		},
+		{
+			name:                       "routing enabled before reset stays enabled",
+			routingDisabledBeforeReset: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			netw := &networker.Mock{}
+			rpc := testRPC()
+			rpc.netw = netw
+
+			if test.routingDisabledBeforeReset {
+				// routing cannot be disabled while meshnet is enabled
+				rpc.cm.(*mockConfigManager).c.Mesh = false
+
+				resp, err := rpc.SetRouting(context.Background(), &pb.SetGenericRequest{Enabled: false})
+				assert.NoError(t, err)
+				assert.Equal(t, internal.CodeSuccess, resp.Type)
+				assert.True(t, netw.RoutingDisabled)
+			}
+
+			resp, err := rpc.SetDefaults(context.Background(), &pb.SetDefaultsRequest{NoLogout: true})
+			assert.NoError(t, err)
+			assert.Equal(t, internal.CodeSuccess, resp.Type)
+			assert.False(t, netw.RoutingDisabled)
+		})
+	}
+}
+
+func TestSetDefaults_AppliesSettingsToNetworker(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name         string
+		applyErr     error
+		expectedCode int64
+	}{
+		{
+			name:         "settings applied",
+			applyErr:     nil,
+			expectedCode: internal.CodeSuccess,
+		},
+		{
+			name:         "applying settings fails",
+			applyErr:     mock.ErrOnPurpose,
+			expectedCode: internal.CodeFailure,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			netw := &networker.Mock{ApplySettingsErr: test.applyErr}
+			defaultsEvents := &daemonevents.MockPublisherSubscriber[any]{}
+			rpc := testRPC()
+			rpc.netw = netw
+			rpc.events.Settings.Defaults = defaultsEvents
+
+			resp, err := rpc.SetDefaults(context.Background(), &pb.SetDefaultsRequest{NoLogout: true})
+			assert.NoError(t, err)
+			assert.Equal(t, test.expectedCode, resp.Type)
+			assert.Equal(t, &netwpkg.Settings{
+				Firewall:     true,
+				Routing:      true,
+				LanDiscovery: false,
+				ARPIgnore:    true,
+				Allowlist:    config.Allowlist{},
+			}, netw.AppliedSettings)
+			// config is reset even if applying settings fails, so defaults event is always published
+			assert.True(t, defaultsEvents.EventPublished)
+		})
+	}
 }

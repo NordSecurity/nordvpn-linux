@@ -10,7 +10,7 @@ import requests
 import sh
 
 import lib
-from lib import IS_NIGHTLY, allowlist, daemon, firewall, network
+from lib import IS_NIGHTLY, allowlist, daemon, firewall, network, settings
 from lib.dynamic_parametrize import dynamic_parametrize
 from lib import capture_utils
 from lib.firewall import tun_interface_names
@@ -232,6 +232,23 @@ def test_firewall_07_with_killswitch_while_connected(tech, proto, obfuscated):
             lib.set_killswitch("off")
             assert firewall.is_active(), "Firewall should remain active after killswitch is disabled"
         assert network.is_disconnected(), "Network should be disconnected after context"
+    assert not firewall.is_active(), "Firewall should be inactive after killswitch is disabled"
+
+
+def test_firewall_active_with_killswitch_after_set_defaults_with_firewall_disabled():
+    """Manual TC: LVPN-11184"""
+    """Firewall disabled before setting defaults is enabled again, so killswitch applies firewall rules."""
+
+    lib.set_firewall("off")
+    assert not settings.is_firewall_enabled(), "Firewall should be disabled before setting defaults"
+
+    sh.nordvpn.set.defaults()
+    assert settings.is_firewall_enabled(), "Firewall should be enabled after setting defaults"
+    assert not firewall.is_active(), "Firewall should not be active before killswitch is enabled"
+
+    with lib.Defer(sh.nordvpn.set.killswitch.off):
+        lib.set_killswitch("on")
+        assert firewall.is_active(), "Firewall should be active when killswitch is enabled"
     assert not firewall.is_active(), "Firewall should be inactive after killswitch is disabled"
 
 

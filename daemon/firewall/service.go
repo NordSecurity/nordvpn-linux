@@ -16,6 +16,7 @@ type Service interface {
 	Flush() error
 	Disable() error
 	Enable() error
+	IsEnabled() bool
 }
 
 type FirewallBackend interface {
