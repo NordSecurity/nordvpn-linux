@@ -242,8 +242,9 @@ func Test_setVpnStatus_pauseRemaining(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ti := &Instance{
-				client: nil,
-				n:      &mockNotifier{},
+				client:     nil,
+				n:          &mockNotifier{},
+				pauseTimer: nil,
 				state: trayState{
 					vpnStatus: tt.previousStatus,
 					vpnName:   "OldServer",
@@ -263,8 +264,31 @@ func Test_setVpnStatus_pauseRemaining(t *testing.T) {
 
 			assert.Equal(t, tt.expectedStatusChanged, changed,
 				"status change should match expected")
-			assert.Equal(t, tt.expectedPauseRemainingMin, ti.state.pauseRemainingMin,
-				"pauseRemainingMin should match expected value")
+
+			// Verify pause timer state matches expectations
+			// Use RLock to safely read pauseTimer without race condition with goroutine
+			ti.pauseTimerMu.RLock()
+			pauseTimer := ti.pauseTimer
+			var lastDisplayedMin int
+			if pauseTimer != nil {
+				lastDisplayedMin = pauseTimer.lastDisplayedMin
+			}
+			ti.pauseTimerMu.RUnlock()
+
+			if tt.newStatus == pb.ConnectionState_PAUSED && tt.pauseRemainingDurationSec > 0 {
+				// Non-zero pause: timer should be started
+				assert.NotNil(t, pauseTimer, "pauseTimer should be started for non-zero pause duration")
+				if pauseTimer != nil {
+					assert.Equal(t, tt.expectedPauseRemainingMin, lastDisplayedMin,
+						"pauseTimer.lastDisplayedMin should match expected minute value")
+					// Stop timer to prevent goroutine from running after test
+					ti.stopPauseTimer()
+				}
+			} else {
+				// Any other case: timer should not be created/running
+				// (either not PAUSED, or PAUSED with zero duration which doesn't need a timer)
+				assert.Nil(t, pauseTimer, "pauseTimer should not be running in this state")
+			}
 		})
 	}
 }
