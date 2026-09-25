@@ -40,7 +40,6 @@ type mockSimpleClientAPI struct {
 	ServerFunc                        func(id int64) (*core.Server, error)
 	ServersCountriesFunc              func() (core.Countries, http.Header, error)
 	BaseFunc                          func() string
-	PlansFunc                         func() (*core.Plans, error)
 	CreateUserFunc                    func(email, password string) (*core.UserCreateResponse, error)
 	OrdersFunc                        func(token string) ([]core.Order, error)
 	PaymentsFunc                      func(token string) ([]core.PaymentResponse, error)
@@ -142,10 +141,6 @@ func (m *mockSimpleClientAPI) DedicatedServerConnectCheck(token string, dedicate
 
 func (m *mockSimpleClientAPI) Base() string {
 	return m.BaseFunc()
-}
-
-func (m *mockSimpleClientAPI) Plans() (*core.Plans, error) {
-	return m.PlansFunc()
 }
 
 func (m *mockSimpleClientAPI) CreateUser(email, password string) (*core.UserCreateResponse, error) {
@@ -1694,40 +1689,6 @@ func Test_Base_TokenRenewalScenarios(t *testing.T) {
 		output := client.Base()
 
 		assert.Equal(t, expectedOutput, output)
-		assert.Equal(t, 0, mockSessionStore.GetTokenCallCount)
-		assert.Equal(t, 0, mockSessionStore.RenewCallCount)
-	})
-}
-
-func Test_Plans_TokenRenewalScenarios(t *testing.T) {
-	t.Run("Bypass token renewal", func(t *testing.T) {
-		expectedPlans := &core.Plans{
-			core.Plan{ID: 1},
-			core.Plan{ID: 2},
-		}
-
-		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
-			GetTokenFunc: func() string {
-				t.Fatal("GetToken should not be called")
-				return ""
-			},
-			RenewFunc: func(opts ...session.RenewalOption) error {
-				t.Fatal("Renew should not be called")
-				return nil
-			},
-		}
-
-		mockAPI := &mockSimpleClientAPI{
-			PlansFunc: func() (*core.Plans, error) {
-				return expectedPlans, nil
-			},
-		}
-
-		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
-		plans, err := client.Plans()
-
-		assert.NoError(t, err)
-		assert.Equal(t, expectedPlans, plans)
 		assert.Equal(t, 0, mockSessionStore.GetTokenCallCount)
 		assert.Equal(t, 0, mockSessionStore.RenewCallCount)
 	})

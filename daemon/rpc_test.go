@@ -52,7 +52,6 @@ const (
 	TestVersionRpm          = "testrpmparse"
 	TestUserCreateJSON      = "usercreate.json"
 	TestUserCredentialsJSON = "usercredentials.json"
-	TestPlansJSON           = "plans.json"
 	TestRecentConnFile      = "recent_connections.dat"
 )
 
@@ -136,14 +135,12 @@ func TestMain(m *testing.M) {
 		{"/v1/users", mockAPI(TestUserCreateJSON).handler},
 		{"/v1/users/services/credentials/", mockAPI(TestUserCredentialsJSON).handler},
 		{"/v1/users/tokens/renew", mockAPI(TestTokenRenewJSON).handler},
-		{"/v1/plans", mockAPI(TestPlansJSON).handler},
 	}
 	servers = append(servers, StartServer(GeneralInfo, generalInfoHandler))
 
 	invalidInfoHandler := []Handler{
 		{"/v1/servers", mockAPI(MixedServersJSON).invalidHandler},
 		{"/v1/users", mockAPI(MixedServersJSON).invalidHandler},
-		{"/v1/plans", mockAPI(MixedServersJSON).invalidHandler},
 	}
 
 	var err error
