@@ -5,6 +5,7 @@ import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/vpn/connection_card_buttons.dart';
 import 'package:nordvpn/vpn/servers_list_card.dart';
 import 'package:nordvpn/vpn/vpn.dart';
+import 'package:nordvpn/widgets/custom_list_tile.dart';
 
 import 'finders.dart';
 import 'screen_handle.dart';
@@ -99,6 +100,22 @@ final class VpnScreenHandle extends ScreenHandle {
   Future<void> clickSpecialtyServersTab() async {
     await app.tester.tap(specialtyServersTab());
     await app.tester.pumpAndSettle();
+  }
+
+  Future<void> scrollToObfuscatedGroup() async {
+    await app.tester.scrollUntilVisible(
+      find.byKey(ServerListWidgetKeys.obfuscatedVpn),
+      100.0,
+      scrollable: find.descendant(
+        of: find.byKey(ServerListWidgetKeys.specialtyServersList),
+        matching: find.byType(Scrollable),
+      ),
+    );
+  }
+
+  bool isObfuscatedGroupOffered() {
+    final widget = app.tester.widget<CustomListTile>(obfuscatedGroupTile());
+    return widget.enabled;
   }
 
   Future<void> clickDoubleVpnGroup() async {
