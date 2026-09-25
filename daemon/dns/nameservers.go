@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/core"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
@@ -99,4 +100,21 @@ func shuffleNameservers(nameservers []string) []string {
 		nameservers[i], nameservers[j] = nameservers[j], nameservers[i]
 	})
 	return nameservers
+}
+
+func isNordDNSServer(address string) bool {
+	return internal.Contains(defaultServers, address) || internal.Contains(defaultRTPServers, address)
+}
+
+func areOnlyNordDNSServers(addresses []string) bool {
+	if len(addresses) == 0 {
+		return false
+	}
+	for _, address := range addresses {
+		if !isNordDNSServer(address) {
+			return false
+		}
+	}
+
+	return true
 }
