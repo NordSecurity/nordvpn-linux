@@ -13,7 +13,7 @@ require (
 require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/NordSecurity/gopenvpn v0.0.0-20230117114932-2252c52984b4
-	github.com/NordSecurity/systray v0.0.0-20260618073639-14a79f2708b4
+	github.com/NordSecurity/systray v0.0.0-20260925084206-16de370deee8 //pulls https://github.com/NordSecurity/systray/pull/7
 	github.com/coreos/go-semver v0.3.1
 	github.com/deckarep/golang-set/v2 v2.9.0
 	github.com/docker/go-units v0.5.0
