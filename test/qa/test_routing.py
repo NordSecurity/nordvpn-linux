@@ -231,6 +231,7 @@ def test_routing_when_iprule_already_exists(tech, proto, obfuscated):
 
 
 def test_routing_applied_after_set_defaults_with_routing_disabled():
+    """Manual TC: LVPN-11185"""
     """Routing disabled before setting defaults is enabled again, so routing rules are applied on connect."""
 
     lib.set_routing("off")

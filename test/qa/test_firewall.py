@@ -236,6 +236,7 @@ def test_firewall_07_with_killswitch_while_connected(tech, proto, obfuscated):
 
 
 def test_firewall_active_with_killswitch_after_set_defaults_with_firewall_disabled():
+    """Manual TC: LVPN-11184"""
     """Firewall disabled before setting defaults is enabled again, so killswitch applies firewall rules."""
 
     lib.set_firewall("off")
