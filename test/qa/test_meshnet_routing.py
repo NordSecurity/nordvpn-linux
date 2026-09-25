@@ -166,7 +166,7 @@ def test_routing_access_LAN():
     ssh_client.exec_command("nordvpn mesh peer refresh")
     cap = capture_utils.BackgroundCapture("any", display_filter=f"ip.addr == {default_gateway}")
     cap.start()
-    time.sleep(2)
+    time.sleep(5)
     assert ssh_client.network.ping(default_gateway, retry=3)
     time.sleep(2)
     cap.stop()
