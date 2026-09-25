@@ -22,7 +22,9 @@ func (r *RPC) SetObfuscate(ctx context.Context, in *pb.SetGenericRequest) (*pb.P
 	}
 
 	if cfg.AutoConnect {
-		switch core.IsServerObfuscated(r.dm.GetServersData().Servers, cfg.AutoConnectData.ServerTag) {
+		// TODO: Fix this. Previously it was looking for a specific tag "de32", now the regenerated tag will be "country city"/"country"
+		// How to deal with this?
+		switch core.IsServerObfuscated(r.dm.GetServersData().Servers, config.ServerTagFromAutoconnectData(cfg.AutoConnectData)) {
 		case core.ServerNotObfuscated:
 			if in.GetEnabled() {
 				return &pb.Payload{

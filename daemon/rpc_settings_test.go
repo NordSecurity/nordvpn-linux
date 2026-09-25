@@ -2,22 +2,13 @@ package daemon
 
 import (
 	"context"
-	"sync"
 	"testing"
 
-	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
-	"github.com/NordSecurity/nordvpn-linux/test/helpers"
-	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	"gotest.tools/v3/assert"
 )
-
-// resetSettingsMigrationOnces resets the package-level sync
-func resetSettingsMigrationOnces() {
-	adjustAutoconnectCfgOnce = sync.Once{}
-}
 
 func TestSettings_NoPeerContext(t *testing.T) {
 	category.Set(t, category.Unit)
@@ -27,34 +18,4 @@ func TestSettings_NoPeerContext(t *testing.T) {
 
 	assert.NilError(t, err)
 	assert.Equal(t, resp.Type, internal.CodeFailure)
-}
-
-func TestSettings_AutoconnectMigrationRunsOnlyOnce(t *testing.T) {
-	category.Set(t, category.Unit)
-	resetSettingsMigrationOnces()
-
-	cm := mock.NewMockConfigManager()
-
-	cm.Cfg.AutoConnect = true
-	cm.Cfg.AutoConnectData.ServerTag = "not-empty"
-	cm.Cfg.AutoConnectData.Country = ""
-	cm.Cfg.AutoConnectData.City = ""
-	cm.Cfg.AutoConnectData.Group = config.ServerGroup_UNDEFINED
-
-	r := testRPC()
-	r.cm = cm
-	assert.Equal(t, cm.SaveCallCount, 0)
-
-	ctx := helpers.PeerCtx(trayTestUID)
-	_, err := r.Settings(ctx, &pb.Empty{})
-	assert.NilError(t, err, "first Settings() call returned error: %v", err)
-
-	// migration was performed
-	assert.Equal(t, cm.SaveCallCount, 1)
-
-	_, err = r.Settings(ctx, &pb.Empty{})
-	assert.NilError(t, err, "second Settings() call returned error: %v", err)
-
-	// migration was not executed again
-	assert.Equal(t, cm.SaveCallCount, 1)
 }

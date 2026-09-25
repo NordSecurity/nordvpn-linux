@@ -52,7 +52,6 @@ func (failingLoginChecker) GetDedicatedServerService() (auth.DedicatedServerServ
 
 func updateAutoconnectData(c *mockConfigManager, data config.AutoConnectData) {
 	c.c.AutoConnect = true
-	c.c.AutoConnectData.ServerTag = data.ServerTag
 	c.c.AutoConnectData.Country = data.Country
 	c.c.AutoConnectData.CountryCode = data.CountryCode
 	c.c.AutoConnectData.City = data.City
@@ -145,7 +144,7 @@ func TestDoAutoConnect(t *testing.T) {
 				mockConfigManager := newMockConfigManager()
 
 				// For obfuscated the server group from API is Obfuscated_servers
-				updateAutoconnectData(mockConfigManager, config.AutoConnectData{Group: config.ServerGroup_OBFUSCATED, ServerTag: "obfuscated_servers"})
+				updateAutoconnectData(mockConfigManager, config.AutoConnectData{Group: config.ServerGroup_OBFUSCATED})
 				mockConfigManager.c.AutoConnectData.Obfuscate = true
 				mockConfigManager.c.Technology = config.Technology_OPENVPN
 
@@ -180,7 +179,7 @@ func TestDoAutoConnect(t *testing.T) {
 				rpc.serversAPI = core_test.NewMockServersAPI()
 				mockConfigManager := newMockConfigManager()
 
-				updateAutoconnectData(mockConfigManager, config.AutoConnectData{Country: "DE", City: "Berlin", Group: config.ServerGroup_P2P, ServerTag: "p2p"})
+				updateAutoconnectData(mockConfigManager, config.AutoConnectData{Country: "DE", City: "Berlin", Group: config.ServerGroup_P2P})
 
 				rpc.cm = mockConfigManager
 			},
@@ -204,8 +203,7 @@ func TestDoAutoConnect_DedicatedServerFallback_ServiceExpired(t *testing.T) {
 
 	mockConfigManager := newMockConfigManager()
 	updateAutoconnectData(mockConfigManager, config.AutoConnectData{
-		Group:     config.ServerGroup_DEDICATED_SERVER,
-		ServerTag: "Dedicated Server",
+		Group: config.ServerGroup_DEDICATED_SERVER,
 	})
 
 	rpc := testRPC()
@@ -215,8 +213,6 @@ func TestDoAutoConnect_DedicatedServerFallback_ServiceExpired(t *testing.T) {
 	// Verify that settings are not modified if service is available
 	assert.Equal(t, config.ServerGroup_DEDICATED_SERVER, mockConfigManager.c.AutoConnectData.Group,
 		"Unexpected autoconnect group target change after doAutoConnect. Group should remain set to %s.", config.ServerGroup_DEDICATED_SERVER.String())
-	assert.Equal(t, "Dedicated Server", mockConfigManager.c.AutoConnectData.ServerTag,
-		"Unexpected autoconnect target ServerTag change after doAutoConnect. ServerTag should remain set to DedicatedServer.")
 
 	authMock := rpc.ac.(*workingLoginChecker)
 	authMock.dedicatedServerErr = errors.New("failed to fetch ds service")
@@ -225,8 +221,6 @@ func TestDoAutoConnect_DedicatedServerFallback_ServiceExpired(t *testing.T) {
 	// Verify that setting are not modified if service fetch failed
 	assert.Equal(t, config.ServerGroup_DEDICATED_SERVER, mockConfigManager.c.AutoConnectData.Group,
 		"Unexpected autoconnect group target change after doAutoConnect. Group should remain set to %s.", config.ServerGroup_DEDICATED_SERVER.String())
-	assert.Equal(t, "Dedicated Server", mockConfigManager.c.AutoConnectData.ServerTag,
-		"Unexpected autoconnect target ServerTag change after doAutoConnect. ServerTag should remain set to DedicatedServer.")
 
 	authMock.dedicatedServerErr = nil
 	authMock.isDedicatedServersExpired = true
@@ -236,8 +230,6 @@ func TestDoAutoConnect_DedicatedServerFallback_ServiceExpired(t *testing.T) {
 	// Verify that settings are  modified if service is not available
 	assert.NotEqual(t, config.ServerGroup_DEDICATED_SERVER, mockConfigManager.c.AutoConnectData.Group,
 		"Group should be unset when dedicated servers service is not available.")
-	assert.Equal(t, "", mockConfigManager.c.AutoConnectData.ServerTag,
-		"ServerTag should be unset when dedicated servers service is not available.")
 }
 
 func TestDoAutoConnect_DedicatedServerFallback_FeatureDisabledInRemoteConfig(t *testing.T) {
@@ -245,8 +237,7 @@ func TestDoAutoConnect_DedicatedServerFallback_FeatureDisabledInRemoteConfig(t *
 
 	mockConfigManager := newMockConfigManager()
 	updateAutoconnectData(mockConfigManager, config.AutoConnectData{
-		Group:     config.ServerGroup_DEDICATED_SERVER,
-		ServerTag: "Dedicated Server",
+		Group: config.ServerGroup_DEDICATED_SERVER,
 	})
 
 	remoteConfigMock := mock.NewRemoteConfigMock()
@@ -259,8 +250,6 @@ func TestDoAutoConnect_DedicatedServerFallback_FeatureDisabledInRemoteConfig(t *
 	rpc.doAutoConnect()
 	assert.NotEqual(t, config.ServerGroup_DEDICATED_SERVER, mockConfigManager.c.AutoConnectData.Group,
 		"Group should be unset when dedicated servers feature is disabled in remote config.")
-	assert.Equal(t, "", mockConfigManager.c.AutoConnectData.ServerTag,
-		"ServerTag should be unset when dedicated servers feature is disabled in remote config.")
 }
 
 type meshRenewChecker struct{}
@@ -445,10 +434,9 @@ func TestDoAutoConnect_SetsRequestedConnectionParams(t *testing.T) {
 		{
 			name: "country, city and group",
 			autoConnectData: config.AutoConnectData{
-				Country:   "US",
-				City:      "New York",
-				Group:     config.ServerGroup_P2P,
-				ServerTag: "p2p",
+				Country: "US",
+				City:    "New York",
+				Group:   config.ServerGroup_P2P,
 			},
 			expectedParams: ConnectionParameters{
 				ConnectionSource: pb.ConnectionSource_AUTO,
