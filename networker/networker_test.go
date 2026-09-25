@@ -1,12 +1,11 @@
 package networker
 
 import (
-	"errors"
-	"testing"
-
 	"context"
+	"errors"
 	"net"
 	"net/netip"
+	"testing"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -1220,6 +1219,131 @@ func TestCombined_SetARPIgnore(t *testing.T) {
 			}
 
 			assert.Equal(t, test.expectedARPIgnore, arpIgnoreSetter.IsSet, "ARP ignore was set to unexpected value.")
+		})
+	}
+}
+
+func TestCombined_ApplySettings(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	firewallErr := errors.New("firewall failed")
+	routerErr := errors.New("router failed")
+	allowlist := config.Allowlist{Subnets: []string{"1.2.3.0/24"}}
+
+	tests := []struct {
+		name                string
+		firewallEnabled     bool
+		routingEnabled      bool
+		firewallErr         error
+		routerErr           error
+		settings            Settings
+		expectedFirewall    bool
+		expectedRouting     bool
+		expectedEnableCalls int
+		expectedErrs        []error
+	}{
+		{
+			name:                "disabled firewall and routing get enabled",
+			firewallEnabled:     false,
+			routingEnabled:      false,
+			settings:            Settings{Firewall: true, Routing: true},
+			expectedFirewall:    true,
+			expectedRouting:     true,
+			expectedEnableCalls: 1,
+		},
+		{
+			name:                "already enabled firewall is not enabled again",
+			firewallEnabled:     true,
+			routingEnabled:      true,
+			settings:            Settings{Firewall: true, Routing: true},
+			expectedFirewall:    true,
+			expectedRouting:     true,
+			expectedEnableCalls: 0,
+		},
+		{
+			name:                "enabled firewall and routing get disabled",
+			firewallEnabled:     true,
+			routingEnabled:      true,
+			settings:            Settings{Firewall: false, Routing: false},
+			expectedFirewall:    false,
+			expectedRouting:     false,
+			expectedEnableCalls: 0,
+		},
+		{
+			name:            "lan discovery, arp ignore and allowlist are applied",
+			firewallEnabled: true,
+			routingEnabled:  true,
+			settings: Settings{
+				Firewall:     true,
+				Routing:      true,
+				LanDiscovery: true,
+				ARPIgnore:    true,
+				Allowlist:    allowlist,
+			},
+			expectedFirewall:    true,
+			expectedRouting:     true,
+			expectedEnableCalls: 0,
+		},
+		{
+			name:            "failures are joined and remaining settings are still applied",
+			firewallEnabled: false,
+			routingEnabled:  false,
+			firewallErr:     firewallErr,
+			routerErr:       routerErr,
+			settings: Settings{
+				Firewall:     true,
+				Routing:      true,
+				LanDiscovery: true,
+				ARPIgnore:    true,
+				Allowlist:    allowlist,
+			},
+			expectedFirewall:    false,
+			expectedRouting:     false,
+			expectedEnableCalls: 1,
+			expectedErrs:        []error{firewallErr, routerErr},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			fw := firewallmock.NewFirewall()
+			if test.firewallEnabled {
+				assert.NoError(t, fw.Enable())
+			}
+			fw.EnableCalls = 0
+			fw.Err = test.firewallErr
+
+			policyRouter := &mock.TogglePolicyRouter{Enabled: test.routingEnabled}
+			routers := []*mock.ToggleRouter{
+				{Enabled: test.routingEnabled, Err: test.routerErr},
+				{Enabled: test.routingEnabled, Err: test.routerErr},
+				{Enabled: test.routingEnabled, Err: test.routerErr},
+			}
+
+			netw := GetTestCombined()
+			netw.fw = fw
+			netw.policyRouter = policyRouter
+			netw.allowlistRouter = routers[0]
+			netw.router = routers[1]
+			netw.peerRouter = routers[2]
+
+			err := netw.ApplySettings(test.settings)
+			if len(test.expectedErrs) == 0 {
+				assert.NoError(t, err)
+			}
+			for _, expectedErr := range test.expectedErrs {
+				assert.ErrorIs(t, err, expectedErr)
+			}
+
+			assert.Equal(t, test.expectedFirewall, fw.IsEnabled())
+			assert.Equal(t, test.expectedEnableCalls, fw.EnableCalls)
+			assert.Equal(t, test.settings.Routing, policyRouter.IsEnabled())
+			for _, router := range routers {
+				assert.Equal(t, test.expectedRouting, router.IsEnabled())
+			}
+			assert.Equal(t, test.settings.LanDiscovery, netw.lanDiscovery)
+			assert.Equal(t, test.settings.ARPIgnore, netw.ignoreARP)
+			assert.Subset(t, netw.allowlist.Subnets, test.settings.Allowlist.Subnets)
 		})
 	}
 }
