@@ -19,7 +19,7 @@ import (
 // Set autoconnect help text
 const (
 	SetAutoconnectUsageText     = "Enables or disables auto-connect. When enabled, this feature will automatically try to connect to VPN on operating system startup."
-	SetAutoConnectArgsUsageText = `<enabled>|<disabled> [<country>|<server>|<country_code>|<city>|<group>|<country> <city>]`
+	SetAutoConnectArgsUsageText = `<enabled>|<disabled> [<country>|<country_code>|<city>|<group>|<country> <city>]`
 	SetAutoConnectDescription   = `Enables or disables auto-connect. When enabled, this feature will automatically try to connect to VPN on operating system startup.
 
 Supported values for <disabled>: 0, false, disable, off, disabled
@@ -29,7 +29,6 @@ Supported values for <enabled>: 1, true, enable, on, enabled
 Example: nordvpn set autoconnect on
 
 Provide a <country> argument to connect to a specific country. For example: 'nordvpn set autoconnect enabled Australia'
-Provide a <server> argument to connect to a specific server. For example: 'nordvpn set autoconnect enabled jp35'
 Provide a <country_code> argument to connect to a specific country. For example: 'nordvpn set autoconnect enabled us'
 Provide a <city> argument to connect to a specific city. For example: 'nordvpn set autoconnect enabled Budapest'
 Provide a <group> argument to connect to a specific servers group. For example: 'nordvpn set autoconnect enabled Onion_Over_VPN'`
@@ -109,7 +108,7 @@ func (c *cmd) SetAutoConnect(ctx *cli.Context) error {
 	case internal.CodeDedicatedServersServerNotSetUp:
 		return errors.New(c.injectLinkIntoMessage(client.DedicatedServersSetupURL, client.DedicatedServersSetupURLLogin, DedicatedServersNoServersAvailable))
 	case internal.CodeAutoconnectToSpecificServer:
-		return formatError(argsParseError(ctx))
+		return errors.New(AutoConnectToObfuscatedServer)
 	case internal.CodeSuccess:
 		color.Green(fmt.Sprintf(MsgSetSuccess, "Auto-connect", nstrings.GetBoolLabel(flag)))
 	}
