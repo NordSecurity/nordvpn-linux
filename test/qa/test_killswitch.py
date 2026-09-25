@@ -177,7 +177,7 @@ def test_killswitch_reconnect(tech_from, proto_from, obfuscated_from, tech_to, p
 def test_fancy_transport():
     """Manual TC: LVPN-8717"""
 
-    sh.nordvpn.logout("--persist-token")
+    sh.nordvpn.logout()
     output = sh.nordvpn.set.killswitch("on")
     assert MSG_KILLSWITCH_ON in output, "Kill switch enable message should be shown"
 

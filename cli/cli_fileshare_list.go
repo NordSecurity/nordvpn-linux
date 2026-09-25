@@ -66,8 +66,8 @@ func (c *cmd) FileshareList(ctx *cli.Context) error {
 
 	printIn, printOut := true, true
 	if ctx.IsSet(flagFileshareListIn) || ctx.IsSet(flagFileshareListOut) {
-		printIn = ctx.IsSet(flagFileshareListIn)
-		printOut = ctx.IsSet(flagFileshareListOut)
+		printIn = ctx.Bool(flagFileshareListIn)
+		printOut = ctx.Bool(flagFileshareListOut)
 	}
 	fmt.Println(strings.TrimSpace(transfersToOutputString(transfers, printIn, printOut)))
 	return nil

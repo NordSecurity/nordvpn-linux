@@ -20,8 +20,8 @@ const (
 )
 
 func (c *cmd) SetDefaults(ctx *cli.Context) error {
-	logout := ctx.IsSet(flagLogout)
-	offKillswitch := ctx.IsSet(flagOffKillswitch)
+	logout := ctx.Bool(flagLogout)
+	offKillswitch := ctx.Bool(flagOffKillswitch)
 
 	resp, err := c.client.SetDefaults(context.Background(), &pb.SetDefaultsRequest{NoLogout: !logout, OffKillswitch: offKillswitch})
 	if err != nil {
@@ -29,14 +29,14 @@ func (c *cmd) SetDefaults(ctx *cli.Context) error {
 	}
 
 	switch resp.Type {
-	case internal.CodeFailure:
-		return formatError(internal.ErrUnhandled)
 	case internal.CodeConfigError:
 		return formatError(ErrConfig)
 	case internal.CodeSuccess:
 		color.Green(SetDefaultsSuccess)
 	case internal.CodeCleanRecentConnectionError:
 		return formatError(errors.New(client.RecentConnectionErrorMessage))
+	default:
+		return formatError(internal.ErrUnhandled)
 	}
 	return nil
 }

@@ -417,7 +417,7 @@ func handleLogoutClick(ti *Instance, item *systray.MenuItem) {
 	if ti == nil {
 		return
 	}
-	handleMenuItemClickWithRetry(item, func() bool { return ti.logout(false) })
+	handleMenuItemClickWithRetry(item, func() bool { return ti.logout() })
 }
 
 func handleLoginClick(ti *Instance, item *systray.MenuItem) {
