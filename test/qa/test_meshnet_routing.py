@@ -162,11 +162,13 @@ def test_routing_access_LAN():
     default_gateway = network.get_default_gateway()
 
     assert not ssh_client.network.ping(default_gateway, retry=3)
+
     sh_no_tty.nordvpn.mesh.peer.local.allow(peer_hostname)
     ssh_client.exec_command("nordvpn mesh peer refresh")
     cap = capture_utils.BackgroundCapture("any", display_filter=f"ip.addr == {default_gateway}")
     cap.start()
     time.sleep(5)
+    assert ssh_client.network._is_internet_reachable()
     assert ssh_client.network.ping(default_gateway, retry=3)
     time.sleep(2)
     cap.stop()
