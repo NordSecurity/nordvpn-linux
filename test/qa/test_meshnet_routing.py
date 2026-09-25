@@ -162,11 +162,24 @@ def test_routing_access_LAN():
     default_gateway = network.get_default_gateway()
 
     assert not ssh_client.network.ping(default_gateway, retry=3)
+
     sh_no_tty.nordvpn.mesh.peer.local.allow(peer_hostname)
+
+    current_retries = 0
+    max_retry = 30
+    while current_retries < max_retry:
+        if ssh_client.network._is_internet_reachable(1):
+            break
+        logging.log("retried: " + str(current_retries))
+        current_retries += 1
+    if current_retries > 3:
+        pytest.fail(f"No internet connection after {current_retries}/{max_retry} retries.")
+
     ssh_client.exec_command("nordvpn mesh peer refresh")
     cap = capture_utils.BackgroundCapture("any", display_filter=f"ip.addr == {default_gateway}")
     cap.start()
-    time.sleep(5)
+    time.sleep(2)
+
     assert ssh_client.network.ping(default_gateway, retry=3)
     time.sleep(2)
     cap.stop()
