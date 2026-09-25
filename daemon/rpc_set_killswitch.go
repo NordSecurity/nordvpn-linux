@@ -12,7 +12,7 @@ import (
 func (r *RPC) SetKillSwitch(ctx context.Context, in *pb.SetKillSwitchRequest) (*pb.Payload, error) {
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Error(err)
+		log.Error("loading config:", err)
 	}
 
 	if !cfg.Firewall {
@@ -45,7 +45,7 @@ func (r *RPC) SetKillSwitch(ctx context.Context, in *pb.SetKillSwitchRequest) (*
 		c.KillSwitch = in.GetKillSwitch()
 		return c
 	}); err != nil {
-		log.Error(err)
+		log.Error("saving kill switch config:", err)
 		return &pb.Payload{
 			Type: internal.CodeConfigError,
 		}, nil

@@ -183,7 +183,7 @@ func (r *RPC) StartKillSwitch() {
 	var cfg config.Config
 	err := r.cm.Load(&cfg)
 	if err != nil {
-		log.Error(err)
+		log.Error("loading config:", err)
 		return
 	}
 

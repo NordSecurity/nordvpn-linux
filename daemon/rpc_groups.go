@@ -14,7 +14,7 @@ import (
 func (r *RPC) Groups(ctx context.Context, in *pb.Empty) (*pb.ServerGroupsList, error) {
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Error(err)
+		log.Error("loading config:", err)
 		return &pb.ServerGroupsList{
 			Type: internal.CodeConfigError,
 		}, nil

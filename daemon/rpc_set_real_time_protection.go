@@ -14,7 +14,7 @@ func (r *RPC) SetRealTimeProtection(
 ) (*pb.SetRealTimeProtectionResponse, error) {
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Error(err)
+		log.Error("loading config:", err)
 	}
 
 	realTimeProtection := in.GetRealTimeProtection()
@@ -28,7 +28,7 @@ func (r *RPC) SetRealTimeProtection(
 	nameservers := r.nameservers.Get(realTimeProtection)
 
 	if err := r.netw.SetDNS(nameservers); err != nil {
-		log.Error(err)
+		log.Error("applying DNS to networker:", err)
 		return &pb.SetRealTimeProtectionResponse{
 			Response: &pb.SetRealTimeProtectionResponse_ErrorCode{ErrorCode: pb.SetErrorCode_CONFIG_ERROR},
 		}, nil
@@ -39,7 +39,7 @@ func (r *RPC) SetRealTimeProtection(
 		c.AutoConnectData.DNS = nil
 		return c
 	}); err != nil {
-		log.Error(err)
+		log.Error("saving config:", err)
 		return &pb.SetRealTimeProtectionResponse{
 			Response: &pb.SetRealTimeProtectionResponse_ErrorCode{ErrorCode: pb.SetErrorCode_CONFIG_ERROR},
 		}, nil

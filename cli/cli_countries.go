@@ -14,13 +14,13 @@ import (
 func (c *cmd) Countries(ctx *cli.Context) error {
 	resp, err := c.client.Countries(context.Background(), &pb.Empty{})
 	if err != nil {
-		log.Error(err)
+		log.Error("listing countries:", err)
 		return formatError(err)
 	}
 
 	if resp.Type != internal.CodeSuccess {
 		err := fmt.Errorf(MsgListIsEmpty, "countries")
-		log.Error(err)
+		log.Error("listing countries:", err)
 		return formatError(err)
 	}
 
@@ -29,7 +29,7 @@ func (c *cmd) Countries(ctx *cli.Context) error {
 		formatServerName,
 	)
 	if err != nil {
-		log.Error(err)
+		log.Error("formatting countries as columns:", err)
 		countries, _ := formatTable(resp.Servers, serverNameLen, formatServerName, 1)
 		fmt.Println(countries)
 	} else {
