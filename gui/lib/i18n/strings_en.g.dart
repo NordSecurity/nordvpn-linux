@@ -1390,6 +1390,9 @@ class Translations$ui$en {
 	/// en: 'No results found.'
 	String get noResults => 'No results found.';
 
+	/// en: 'No results found for '
+	String get noResultsFor => 'No results found for ';
+
 	/// en: 'Connecting to the daemon...'
 	String get waitingToConnectToDaemon => 'Connecting to the daemon...';
 
@@ -2657,6 +2660,7 @@ extension on Translations {
 			'ui.specialServers' => 'Specialty servers',
 			'ui.cities' => 'Cities',
 			'ui.noResults' => 'No results found.',
+			'ui.noResultsFor' => 'No results found for ',
 			'ui.waitingToConnectToDaemon' => 'Connecting to the daemon...',
 			'ui.fetchingData' => 'Fetching data',
 			'ui.failedToFetchData' => 'Failed to fetch data',
@@ -2735,9 +2739,9 @@ extension on Translations {
 			'ui.dedicatedIp' => 'Dedicated IP',
 			'ui.dedicatedServer' => 'Dedicated Server',
 			'ui.doubleVpn' => 'Double VPN',
-			'ui.onionOverVpn' => 'Onion over VPN',
 			_ => null,
 		} ?? switch (path) {
+			'ui.onionOverVpn' => 'Onion over VPN',
 			'ui.p2p' => 'P2P',
 			'ui.obfuscated' => 'Obfuscated',
 			'ui.obfuscatedServers' => 'Obfuscated Servers',
