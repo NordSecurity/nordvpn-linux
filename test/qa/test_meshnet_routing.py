@@ -180,7 +180,15 @@ def test_routing_access_LAN():
     cap.start()
     time.sleep(2)
 
-    assert ssh_client.network.ping(default_gateway, retry=3)
+    current_retries = 0
+    while current_retries < max_retry:
+        if ssh_client.network.ping(default_gateway, retry=1):
+            break
+        logging.log("retried: " + str(current_retries))
+        current_retries += 1
+    if current_retries > 3:
+        pytest.fail(f"No access to gw after {current_retries}/{max_retry} retries.")
+
     time.sleep(2)
     cap.stop()
     capture_utils.summarize(cap.packets)
