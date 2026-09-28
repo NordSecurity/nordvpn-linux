@@ -506,6 +506,15 @@ func (s *Servers) Validate() error {
 
 type Groups []Group
 
+// IDs returns the ID of every group.
+func (g Groups) IDs() []config.ServerGroup {
+	ids := make([]config.ServerGroup, 0, len(g))
+	for _, group := range g {
+		ids = append(ids, group.ID)
+	}
+	return ids
+}
+
 type Group struct {
 	ID    config.ServerGroup `json:"id"`
 	Title string             `json:"title"`

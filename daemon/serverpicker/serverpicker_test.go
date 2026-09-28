@@ -3,6 +3,7 @@ package serverpicker
 import (
 	"errors"
 	"net/http"
+	"slices"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -296,6 +297,116 @@ func TestSearchGroup(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			assert.Equal(t, test.expected, searchGroup(test.requested, test.tech))
+		})
+	}
+}
+
+func TestEffectiveGroups(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	standard := core.Group{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"}
+	p2p := core.Group{ID: config.ServerGroup_P2P, Title: "P2P"}
+	xor := core.Group{ID: config.ServerGroup_OBFUSCATED, Title: "Obfuscated"}
+	obfuscated := core.Group{ID: config.ServerGroup_OBFUSCATED, Title: ObfuscatedServersGroupTitle}
+
+	nordWhisper := core.Technologies{{ID: core.NordWhisperTech, Pivot: core.Pivot{Status: core.Online}}}
+	nordWhisperOffline := core.Technologies{{ID: core.NordWhisperTech, Pivot: core.Pivot{Status: core.Offline}}}
+	wireguardOnly := core.Technologies{{ID: core.WireguardTech, Pivot: core.Pivot{Status: core.Online}}}
+
+	tests := []struct {
+		name         string
+		groups       core.Groups
+		technologies core.Technologies
+		status       core.Status
+		tech         config.Technology
+		expected     core.Groups
+	}{
+		{
+			name:         "standard nordwhisper server over nordwhisper offers the obfuscated group too",
+			groups:       core.Groups{standard, p2p},
+			technologies: nordWhisper,
+			status:       core.Online,
+			tech:         config.Technology_NORDWHISPER,
+			expected:     core.Groups{standard, p2p, obfuscated},
+		},
+		{
+			name:         "standard server over nordlynx is left alone",
+			groups:       core.Groups{standard, p2p},
+			technologies: nordWhisper,
+			status:       core.Online,
+			tech:         config.Technology_NORDLYNX,
+			expected:     core.Groups{standard, p2p},
+		},
+		{
+			name:         "non-standard nordwhisper server over nordwhisper is not obfuscated",
+			groups:       core.Groups{p2p},
+			technologies: nordWhisper,
+			status:       core.Online,
+			tech:         config.Technology_NORDWHISPER,
+			expected:     core.Groups{p2p},
+		},
+		{
+			name:         "standard server not reachable over nordwhisper is not obfuscated",
+			groups:       core.Groups{standard},
+			technologies: wireguardOnly,
+			status:       core.Online,
+			tech:         config.Technology_NORDWHISPER,
+			expected:     core.Groups{standard},
+		},
+		{
+			name:         "standard server with nordwhisper offline is not obfuscated",
+			groups:       core.Groups{standard},
+			technologies: nordWhisperOffline,
+			status:       core.Online,
+			tech:         config.Technology_NORDWHISPER,
+			expected:     core.Groups{standard},
+		},
+		{
+			name:         "offline standard nordwhisper server is not obfuscated",
+			groups:       core.Groups{standard},
+			technologies: nordWhisper,
+			status:       core.Offline,
+			tech:         config.Technology_NORDWHISPER,
+			expected:     core.Groups{standard},
+		},
+		{
+			name:         "retired XOR tag is dropped under openvpn",
+			groups:       core.Groups{xor, standard},
+			technologies: nordWhisper,
+			status:       core.Online,
+			tech:         config.Technology_OPENVPN,
+			expected:     core.Groups{standard},
+		},
+		{
+			name:         "retired XOR tag is replaced under nordwhisper, not duplicated",
+			groups:       core.Groups{xor, standard},
+			technologies: nordWhisper,
+			status:       core.Online,
+			tech:         config.Technology_NORDWHISPER,
+			expected:     core.Groups{standard, obfuscated},
+		},
+		{
+			name:         "server without groups stays without groups",
+			groups:       core.Groups{},
+			technologies: nordWhisper,
+			status:       core.Online,
+			tech:         config.Technology_NORDWHISPER,
+			expected:     core.Groups{},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			server := core.Server{
+				Groups:       slices.Clone(test.groups),
+				Technologies: test.technologies,
+				Status:       test.status,
+			}
+
+			got := EffectiveGroups(server, test.tech)
+
+			assert.Equal(t, test.expected, got)
+			assert.Equal(t, test.groups, server.Groups)
 		})
 	}
 }

@@ -50,11 +50,6 @@ func (l *DaemonSettingsSubscriber) NotifyThreatProtectionLite(data bool) error {
 	return nil
 }
 
-func (l *DaemonSettingsSubscriber) NotifyObfuscate(data bool) error {
-	printSettingsChange("Obfuscate", boolToString(data))
-	return nil
-}
-
 func (l *DaemonSettingsSubscriber) NotifyNotify(data bool) error {
 	printSettingsChange("Notify", boolToString(data))
 	return nil

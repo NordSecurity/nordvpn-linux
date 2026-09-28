@@ -1,6 +1,15 @@
 package serverpicker
 
-import "github.com/NordSecurity/nordvpn-linux/config"
+import (
+	"slices"
+
+	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/core"
+)
+
+// ObfuscatedServersGroupTitle is the title of the synthesized "Obfuscated Servers" group. No server
+// carries that group anymore, so the title is not taken from the API.
+const ObfuscatedServersGroupTitle = "Obfuscated Servers"
 
 // IsObfuscatedTech reports whether connections over the technology are obfuscated.
 func IsObfuscatedTech(tech config.Technology) bool {
@@ -14,4 +23,21 @@ func searchGroup(requested config.ServerGroup, tech config.Technology) config.Se
 	}
 
 	return requested
+}
+
+// withObfuscatedAlias adds the Obfuscated group for obfuscated technologies.
+func withObfuscatedAlias(groups core.Groups, s core.Server, tech config.Technology) core.Groups {
+	if !IsObfuscatedTech(tech) {
+		return groups
+	}
+
+	isStandard := slices.ContainsFunc(groups, core.ByGroup(config.ServerGroup_STANDARD_VPN_SERVERS))
+	if !isStandard || !core.IsConnectableVia(core.NordWhisperTech)(s) {
+		return groups
+	}
+
+	return append(groups, core.Group{
+		ID:    config.ServerGroup_OBFUSCATED,
+		Title: ObfuscatedServersGroupTitle,
+	})
 }

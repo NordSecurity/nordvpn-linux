@@ -902,3 +902,30 @@ func TestNewCountryCode_SetsCountryCodeToLowercase(t *testing.T) {
 		})
 	}
 }
+
+func TestGroups_IDs(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name     string
+		groups   Groups
+		expected []config.ServerGroup
+	}{
+		{
+			name: "every group id in order",
+			groups: Groups{
+				{ID: config.ServerGroup_DEDICATED_IP, Title: "Dedicated IP"},
+				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
+			},
+			expected: []config.ServerGroup{config.ServerGroup_DEDICATED_IP, config.ServerGroup_STANDARD_VPN_SERVERS},
+		},
+		{name: "empty groups", groups: Groups{}, expected: []config.ServerGroup{}},
+		{name: "nil groups", groups: nil, expected: []config.ServerGroup{}},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			assert.Equal(t, test.expected, test.groups.IDs())
+		})
+	}
+}

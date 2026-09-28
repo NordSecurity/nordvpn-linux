@@ -29,46 +29,27 @@ func technologiesToProtobuf(technologies core.Technologies) []pb.Technology {
 	return technologiesProto
 }
 
-// groupsToProtobuf converts core.Groups to a slice of config.ServerGroup. It also filters out the groups so that only
-// ones returned are of interest to the GUI
-func groupsToProtobuf(groups core.Groups, technology config.Technology) []config.ServerGroup {
-	// the obfuscated group is never taken from the server tags. Only the OVPN XOR servers carry
-	// that tag, and those are not connectable anymore
+// groupsToProtobuf returns the groups the server offers under the technology as a slice of
+// config.ServerGroup, keeping only the ones of interest to the GUI
+func groupsToProtobuf(server core.Server, technology config.Technology) []config.ServerGroup {
 	filter := []config.ServerGroup{
 		config.ServerGroup_P2P,
 		config.ServerGroup_DOUBLE_VPN,
 		config.ServerGroup_ONION_OVER_VPN,
 		config.ServerGroup_DEDICATED_IP,
 		config.ServerGroup_STANDARD_VPN_SERVERS,
+		config.ServerGroup_OBFUSCATED,
 	}
 
+	groups := serverpicker.EffectiveGroups(server, technology)
 	desiredGroups := []config.ServerGroup{}
 	for _, filterGroup := range filter {
-		if slices.ContainsFunc(groups, func(g core.Group) bool {
-			return g.ID == filterGroup
-		}) {
+		if slices.ContainsFunc(groups, core.ByGroup(filterGroup)) {
 			desiredGroups = append(desiredGroups, filterGroup)
 		}
 	}
 
-	return withObfuscatedGroup(desiredGroups, technology)
-}
-
-// withObfuscatedGroup reports the standard servers as obfuscated ones as well, but only under a
-// technology which is obfuscated. No server is tagged with that group by the API anymore.
-func withObfuscatedGroup(
-	groups []config.ServerGroup,
-	technology config.Technology,
-) []config.ServerGroup {
-	if !serverpicker.IsObfuscatedTech(technology) {
-		return groups
-	}
-
-	if !slices.Contains(groups, config.ServerGroup_STANDARD_VPN_SERVERS) {
-		return groups
-	}
-
-	return append(groups, config.ServerGroup_OBFUSCATED)
+	return desiredGroups
 }
 
 func serversListToServersMap(
@@ -91,7 +72,7 @@ func serversListToServersMap(
 			Id:           server.ID,
 			HostName:     server.Hostname,
 			Virtual:      server.IsVirtualLocation(),
-			ServerGroups: groupsToProtobuf(server.Groups, technology),
+			ServerGroups: groupsToProtobuf(server, technology),
 			Technologies: technologiesToProtobuf(server.Technologies),
 		}
 

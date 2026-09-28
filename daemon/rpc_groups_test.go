@@ -9,6 +9,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/daemon/serverpicker"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
@@ -264,7 +265,7 @@ func TestGroups_ObfuscatedIsListedOnlyUnderNordWhisper(t *testing.T) {
 				names = append(names, group.Name)
 			}
 
-			obfuscated := internal.Title(obfuscatedServersGroupTitle)
+			obfuscated := internal.Title(serverpicker.ObfuscatedServersGroupTitle)
 			if test.expected {
 				assert.Contains(t, names, obfuscated)
 				assert.Equal(t, 1, strings.Count(strings.Join(names, " "), obfuscated),
