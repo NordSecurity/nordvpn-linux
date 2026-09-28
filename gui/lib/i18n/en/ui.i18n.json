@@ -4,7 +4,7 @@
   "specialServers": "Specialty servers",
   "cities": "Cities",
   "noResults": "No results found.",
-  "noResultsFor": "No results found for ",
+  "noResultsFor": "No results found for ${searchStr: String}",
   "waitingToConnectToDaemon": "Connecting to the daemon...",
   "fetchingData": "Fetching data",
   "failedToFetchData": "Failed to fetch data",

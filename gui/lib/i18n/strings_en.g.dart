@@ -1396,8 +1396,8 @@ class Translations$ui$en {
 	/// en: 'No results found.'
 	String get noResults => 'No results found.';
 
-	/// en: 'No results found for '
-	String get noResultsFor => 'No results found for ';
+	/// en: 'No results found for ${searchStr: String}'
+	String noResultsFor({required String searchStr}) => 'No results found for ${searchStr}';
 
 	/// en: 'Connecting to the daemon...'
 	String get waitingToConnectToDaemon => 'Connecting to the daemon...';
@@ -2662,7 +2662,7 @@ extension on Translations {
 			'ui.specialServers' => 'Specialty servers',
 			'ui.cities' => 'Cities',
 			'ui.noResults' => 'No results found.',
-			'ui.noResultsFor' => 'No results found for ',
+			'ui.noResultsFor' => ({required String searchStr}) => 'No results found for ${searchStr}',
 			'ui.waitingToConnectToDaemon' => 'Connecting to the daemon...',
 			'ui.fetchingData' => 'Fetching data',
 			'ui.failedToFetchData' => 'Failed to fetch data',

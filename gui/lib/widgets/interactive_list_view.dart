@@ -45,6 +45,9 @@ class _InteractiveListViewState extends State<InteractiveListView> {
   final _searchController = TextEditingController();
   final _searchFieldNodeFocus = FocusNode();
 
+  String _cachedQuery = '';
+  List<dynamic> _cachedFilteredResults = const [];
+
   TextEditingController get _activeController =>
       widget.searchTextController ?? _searchController;
 
@@ -63,6 +66,18 @@ class _InteractiveListViewState extends State<InteractiveListView> {
     super.dispose();
   }
 
+  List<dynamic> _getFilteredResults(String query) {
+    if (query != _cachedQuery) {
+      _cachedQuery = query;
+      if (query.isEmpty || query.length < widget.beginSearchAfter) {
+        _cachedFilteredResults = widget.items;
+      } else {
+        _cachedFilteredResults = widget.filter(query, widget.items);
+      }
+    }
+    return _cachedFilteredResults;
+  }
+
   void _onQueryChanged() {
     if (!mounted) return;
 
@@ -73,15 +88,15 @@ class _InteractiveListViewState extends State<InteractiveListView> {
       return;
     }
 
-    if (widget.showEmptyListAtStartup &&
-        widget.filter(query, widget.items).isEmpty) {
+    final filteredResults = _getFilteredResults(query);
+    if (widget.showEmptyListAtStartup && filteredResults.isEmpty) {
       setState(() {});
       _announceNoResults(query);
     }
   }
 
   void _announceNoResults(String query) {
-    final message = '${t.ui.noResultsFor} "$query"';
+    final message = t.ui.noResultsFor(searchStr: query);
     SemanticsService.sendAnnouncement(
       View.of(context),
       message,
@@ -111,12 +126,7 @@ class _InteractiveListViewState extends State<InteractiveListView> {
       textStyle: widget.searchBarSize,
       itemBuilder: (item) => widget.itemBuilder(context, item),
       initialList: initialItems,
-      filter: (query) {
-        if (query.isEmpty || query.length < widget.beginSearchAfter) {
-          return widget.items;
-        }
-        return widget.filter(query, widget.items);
-      },
+      filter: (query) => _getFilteredResults(query),
       emptyWidget: _emptyResultsWidget(),
       inputDecoration: InputDecoration(
         enabledBorder: OutlineInputBorder(
