@@ -22,8 +22,6 @@ func ItemValueFromServerGroup(
 		return pb.UIEvent_ONION_OVER_VPN
 	case config.ServerGroup_DOUBLE_VPN:
 		return pb.UIEvent_DOUBLE_VPN
-	case config.ServerGroup_P2P:
-		return pb.UIEvent_P2P
 	case config.ServerGroup_DEDICATED_SERVER:
 		return pb.UIEvent_DEDICATED_SERVER
 	default:

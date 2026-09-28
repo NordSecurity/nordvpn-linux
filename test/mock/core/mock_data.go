@@ -93,10 +93,6 @@ func ServersList() core.Servers {
 
 	standardGroups := core.Groups{
 		core.Group{
-			ID:    config.ServerGroup_P2P,
-			Title: "P2P",
-		},
-		core.Group{
 			ID:    config.ServerGroup_DOUBLE_VPN,
 			Title: "Double VPN",
 		},

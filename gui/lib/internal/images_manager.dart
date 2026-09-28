@@ -31,9 +31,6 @@ final class ImagesManager {
 
   Widget forSpecialtyServer(ServerType? type) {
     switch (type) {
-      case ServerType.p2p:
-        return DynamicThemeImage("p2p.svg");
-
       case ServerType.doubleVpn:
         return DynamicThemeImage("double_vpn.svg");
 

@@ -1805,8 +1805,6 @@ func serverGroupToInternalType(group config.ServerGroup) moose.NordvpnappServerG
 		return moose.NordvpnappServerGroupDedicatedIp
 	case config.ServerGroup_STANDARD_VPN_SERVERS:
 		return moose.NordvpnappServerGroupStandard
-	case config.ServerGroup_P2P:
-		return moose.NordvpnappServerGroupP2p
 	case config.ServerGroup_OBFUSCATED:
 		return moose.NordvpnappServerGroupObfuscated
 	case config.ServerGroup_DEDICATED_SERVER:

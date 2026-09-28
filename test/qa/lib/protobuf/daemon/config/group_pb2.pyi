@@ -14,7 +14,6 @@ class ServerGroup(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     DEDICATED_IP: _ClassVar[ServerGroup]
     STANDARD_VPN_SERVERS: _ClassVar[ServerGroup]
     NETFLIX_USA: _ClassVar[ServerGroup]
-    P2P: _ClassVar[ServerGroup]
     OBFUSCATED: _ClassVar[ServerGroup]
     DEDICATED_SERVER: _ClassVar[ServerGroup]
 UNDEFINED: ServerGroup
@@ -25,6 +24,5 @@ ANTI_DDOS: ServerGroup
 DEDICATED_IP: ServerGroup
 STANDARD_VPN_SERVERS: ServerGroup
 NETFLIX_USA: ServerGroup
-P2P: ServerGroup
 OBFUSCATED: ServerGroup
 DEDICATED_SERVER: ServerGroup

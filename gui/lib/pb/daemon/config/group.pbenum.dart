@@ -31,7 +31,6 @@ class ServerGroup extends $pb.ProtobufEnum {
       ServerGroup._(11, _omitEnumNames ? '' : 'STANDARD_VPN_SERVERS');
   static const ServerGroup NETFLIX_USA =
       ServerGroup._(13, _omitEnumNames ? '' : 'NETFLIX_USA');
-  static const ServerGroup P2P = ServerGroup._(15, _omitEnumNames ? '' : 'P2P');
   static const ServerGroup OBFUSCATED =
       ServerGroup._(17, _omitEnumNames ? '' : 'OBFUSCATED');
   static const ServerGroup DEDICATED_SERVER =
@@ -46,7 +45,6 @@ class ServerGroup extends $pb.ProtobufEnum {
     DEDICATED_IP,
     STANDARD_VPN_SERVERS,
     NETFLIX_USA,
-    P2P,
     OBFUSCATED,
     DEDICATED_SERVER,
   ];

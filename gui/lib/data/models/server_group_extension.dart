@@ -10,7 +10,6 @@ extension Convert on ServerGroup {
       ServerGroup.DOUBLE_VPN => ServerType.doubleVpn,
       ServerGroup.ONION_OVER_VPN => ServerType.onionOverVpn,
       ServerGroup.DEDICATED_IP => ServerType.dedicatedIP,
-      ServerGroup.P2P => ServerType.p2p,
       ServerGroup.STANDARD_VPN_SERVERS => ServerType.standardVpn,
       ServerGroup.OBFUSCATED => ServerType.obfuscated,
       _ => null,

@@ -6,7 +6,6 @@ var GroupMap = map[string]ServerGroup{
 	"onion_over_vpn":       ServerGroup_ONION_OVER_VPN,
 	"dedicated_ip":         ServerGroup_DEDICATED_IP,
 	"standard_vpn_servers": ServerGroup_STANDARD_VPN_SERVERS,
-	"p2p":                  ServerGroup_P2P,
 	"obfuscated_servers":   ServerGroup_OBFUSCATED,
 	"dedicated_server":     ServerGroup_DEDICATED_SERVER,
 }
@@ -19,6 +18,11 @@ func IsRegionalGroup(g ServerGroup) bool {
 		return true
 	}
 	return false
+}
+
+// IsDeprecatedP2PGroup reports whether g is a deprecated P2P group
+func IsDeprecatedP2PGroup(g ServerGroup) bool {
+	return g == 15
 }
 
 // GroupTitleForId converts group ID to group lowercase title
