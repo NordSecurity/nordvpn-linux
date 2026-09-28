@@ -152,11 +152,11 @@ func (c *cmd) FileshareSend(ctx *cli.Context) error {
 	c.loaderInterceptor.enabled = false
 	sendContext, cancelFunc := context.WithCancel(context.Background())
 	defer cancelFunc()
-
+	fileshareNoWait := ctx.Bool(flagFileshareNoWait)
 	client, err := c.fileshareClient.Send(sendContext, &pb.SendRequest{
 		Peer:   args.First(),
 		Paths:  absPaths,
-		Silent: ctx.IsSet(flagFileshareNoWait),
+		Silent: fileshareNoWait,
 	})
 	if err != nil {
 		return formatError(err)
