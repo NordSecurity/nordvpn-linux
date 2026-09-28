@@ -19,7 +19,6 @@ type techContextRecorder struct {
 	currentTech   []moose.NordvpnappVpnConnectionTechnology
 	userPrefProto []moose.NordvpnappVpnConnectionProtocol
 	currentProto  []moose.NordvpnappVpnConnectionProtocol
-	obfuscation   []bool
 }
 
 func newTechTestSubscriber() (*Subscriber, *techContextRecorder) {
@@ -66,10 +65,6 @@ func newTechTestSubscriber() (*Subscriber, *techContextRecorder) {
 		r.currentProto = append(r.currentProto, v)
 		return 0
 	}
-	sub.mooseFuncs.setObfuscationEnabledUserPreference = func(v bool) uint32 {
-		r.obfuscation = append(r.obfuscation, v)
-		return 0
-	}
 	return sub, r
 }
 
@@ -88,11 +83,10 @@ func TestNotifyTechnology_Disconnected_ReportsEffectiveState(t *testing.T) {
 	tests := []struct {
 		name       string
 		technology config.Technology
-		obfuscated bool
 	}{
-		{name: "nordlynx is not obfuscated", technology: config.Technology_NORDLYNX, obfuscated: false},
-		{name: "openvpn is not obfuscated", technology: config.Technology_OPENVPN, obfuscated: false},
-		{name: "nordwhisper is obfuscated", technology: config.Technology_NORDWHISPER, obfuscated: true},
+		{name: "nordlynx", technology: config.Technology_NORDLYNX},
+		{name: "openvpn", technology: config.Technology_OPENVPN},
+		{name: "nordwhisper", technology: config.Technology_NORDWHISPER},
 	}
 
 	for _, tt := range tests {
@@ -105,7 +99,6 @@ func TestNotifyTechnology_Disconnected_ReportsEffectiveState(t *testing.T) {
 			want := connectionTechnologyToInternalType(tt.technology)
 			assert.DeepEqual(t, []moose.NordvpnappVpnConnectionTechnology{want}, rec.userPrefTech)
 			assert.DeepEqual(t, []moose.NordvpnappVpnConnectionTechnology{want}, rec.currentTech)
-			assert.DeepEqual(t, []bool{tt.obfuscated}, rec.obfuscation)
 			assert.Equal(t, 0, len(rec.currentProto))
 		})
 	}
@@ -133,7 +126,6 @@ func TestNotifyProtocol_Disconnected_ReportsCurrentState(t *testing.T) {
 	assert.DeepEqual(t, []moose.NordvpnappVpnConnectionProtocol{want}, rec.userPrefProto)
 	assert.DeepEqual(t, []moose.NordvpnappVpnConnectionProtocol{want}, rec.currentProto)
 	assert.Equal(t, 0, len(rec.currentTech))
-	assert.Equal(t, 0, len(rec.obfuscation))
 }
 
 func TestNotifyConnect_NotSuccessful_DoesNotTouchConnectionTechnology(t *testing.T) {
@@ -166,7 +158,6 @@ func TestNotifyConnect_NotSuccessful_DoesNotTouchConnectionTechnology(t *testing
 			assert.NilError(t, err)
 			assert.Equal(t, 0, len(rec.currentTech))
 			assert.Equal(t, 0, len(rec.currentProto))
-			assert.Equal(t, 0, len(rec.obfuscation))
 		})
 	}
 }
@@ -178,13 +169,11 @@ func TestNotifyTechnology_MeshnetPeerOnly_IsNotDeferred(t *testing.T) {
 
 	assert.NilError(t, sub.NotifyTechnology(config.Technology_NORDWHISPER))
 
-	assert.DeepEqual(t, []bool{true}, rec.obfuscation)
 	assert.DeepEqual(t,
 		[]moose.NordvpnappVpnConnectionTechnology{connectionTechnologyToInternalType(config.Technology_NORDWHISPER)},
 		rec.currentTech)
 
 	assert.NilError(t, sub.NotifyDisconnect(events.DataDisconnect{EventStatus: events.StatusSuccess}))
-	assert.DeepEqual(t, []bool{true}, rec.obfuscation)
 }
 
 func TestTechnologyChangeWhileConnected_ReportedOnNextConnect(t *testing.T) {
@@ -195,22 +184,17 @@ func TestTechnologyChangeWhileConnected_ReportedOnNextConnect(t *testing.T) {
 
 	assert.NilError(t, sub.NotifyProtocol(config.Protocol_UDP))
 	assert.NilError(t, sub.NotifyTechnology(config.Technology_OPENVPN))
-	assert.DeepEqual(t, []bool{false}, rec.obfuscation)
 
 	connectVPN(t, sub, config.Technology_OPENVPN, config.Protocol_UDP)
-	assert.DeepEqual(t, []bool{false, false}, rec.obfuscation)
 
 	assert.NilError(t, sub.NotifyTechnology(config.Technology_NORDWHISPER))
 	assert.NilError(t, sub.NotifyProtocol(config.Protocol_Webtunnel))
-	assert.DeepEqual(t, []bool{false, false}, rec.obfuscation)
 	assert.DeepEqual(t, []moose.NordvpnappVpnConnectionProtocol{udp, udp, udp}, rec.currentProto)
 	assert.Equal(t, 2, len(rec.userPrefTech))
 	assert.Equal(t, 2, len(rec.userPrefProto))
 
 	assert.NilError(t, sub.NotifyDisconnect(events.DataDisconnect{EventStatus: events.StatusSuccess}))
-	assert.DeepEqual(t, []bool{false, false, true}, rec.obfuscation)
 
 	connectVPN(t, sub, config.Technology_NORDWHISPER, config.Protocol_Webtunnel)
-	assert.DeepEqual(t, []bool{false, false, true, true}, rec.obfuscation)
 	assert.DeepEqual(t, []moose.NordvpnappVpnConnectionProtocol{udp, udp, udp, webtunnel, webtunnel}, rec.currentProto)
 }

@@ -85,17 +85,13 @@ func (s *Subscriber) NotifyProtocol(data config.Protocol) error {
 	return nil
 }
 
-// reportEffectiveConnection sets current state of technology/protocol and the derived obfuscation metric.
+// reportEffectiveConnection sets current state of technology/protocol.
 func (s *Subscriber) reportEffectiveConnection(c techProto) error {
 	var errs []error
 
 	if c.technology != config.Technology_UNKNOWN_TECHNOLOGY {
 		if err := s.response(s.mooseFuncs.setTechnologyCurrentState(connectionTechnologyToInternalType(c.technology))); err != nil {
 			errs = append(errs, fmt.Errorf("setting technology current state (%v): %w", c.technology, err))
-		}
-		obfuscated := c.technology == config.Technology_NORDWHISPER
-		if err := s.response(s.mooseFuncs.setObfuscationEnabledUserPreference(obfuscated)); err != nil {
-			errs = append(errs, fmt.Errorf("setting obfuscation preference (enabled=%v): %w", obfuscated, err))
 		}
 	}
 

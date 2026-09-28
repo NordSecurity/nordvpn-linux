@@ -94,9 +94,8 @@ type (
 	mooseSetConnectionPreferenceFunc  func(moose.NordvpnappConnectionPreference) uint32
 	mooseSetAutoConnectTypeFunc       func(moose.NordvpnappVpnAutoConnectType) uint32
 	// technology / protocol context setters (user preference and current state)
-	mooseSetTechnologyFunc         func(moose.NordvpnappVpnConnectionTechnology) uint32
-	mooseSetProtocolFunc           func(moose.NordvpnappVpnConnectionProtocol) uint32
-	mooseSetObfuscationEnabledFunc func(bool) uint32
+	mooseSetTechnologyFunc func(moose.NordvpnappVpnConnectionTechnology) uint32
+	mooseSetProtocolFunc   func(moose.NordvpnappVpnConnectionProtocol) uint32
 )
 
 type mooseFunctions struct {
@@ -130,11 +129,10 @@ type mooseFunctions struct {
 	setUserPrefConnectionPreference mooseSetConnectionPreferenceFunc
 	setUserPrefAutoConnectType      mooseSetAutoConnectTypeFunc
 	// technology / protocol
-	setTechnologyUserPreference         mooseSetTechnologyFunc
-	setTechnologyCurrentState           mooseSetTechnologyFunc
-	setProtocolUserPreference           mooseSetProtocolFunc
-	setProtocolCurrentState             mooseSetProtocolFunc
-	setObfuscationEnabledUserPreference mooseSetObfuscationEnabledFunc
+	setTechnologyUserPreference mooseSetTechnologyFunc
+	setTechnologyCurrentState   mooseSetTechnologyFunc
+	setProtocolUserPreference   mooseSetProtocolFunc
+	setProtocolCurrentState     mooseSetProtocolFunc
 }
 
 // Subscriber listen events, send to moose engine
@@ -182,40 +180,39 @@ func NewSubscriber(
 		clientAPI:    clientAPI,
 		httpClient:   httpClient,
 		mooseFuncs: mooseFunctions{
-			setAppConsentLevel:                  moose.MooseNordvpnappSetConsentLevel,
-			setConsentUserPreference:            moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesConsentLevel,
-			setTokenRenewDateCurrentState:       moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateTokenRenewDateValue,
-			setTPLiteUserPreference:             moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesThreatProtectionLiteEnabledValue,
-			setTPLiteCurrentState:               moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue,
-			unsetTPLiteCurrentState:             moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue,
-			setCustomDNSMeta:                    moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesCustomDnsEnabledMeta,
-			setCustomDNSValue:                   moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesCustomDnsEnabledValue,
-			unsetServerDomainCurrentState:       moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateServerDomainValue,
-			setServerDomainCurrentState:         moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerDomainValue,
-			setServerCityCurrentState:           moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerCityValue,
-			unsetServerCityCurrentState:         moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateServerCityValue,
-			unsetRecommendationUuid:             moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateRecommendationUuid,
-			setRecommendationUuid:               moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateRecommendationUuid,
-			setServerCountryCurrentState:        moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerCountryValue,
-			setServerGroupCurrentState:          moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerGroupValue,
-			unsetServerGroupCurrentState:        moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateServerGroupValue,
-			setIsOnVpnCurrentState:              moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateIsOnVpnValue,
-			sendConnect:                         moose.NordvpnappSendServiceQualityServersConnect,
-			sendDisconnect:                      moose.NordvpnappSendServiceQualityServersDisconnect,
-			setDSIsActive:                       moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStateDedicatedServerIsActive,
-			unsetDSIsActive:                     moose.NordvpnappUnsetContextUserNordvpnappSubscriptionCurrentStateDedicatedServerIsActive,
-			setDSEnabled:                        moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateDedicatedServerEnabled,
-			unsetDSEnabled:                      moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateDedicatedServerEnabled,
-			setUserPrefServerCountry:            moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesServerCountry,
-			setUserPrefServerCity:               moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesServerCity,
-			setUserPrefServerGroup:              moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesServerGroup,
-			setUserPrefConnectionPreference:     moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesConnectionPreference,
-			setUserPrefAutoConnectType:          moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesAutoConnectTypeValue,
-			setTechnologyUserPreference:         moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesTechnologyValue,
-			setTechnologyCurrentState:           moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateTechnologyValue,
-			setProtocolUserPreference:           moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesProtocolValue,
-			setProtocolCurrentState:             moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateProtocolValue,
-			setObfuscationEnabledUserPreference: moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesObfuscationEnabledValue,
+			setAppConsentLevel:              moose.MooseNordvpnappSetConsentLevel,
+			setConsentUserPreference:        moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesConsentLevel,
+			setTokenRenewDateCurrentState:   moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateTokenRenewDateValue,
+			setTPLiteUserPreference:         moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesThreatProtectionLiteEnabledValue,
+			setTPLiteCurrentState:           moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue,
+			unsetTPLiteCurrentState:         moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue,
+			setCustomDNSMeta:                moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesCustomDnsEnabledMeta,
+			setCustomDNSValue:               moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesCustomDnsEnabledValue,
+			unsetServerDomainCurrentState:   moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateServerDomainValue,
+			setServerDomainCurrentState:     moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerDomainValue,
+			setServerCityCurrentState:       moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerCityValue,
+			unsetServerCityCurrentState:     moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateServerCityValue,
+			unsetRecommendationUuid:         moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateRecommendationUuid,
+			setRecommendationUuid:           moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateRecommendationUuid,
+			setServerCountryCurrentState:    moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerCountryValue,
+			setServerGroupCurrentState:      moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerGroupValue,
+			unsetServerGroupCurrentState:    moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateServerGroupValue,
+			setIsOnVpnCurrentState:          moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateIsOnVpnValue,
+			sendConnect:                     moose.NordvpnappSendServiceQualityServersConnect,
+			sendDisconnect:                  moose.NordvpnappSendServiceQualityServersDisconnect,
+			setDSIsActive:                   moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStateDedicatedServerIsActive,
+			unsetDSIsActive:                 moose.NordvpnappUnsetContextUserNordvpnappSubscriptionCurrentStateDedicatedServerIsActive,
+			setDSEnabled:                    moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateDedicatedServerEnabled,
+			unsetDSEnabled:                  moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateDedicatedServerEnabled,
+			setUserPrefServerCountry:        moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesServerCountry,
+			setUserPrefServerCity:           moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesServerCity,
+			setUserPrefServerGroup:          moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesServerGroup,
+			setUserPrefConnectionPreference: moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesConnectionPreference,
+			setUserPrefAutoConnectType:      moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesAutoConnectTypeValue,
+			setTechnologyUserPreference:     moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesTechnologyValue,
+			setTechnologyCurrentState:       moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateTechnologyValue,
+			setProtocolUserPreference:       moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesProtocolValue,
+			setProtocolCurrentState:         moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateProtocolValue,
 		},
 	}
 	// Add more handlers here as needed
