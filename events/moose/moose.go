@@ -642,8 +642,7 @@ func (s *Subscriber) handleTokenRenewDateChange(prev, curr *config.Config) error
 // autoConnectTargetChanged reports whether the auto-connect target differs between
 // two configs.
 func autoConnectTargetChanged(prev, curr config.AutoConnectData) bool {
-	return prev.ServerTag != curr.ServerTag ||
-		prev.Country != curr.Country ||
+	return prev.Country != curr.Country ||
 		prev.City != curr.City ||
 		prev.Group != curr.Group
 }
@@ -1818,8 +1817,7 @@ func serverGroupToInternalType(group config.ServerGroup) moose.NordvpnappServerG
 
 // isAutoConnectForFastestServer reports whether the auto-connect configuration has no specific target
 func isAutoConnectForFastestServer(ac config.AutoConnectData) bool {
-	return ac.ServerTag == "" &&
-		ac.Country == "" &&
+	return ac.Country == "" &&
 		ac.City == "" &&
 		ac.Group == config.ServerGroup_UNDEFINED
 }

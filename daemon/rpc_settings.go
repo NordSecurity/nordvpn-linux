@@ -2,16 +2,12 @@ package daemon
 
 import (
 	"context"
-	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
-	"github.com/NordSecurity/nordvpn-linux/daemon/serverpicker"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
-
-var adjustAutoconnectCfgOnce sync.Once
 
 // Settings returns system daemon settings
 func (r *RPC) Settings(ctx context.Context, in *pb.Empty) (*pb.SettingsResponse, error) {
@@ -29,38 +25,6 @@ func (r *RPC) Settings(ctx context.Context, in *pb.Empty) (*pb.SettingsResponse,
 			Type: internal.CodeConfigError,
 		}, nil
 	}
-
-	// Storing autoconnect parameters was introduced later on so they might not be save in a config yet. We need to
-	// perform an update in such cases to maintain compatibility.
-	adjustAutoconnectCfgOnce.Do(func() {
-		autoconnectParamsNotSet := cfg.AutoConnectData.Country == "" &&
-			cfg.AutoConnectData.City == "" &&
-			cfg.AutoConnectData.Group == config.ServerGroup_UNDEFINED
-		if cfg.AutoConnect && cfg.AutoConnectData.ServerTag != "" && autoconnectParamsNotSet {
-			// use group tag as a second parameter once it is implemented
-			parameters := serverpicker.GetServerParameters(
-				cfg.AutoConnectData.ServerTag,
-				cfg.AutoConnectData.ServerTag,
-				r.dm.GetCountryData().Countries,
-			)
-			cfg.AutoConnectData.Country = parameters.Country
-			cfg.AutoConnectData.CountryCode = parameters.CountryCode
-			cfg.AutoConnectData.City = parameters.City
-			cfg.AutoConnectData.Group = parameters.Group
-
-			err := r.cm.SaveWith(func(c config.Config) config.Config {
-				c.AutoConnectData.Country = cfg.AutoConnectData.Country
-				c.AutoConnectData.CountryCode = cfg.AutoConnectData.CountryCode
-				c.AutoConnectData.City = cfg.AutoConnectData.City
-				c.AutoConnectData.Group = cfg.AutoConnectData.Group
-
-				return c
-			})
-			if err != nil {
-				log.Warn("failed to set autoconnect parameters during the settings RPC:", err)
-			}
-		}
-	})
 
 	// ECH value is stored in config but controlled by remote config as well
 	cfg.AutoConnectData.ECH = r.getECHEnabledField(cfg)

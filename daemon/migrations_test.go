@@ -21,7 +21,6 @@ func TestMigrateDeprecatedRegionalAutoconnect_PreservesCountryAndClearsGroup(t *
 
 	cm := mock.NewMockConfigManager()
 	cm.Cfg.AutoConnect = true
-	cm.Cfg.AutoConnectData.ServerTag = "germany"
 	cm.Cfg.AutoConnectData.Country = "de"
 	cm.Cfg.AutoConnectData.City = ""
 	cm.Cfg.AutoConnectData.Group = regionalGroupEurope
@@ -30,7 +29,6 @@ func TestMigrateDeprecatedRegionalAutoconnect_PreservesCountryAndClearsGroup(t *
 
 	assert.Equal(t, cm.SaveCallCount, 1)
 	assert.Equal(t, cm.Cfg.AutoConnectData.Group, config.ServerGroup_UNDEFINED)
-	assert.Equal(t, cm.Cfg.AutoConnectData.ServerTag, "germany")
 	assert.Equal(t, cm.Cfg.AutoConnectData.Country, "de")
 	assert.Equal(t, cm.Cfg.AutoConnectData.City, "")
 }
@@ -40,7 +38,6 @@ func TestMigrateDeprecatedRegionalAutoconnect_PreservesCityAndClearsGroup(t *tes
 
 	cm := mock.NewMockConfigManager()
 	cm.Cfg.AutoConnect = true
-	cm.Cfg.AutoConnectData.ServerTag = "berlin"
 	cm.Cfg.AutoConnectData.Country = ""
 	cm.Cfg.AutoConnectData.City = "berlin"
 	cm.Cfg.AutoConnectData.Group = regionalGroupEurope
@@ -49,7 +46,6 @@ func TestMigrateDeprecatedRegionalAutoconnect_PreservesCityAndClearsGroup(t *tes
 
 	assert.Equal(t, cm.SaveCallCount, 1)
 	assert.Equal(t, cm.Cfg.AutoConnectData.Group, config.ServerGroup_UNDEFINED)
-	assert.Equal(t, cm.Cfg.AutoConnectData.ServerTag, "berlin")
 	assert.Equal(t, cm.Cfg.AutoConnectData.Country, "")
 	assert.Equal(t, cm.Cfg.AutoConnectData.City, "berlin")
 }
@@ -59,7 +55,6 @@ func TestMigrateDeprecatedRegionalAutoconnect_OnlyRegionalFallsBackToQuickConnec
 
 	cm := mock.NewMockConfigManager()
 	cm.Cfg.AutoConnect = true
-	cm.Cfg.AutoConnectData.ServerTag = "europe"
 	cm.Cfg.AutoConnectData.Country = ""
 	cm.Cfg.AutoConnectData.City = ""
 	cm.Cfg.AutoConnectData.Group = regionalGroupEurope
@@ -68,7 +63,6 @@ func TestMigrateDeprecatedRegionalAutoconnect_OnlyRegionalFallsBackToQuickConnec
 
 	assert.Equal(t, cm.SaveCallCount, 1)
 	assert.Equal(t, cm.Cfg.AutoConnectData.Group, config.ServerGroup_UNDEFINED)
-	assert.Equal(t, cm.Cfg.AutoConnectData.ServerTag, "")
 }
 
 func TestMigrateDeprecatedRegionalAutoconnect_NonRegionalGroup_NoSave(t *testing.T) {
@@ -76,7 +70,6 @@ func TestMigrateDeprecatedRegionalAutoconnect_NonRegionalGroup_NoSave(t *testing
 
 	cm := mock.NewMockConfigManager()
 	cm.Cfg.AutoConnect = true
-	cm.Cfg.AutoConnectData.ServerTag = "us"
 	cm.Cfg.AutoConnectData.Country = "us"
 	cm.Cfg.AutoConnectData.City = ""
 	cm.Cfg.AutoConnectData.Group = config.ServerGroup_DOUBLE_VPN
@@ -85,7 +78,6 @@ func TestMigrateDeprecatedRegionalAutoconnect_NonRegionalGroup_NoSave(t *testing
 
 	assert.Equal(t, cm.SaveCallCount, 0)
 	assert.Equal(t, cm.Cfg.AutoConnectData.Group, config.ServerGroup_DOUBLE_VPN)
-	assert.Equal(t, cm.Cfg.AutoConnectData.ServerTag, "us")
 	assert.Equal(t, cm.Cfg.AutoConnectData.Country, "us")
 }
 
@@ -94,7 +86,6 @@ func TestMigrateDeprecatedRegionalAutoconnect_Idempotent(t *testing.T) {
 
 	cm := mock.NewMockConfigManager()
 	cm.Cfg.AutoConnect = true
-	cm.Cfg.AutoConnectData.ServerTag = "europe"
 	cm.Cfg.AutoConnectData.Group = regionalGroupEurope
 
 	assert.NilError(t, MigrateDeprecatedRegionalAutoconnect(cm))
