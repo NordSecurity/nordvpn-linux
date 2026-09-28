@@ -107,7 +107,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
 
   Widget _killSwitchCheckbox(WidgetRef ref) {
     return AccessibleItem(
-      toggled: _checkboxValue,
+      checked: _checkboxValue,
       label: t.ui.turnOffKillSwitch,
       onActivate: () => _toggleKillSwitch(ref, !_checkboxValue),
       child: LoadingCheckbox(
