@@ -38,8 +38,7 @@ func MigrateLegacyAllowlist(c config.Config) config.Config {
 	return c
 }
 
-// ConfigCleanup - validate/cleanup DNS addresses, allowlist subnets
-func ConfigCleanup(c config.Config) config.Config {
+func MigrateConfig(c config.Config) config.Config {
 	// Remove all nameservers with IPv6 addresses
 	var dnsList []string
 	for _, addr := range c.AutoConnectData.DNS {
@@ -56,6 +55,7 @@ func ConfigCleanup(c config.Config) config.Config {
 		log.Warn("On start, allowlist remove subnet:", removed, "; reason:", reason)
 	})
 
+	// switch from OpenVPN obfuscated to NordWhisper or simple OpenVPN
 	return migrateObfuscatedSettingsToNordWhisper(c, features.NordWhisperEnabled)
 }
 
@@ -64,7 +64,7 @@ func migrateObfuscatedSettingsToNordWhisper(c config.Config, isNordWhisperEnable
 		return c
 	}
 
-	log.Info("migrating user settings to NordWhisper")
+	log.Info("migrating OpenVPN obfuscated")
 
 	c.AutoConnectData.Obfuscate = false
 
