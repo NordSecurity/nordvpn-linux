@@ -156,3 +156,96 @@ func TestMigrateLegacyAllowlist_RewritesConfigFile(t *testing.T) {
 	assert.Assert(t, strings.Contains(string(saved), `"allowlist":`))
 	assert.Assert(t, !strings.Contains(string(saved), `"whitelist"`))
 }
+
+func TestMigrateObfuscatedSettingsToNordWhisper(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name                 string
+		cfg                  config.Config
+		isNordWhisperEnabled bool
+		expected             config.Config
+	}{
+		{
+			name: "migrate to NordWhisper",
+			cfg: config.Config{
+				AutoConnectData: config.AutoConnectData{
+					Obfuscate: true,
+					Protocol:  config.Protocol_TCP,
+				},
+				Technology: config.Technology_OPENVPN,
+			},
+			isNordWhisperEnabled: true,
+			expected: config.Config{
+				AutoConnectData: config.AutoConnectData{
+					Obfuscate: false,
+					Protocol:  config.Protocol_Webtunnel,
+				},
+				Technology: config.Technology_NORDWHISPER,
+			},
+		},
+		{
+			name: "migrate to OpenVPN, when NordWhisper is disabled",
+			cfg: config.Config{
+				AutoConnectData: config.AutoConnectData{
+					Obfuscate: true,
+					Protocol:  config.Protocol_TCP,
+				},
+				Technology: config.Technology_OPENVPN,
+			},
+			isNordWhisperEnabled: false,
+			expected: config.Config{
+				AutoConnectData: config.AutoConnectData{
+					Obfuscate: false,
+					Protocol:  config.Protocol_TCP,
+				},
+				Technology: config.Technology_OPENVPN,
+			},
+		},
+		{
+			name: "migrate to OpenVPN with Obfuscated group, when NordWhisper is disabled",
+			cfg: config.Config{
+				AutoConnectData: config.AutoConnectData{
+					Obfuscate: true,
+					Protocol:  config.Protocol_TCP,
+					Group:     config.ServerGroup_OBFUSCATED,
+				},
+				Technology: config.Technology_OPENVPN,
+			},
+			isNordWhisperEnabled: false,
+			expected: config.Config{
+				AutoConnectData: config.AutoConnectData{
+					Obfuscate: false,
+					Protocol:  config.Protocol_TCP,
+					Group:     config.ServerGroup_UNDEFINED,
+				},
+				Technology: config.Technology_OPENVPN,
+			},
+		},
+		{
+			name: "no migration happening, only Obfuscated=false",
+			cfg: config.Config{
+				AutoConnectData: config.AutoConnectData{
+					Obfuscate: true,
+					Protocol:  config.Protocol_Webtunnel,
+				},
+				Technology: config.Technology_NORDWHISPER,
+			},
+			isNordWhisperEnabled: true,
+			expected: config.Config{
+				AutoConnectData: config.AutoConnectData{
+					Obfuscate: false,
+					Protocol:  config.Protocol_Webtunnel,
+				},
+				Technology: config.Technology_NORDWHISPER,
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := migrateObfuscatedSettingsToNordWhisper(test.cfg, test.isNordWhisperEnabled)
+			assert.DeepEqual(t, result, test.expected)
+		})
+	}
+}
