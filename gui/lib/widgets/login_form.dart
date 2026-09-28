@@ -113,6 +113,8 @@ class _LoginFormState extends ConsumerState<LoginForm> {
       child: LoadingCheckbox(
         value: _checkboxValue,
         text: t.ui.turnOffKillSwitch,
+        // TODO(LVPN-11207): improve AccessibleItem to have single
+        // callback to control children state
         onChanged: (value) => _toggleKillSwitch(ref, value),
       ),
     );
