@@ -10,7 +10,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/core"
-	"github.com/NordSecurity/nordvpn-linux/daemon/ens"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/serverpicker"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
@@ -534,10 +533,8 @@ func (r *RPC) connect(
 			event.EventStatus = events.StatusCanceled
 			event.Error = nil
 
-		case errors.Is(err, ens.ErrConnectionLimitReached):
+		case errors.Is(err, events.ErrConnectionLimitReached):
 			t = internal.CodeConnectionLimitReached
-			event.VPNConnReason = events.VPNConnectionReasonConnectionLimitReached
-			event.Error = nil
 		}
 		r.events.Service.Connect.Publish(event)
 		if err := srv.Send(&pb.Payload{

@@ -2068,7 +2068,7 @@ func TestNotifyDedicatedServerStatus(t *testing.T) {
 	}
 }
 
-func TestVPNConnReasonToMoose(t *testing.T) {
+func TestVPNConnReasonToInternalType(t *testing.T) {
 	category.Set(t, category.Unit)
 	tests := []struct {
 		name              string
@@ -2110,18 +2110,10 @@ func TestVPNConnReasonToMoose(t *testing.T) {
 			wantEventTrigger:  moose.NordvpnappEventTriggerUser,
 			isWhileConnecting: false,
 		},
-		{
-			name:              "ENS connection limit reached",
-			trigger:           events.VPNConnectionReasonConnectionLimitReached,
-			wantMooseTrigger:  moose.NordvpnappVpnConnectionTriggerNone,
-			wantExceptionCode: 1000075,
-			wantEventTrigger:  moose.NordvpnappEventTriggerApp,
-			isWhileConnecting: false,
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := vpnConnReasonToMoose(tt.trigger, tt.isWhileConnecting)
+			got := vpnConnReasonToInternalType(tt.trigger, tt.isWhileConnecting)
 			assert.Equal(t, tt.wantMooseTrigger, got.trigger)
 			assert.Equal(t, tt.wantExceptionCode, got.exceptionCode)
 			assert.Equal(t, tt.wantEventTrigger, got.eventTrigger)
@@ -2164,20 +2156,48 @@ func TestNotifyConnect_VPNConnReason(t *testing.T) {
 	tests := []struct {
 		name                  string
 		trigger               events.VPNConnectionReason
+		err                   error
 		wantEventTrigger      moose.NordvpnappEventTrigger
 		wantConnectionTrigger moose.NordvpnappVpnConnectionTrigger
+		wantExceptionCode     int32
 	}{
 		{
 			name:                  "server maintenance reconnect is app-triggered",
 			trigger:               events.VPNConnectionReasonServerMaintenance,
 			wantEventTrigger:      moose.NordvpnappEventTriggerApp,
 			wantConnectionTrigger: moose.NordvpnappVpnConnectionTriggerServerMaintenance,
+			wantExceptionCode:     -1,
 		},
 		{
 			name:                  "user connect is user-triggered",
 			trigger:               events.VPNConnectionReasonNone,
 			wantEventTrigger:      moose.NordvpnappEventTriggerUser,
 			wantConnectionTrigger: moose.NordvpnappVpnConnectionTriggerNone,
+			wantExceptionCode:     -1,
+		},
+		{
+			name:                  "user connect hitting connection limit is app-triggered with 1000075",
+			trigger:               events.VPNConnectionReasonNone,
+			err:                   events.ErrConnectionLimitReached,
+			wantEventTrigger:      moose.NordvpnappEventTriggerApp,
+			wantConnectionTrigger: moose.NordvpnappVpnConnectionTriggerNone,
+			wantExceptionCode:     1000075,
+		},
+		{
+			name:                  "auto-connect hitting connection limit keeps AutoConnectUserSetting trigger",
+			trigger:               events.VPNConnectionReasonAutoConnect,
+			err:                   events.ErrConnectionLimitReached,
+			wantEventTrigger:      moose.NordvpnappEventTriggerApp,
+			wantConnectionTrigger: moose.NordvpnappVpnConnectionTriggerAutoConnectUserSetting,
+			wantExceptionCode:     1000075,
+		},
+		{
+			name:                  "server maintenance reconnect hitting connection limit keeps ServerMaintenance trigger",
+			trigger:               events.VPNConnectionReasonServerMaintenance,
+			err:                   events.ErrConnectionLimitReached,
+			wantEventTrigger:      moose.NordvpnappEventTriggerApp,
+			wantConnectionTrigger: moose.NordvpnappVpnConnectionTriggerServerMaintenance,
+			wantExceptionCode:     1000075,
 		},
 	}
 	for _, tt := range tests {
@@ -2185,29 +2205,33 @@ func TestNotifyConnect_VPNConnReason(t *testing.T) {
 			sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 			var gotEvent moose.EventParams
 			var gotConn moose.ConnectionParams
+			var gotExceptionCode int32
 			sub.mooseFuncs.sendConnect = func(
 				eventParams moose.EventParams,
 				_ moose.TargetConnectionParams,
 				_ moose.TargetConnectionAdditionalParams,
 				connectionParams moose.ConnectionParams,
 				_ moose.NordvpnappOptBool,
-				_ int32,
+				exceptionCode int32,
 				_ string,
 				_ *string,
 			) uint32 {
 				gotEvent = eventParams
 				gotConn = connectionParams
+				gotExceptionCode = exceptionCode
 				return 0
 			}
 
 			err := sub.NotifyConnect(events.DataConnect{
-				EventStatus:   events.StatusAttempt,
+				EventStatus:   events.StatusFailure,
 				VPNConnReason: tt.trigger,
+				Error:         tt.err,
 			})
 
 			assert.NilError(t, err)
 			assert.Equal(t, tt.wantEventTrigger, gotEvent.EventTrigger)
 			assert.Equal(t, tt.wantConnectionTrigger, gotConn.VpnConnectionTrigger)
+			assert.Equal(t, tt.wantExceptionCode, gotExceptionCode)
 		})
 	}
 }

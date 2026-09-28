@@ -918,10 +918,14 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 		connectionFunnel = durationToConnectionFunnel(data.PauseInterval)
 	}
 	if data.VPNConnReason != events.VPNConnectionReasonNone {
-		attrs := vpnConnReasonToMoose(data.VPNConnReason, true)
+		attrs := vpnConnReasonToInternalType(data.VPNConnReason, true)
 		vpnConnectionTrigger = attrs.trigger
 		eventTrigger = attrs.eventTrigger
 		exceptionCode = attrs.exceptionCode
+	}
+	if errors.Is(data.Error, events.ErrConnectionLimitReached) {
+		eventTrigger = moose.NordvpnappEventTriggerApp
+		exceptionCode = connectionLimitReachedExceptionCode
 	}
 
 	targetServerDomain := data.TargetServerDomain
@@ -1063,7 +1067,7 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 	eventTrigger := moose.NordvpnappEventTriggerUser
 	exceptionCode := errToExceptionCode(data.Error)
 	if data.VPNConnReason != events.VPNConnectionReasonNone {
-		attrs := vpnConnReasonToMoose(data.VPNConnReason, false)
+		attrs := vpnConnReasonToInternalType(data.VPNConnReason, false)
 		eventTrigger = attrs.eventTrigger
 		exceptionCode = attrs.exceptionCode
 	}
@@ -1667,8 +1671,8 @@ type mooseConnReasonAttrs struct {
 	eventTrigger  moose.NordvpnappEventTrigger
 }
 
-// vpnConnReasonToMoose maps a VPN connection reason to its Moose telemetry attributes.
-func vpnConnReasonToMoose(t events.VPNConnectionReason, isConnectEvent bool) mooseConnReasonAttrs {
+// vpnConnReasonToInternalType maps a VPN connection reason to its Moose telemetry attributes.
+func vpnConnReasonToInternalType(t events.VPNConnectionReason, isConnectEvent bool) mooseConnReasonAttrs {
 	switch t {
 	case events.VPNConnectionReasonServerMaintenance:
 		// it must only be set while disconnecting
@@ -1679,12 +1683,6 @@ func vpnConnReasonToMoose(t events.VPNConnectionReason, isConnectEvent bool) moo
 		return mooseConnReasonAttrs{
 			trigger:       moose.NordvpnappVpnConnectionTriggerServerMaintenance,
 			exceptionCode: exceptionCode,
-			eventTrigger:  moose.NordvpnappEventTriggerApp,
-		}
-	case events.VPNConnectionReasonConnectionLimitReached:
-		return mooseConnReasonAttrs{
-			trigger:       moose.NordvpnappVpnConnectionTriggerNone,
-			exceptionCode: connectionLimitReachedExceptionCode,
 			eventTrigger:  moose.NordvpnappEventTriggerApp,
 		}
 	case events.VPNConnectionReasonAutoConnect:
