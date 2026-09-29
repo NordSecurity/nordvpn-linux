@@ -30,23 +30,6 @@ type RecentConnection struct {
 	ConnectionType     config.ServerSelectionRule
 }
 
-var groupTitles = map[config.ServerGroup]string{
-	config.ServerGroup_DOUBLE_VPN:           "Double VPN",
-	config.ServerGroup_ONION_OVER_VPN:       "Onion Over VPN",
-	config.ServerGroup_STANDARD_VPN_SERVERS: "Standard VPN Servers",
-	config.ServerGroup_OBFUSCATED:           "Obfuscated Servers",
-	config.ServerGroup_DEDICATED_IP:         "Dedicated IP",
-	config.ServerGroup_DEDICATED_SERVER:     "Dedicated Server",
-}
-
-func formatGroupTitle(group config.ServerGroup) string {
-	value, ok := groupTitles[group]
-	if !ok {
-		return ""
-	}
-	return value
-}
-
 func makeDisplayLabel(conn *RecentConnection) string {
 	switch conn.ConnectionType {
 	case config.ServerSelectionRule_CITY:
@@ -72,15 +55,14 @@ func makeDisplayLabel(conn *RecentConnection) string {
 		return fmt.Sprintf("%s (%s)", group, conn.Country)
 
 	case config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP:
-		if conn.Group != config.ServerGroup_UNDEFINED {
-			group := config.GroupDisplayName(conn.Group)
-			if conn.Country != "" && conn.City != "" {
-				return fmt.Sprintf("%s (%s, %s)", group, conn.Country, conn.City)
-			} else if conn.Country != "" {
-				return fmt.Sprintf("%s (%s)", group, conn.Country)
-			}
+		group := config.GroupDisplayName(conn.Group)
+		if group == "" || conn.Country == "" {
+			return ""
 		}
-		return ""
+		if conn.City != "" {
+			return fmt.Sprintf("%s (%s, %s)", group, conn.Country, conn.City)
+		}
+		return fmt.Sprintf("%s (%s)", group, conn.Country)
 
 	case config.ServerSelectionRule_NONE:
 		log.Warn("cannot make a proper label with server selection rule 'none'")

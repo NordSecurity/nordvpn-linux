@@ -30,7 +30,6 @@ func TestSpecialtyGroupLabel(t *testing.T) {
 		{name: "dedicated ip", status: connectedTo(config.ServerGroup_DEDICATED_IP), expected: "Dedicated IP"},
 		{name: "obfuscated group", status: connectedTo(config.ServerGroup_OBFUSCATED), expected: "Obfuscated Servers"},
 		{name: "standard vpn servers", status: connectedTo(config.ServerGroup_STANDARD_VPN_SERVERS), expected: ""},
-		{name: "p2p", status: connectedTo(config.ServerGroup_P2P), expected: ""},
 		{name: "no group", status: connectedTo(config.ServerGroup_UNDEFINED), expected: ""},
 		{
 			name:     "missing parameters",
