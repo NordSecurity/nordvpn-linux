@@ -1229,18 +1229,21 @@ func TestCombined_ApplySettings(t *testing.T) {
 	firewallErr := errors.New("firewall failed")
 	routerErr := errors.New("router failed")
 	allowlist := config.Allowlist{Subnets: []string{"1.2.3.0/24"}}
+	oldAllowlist := config.Allowlist{Subnets: []string{"5.6.7.0/24"}}
 
 	tests := []struct {
-		name                string
-		firewallEnabled     bool
-		routingEnabled      bool
-		firewallErr         error
-		routerErr           error
-		settings            Settings
-		expectedFirewall    bool
-		expectedRouting     bool
-		expectedEnableCalls int
-		expectedErrs        []error
+		name                   string
+		firewallEnabled        bool
+		routingEnabled         bool
+		firewallErr            error
+		routerErr              error
+		fwConfig               firewall.Config
+		settings               Settings
+		expectedFirewall       bool
+		expectedRouting        bool
+		expectedEnableCalls    int
+		expectedAppliedConfigs []firewall.Config
+		expectedErrs           []error
 	}{
 		{
 			name:                "disabled firewall and routing get enabled",
@@ -1302,6 +1305,38 @@ func TestCombined_ApplySettings(t *testing.T) {
 			expectedEnableCalls: 1,
 			expectedErrs:        []error{firewallErr, routerErr},
 		},
+		{
+			name:            "enabling firewall applies config with new allowlist once",
+			firewallEnabled: false,
+			routingEnabled:  true,
+			fwConfig:        firewall.Config{TunnelInterface: "nordlynx", Allowlist: oldAllowlist},
+			settings: Settings{
+				Firewall:  true,
+				Routing:   true,
+				Allowlist: allowlist,
+			},
+			expectedFirewall:    true,
+			expectedRouting:     true,
+			expectedEnableCalls: 1,
+			expectedAppliedConfigs: []firewall.Config{
+				{TunnelInterface: "nordlynx", Allowlist: allowlist},
+			},
+		},
+		{
+			name:            "disabling firewall does not apply config with new allowlist",
+			firewallEnabled: true,
+			routingEnabled:  true,
+			fwConfig:        firewall.Config{TunnelInterface: "nordlynx", Allowlist: oldAllowlist},
+			settings: Settings{
+				Firewall:  false,
+				Routing:   true,
+				Allowlist: allowlist,
+			},
+			expectedFirewall:       false,
+			expectedRouting:        true,
+			expectedEnableCalls:    0,
+			expectedAppliedConfigs: nil,
+		},
 	}
 
 	for _, test := range tests {
@@ -1326,6 +1361,7 @@ func TestCombined_ApplySettings(t *testing.T) {
 			netw.allowlistRouter = routers[0]
 			netw.router = routers[1]
 			netw.peerRouter = routers[2]
+			netw.fwConfig = test.fwConfig
 
 			err := netw.ApplySettings(test.settings)
 			if len(test.expectedErrs) == 0 {
@@ -1337,6 +1373,7 @@ func TestCombined_ApplySettings(t *testing.T) {
 
 			assert.Equal(t, test.expectedFirewall, fw.IsEnabled())
 			assert.Equal(t, test.expectedEnableCalls, fw.EnableCalls)
+			assert.Equal(t, test.expectedAppliedConfigs, fw.AppliedConfigs)
 			assert.Equal(t, test.settings.Routing, policyRouter.IsEnabled())
 			for _, router := range routers {
 				assert.Equal(t, test.expectedRouting, router.IsEnabled())
