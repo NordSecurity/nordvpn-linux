@@ -760,12 +760,11 @@ func (netw *Combined) ApplySettings(settings Settings) error {
 	defer netw.mu.Unlock()
 
 	var errs []error
-	if settings.Firewall != netw.fw.IsEnabled() {
-		if settings.Firewall {
-			errs = append(errs, netw.enableFirewall())
-		} else {
-			errs = append(errs, netw.disableFirewall())
-		}
+
+	// if disabling - disable firewall at the beginning, but enable
+	// after all other settings (like allowlist) are applied first
+	if !settings.Firewall && netw.fw.IsEnabled() {
+		errs = append(errs, netw.disableFirewall())
 	}
 
 	if settings.Routing {
@@ -777,6 +776,10 @@ func (netw *Combined) ApplySettings(settings Settings) error {
 	errs = append(errs, netw.setLanDiscovery(settings.LanDiscovery))
 	errs = append(errs, netw.setARPIgnore(settings.ARPIgnore))
 	errs = append(errs, netw.applyAllowlist(settings.Allowlist))
+
+	if settings.Firewall && !netw.fw.IsEnabled() {
+		errs = append(errs, netw.enableFirewall())
+	}
 
 	return errors.Join(errs...)
 }
