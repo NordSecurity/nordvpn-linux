@@ -34,6 +34,7 @@ final class ServerListWidgetKeys {
   static const obfuscatedVpn = Key("serverListObfuscated");
   static const search = Key("serverListSearch");
   static const countriesServersList = Key("serverListCountries");
+  static const specialtyServersList = Key("serverListSpecialty");
   static const recentConnections = Key("recentConnections");
 }
 
@@ -274,6 +275,7 @@ final class _ServersListCardState extends State<ServersListCard> {
       children: [
         Expanded(
           child: ListView.builder(
+            key: ServerListWidgetKeys.specialtyServersList,
             itemCount: specialtyServersOrder.length,
             itemBuilder: (context, index) {
               final group = specialtyServersOrder[index];
