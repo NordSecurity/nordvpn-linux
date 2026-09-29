@@ -1403,7 +1403,7 @@ func TestReportAutoConnectTarget(t *testing.T) {
 		},
 		{
 			name:      "group - obfuscated",
-			ac:        config.AutoConnectData{Group: config.ServerGroup_OBFUSCATED},
+			ac:        config.AutoConnectData{Group: config.ServerGroup_NW_OBFUSCATED},
 			wantPref:  moose.NordvpnappConnectionPreferenceSpecific,
 			wantGroup: moose.NordvpnappServerGroupObfuscated,
 		},
