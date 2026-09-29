@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"context"
+	"errors"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/access"
@@ -106,20 +107,36 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.P
 	}
 	r.netw.SetVPN(v)
 
-	if err := r.netw.ApplySettings(networker.Settings{
+	applyErr := r.netw.ApplySettings(networker.Settings{
 		Firewall:     cfg.Firewall,
 		Routing:      cfg.Routing.Get(),
 		LanDiscovery: cfg.LanDiscovery,
 		ARPIgnore:    cfg.ARPIgnore.Get(),
 		Allowlist:    cfg.AutoConnectData.Allowlist,
-	}); err != nil {
-		log.Warn("applying default settings to networker:", err)
-	}
+	})
 
 	r.events.Settings.Defaults.Publish(nil)
 	r.events.Settings.Publish(cfg)
 
-	return &pb.Payload{
-		Type: internal.CodeSuccess,
-	}, nil
+	if applyErr != nil {
+		log.Error("applying default settings to networker:", applyErr)
+		return &pb.Payload{
+			Type: internal.CodeSetDefaultsNotApplied,
+			Data: failedSettingNames(applyErr),
+		}, nil
+	}
+
+	return &pb.Payload{Type: internal.CodeSuccess}, nil
+}
+
+func failedSettingNames(err error) []string {
+	applyErr, ok := errors.AsType[*networker.ApplySettingsError](err)
+	if !ok {
+		return nil
+	}
+	var names []string
+	for _, setting := range applyErr.FailedSettings() {
+		names = append(names, string(setting))
+	}
+	return names
 }

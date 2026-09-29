@@ -3,6 +3,8 @@ package cli
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/client"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
@@ -33,6 +35,11 @@ func (c *cmd) SetDefaults(ctx *cli.Context) error {
 		return formatError(ErrConfig)
 	case internal.CodeSuccess:
 		color.Green(SetDefaultsSuccess)
+	case internal.CodeSetDefaultsNotApplied:
+		if len(resp.Data) == 0 {
+			return formatError(errors.New(SetDefaultsNetworkSettingsNotApplied))
+		}
+		return formatError(fmt.Errorf(SetDefaultsPartialSuccess, strings.Join(resp.Data, ", ")))
 	case internal.CodeCleanRecentConnectionError:
 		return formatError(errors.New(client.RecentConnectionErrorMessage))
 	default:

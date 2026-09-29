@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -341,16 +342,36 @@ func TestSetDefaults_AppliesSettingsToNetworker(t *testing.T) {
 		name         string
 		applyErr     error
 		expectedCode int64
+		expectedData []string
 	}{
 		{
 			name:         "settings applied",
 			applyErr:     nil,
 			expectedCode: internal.CodeSuccess,
+			expectedData: nil,
 		},
 		{
-			name:         "applying settings fails but reset still succeeds",
+			name: "failed settings are reported with their names",
+			applyErr: &netwpkg.ApplySettingsError{Errors: []*netwpkg.SettingError{
+				{Setting: netwpkg.SettingRouting, Err: mock.ErrOnPurpose},
+				{Setting: netwpkg.SettingFirewall, Err: mock.ErrOnPurpose},
+			}},
+			expectedCode: internal.CodeSetDefaultsNotApplied,
+			expectedData: []string{"routing", "firewall"},
+		},
+		{
+			name:         "unknown apply error is reported without setting names",
 			applyErr:     mock.ErrOnPurpose,
-			expectedCode: internal.CodeSuccess,
+			expectedCode: internal.CodeSetDefaultsNotApplied,
+			expectedData: nil,
+		},
+		{
+			name: "wrapped apply error is reported with setting names",
+			applyErr: fmt.Errorf("wrapped: %w", &netwpkg.ApplySettingsError{Errors: []*netwpkg.SettingError{
+				{Setting: netwpkg.SettingLanDiscovery, Err: mock.ErrOnPurpose},
+			}}),
+			expectedCode: internal.CodeSetDefaultsNotApplied,
+			expectedData: []string{"lan-discovery"},
 		},
 	}
 
@@ -365,6 +386,7 @@ func TestSetDefaults_AppliesSettingsToNetworker(t *testing.T) {
 			resp, err := rpc.SetDefaults(context.Background(), &pb.SetDefaultsRequest{NoLogout: true})
 			assert.NoError(t, err)
 			assert.Equal(t, test.expectedCode, resp.Type)
+			assert.Equal(t, test.expectedData, resp.Data)
 			assert.Equal(t, &netwpkg.Settings{
 				Firewall:     true,
 				Routing:      true,

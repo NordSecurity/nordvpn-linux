@@ -1244,6 +1244,7 @@ func TestCombined_ApplySettings(t *testing.T) {
 		expectedEnableCalls    int
 		expectedAppliedConfigs []firewall.Config
 		expectedErrs           []error
+		expectedFailedSettings []Setting
 	}{
 		{
 			name:                "disabled firewall and routing get enabled",
@@ -1304,6 +1305,8 @@ func TestCombined_ApplySettings(t *testing.T) {
 			expectedRouting:     false,
 			expectedEnableCalls: 1,
 			expectedErrs:        []error{firewallErr, routerErr},
+			// mocked firewall error fails configuring the allowlist in the firewall too
+			expectedFailedSettings: []Setting{SettingRouting, SettingAllowlist, SettingFirewall},
 		},
 		{
 			name:            "enabling firewall applies config with new allowlist once",
@@ -1369,6 +1372,12 @@ func TestCombined_ApplySettings(t *testing.T) {
 			}
 			for _, expectedErr := range test.expectedErrs {
 				assert.ErrorIs(t, err, expectedErr)
+			}
+			if test.expectedFailedSettings != nil {
+				var applyErr *ApplySettingsError
+				if assert.ErrorAs(t, err, &applyErr) {
+					assert.Equal(t, test.expectedFailedSettings, applyErr.FailedSettings())
+				}
 			}
 
 			assert.Equal(t, test.expectedFirewall, fw.IsEnabled())

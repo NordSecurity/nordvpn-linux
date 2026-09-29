@@ -95,6 +95,62 @@ type Settings struct {
 	Allowlist    config.Allowlist
 }
 
+// Setting identifies one of the Settings applied by ApplySettings.
+type Setting string
+
+const (
+	SettingFirewall     Setting = "firewall"
+	SettingRouting      Setting = "routing"
+	SettingLanDiscovery Setting = "lan-discovery"
+	SettingARPIgnore    Setting = "arp-ignore"
+	SettingAllowlist    Setting = "allowlist"
+)
+
+// SettingError is returned when a single setting failed to be applied.
+type SettingError struct {
+	Setting Setting
+	Err     error
+}
+
+func (e *SettingError) Error() string {
+	return fmt.Sprintf("%s: %s", e.Setting, e.Err)
+}
+
+func (e *SettingError) Unwrap() error {
+	return e.Err
+}
+
+// ApplySettingsError holds all the settings which failed to be applied by ApplySettings.
+type ApplySettingsError struct {
+	Errors []*SettingError
+}
+
+func (e *ApplySettingsError) Error() string {
+	return errors.Join(e.Unwrap()...).Error()
+}
+
+func (e *ApplySettingsError) Unwrap() []error {
+	errs := make([]error, 0, len(e.Errors))
+	for _, err := range e.Errors {
+		errs = append(errs, err)
+	}
+	return errs
+}
+
+func (e *ApplySettingsError) add(setting Setting, err error) {
+	if err != nil {
+		e.Errors = append(e.Errors, &SettingError{Setting: setting, Err: err})
+	}
+}
+
+func (e *ApplySettingsError) FailedSettings() []Setting {
+	settings := make([]Setting, 0, len(e.Errors))
+	for _, err := range e.Errors {
+		settings = append(settings, err.Setting)
+	}
+	return settings
+}
+
 type killSwitchState int
 
 const (
@@ -759,29 +815,32 @@ func (netw *Combined) ApplySettings(newSettings Settings) error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
 
-	var errs []error
+	var applyErr ApplySettingsError
 
 	// if disabling - disable firewall at the beginning, but enable
 	// after all other settings (like allowlist) are applied first
 	if netw.fw.IsEnabled() && !newSettings.Firewall {
-		errs = append(errs, netw.disableFirewall())
+		applyErr.add(SettingFirewall, netw.disableFirewall())
 	}
 
 	if newSettings.Routing {
-		errs = append(errs, netw.enableRouting())
+		applyErr.add(SettingRouting, netw.enableRouting())
 	} else {
-		errs = append(errs, netw.disableRouting())
+		applyErr.add(SettingRouting, netw.disableRouting())
 	}
 
-	errs = append(errs, netw.setLanDiscovery(newSettings.LanDiscovery))
-	errs = append(errs, netw.setARPIgnore(newSettings.ARPIgnore))
-	errs = append(errs, netw.applyAllowlist(newSettings.Allowlist))
+	applyErr.add(SettingLanDiscovery, netw.setLanDiscovery(newSettings.LanDiscovery))
+	applyErr.add(SettingARPIgnore, netw.setARPIgnore(newSettings.ARPIgnore))
+	applyErr.add(SettingAllowlist, netw.applyAllowlist(newSettings.Allowlist))
 
 	if !netw.fw.IsEnabled() && newSettings.Firewall {
-		errs = append(errs, netw.enableFirewall())
+		applyErr.add(SettingFirewall, netw.enableFirewall())
 	}
 
-	return errors.Join(errs...)
+	if len(applyErr.Errors) > 0 {
+		return &applyErr
+	}
+	return nil
 }
 
 func (netw *Combined) blockIPv6() {

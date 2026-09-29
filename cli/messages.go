@@ -53,7 +53,9 @@ Example: nordvpn set %s on`
 	SetRealTimeProtectionDisableDNS = "Disabling DNS."
 	SetRealTimeProtectionAlreadySet = "Real-time protection is already set to `%s`."
 
-	SetDefaultsSuccess = "Settings were successfully restored to defaults."
+	SetDefaultsSuccess                   = "Settings were successfully restored to defaults."
+	SetDefaultsPartialSuccess            = "Some default settings could not be applied. The reset finished, but these settings may not be active: %s. Run 'nordvpn set defaults' again to retry. If the problem continues, contact support."
+	SetDefaultsNetworkSettingsNotApplied = "Some default network settings could not be applied. Run 'nordvpn set defaults' again to retry. If the problem continues, contact support."
 
 	FirewallRequired = "Firewall must be enabled to use '%s'."
 
