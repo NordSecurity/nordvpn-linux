@@ -755,7 +755,7 @@ func (netw *Combined) disableRouting() error {
 	return errors.Join(errs...)
 }
 
-func (netw *Combined) ApplySettings(settings Settings) error {
+func (netw *Combined) ApplySettings(newSettings Settings) error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
 
@@ -763,21 +763,21 @@ func (netw *Combined) ApplySettings(settings Settings) error {
 
 	// if disabling - disable firewall at the beginning, but enable
 	// after all other settings (like allowlist) are applied first
-	if !settings.Firewall && netw.fw.IsEnabled() {
+	if netw.fw.IsEnabled() && !newSettings.Firewall {
 		errs = append(errs, netw.disableFirewall())
 	}
 
-	if settings.Routing {
+	if newSettings.Routing {
 		errs = append(errs, netw.enableRouting())
 	} else {
 		errs = append(errs, netw.disableRouting())
 	}
 
-	errs = append(errs, netw.setLanDiscovery(settings.LanDiscovery))
-	errs = append(errs, netw.setARPIgnore(settings.ARPIgnore))
-	errs = append(errs, netw.applyAllowlist(settings.Allowlist))
+	errs = append(errs, netw.setLanDiscovery(newSettings.LanDiscovery))
+	errs = append(errs, netw.setARPIgnore(newSettings.ARPIgnore))
+	errs = append(errs, netw.applyAllowlist(newSettings.Allowlist))
 
-	if settings.Firewall && !netw.fw.IsEnabled() {
+	if !netw.fw.IsEnabled() && newSettings.Firewall {
 		errs = append(errs, netw.enableFirewall())
 	}
 
