@@ -73,11 +73,7 @@ class Ssh:
 
         def _is_internet_reachable(self, retry=5) -> bool:
             """Returns True when remote host is reachable by it's public IP."""
-            def _check():
-                return "icmp_seq=" in self.ssh_class_instance.exec_command("ping -c 1 -w 1 1.1.1.1")
-
-            result = retry_on_exc(attempts=retry, delay=1, raise_exc=False)(_check)()
-            return bool(result)
+            return self.ping(target="1.1.1.1", retry=retry)
 
         def _is_dns_not_resolvable(self, retry=5) -> bool:
             """Returns True when domain resolution is not working."""
