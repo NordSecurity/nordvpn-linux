@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:nordvpn/theme/interactive_list_view_theme.dart';
@@ -44,6 +46,8 @@ final class InteractiveListView extends StatefulWidget {
 class _InteractiveListViewState extends State<InteractiveListView> {
   final _searchController = TextEditingController();
   final _searchFieldNodeFocus = FocusNode();
+  String _lastAnnouncedQuery = '';
+  Timer? _announcementTimer;
 
   String _cachedQuery = '';
   List<dynamic> _cachedFilteredResults = const [];
@@ -60,6 +64,7 @@ class _InteractiveListViewState extends State<InteractiveListView> {
 
   @override
   void dispose() {
+    _announcementTimer?.cancel();
     _activeController.removeListener(_onQueryChanged);
     _searchController.dispose();
     _searchFieldNodeFocus.dispose();
@@ -84,15 +89,28 @@ class _InteractiveListViewState extends State<InteractiveListView> {
     final query = _activeController.text;
 
     if (query.isEmpty || query.length < widget.beginSearchAfter) {
+      _lastAnnouncedQuery = '';
+      _announcementTimer?.cancel();
       setState(() {});
       return;
     }
 
     final filteredResults = _getFilteredResults(query);
-    if (widget.showEmptyListAtStartup && filteredResults.isEmpty) {
-      setState(() {});
-      _announceNoResults(query);
+
+    if (filteredResults.isEmpty && query != _lastAnnouncedQuery) {
+      // Cancel any pending announcement before scheduling a new one
+      _announcementTimer?.cancel();
+
+      // Debounce: only announce if user stops typing for 300ms
+      _announcementTimer = Timer(const Duration(milliseconds: 300), () {
+        if (mounted && _activeController.text == query) {
+          _lastAnnouncedQuery = query;
+          _announceNoResults(query);
+        }
+      });
     }
+
+    setState(() {});
   }
 
   void _announceNoResults(String query) {
