@@ -26,6 +26,7 @@ type Mock struct {
 	SetAllowlistErr   error
 	UnsetAllowlistErr error
 	StopErr           error
+	StartErr          error
 
 	// ProvidedCredentials contain vpn.Credentials provided to the networker in the last Start call
 	ProvidedCredentials vpn.Credentials
@@ -46,7 +47,7 @@ func (m *Mock) Start(
 ) error {
 	m.ProvidedCredentials = credentials
 	m.ProvidedServerData = serverData
-	return nil
+	return m.StartErr
 }
 
 func (m *Mock) Stop() error {

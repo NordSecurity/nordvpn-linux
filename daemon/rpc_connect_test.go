@@ -1461,6 +1461,36 @@ func Test_serverGroupIDs_NilGroups_ReturnsEmptySlice(t *testing.T) {
 	assert.Equal(t, 0, len(got))
 }
 
+func TestConnect_ConnectionLimitReachedKeepsVPNConnReason(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	for name, reason := range map[string]events.VPNConnectionReason{
+		"user":               events.VPNConnectionReasonNone,
+		"auto-connect":       events.VPNConnectionReasonAutoConnect,
+		"server maintenance": events.VPNConnectionReasonServerMaintenance,
+	} {
+		t.Run(name, func(t *testing.T) {
+			rpc := testRPCLocal(t)
+			rpc.netw = &testnetworker.Mock{StartErr: events.ErrConnectionLimitReached}
+			_ = rpc.cm.SaveWith(func(c config.Config) config.Config {
+				return config.Config{Technology: config.Technology_NORDLYNX}
+			})
+			connectEvents := &daemonEvents.MockPublisherSubscriber[events.DataConnect]{}
+			rpc.events.Service.Connect = connectEvents
+			server := &mockRPCServer{}
+
+			failed, err := rpc.connectWithParameters(context.Background(), &pb.ConnectRequest{ServerTag: "it1"}, server, pb.ConnectionSource_AUTO, "", reason)
+
+			assert.False(t, failed)
+			assert.NoError(t, err)
+			assert.Equal(t, internal.CodeConnectionLimitReached, server.msg.Type)
+			assert.Equal(t, events.StatusFailure, connectEvents.Event.EventStatus)
+			assert.Equal(t, reason, connectEvents.Event.VPNConnReason)
+			assert.ErrorIs(t, connectEvents.Event.Error, events.ErrConnectionLimitReached)
+		})
+	}
+}
+
 func TestReconnectOnServerMaintenance(t *testing.T) {
 	category.Set(t, category.Unit)
 

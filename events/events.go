@@ -2,6 +2,7 @@
 package events
 
 import (
+	"errors"
 	"net/http"
 	"net/netip"
 	"time"
@@ -57,6 +58,9 @@ const (
 	TriggerUser
 )
 
+// ErrConnectionLimitReached is returned when a connect is canceled because the session limit was hit.
+var ErrConnectionLimitReached = errors.New("connection limit reached")
+
 // VPNConnectionError is a generic VPN connection error code.
 // Errors from VPN protocol libraries are mapped to these values so the daemon
 // does not depend on any one VPN protocol's error types.
@@ -109,8 +113,6 @@ const (
 	VPNConnectionReasonServerMaintenance
 	// VPNConnectionReasonAutoConnect is set when the app auto-connects based on the user's auto-connect setting
 	VPNConnectionReasonAutoConnect
-	// VPNConnectionReasonConnectionLimitReached is set when connection is canceled after and connection limit reached event is received
-	VPNConnectionReasonConnectionLimitReached
 )
 
 type TypeLoginType int
