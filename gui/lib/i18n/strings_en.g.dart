@@ -1807,11 +1807,11 @@ class Translations$ui$en {
 	/// en: 'Continue'
 	String get continueWord => 'Continue';
 
-	/// en: 'Scam and phishing protection will be turned off'
-	String get realTimeProtectionWillTurnOff => 'Scam and phishing protection will be turned off';
+	/// en: 'Real-time protection will be turned off'
+	String get realTimeProtectionWillTurnOff => 'Real-time protection will be turned off';
 
-	/// en: 'Scam and phishing protection works only with the default DNS. Set a custom DNS server anyway?'
-	String get realTimeProtectionWillTurnOffDescription => 'Scam and phishing protection works only with the default DNS. Set a custom DNS server anyway?';
+	/// en: 'Real-time protection works only with the default DNS. Set a custom DNS server anyway?'
+	String get realTimeProtectionWillTurnOffDescription => 'Real-time protection works only with the default DNS. Set a custom DNS server anyway?';
 
 	/// en: 'Set custom DNS'
 	String get setCustomDns => 'Set custom DNS';
@@ -2797,8 +2797,8 @@ extension on Translations {
 			'ui.realTimeDisableCustomDNS' => 'Turn off custom DNS?',
 			'ui.realTimeDisableCustomDNSDescription' => 'Real-time protection works with our default DNS servers only.',
 			'ui.continueWord' => 'Continue',
-			'ui.realTimeProtectionWillTurnOff' => 'Scam and phishing protection will be turned off',
-			'ui.realTimeProtectionWillTurnOffDescription' => 'Scam and phishing protection works only with the default DNS. Set a custom DNS server anyway?',
+			'ui.realTimeProtectionWillTurnOff' => 'Real-time protection will be turned off',
+			'ui.realTimeProtectionWillTurnOffDescription' => 'Real-time protection works only with the default DNS. Set a custom DNS server anyway?',
 			'ui.setCustomDns' => 'Set custom DNS',
 			'ui.turnOffCustomDns' => 'Turn off custom DNS?',
 			'ui.turnOffCustomDnsDescription' => 'This will remove all your previously added DNS servers.',
