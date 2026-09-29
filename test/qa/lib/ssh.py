@@ -5,7 +5,7 @@ from collections import namedtuple
 import paramiko
 import pytest
 
-from . import retry_on_exc, API_EXTERNAL_IP
+from . import logging, retry_on_exc, API_EXTERNAL_IP
 
 Directory = namedtuple("Directory", "dir_path paths transfer_paths filenames filehashes")
 
@@ -93,10 +93,12 @@ class Ssh:
             return not self._is_internet_reachable(retry=retry) and self._is_dns_not_resolvable(retry=retry)
 
         def ping(self, target: str, retry=5) -> bool:
+            """Returns True when target host is reachable via ping."""
             def _check():
                 return "icmp_seq=" in self.ssh_class_instance.exec_command(f"ping -c 1 -w 1 {target}")
 
             result = retry_on_exc(attempts=retry, delay=1, raise_exc=False)(_check)()
+            logging.log(f"ssh_client, ping {target}: {result}")
             return bool(result)
 
         def get_external_device_ip(self) -> str:
