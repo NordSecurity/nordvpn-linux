@@ -1312,7 +1312,7 @@ func (netw *Combined) SetLanDiscovery(enabled bool) {
 	defer netw.mu.Unlock()
 
 	if err := netw.setLanDiscovery(enabled); err != nil {
-		log.Error("setting land discovery failed:", err)
+		log.Error("setting lan discovery failed:", err)
 	}
 }
 
