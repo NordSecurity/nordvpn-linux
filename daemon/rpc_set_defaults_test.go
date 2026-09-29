@@ -348,9 +348,9 @@ func TestSetDefaults_AppliesSettingsToNetworker(t *testing.T) {
 			expectedCode: internal.CodeSuccess,
 		},
 		{
-			name:         "applying settings fails",
+			name:         "applying settings fails but reset still succeeds",
 			applyErr:     mock.ErrOnPurpose,
-			expectedCode: internal.CodeFailure,
+			expectedCode: internal.CodeSuccess,
 		},
 	}
 

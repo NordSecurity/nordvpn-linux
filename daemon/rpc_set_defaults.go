@@ -106,23 +106,18 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.P
 	}
 	r.netw.SetVPN(v)
 
-	applyErr := r.netw.ApplySettings(networker.Settings{
+	if err := r.netw.ApplySettings(networker.Settings{
 		Firewall:     cfg.Firewall,
 		Routing:      cfg.Routing.Get(),
 		LanDiscovery: cfg.LanDiscovery,
 		ARPIgnore:    cfg.ARPIgnore.Get(),
 		Allowlist:    cfg.AutoConnectData.Allowlist,
-	})
-	if applyErr != nil {
-		log.Error("applying default settings to networker:", applyErr)
+	}); err != nil {
+		log.Warn("applying default settings to networker:", err)
 	}
 
 	r.events.Settings.Defaults.Publish(nil)
 	r.events.Settings.Publish(cfg)
-
-	if applyErr != nil {
-		return &pb.Payload{Type: internal.CodeFailure}, nil
-	}
 
 	return &pb.Payload{
 		Type: internal.CodeSuccess,
