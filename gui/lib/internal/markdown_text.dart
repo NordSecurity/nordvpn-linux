@@ -8,12 +8,17 @@ final _linkPattern = RegExp(
 
 sealed class MarkdownPart {
   const MarkdownPart();
+
+  String get semanticsText;
 }
 
 final class MarkdownPlainText extends MarkdownPart {
   final String text;
 
   const MarkdownPlainText(this.text);
+
+  @override
+  String get semanticsText => text;
 }
 
 final class MarkdownLink extends MarkdownPart {
@@ -21,6 +26,9 @@ final class MarkdownLink extends MarkdownPart {
   final String url;
 
   const MarkdownLink({required this.label, required this.url});
+
+  @override
+  String get semanticsText => t.a11y.linkWithinPopup(name: label);
 }
 
 // Holds both raw and parsed markdown for further reuse
@@ -34,14 +42,7 @@ final class MarkdownText {
 
   // The text as a screen reader should announce it: links keep only their
   // label, dropping the `[label](url)` markdown syntax and the URL itself.
-  String get semanticsText => parts
-      .map(
-        (part) => switch (part) {
-          MarkdownPlainText(:final text) => text,
-          MarkdownLink(:final label) => t.a11y.linkWithinPopup(name: label),
-        },
-      )
-      .join();
+  String get semanticsText => parts.map((part) => part.semanticsText).join();
 }
 
 List<MarkdownPart> _parse(String text) {
