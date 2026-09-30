@@ -447,8 +447,8 @@ func TestDoAutoConnect_SetsRequestedConnectionParams(t *testing.T) {
 			autoConnectData: config.AutoConnectData{
 				Country:   "US",
 				City:      "New York",
-				Group:     config.ServerGroup_P2P,
-				ServerTag: "p2p",
+				Group:     config.ServerGroup_DOUBLE_VPN,
+				ServerTag: "double_vpn",
 			},
 			expectedParams: ConnectionParameters{
 				ConnectionSource: pb.ConnectionSource_AUTO,
@@ -456,7 +456,7 @@ func TestDoAutoConnect_SetsRequestedConnectionParams(t *testing.T) {
 					Country:     "US",
 					CountryCode: "US",
 					City:        "New York",
-					Group:       config.ServerGroup_P2P,
+					Group:       config.ServerGroup_DOUBLE_VPN,
 				},
 			},
 		},
