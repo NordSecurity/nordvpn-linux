@@ -1,3 +1,4 @@
+import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/logger.dart';
 import 'package:nordvpn/pb/daemon/config/vpn_protocol.pbenum.dart' as pb;
 
@@ -46,6 +47,25 @@ extension VpnProtocolExt on VpnProtocol {
         return pb.VPNProtocol.VPN_PROTOCOL_OPENVPN_TCP;
       case VpnProtocol.nordWhisper:
         return pb.VPNProtocol.VPN_PROTOCOL_NORDWHISPER;
+    }
+  }
+
+  String displayName() {
+    switch (this) {
+      case VpnProtocol.unknown:
+        assert(false);
+        logger.e("Incorrect protocol value VpnProtocol.unknown");
+        return t.ui.protocol;
+
+      case VpnProtocol.nordlynx:
+        return t.ui.nordLynx;
+      case VpnProtocol.openVpnUdp:
+        return t.ui.openVpnUdp;
+      case VpnProtocol.openVpnTcp:
+        return t.ui.openVpnTcp;
+
+      case VpnProtocol.nordWhisper:
+        return t.ui.nordWhisper;
     }
   }
 }
