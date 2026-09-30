@@ -28,6 +28,7 @@ func MigrateDeprecatedGroupsAutoconnect(cm config.Manager) error {
 		c.AutoConnectData.Group = config.ServerGroup_UNDEFINED
 		if c.AutoConnectData.Country == "" && c.AutoConnectData.City == "" {
 			c.AutoConnectData.ServerTag = ""
+			c.AutoConnectData.CountryCode = ""
 		}
 		return c
 	})
