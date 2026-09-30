@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
-	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/serverpicker"
@@ -29,42 +28,18 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Error(err)
+		log.Error("configuration loading for auto-connect", err)
+		return &pb.Payload{Type: internal.CodeConfigError}, nil
 	}
 
 	if !cfg.AutoConnect && !in.GetEnabled() {
-		return &pb.Payload{
-			Type: internal.CodeNothingToDo,
-		}, nil
-	}
-
-	if in.GetEnabled() && serverpicker.IsP2PGroup(in.ServerTag, in.ServerGroup) {
-		return &pb.Payload{Type: internal.CodeP2PDeprecated}, nil
-	}
-
-	if in.GetEnabled() && serverpicker.IsDedicatedServer(in.ServerTag, in.ServerGroup) {
-		if !r.remoteConfigGetter.IsFeatureEnabled(remote.FeatureDedicatedServer) {
-			return &pb.Payload{Type: internal.CodeGroupNonexisting}, nil
-		}
-
-		if !cfg.VPNProtocol.IsNordLynx() {
-			return &pb.Payload{Type: internal.CodeDedicatedServersNoNordlynx}, nil
-		}
-
-		if cfg.AutoConnectData.PostquantumVpn {
-			return &pb.Payload{Type: internal.CodeDedicatedServersPq}, nil
-		}
+		return &pb.Payload{Type: internal.CodeNothingToDo}, nil
 	}
 
 	var parameters serverpicker.ServerParameters
-	serverTag := in.GetServerTag()
-	serverGroup := in.GetServerGroup()
 	if in.GetEnabled() {
-		insights := r.dm.GetInsightsData().Insights
-		serverSelection, err := selectServer(r, &insights, cfg, serverTag, serverGroup, "")
+		serverSelection, err := r.validateServerInput(in.ServerTag, in.ServerGroup, cfg)
 		if err != nil {
-			log.Error("no server found for autoconnect", serverTag, err)
-
 			var errorCode *internal.ErrorWithCode
 			if errors.As(err, &errorCode) {
 				return &pb.Payload{
@@ -74,42 +49,23 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 
 			return nil, err
 		}
-		log.Info("server for autoconnect found", serverSelection.Server)
-		parameters = serverpicker.GetServerParameters(serverTag, serverGroup, r.dm.GetCountryData().Countries)
 
-		if err := r.cm.SaveWith(func(c config.Config) config.Config {
-			c.AutoConnect = in.GetEnabled()
-			c.AutoConnectData = config.AutoConnectData{
-				ID:                 cfg.AutoConnectData.ID,
-				ServerTag:          serverTag,
-				Country:            parameters.Country,
-				CountryCode:        parameters.CountryCode,
-				City:               parameters.City,
-				Group:              parameters.Group,
-				RealTimeProtection: cfg.AutoConnectData.RealTimeProtection,
-				Obfuscate:          cfg.AutoConnectData.Obfuscate,
-				DNS:                cfg.AutoConnectData.DNS,
-				Allowlist:          cfg.AutoConnectData.Allowlist,
-				PostquantumVpn:     cfg.AutoConnectData.PostquantumVpn,
-				ECH:                r.getECHEnabledField(cfg),
-			}
-			return c
-		}); err != nil {
-			log.Error(err)
-			return &pb.Payload{
-				Type: internal.CodeConfigError,
-			}, nil
-		}
-	} else {
-		if err := r.cm.SaveWith(func(c config.Config) config.Config {
-			c.AutoConnect = in.GetEnabled()
-			return c
-		}); err != nil {
-			log.Error(err)
-			return &pb.Payload{
-				Type: internal.CodeConfigError,
-			}, nil
-		}
+		log.Info("server for autoconnect found", serverSelection.Server)
+		parameters = serverpicker.GetServerParameters(in.ServerTag, in.ServerGroup, r.dm.GetCountryData().Countries)
+	}
+
+	if err := r.cm.SaveWith(func(c config.Config) config.Config {
+		c.AutoConnect = in.GetEnabled()
+		c.AutoConnectData.ServerTag = in.ServerTag
+		c.AutoConnectData.Country = parameters.Country
+		c.AutoConnectData.CountryCode = parameters.CountryCode
+		c.AutoConnectData.City = parameters.City
+		c.AutoConnectData.Group = parameters.Group
+
+		return c
+	}); err != nil {
+		log.Error("saving config for auto-connect", err)
+		return &pb.Payload{Type: internal.CodeConfigError}, nil
 	}
 	r.events.Settings.Autoconnect.Publish(in.GetEnabled())
 

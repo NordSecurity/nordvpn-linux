@@ -415,4 +415,6 @@ Your browsing activities remain private, regardless of your choice.
 	MsgDiagnosticsSuccess    = "Diagnostics collected successfully.\nFile saved to: %s"
 	MsgDiagnosticsFailure    = "We couldn't collect diagnostic logs. Please try again or contact our support team."
 	MsgDiagnosticsDisclaimer = "WARNING: This file contains sensitive information about your system and configuration. Share it only with our support team through a secure channel."
+
+	MsgIncompatibleTechWithAutoconnect = "%s is incompatible with auto-connect. To apply this change, turn off auto-connect first and try again."
 )

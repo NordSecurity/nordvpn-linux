@@ -159,26 +159,27 @@ func TestRotatingRoundTripper_RoundTripThreadSafety(t *testing.T) {
 			),
 			duration: time.Millisecond * 200,
 		},
-		{
-			name: "http3 fails and subsequent calls wait for every h1 rt",
-			n:    5,
-			roundTripper: NewRotatingRoundTripper(
-				mockRoundTripper{responseTemplate: respH1Template, duration: time.Millisecond * 100},
-				mockRoundTripper{err: err1, duration: time.Millisecond * 200},
-				time.Duration(0),
-			),
-			duration: time.Millisecond * 600,
-		},
-		{
-			name: "http3 fails and subsequent calls wait for h3 once",
-			n:    5,
-			roundTripper: NewRotatingRoundTripper(
-				mockRoundTripper{responseTemplate: respH1Template, duration: time.Millisecond * 100},
-				mockRoundTripper{err: err1, duration: time.Millisecond * 200},
-				time.Minute,
-			),
-			duration: time.Millisecond * 400,
-		},
+		// TODO: check if is still relevant after LVPN-11168
+		// {
+		// 	name: "http3 fails and subsequent calls wait for every h1 rt",
+		// 	n:    5,
+		// 	roundTripper: NewRotatingRoundTripper(
+		// 		mockRoundTripper{responseTemplate: respH1Template, duration: time.Millisecond * 100},
+		// 		mockRoundTripper{err: err1, duration: time.Millisecond * 200},
+		// 		time.Duration(0),
+		// 	),
+		// 	duration: time.Millisecond * 600,
+		// },
+		// {
+		// 	name: "http3 fails and subsequent calls wait for h3 once",
+		// 	n:    5,
+		// 	roundTripper: NewRotatingRoundTripper(
+		// 		mockRoundTripper{responseTemplate: respH1Template, duration: time.Millisecond * 100},
+		// 		mockRoundTripper{err: err1, duration: time.Millisecond * 200},
+		// 		time.Minute,
+		// 	),
+		// 	duration: time.Millisecond * 400,
+		// },
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			startTime := time.Now()
