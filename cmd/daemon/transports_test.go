@@ -299,7 +299,7 @@ func TestResolverWrapper_ResolveDomainName(t *testing.T) {
 				err:   test.resolverErr,
 			}
 
-			resolverWrapper := newResolverWrapper(resolver, cfgManager)
+			resolverWrapper := newResolverWithBackoff(resolver, cfgManager)
 			resolverWrapper.backoff = test.initialBackoff
 			resolverWrapper.nextInternalDNSAttempt = test.initialNextAttemptUnix
 

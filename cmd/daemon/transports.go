@@ -48,9 +48,9 @@ func SetBufferSizeForHTTP3() error {
 	return nil
 }
 
-// resolverWrapper wraps a network.DNSResolver with a self-managing backoff
+// resolverWithBackoff wraps a network.DNSResolver with a self-managing backoff
 // mechanism for internal DNS resolution.
-type resolverWrapper struct {
+type resolverWithBackoff struct {
 	resolver               network.DNSResolver
 	configManager          config.Manager
 	mu                     sync.Mutex
@@ -58,14 +58,14 @@ type resolverWrapper struct {
 	backoff                time.Duration
 }
 
-func newResolverWrapper(resolver network.DNSResolver, configManager config.Manager) *resolverWrapper {
-	return &resolverWrapper{
+func newResolverWithBackoff(resolver network.DNSResolver, configManager config.Manager) *resolverWithBackoff {
+	return &resolverWithBackoff{
 		resolver:      resolver,
 		configManager: configManager,
 	}
 }
 
-func (r *resolverWrapper) isInBackoffMode() bool {
+func (r *resolverWithBackoff) isInBackoffMode() bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -76,7 +76,7 @@ func (r *resolverWrapper) isInBackoffMode() bool {
 //  1. initial backoff is 5 minutes long
 //  2. subsequent backoff is 30 minutes long
 //  3. all backoffs after that are 60 minutes long
-func (r *resolverWrapper) setBackoff() {
+func (r *resolverWithBackoff) setBackoff() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -93,9 +93,11 @@ func (r *resolverWrapper) setBackoff() {
 	r.nextInternalDNSAttempt = time.Now().Add(r.backoff)
 }
 
-func (r *resolverWrapper) unsetBackoff() {
+func (r *resolverWithBackoff) unsetBackoff() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+
+	log.Info("backoff period is over, will attempt to use internal resolver")
 
 	r.backoff = 0
 	r.nextInternalDNSAttempt = time.Time{}
@@ -107,7 +109,7 @@ func (r *resolverWrapper) unsetBackoff() {
 //   - if killswitch is on, internal resolver will always be used
 //   - if killswitch is off and the internal resolver fails or backoff is on, domain will be returned as is to be
 //     resolved by the OS resolver
-func (r *resolverWrapper) resolveDomainName(ctx context.Context, domain string) (string, error) {
+func (r *resolverWithBackoff) resolveDomainName(ctx context.Context, domain string) (string, error) {
 	var cfg config.Config
 	if cfgLoadErr := r.configManager.Load(&cfg); cfgLoadErr != nil {
 		log.Error("loading config to determine if internal DNS resolution can be skipped:", cfgLoadErr)
@@ -125,7 +127,7 @@ func (r *resolverWrapper) resolveDomainName(ctx context.Context, domain string) 
 	if err != nil {
 		// only set backoff if it was not set(or the previous backoff has expired) so that it won't be saturated by
 		// multiple failed DNS calls.
-		if !inBackoff {
+		if r.isInBackoffMode() {
 			r.setBackoff()
 		}
 
@@ -158,7 +160,7 @@ func createH1Transport(
 	environment string,
 	configManager config.Manager,
 ) func() http.RoundTripper {
-	resolverWrapper := newResolverWrapper(resolver, configManager)
+	resolverWrapper := newResolverWithBackoff(resolver, configManager)
 
 	return func() http.RoundTripper {
 		dialer := &net.Dialer{
