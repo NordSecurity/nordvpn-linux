@@ -11,7 +11,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"sync/atomic"
+	"sync"
 	"syscall"
 	"time"
 
@@ -51,10 +51,11 @@ func SetBufferSizeForHTTP3() error {
 // resolverWrapper wraps a network.DNSResolver with a self-managing backoff
 // mechanism for internal DNS resolution.
 type resolverWrapper struct {
-	resolver                   network.DNSResolver
-	configManager              config.Manager
-	nextInternalDNSAttemptUnix atomic.Int64
-	internalDNSBackoffMinutes  atomic.Int64
+	resolver               network.DNSResolver
+	configManager          config.Manager
+	mu                     sync.Mutex
+	nextInternalDNSAttempt time.Time
+	backoff                time.Duration
 }
 
 func newResolverWrapper(resolver network.DNSResolver, configManager config.Manager) *resolverWrapper {
@@ -65,7 +66,10 @@ func newResolverWrapper(resolver network.DNSResolver, configManager config.Manag
 }
 
 func (r *resolverWrapper) isInBackoffMode() bool {
-	return time.Now().Before(time.Unix(r.nextInternalDNSAttemptUnix.Load(), 0))
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	return time.Now().Before(r.nextInternalDNSAttempt)
 }
 
 // setBackoff sets the new backoff based on the previous backoff:
@@ -73,27 +77,28 @@ func (r *resolverWrapper) isInBackoffMode() bool {
 //  2. subsequent backoff is 30 minutes long
 //  3. all backoffs after that are 60 minutes long
 func (r *resolverWrapper) setBackoff() {
-	currentBackoff := r.internalDNSBackoffMinutes.Load()
+	r.mu.Lock()
+	defer r.mu.Unlock()
 
-	var nextBackoff int64
-	switch currentBackoff {
+	switch r.backoff {
 	case 0:
-		nextBackoff = 5
-	case 5:
-		nextBackoff = 30
+		r.backoff = 5 * time.Minute
+	case 5 * time.Minute:
+		r.backoff = 30 * time.Minute
 	default:
-		nextBackoff = 60
+		r.backoff = 60 * time.Minute
 	}
 
-	log.Info("backing off from internal DNS resolution for", nextBackoff, "minutes")
-
-	r.internalDNSBackoffMinutes.Store(nextBackoff)
-	r.nextInternalDNSAttemptUnix.Store(time.Now().Add(time.Minute * time.Duration(nextBackoff)).Unix())
+	log.Info("backing off from internal DNS resolution for", r.backoff)
+	r.nextInternalDNSAttempt = time.Now().Add(r.backoff)
 }
 
 func (r *resolverWrapper) unsetBackoff() {
-	r.internalDNSBackoffMinutes.Store(0)
-	r.nextInternalDNSAttemptUnix.Store(0)
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	r.backoff = 0
+	r.nextInternalDNSAttempt = time.Time{}
 }
 
 // resolveDomainName resolves domain via the internal resolver, applying the
@@ -102,7 +107,7 @@ func (r *resolverWrapper) unsetBackoff() {
 //   - if killswitch is on, internal resolver will always be used
 //   - if killswitch is off and the internal resolver fails or backoff is on, domain will be returned as is to be
 //     resolved by the OS resolver
-func (r *resolverWrapper) resolveDomainName(domain string, ctx context.Context) (string, error) {
+func (r *resolverWrapper) resolveDomainName(ctx context.Context, domain string) (string, error) {
 	var cfg config.Config
 	if cfgLoadErr := r.configManager.Load(&cfg); cfgLoadErr != nil {
 		log.Error("loading config to determine if internal DNS resolution can be skipped:", cfgLoadErr)
@@ -116,7 +121,7 @@ func (r *resolverWrapper) resolveDomainName(domain string, ctx context.Context) 
 		return domain, nil
 	}
 
-	addr, err := r.resolver.Resolve(domain, ctx)
+	addr, err := r.resolver.Resolve(ctx, domain)
 	if err != nil {
 		// only set backoff if it was not set(or the previous backoff has expired) so that it won't be saturated by
 		// multiple failed DNS calls.
@@ -170,7 +175,7 @@ func createH1Transport(
 
 				// resolverWrapper will return unresolved address if DNS resolution fails and killswitch is off.
 				// In such cases this address will be resolved by the OS resolver when it's passed on to the dialer.
-				resolvedAddr, err := resolverWrapper.resolveDomainName(domain, ctx)
+				resolvedAddr, err := resolverWrapper.resolveDomainName(ctx, domain)
 				if err != nil {
 					return nil, err
 				}
@@ -252,7 +257,7 @@ func createH3Transport(resolver network.DNSResolver, fwmark uint32) func() http.
 					if err != nil {
 						return nil, fmt.Errorf("port conversion failed: %s", portStr)
 					}
-					ips, err := resolver.Resolve(domain, ctx)
+					ips, err := resolver.Resolve(ctx, domain)
 					if err != nil {
 						return nil, err
 					}

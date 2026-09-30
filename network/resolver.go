@@ -47,15 +47,15 @@ func NewResolver(
 }
 
 type DNSResolver interface {
-	Resolve(domain string, ctx context.Context) ([]netip.Addr, error)
+	Resolve(ctx context.Context, domain string) ([]netip.Addr, error)
 }
 
-func (r *Resolver) Resolve(domain string, ctx context.Context) ([]netip.Addr, error) {
+func (r *Resolver) Resolve(ctx context.Context, domain string) ([]netip.Addr, error) {
 	nameservers := r.servers.Get(false)
-	return r.resolveWithNameservers(domain, FilterInvalidIPs(nameservers), "udp", ctx)
+	return r.resolveWithNameservers(ctx, domain, FilterInvalidIPs(nameservers), "udp")
 }
 
-func (r *Resolver) resolveWithNameservers(domain string, nameservers []string, protocol string, ctx context.Context) ([]netip.Addr, error) {
+func (r *Resolver) resolveWithNameservers(ctx context.Context, domain string, nameservers []string, protocol string) ([]netip.Addr, error) {
 	r.Lock()
 	defer r.Unlock()
 
@@ -68,7 +68,7 @@ func (r *Resolver) resolveWithNameservers(domain string, nameservers []string, p
 			// While connected to VPN, send the DNS requests thru the tunnel so no fwmark
 			fwmark = noFwMark
 		}
-		ipAddrs, err = lookupAddress(domain, nameserver, protocol, fwmark, ctx)
+		ipAddrs, err = lookupAddress(ctx, domain, nameserver, protocol, fwmark)
 
 		if err == nil {
 			return ipAddrs, nil

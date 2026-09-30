@@ -27,7 +27,7 @@ type workingResolver struct {
 	IP string
 }
 
-func (w workingResolver) Resolve(string, context.Context) ([]netip.Addr, error) {
+func (w workingResolver) Resolve(context.Context, string) ([]netip.Addr, error) {
 	if w.IP != "" {
 		return []netip.Addr{netip.MustParseAddr(w.IP)}, nil
 	}
@@ -167,7 +167,7 @@ type mockDNSResolver struct {
 	err   error
 }
 
-func (m mockDNSResolver) Resolve(domain string, ctx context.Context) ([]netip.Addr, error) {
+func (m mockDNSResolver) Resolve(ctx context.Context, domain string) ([]netip.Addr, error) {
 	return m.addrs, m.err
 }
 
@@ -180,12 +180,12 @@ func TestResolverWrapper_ResolveDomainName(t *testing.T) {
 		resolverErr            error
 		killSwitch             bool
 		loadErr                error
-		initialBackoffMinutes  int64
-		initialNextAttemptUnix int64
+		initialBackoff         time.Duration
+		initialNextAttemptUnix time.Time
 		domain                 string
 		expectedAddress        string
 		errorIsExpected        bool
-		expectedBackoffMins    int64
+		expectedBackoff        time.Duration
 		expectedBackoffSet     bool
 	}{
 		{
@@ -195,64 +195,64 @@ func TestResolverWrapper_ResolveDomainName(t *testing.T) {
 			expectedAddress: "1.2.3.4",
 		},
 		{
-			name:                  "success clears existing backoff",
-			resolverAddrs:         []netip.Addr{netip.MustParseAddr("1.2.3.4")},
-			initialBackoffMinutes: 60,
-			domain:                "example.com",
-			expectedAddress:       "1.2.3.4",
-			expectedBackoffMins:   0,
-			expectedBackoffSet:    false,
+			name:               "success clears existing backoff",
+			resolverAddrs:      []netip.Addr{netip.MustParseAddr("1.2.3.4")},
+			initialBackoff:     60 * time.Minute,
+			domain:             "example.com",
+			expectedAddress:    "1.2.3.4",
+			expectedBackoff:    0 * time.Minute,
+			expectedBackoffSet: false,
 		},
 		{
-			name:                "resolve error with kill switch off returns raw domain",
-			resolverErr:         errors.New("dns failure"),
-			killSwitch:          false,
-			domain:              "example.com",
-			expectedAddress:     "example.com",
-			expectedBackoffMins: 5,
-			expectedBackoffSet:  true,
+			name:               "resolve error with kill switch off returns raw domain",
+			resolverErr:        errors.New("dns failure"),
+			killSwitch:         false,
+			domain:             "example.com",
+			expectedAddress:    "example.com",
+			expectedBackoff:    5 * time.Minute,
+			expectedBackoffSet: true,
 		},
 		{
-			name:                "resolve error with kill switch on returns error",
-			resolverErr:         errors.New("dns failure"),
-			killSwitch:          true,
-			domain:              "example.com",
-			errorIsExpected:     true,
-			expectedBackoffMins: 5,
-			expectedBackoffSet:  true,
+			name:               "resolve error with kill switch on returns error",
+			resolverErr:        errors.New("dns failure"),
+			killSwitch:         true,
+			domain:             "example.com",
+			errorIsExpected:    true,
+			expectedBackoff:    5 * time.Minute,
+			expectedBackoffSet: true,
 		},
 		{
-			name:                "resolve error with config load error returns error",
-			resolverErr:         errors.New("dns failure"),
-			loadErr:             errors.New("config load failure"),
-			domain:              "example.com",
-			errorIsExpected:     true,
-			expectedBackoffMins: 5,
-			expectedBackoffSet:  true,
+			name:               "resolve error with config load error returns error",
+			resolverErr:        errors.New("dns failure"),
+			loadErr:            errors.New("config load failure"),
+			domain:             "example.com",
+			errorIsExpected:    true,
+			expectedBackoff:    5 * time.Minute,
+			expectedBackoffSet: true,
 		},
 		{
-			name:                  "backoff escalates 5 to 30 on failure",
-			resolverErr:           errors.New("dns failure"),
-			killSwitch:            true,
-			initialBackoffMinutes: 5,
-			domain:                "example.com",
-			errorIsExpected:       true,
-			expectedBackoffMins:   30,
-			expectedBackoffSet:    true,
+			name:               "backoff escalates 5 to 30 on failure",
+			resolverErr:        errors.New("dns failure"),
+			killSwitch:         true,
+			initialBackoff:     5 * time.Minute,
+			domain:             "example.com",
+			errorIsExpected:    true,
+			expectedBackoff:    30 * time.Minute,
+			expectedBackoffSet: true,
 		},
 		{
-			name:                  "backoff caps at 60 minutes",
-			resolverErr:           errors.New("dns failure"),
-			killSwitch:            true,
-			initialBackoffMinutes: 60,
-			domain:                "example.com",
-			errorIsExpected:       true,
-			expectedBackoffMins:   60,
-			expectedBackoffSet:    true,
+			name:               "backoff caps at 60 minutes",
+			resolverErr:        errors.New("dns failure"),
+			killSwitch:         true,
+			initialBackoff:     60 * time.Minute,
+			domain:             "example.com",
+			errorIsExpected:    true,
+			expectedBackoff:    60 * time.Minute,
+			expectedBackoffSet: true,
 		},
 		{
 			name:                   "in backoff mode returns raw domain without resolving",
-			initialNextAttemptUnix: time.Now().Add(time.Hour).Unix(),
+			initialNextAttemptUnix: time.Now().Add(time.Hour),
 			domain:                 "example.com",
 			expectedAddress:        "example.com",
 			expectedBackoffSet:     true,
@@ -269,22 +269,22 @@ func TestResolverWrapper_ResolveDomainName(t *testing.T) {
 			domain:                 "example.com",
 			resolverErr:            errors.New("dns failure"),
 			loadErr:                errors.New("config load failure"),
-			initialNextAttemptUnix: time.Now().Add(time.Hour).Unix(),
-			initialBackoffMinutes:  5,
-			expectedBackoffMins:    5,
+			initialNextAttemptUnix: time.Now().Add(time.Hour),
+			initialBackoff:         5 * time.Minute,
+			expectedBackoff:        5 * time.Minute,
 			errorIsExpected:        true,
 			expectedBackoffSet:     true,
 		},
 		{
-			name:                  "killswitch is assumed to be on in case of config load error, updates backoff when not in backoff mode",
-			resolverAddrs:         []netip.Addr{},
-			domain:                "example.com",
-			resolverErr:           errors.New("dns failure"),
-			loadErr:               errors.New("config load failure"),
-			initialBackoffMinutes: 5,
-			expectedBackoffMins:   30,
-			errorIsExpected:       true,
-			expectedBackoffSet:    true,
+			name:               "killswitch is assumed to be on in case of config load error, updates backoff when not in backoff mode",
+			resolverAddrs:      []netip.Addr{},
+			domain:             "example.com",
+			resolverErr:        errors.New("dns failure"),
+			loadErr:            errors.New("config load failure"),
+			initialBackoff:     5 * time.Minute,
+			expectedBackoff:    30 * time.Minute,
+			errorIsExpected:    true,
+			expectedBackoffSet: true,
 		},
 	}
 
@@ -300,10 +300,10 @@ func TestResolverWrapper_ResolveDomainName(t *testing.T) {
 			}
 
 			resolverWrapper := newResolverWrapper(resolver, cfgManager)
-			resolverWrapper.internalDNSBackoffMinutes.Store(test.initialBackoffMinutes)
-			resolverWrapper.nextInternalDNSAttemptUnix.Store(test.initialNextAttemptUnix)
+			resolverWrapper.backoff = test.initialBackoff
+			resolverWrapper.nextInternalDNSAttempt = test.initialNextAttemptUnix
 
-			resolvedAddress, err := resolverWrapper.resolveDomainName(test.domain, context.Background())
+			resolvedAddress, err := resolverWrapper.resolveDomainName(context.Background(), test.domain)
 
 			assert.Equal(t, test.expectedAddress, resolvedAddress, "Domain name was resolved to an unexpected address.")
 			if test.errorIsExpected {
@@ -311,7 +311,7 @@ func TestResolverWrapper_ResolveDomainName(t *testing.T) {
 			} else {
 				assert.NoError(t, err, "Unexpected error returned by the resolver wrapper.")
 			}
-			assert.Equal(t, test.expectedBackoffMins, resolverWrapper.internalDNSBackoffMinutes.Load(),
+			assert.Equal(t, test.expectedBackoff, resolverWrapper.backoff,
 				"Unexpected backoff value after DNS resolution attempt.")
 			assert.Equal(t, test.expectedBackoffSet, resolverWrapper.isInBackoffMode(),
 				"Backoff not set as expected after DNS resolution attempt.")

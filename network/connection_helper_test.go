@@ -79,7 +79,7 @@ func TestResolveHostUsingLocalDnsServer(t *testing.T) {
 	dnsAddr, shutdown := startTestDNSServer(t, domainName, ipAddress)
 	defer shutdown()
 
-	result, err := lookupAddress(domainName, dnsAddr, "udp", noFwMark, context.Background())
+	result, err := lookupAddress(context.Background(), domainName, dnsAddr, "udp", noFwMark)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, result)
 	if len(result) > 0 {
@@ -90,7 +90,7 @@ func TestResolveHostUsingLocalDnsServer(t *testing.T) {
 func TestResolveHost(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	result, err := lookupAddress("google.com", "1.1.1.1", "udp", noFwMark, context.Background())
+	result, err := lookupAddress(context.Background(), "google.com", "1.1.1.1", "udp", noFwMark)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, result[0])
 	assert.NotEmpty(t, result[1])
