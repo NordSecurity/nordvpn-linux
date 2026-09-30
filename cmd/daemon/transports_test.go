@@ -70,13 +70,13 @@ func TestTransports(t *testing.T) {
 		{
 			comment:     "test older transport small req/resp",
 			inputURL:    serverListSmallURL,
-			transport:   createH1Transport(workingResolver{}, 0, "", mock.NewMockConfigManager())(),
+			transport:   createH1Transport(workingResolver{}, 0, "")(),
 			expectError: false,
 		},
 		{
 			comment:     "test older transport large resp",
 			inputURL:    serverListLargeURL,
-			transport:   createH1Transport(workingResolver{}, 0, "", mock.NewMockConfigManager())(),
+			transport:   createH1Transport(workingResolver{}, 0, "")(),
 			expectError: false,
 		},
 		{
@@ -94,7 +94,7 @@ func TestTransports(t *testing.T) {
 		{
 			comment:     "test non quic/H3 url with H1 transport",
 			inputURL:    nonH3serverURL,
-			transport:   createH1Transport(workingResolver{}, 0, "", mock.NewMockConfigManager())(),
+			transport:   createH1Transport(workingResolver{}, 0, "")(),
 			expectError: false,
 		},
 		{
@@ -129,7 +129,7 @@ func TestH1Transport_RoundTrip(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.ip, func(t *testing.T) {
-			transport := createH1Transport(workingResolver{IP: test.ip}, 0, "", mock.NewMockConfigManager())()
+			transport := createH1Transport(workingResolver{IP: test.ip}, 0, "")()
 			req, err := http.NewRequest(http.MethodGet, serverListSmallURL, nil)
 			assert.NoError(t, err)
 			resp, err := transport.RoundTrip(req)
@@ -178,7 +178,6 @@ func TestResolverWrapper_ResolveDomainName(t *testing.T) {
 		name                   string
 		resolverAddrs          []netip.Addr
 		resolverErr            error
-		killSwitch             bool
 		loadErr                error
 		initialBackoff         time.Duration
 		initialNextAttemptUnix time.Time
@@ -204,49 +203,28 @@ func TestResolverWrapper_ResolveDomainName(t *testing.T) {
 			expectedBackoffSet: false,
 		},
 		{
-			name:               "resolve error with kill switch off returns raw domain",
+			name:               "resolve error returns raw domain",
 			resolverErr:        errors.New("dns failure"),
-			killSwitch:         false,
 			domain:             "example.com",
 			expectedAddress:    "example.com",
 			expectedBackoff:    5 * time.Minute,
 			expectedBackoffSet: true,
 		},
 		{
-			name:               "resolve error with kill switch on returns error",
-			resolverErr:        errors.New("dns failure"),
-			killSwitch:         true,
-			domain:             "example.com",
-			errorIsExpected:    true,
-			expectedBackoff:    5 * time.Minute,
-			expectedBackoffSet: true,
-		},
-		{
-			name:               "resolve error with config load error returns error",
-			resolverErr:        errors.New("dns failure"),
-			loadErr:            errors.New("config load failure"),
-			domain:             "example.com",
-			errorIsExpected:    true,
-			expectedBackoff:    5 * time.Minute,
-			expectedBackoffSet: true,
-		},
-		{
 			name:               "backoff escalates 5 to 30 on failure",
 			resolverErr:        errors.New("dns failure"),
-			killSwitch:         true,
 			initialBackoff:     5 * time.Minute,
 			domain:             "example.com",
-			errorIsExpected:    true,
+			expectedAddress:    "example.com",
 			expectedBackoff:    30 * time.Minute,
 			expectedBackoffSet: true,
 		},
 		{
 			name:               "backoff caps at 60 minutes",
 			resolverErr:        errors.New("dns failure"),
-			killSwitch:         true,
 			initialBackoff:     60 * time.Minute,
 			domain:             "example.com",
-			errorIsExpected:    true,
+			expectedAddress:    "example.com",
 			expectedBackoff:    60 * time.Minute,
 			expectedBackoffSet: true,
 		},
@@ -263,35 +241,11 @@ func TestResolverWrapper_ResolveDomainName(t *testing.T) {
 			domain:          "example.com",
 			errorIsExpected: true,
 		},
-		{
-			name:                   "killswitch is assumed to be on in case of config load error, doesn't change backoff when already in backoff mode",
-			resolverAddrs:          []netip.Addr{},
-			domain:                 "example.com",
-			resolverErr:            errors.New("dns failure"),
-			loadErr:                errors.New("config load failure"),
-			initialNextAttemptUnix: time.Now().Add(time.Hour),
-			initialBackoff:         5 * time.Minute,
-			expectedBackoff:        5 * time.Minute,
-			errorIsExpected:        true,
-			expectedBackoffSet:     true,
-		},
-		{
-			name:               "killswitch is assumed to be on in case of config load error, updates backoff when not in backoff mode",
-			resolverAddrs:      []netip.Addr{},
-			domain:             "example.com",
-			resolverErr:        errors.New("dns failure"),
-			loadErr:            errors.New("config load failure"),
-			initialBackoff:     5 * time.Minute,
-			expectedBackoff:    30 * time.Minute,
-			errorIsExpected:    true,
-			expectedBackoffSet: true,
-		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			cfgManager := mock.NewMockConfigManager()
-			cfgManager.Cfg.KillSwitch = test.killSwitch
 			cfgManager.LoadErr = test.loadErr
 
 			resolver := mockDNSResolver{
@@ -299,7 +253,7 @@ func TestResolverWrapper_ResolveDomainName(t *testing.T) {
 				err:   test.resolverErr,
 			}
 
-			resolverWrapper := newResolverWithBackoff(resolver, cfgManager)
+			resolverWrapper := newResolverWithBackoff(resolver)
 			resolverWrapper.backoff = test.initialBackoff
 			resolverWrapper.nextInternalDNSAttempt = test.initialNextAttemptUnix
 

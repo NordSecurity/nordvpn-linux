@@ -15,7 +15,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/kernel"
@@ -52,16 +51,14 @@ func SetBufferSizeForHTTP3() error {
 // mechanism for internal DNS resolution.
 type resolverWithBackoff struct {
 	resolver               network.DNSResolver
-	configManager          config.Manager
 	mu                     sync.Mutex
 	nextInternalDNSAttempt time.Time
 	backoff                time.Duration
 }
 
-func newResolverWithBackoff(resolver network.DNSResolver, configManager config.Manager) *resolverWithBackoff {
+func newResolverWithBackoff(resolver network.DNSResolver) *resolverWithBackoff {
 	return &resolverWithBackoff{
-		resolver:      resolver,
-		configManager: configManager,
+		resolver: resolver,
 	}
 }
 
@@ -80,12 +77,11 @@ func (r *resolverWithBackoff) setBackoff() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	switch r.backoff {
-	case 0:
+	if r.backoff == 0 {
 		r.backoff = 5 * time.Minute
-	case 5 * time.Minute:
+	} else if r.backoff == 5*time.Minute {
 		r.backoff = 30 * time.Minute
-	default:
+	} else {
 		r.backoff = 60 * time.Minute
 	}
 
@@ -110,16 +106,9 @@ func (r *resolverWithBackoff) unsetBackoff() {
 //   - if killswitch is off and the internal resolver fails or backoff is on, domain will be returned as is to be
 //     resolved by the OS resolver
 func (r *resolverWithBackoff) resolveDomainName(ctx context.Context, domain string) (string, error) {
-	var cfg config.Config
-	if cfgLoadErr := r.configManager.Load(&cfg); cfgLoadErr != nil {
-		log.Error("loading config to determine if internal DNS resolution can be skipped:", cfgLoadErr)
-		// assume killswitch is on upon config load failure
-		cfg.KillSwitch = true
-	}
-
 	inBackoff := r.isInBackoffMode()
 
-	if inBackoff && !cfg.KillSwitch {
+	if inBackoff {
 		return domain, nil
 	}
 
@@ -127,15 +116,11 @@ func (r *resolverWithBackoff) resolveDomainName(ctx context.Context, domain stri
 	if err != nil {
 		// only set backoff if it was not set(or the previous backoff has expired) so that it won't be saturated by
 		// multiple failed DNS calls.
-		if r.isInBackoffMode() {
+		if !r.isInBackoffMode() {
 			r.setBackoff()
 		}
 
-		if !cfg.KillSwitch {
-			return domain, nil
-		}
-
-		return "", fmt.Errorf("resolving domain name: %w", err)
+		return domain, nil
 	}
 
 	r.unsetBackoff()
@@ -158,9 +143,8 @@ func createH1Transport(
 	resolver network.DNSResolver,
 	fwmark uint32,
 	environment string,
-	configManager config.Manager,
 ) func() http.RoundTripper {
-	resolverWrapper := newResolverWithBackoff(resolver, configManager)
+	resolverWrapper := newResolverWithBackoff(resolver)
 
 	return func() http.RoundTripper {
 		dialer := &net.Dialer{
@@ -334,7 +318,6 @@ func createTimedOutTransport(
 	connectSubject events.PublishSubcriber[events.DataConnect],
 	ctx context.Context,
 	environment string,
-	configManager config.Manager,
 ) http.RoundTripper {
 	transportsStr := os.Getenv(envHTTPTransportsKey)
 	log.Info("http transports to use (environment):", transportsStr)
@@ -352,7 +335,7 @@ func createTimedOutTransport(
 			1,
 			1,
 			"HTTP/1.1",
-			createH1Transport(resolver, fwmark, environment, configManager),
+			createH1Transport(resolver, fwmark, environment),
 			nil,
 			transportNeedsRecreate,
 		)
