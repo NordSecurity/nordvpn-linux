@@ -84,6 +84,7 @@ func (r *resolverWithBackoff) setBackoff() {
 		maxBackoff     = 60 * time.Minute
 	)
 
+	//nolint:exhaustive // time.Duration is not an enum; default covers all other values
 	switch r.backoff {
 	case 0:
 		r.backoff = initialBackoff
