@@ -147,6 +147,13 @@ func (e *ApplySettingsError) add(setting Setting, err error) {
 	}
 }
 
+func (e *ApplySettingsError) err() error {
+	if len(e.Errors) == 0 {
+		return nil
+	}
+	return e
+}
+
 func (e *ApplySettingsError) FailedSettings() []string {
 	settings := make([]string, 0, len(e.Errors))
 	for _, err := range e.Errors {
@@ -841,10 +848,7 @@ func (netw *Combined) ApplySettings(newSettings Settings) error {
 		applyErr.add(SettingFirewall, netw.enableFirewall())
 	}
 
-	if len(applyErr.Errors) > 0 {
-		return &applyErr
-	}
-	return nil
+	return applyErr.err()
 }
 
 func (netw *Combined) blockIPv6() {
