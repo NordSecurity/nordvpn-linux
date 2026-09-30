@@ -120,23 +120,15 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.P
 
 	if applyErr != nil {
 		log.Error("applying default settings to networker:", applyErr)
+		var failedSettings []string
+		if settingsErr, ok := errors.AsType[*networker.ApplySettingsError](applyErr); ok {
+			failedSettings = settingsErr.FailedSettings()
+		}
 		return &pb.Payload{
 			Type: internal.CodeSetDefaultsNotApplied,
-			Data: failedSettingNames(applyErr),
+			Data: failedSettings,
 		}, nil
 	}
 
 	return &pb.Payload{Type: internal.CodeSuccess}, nil
-}
-
-func failedSettingNames(err error) []string {
-	applyErr, ok := errors.AsType[*networker.ApplySettingsError](err)
-	if !ok {
-		return nil
-	}
-	var names []string
-	for _, setting := range applyErr.FailedSettings() {
-		names = append(names, string(setting))
-	}
-	return names
 }

@@ -126,7 +126,11 @@ type ApplySettingsError struct {
 }
 
 func (e *ApplySettingsError) Error() string {
-	return errors.Join(e.Unwrap()...).Error()
+	msgs := make([]string, 0, len(e.Errors))
+	for _, err := range e.Errors {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "\n")
 }
 
 func (e *ApplySettingsError) Unwrap() []error {
@@ -143,10 +147,10 @@ func (e *ApplySettingsError) add(setting Setting, err error) {
 	}
 }
 
-func (e *ApplySettingsError) FailedSettings() []Setting {
-	settings := make([]Setting, 0, len(e.Errors))
+func (e *ApplySettingsError) FailedSettings() []string {
+	settings := make([]string, 0, len(e.Errors))
 	for _, err := range e.Errors {
-		settings = append(settings, err.Setting)
+		settings = append(settings, string(err.Setting))
 	}
 	return settings
 }
