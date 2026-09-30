@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -93,7 +94,9 @@ func (r *resolverWithBackoff) unsetBackoff() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	log.Info("backoff period is over, will attempt to use internal resolver")
+	if r.backoff != 0 {
+		log.Info("unsetting internal DNS resolution backoff")
+	}
 
 	r.backoff = 0
 	r.nextInternalDNSAttempt = time.Time{}
@@ -114,9 +117,15 @@ func (r *resolverWithBackoff) resolveDomainName(ctx context.Context, domain stri
 
 	addr, err := r.resolver.Resolve(ctx, domain)
 	if err != nil {
+		var dnsErr *net.DNSError
+		if errors.As(err, &dnsErr) && dnsErr.IsNotFound {
+			return "", fmt.Errorf("resolving DNS: %w", err)
+		}
+
 		// only set backoff if it was not set(or the previous backoff has expired) so that it won't be saturated by
 		// multiple failed DNS calls.
 		if !r.isInBackoffMode() {
+			log.Warn("failed to resolve domain name with internal resolver, enabling backoff:", err)
 			r.setBackoff()
 		}
 
