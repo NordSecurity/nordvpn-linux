@@ -1981,6 +1981,15 @@ class Translations$ui$en {
 	/// en: 'We couldn't save your settings to the configuration file.'
 	String get couldNotSave => 'We couldn\'t save your settings to the configuration file.';
 
+	/// en: 'Some settings weren't applied'
+	String get settingsNotApplied => 'Some settings weren\'t applied';
+
+	/// en: 'Some default network settings could not be applied. Reset settings again to retry. If the problem continues, contact support.'
+	String get networkSettingsNotAppliedDescription => 'Some default network settings could not be applied. Reset settings again to retry. If the problem continues, contact support.';
+
+	/// en: 'Some default settings could not be applied. The reset finished, but these settings may not be active: $settings. Reset settings again to retry. If the problem continues, contact support.'
+	String settingsNotAppliedDescription({required Object settings}) => 'Some default settings could not be applied. The reset finished, but these settings may not be active: ${settings}. Reset settings again to retry. If the problem continues, contact support.';
+
 	/// en: 'Turn off obfuscation for more server types'
 	String get turnOffObfuscationServerTypes => 'Turn off obfuscation for more server types';
 
@@ -2855,6 +2864,9 @@ extension on Translations {
 			'ui.delete' => 'Delete',
 			'ui.settingsWereNotSaved' => 'Settings weren\'t saved',
 			'ui.couldNotSave' => 'We couldn\'t save your settings to the configuration file.',
+			'ui.settingsNotApplied' => 'Some settings weren\'t applied',
+			'ui.networkSettingsNotAppliedDescription' => 'Some default network settings could not be applied. Reset settings again to retry. If the problem continues, contact support.',
+			'ui.settingsNotAppliedDescription' => ({required Object settings}) => 'Some default settings could not be applied. The reset finished, but these settings may not be active: ${settings}. Reset settings again to retry. If the problem continues, contact support.',
 			'ui.turnOffObfuscationServerTypes' => 'Turn off obfuscation for more server types',
 			'ui.turnOffObfuscationLocations' => 'Turn off obfuscation for more locations',
 			'ui.nordWhisper' => 'NordWhisper',

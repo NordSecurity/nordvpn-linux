@@ -272,11 +272,11 @@ class VpnSettingsRepository {
     return result.type.toInt();
   }
 
-  Future<int> resetToDefaults() async {
+  Future<({int status, List<String> failedSettings})> resetToDefaults() async {
     final result = await _client.setDefaults(
       SetDefaultsRequest(noLogout: true),
     );
-    return result.type.toInt();
+    return (status: result.type.toInt(), failedSettings: result.data.toList());
   }
 
   Future<int> setPostQuantum(bool value) async {

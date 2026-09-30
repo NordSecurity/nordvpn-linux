@@ -187,6 +187,14 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code, {Object? userData}) {
       buttonText: t.ui.gotIt,
     ),
 
+    // Settings were reset, but some of them could not be applied
+    DaemonStatusCode.setDefaultsNotApplied => InfoPopupMetadata(
+      id: DaemonStatusCode.setDefaultsNotApplied,
+      title: t.ui.settingsNotApplied,
+      message: (_) => _setDefaultsNotAppliedMessage(userData),
+      buttonText: t.ui.gotIt,
+    ),
+
     // ==============================    [ triggered by daemon ]    ==============================
 
     // Subscription expired
@@ -276,6 +284,15 @@ PopupMetadata infoForDaemonCode(int code) {
     title: title,
     message: (_) => message,
     buttonText: t.ui.gotIt,
+  );
+}
+
+String _setDefaultsNotAppliedMessage(Object? failedSettings) {
+  if (failedSettings is! List<String> || failedSettings.isEmpty) {
+    return t.ui.networkSettingsNotAppliedDescription;
+  }
+  return t.ui.settingsNotAppliedDescription(
+    settings: failedSettings.join(", "),
   );
 }
 
