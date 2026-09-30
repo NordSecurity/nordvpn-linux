@@ -8,25 +8,27 @@ import 'package:url_launcher/url_launcher.dart';
 // Custom class implementation for RichText that replaces the URL link from
 // [label](<url>) to a clickable url
 class RichTextMarkdownLinks extends StatefulWidget {
-  final String? text;
-  final MarkdownText? markdown;
+  final MarkdownText markdown;
   final TextStyle? style;
-  // One callback per link, in the order the links appear in [text].
+  // One callback per link, in the order the links appear in [markdown].
   // Each is invoked when its link is tapped, and before the URL is launched.
   // The URL is launched regardless of the callback.
-  // Number of callbacks (when provided) must match the number of links in [text].
+  // Number of callbacks (when provided) must match the number of links in [markdown].
   final List<VoidCallback>? onLinkTaps;
 
-  const RichTextMarkdownLinks({
+  RichTextMarkdownLinks({
     super.key,
-    this.text,
-    this.markdown,
+    required String text,
     this.style,
     this.onLinkTaps,
-  }) : assert(
-         (text == null) != (markdown == null),
-         "provide either text or markdown",
-       );
+  }) : markdown = MarkdownText.parse(text);
+
+  const RichTextMarkdownLinks.markdown({
+    super.key,
+    required this.markdown,
+    this.style,
+    this.onLinkTaps,
+  });
 
   @override
   State<RichTextMarkdownLinks> createState() => _RichTextMarkdownLinksState();
@@ -60,7 +62,7 @@ class _RichTextMarkdownLinksState extends State<RichTextMarkdownLinks> {
   List<TextSpan> _buildSpans(BuildContext context) {
     final linkTheme = context.supportLinkTheme;
     List<TextSpan> spans = [];
-    final markdown = widget.markdown ?? MarkdownText.parse(widget.text!);
+    final markdown = widget.markdown;
     final onLinkTaps = widget.onLinkTaps;
     assert(
       onLinkTaps == null || onLinkTaps.length == markdown.linksCount,
