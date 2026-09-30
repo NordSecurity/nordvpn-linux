@@ -247,7 +247,14 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code, {Object? userData}) {
             ref.read(uiEventRepositoryProvider).reportSessionLimitLearnMore(),
       ],
     ),
-
+    DaemonStatusCode.technologyIsIncompatibleWithAutoconnect =>
+      InfoPopupMetadata(
+        id: DaemonStatusCode.technologyIsIncompatibleWithAutoconnect,
+        title: "TODO: Failed to switch technology",
+        message: (_) =>
+            "TODO: Technology is incompatible with autoconnect settings",
+        buttonText: t.ui.gotIt,
+      ),
     // not matched, display generic error message
     _ => infoForDaemonCode(code),
   };

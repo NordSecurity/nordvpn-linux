@@ -70,6 +70,8 @@ func (c *cmd) SetTechnology(ctx *cli.Context) error {
 		return formatError(argsParseError(ctx))
 	case internal.CodeDedicatedServersNoNordlynx:
 		return errors.New(DedicatedServersAutoconnectNordlynxMessage)
+	case internal.CodeTechnologyIncompatibleWithAutoconnect:
+		return errors.New("TODO: Cannot change technology because autoconnect data is incompatible.")
 	case internal.CodeSuccessWithoutAC:
 		// must be right before CodeSuccess
 		color.Yellow(SetAutoConnectForceOff)
