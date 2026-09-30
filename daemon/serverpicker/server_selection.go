@@ -38,10 +38,14 @@ type SearchParams struct {
 	ExcludedServer string
 }
 
+func normalizeSearchField(tag string) string {
+	return strings.ToLower(internal.RemoveNonAlphanumeric(strings.TrimSpace(tag)))
+}
+
 func NewSearchParams(tag, group string, excludedServer string) SearchParams {
 	return SearchParams{
-		Tag:            strings.TrimSpace(tag),
-		Group:          strings.TrimSpace(group),
+		Tag:            normalizeSearchField(tag),
+		Group:          normalizeSearchField(group),
 		ExcludedServer: strings.TrimSpace(excludedServer),
 	}
 }

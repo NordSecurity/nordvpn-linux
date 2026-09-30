@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"context"
+	"errors"
 	"slices"
 	"strconv"
 
@@ -22,30 +23,56 @@ func (r *RPC) SetVPNProtocol(
 
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Error(err)
-		// preventing following checks/actions on an empty config
+		log.Error("configuration loading at VPN protocol change", err)
 		return &pb.Payload{Type: internal.CodeConfigError}, nil
 	}
 
 	if req.VpnProtocol == cfg.VPNProtocol {
 		return &pb.Payload{
 			Type: internal.CodeNothingToDo,
-			Data: []string{req.GetVpnProtocol().DisplayName()},
 		}, nil
 	}
 
-	if cfg.AutoConnect &&
-		cfg.AutoConnectData.Group == config.ServerGroup_DEDICATED_SERVER &&
-		!req.GetVpnProtocol().IsNordLynx() {
-		return &pb.Payload{Type: internal.CodeDedicatedServersNoNordlynx}, nil
+	v, err := r.factory(req.GetVpnProtocol())
+	if err != nil {
+		log.Errorf("VPN factory fails for %s: %v", req.GetVpnProtocol().DisplayName(), err)
+		return &pb.Payload{Type: internal.CodeFeatureHidden}, nil
 	}
 
-	if cfg.AutoConnect && cfg.AutoConnectData.Group == config.ServerGroup_NW_OBFUSCATED &&
-		!req.GetVpnProtocol().IsNordWhisper() {
+	pq := cfg.AutoConnectData.PostquantumVpn
+	if pq && !req.GetVpnProtocol().IsNordLynx() {
 		return &pb.Payload{
-			Type: internal.CodeObfuscatedNeedsNordwhisper,
-			Data: []string{req.GetVpnProtocol().DisplayName()},
+			Type: internal.CodePqWithoutNordlynx,
 		}, nil
+	}
+
+	if cfg.AutoConnect {
+		pq := cfg.AutoConnectData.PostquantumVpn
+		if pq && !req.GetVpnProtocol().IsNordLynx() {
+			return &pb.Payload{
+				Type: internal.CodePqWithoutNordlynx,
+			}, nil
+		}
+
+		serverTag, serverGroup := generateTagFromAutoConnect(cfg)
+
+		c := cfg
+		c.VPNProtocol = req.GetVpnProtocol()
+
+		_, err := r.validateServerInput(serverTag, serverGroup, c)
+		if err != nil {
+			log.Error("no server found for auto-connect data and new server protocol", req.GetVpnProtocol().DisplayName(), err)
+			var errorCode *internal.ErrorWithCode
+			if errors.As(err, &errorCode) {
+				return &pb.Payload{
+					Type: errorCode.Code,
+				}, nil
+			}
+
+			return &pb.Payload{
+				Type: internal.CodeProtocolIncompatibleWithAutoconnect,
+			}, nil
+		}
 	}
 
 	ech := cfg.AutoConnectData.ECH
@@ -53,26 +80,12 @@ func (r *RPC) SetVPNProtocol(
 		ech = r.resetECHEnabledField()
 	}
 
-	pq := cfg.AutoConnectData.PostquantumVpn
-	if pq && !req.GetVpnProtocol().IsNordLynx() {
-		return &pb.Payload{
-			Type: internal.CodePqWithoutNordlynx,
-			Data: []string{req.GetVpnProtocol().DisplayName()},
-		}, nil
-	}
-
-	v, err := r.factory(req.GetVpnProtocol())
-	if err != nil {
-		log.Error(err)
-		return &pb.Payload{Type: internal.CodeConfigError}, nil
-	}
-
 	if err := r.cm.SaveWith(func(c config.Config) config.Config {
 		c.VPNProtocol = req.GetVpnProtocol()
 		c.AutoConnectData.ECH = ech
 		return c
 	}); err != nil {
-		log.Error(err)
+		log.Error("cannot save configuration at protocol change", err)
 		return &pb.Payload{Type: internal.CodeConfigError}, nil
 	}
 
@@ -83,6 +96,22 @@ func (r *RPC) SetVPNProtocol(
 
 	return &pb.Payload{
 		Type: internal.CodeSuccess,
-		Data: []string{strconv.FormatBool(r.netw.IsVPNActive()), req.GetVpnProtocol().DisplayName()},
+		Data: []string{strconv.FormatBool(r.netw.IsVPNActive())},
 	}, nil
+}
+
+func generateTagFromAutoConnect(cfg config.Config) (string, string) {
+	var tag, group string
+	if cfg.AutoConnectData.Group != config.ServerGroup_UNDEFINED {
+		group = cfg.AutoConnectData.Group.String()
+	}
+
+	if cfg.AutoConnectData.Country != "" {
+		tag = cfg.AutoConnectData.Country
+		if cfg.AutoConnectData.City != "" {
+			tag += " " + cfg.AutoConnectData.City
+		}
+	}
+
+	return tag, group
 }
