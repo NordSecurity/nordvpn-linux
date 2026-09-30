@@ -1244,6 +1244,7 @@ func TestCombined_ApplySettings(t *testing.T) {
 		expectedEnableCalls    int
 		expectedAppliedConfigs []firewall.Config
 		expectedErrs           []error
+		expectedFailedSettings []string
 	}{
 		{
 			name:                "disabled firewall and routing get enabled",
@@ -1304,6 +1305,8 @@ func TestCombined_ApplySettings(t *testing.T) {
 			expectedRouting:     false,
 			expectedEnableCalls: 1,
 			expectedErrs:        []error{firewallErr, routerErr},
+			// mocked firewall error fails configuring the allowlist in the firewall too
+			expectedFailedSettings: []string{"routing", "allowlist", "firewall"},
 		},
 		{
 			name:            "enabling firewall applies config with new allowlist once",
@@ -1370,6 +1373,12 @@ func TestCombined_ApplySettings(t *testing.T) {
 			for _, expectedErr := range test.expectedErrs {
 				assert.ErrorIs(t, err, expectedErr)
 			}
+			if test.expectedFailedSettings != nil {
+				applyErr, ok := errors.AsType[*ApplySettingsError](err)
+				if assert.True(t, ok) {
+					assert.Equal(t, test.expectedFailedSettings, applyErr.FailedSettings())
+				}
+			}
 
 			assert.Equal(t, test.expectedFirewall, fw.IsEnabled())
 			assert.Equal(t, test.expectedEnableCalls, fw.EnableCalls)
@@ -1381,6 +1390,46 @@ func TestCombined_ApplySettings(t *testing.T) {
 			assert.Equal(t, test.settings.LanDiscovery, netw.lanDiscovery)
 			assert.Equal(t, test.settings.ARPIgnore, netw.ignoreARP)
 			assert.Subset(t, netw.allowlist.Subnets, test.settings.Allowlist.Subnets)
+		})
+	}
+}
+
+func TestApplySettingsError(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	errFirewall := errors.New("firewall failure")
+	errRouting := errors.New("routing failure")
+
+	tests := []struct {
+		name                   string
+		err                    *ApplySettingsError
+		expectedMsg            string
+		expectedFailedSettings []string
+	}{
+		{
+			name:                   "no errors",
+			err:                    &ApplySettingsError{},
+			expectedMsg:            "",
+			expectedFailedSettings: []string{},
+		},
+		{
+			name: "multiple errors",
+			err: &ApplySettingsError{Errors: []*SettingError{
+				{Setting: SettingRouting, Err: errRouting},
+				{Setting: SettingFirewall, Err: errFirewall},
+			}},
+			expectedMsg:            "routing: routing failure\nfirewall: firewall failure",
+			expectedFailedSettings: []string{"routing", "firewall"},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			assert.Equal(t, test.expectedMsg, test.err.Error())
+			assert.Equal(t, test.expectedFailedSettings, test.err.FailedSettings())
+			for _, settingErr := range test.err.Errors {
+				assert.ErrorIs(t, test.err, settingErr.Err)
+			}
 		})
 	}
 }

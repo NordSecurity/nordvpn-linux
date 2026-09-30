@@ -96,7 +96,13 @@ class VpnSettingsController extends _$VpnSettingsController
   }
 
   Future<int> resetToDefaults() async {
-    return await ref.read(vpnSettingsProvider).resetToDefaults();
+    final result = await ref.read(vpnSettingsProvider).resetToDefaults();
+    if (result.status == DaemonStatusCode.setDefaultsNotApplied) {
+      ref
+          .read(popupsProvider.notifier)
+          .show(result.status, userData: result.failedSettings);
+    }
+    return result.status;
   }
 
   Future<int> setObfuscated(bool value) async {
