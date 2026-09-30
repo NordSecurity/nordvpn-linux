@@ -405,7 +405,7 @@ func (r *RPC) doAutoConnect() error {
 
 	groupTag := ""
 	if cfg.AutoConnectData.Group != config.ServerGroup_UNDEFINED {
-		groupTag = cfg.AutoConnectData.Group.String()
+		groupTag = config.GroupTitleForId(cfg.AutoConnectData.Group)
 	}
 
 	err = r.executeConnect(&server, func(ctx context.Context) (bool, error) {
