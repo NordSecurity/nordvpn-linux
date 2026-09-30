@@ -267,7 +267,7 @@ func TestMigrateDeprecatedAutoconnectToSpecificServer(t *testing.T) {
 			serversList:      testServersList,
 		},
 		{
-			name:             "server set to specific, server not found, fallback to fastest",
+			name:             "server set to specific, server not found, fallback to country code",
 			currentServerTag: testServerTag,
 			serversList:      core.Servers{},
 			expectedTag:      "ts",
