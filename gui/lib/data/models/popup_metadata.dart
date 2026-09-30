@@ -22,8 +22,7 @@ sealed class PopupMetadata {
 
   MarkdownText parsedMessage(WidgetRef ref) {
     final raw = message(ref);
-    final parsed = _parsedMessage;
-    if (parsed != null && parsed.raw == raw) return parsed;
+    if (_parsedMessage?.raw == raw) return _parsedMessage!;
 
     return _parsedMessage = MarkdownText.parse(raw);
   }
