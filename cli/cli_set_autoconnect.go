@@ -110,7 +110,7 @@ func (c *cmd) SetAutoConnect(ctx *cli.Context) error {
 	case internal.CodeP2PDeprecated:
 		return errors.New(internal.P2PDeprecatedMessage)
 	case internal.CodeAutoconnectToSpecificServer:
-		return errors.New(AutoConnectToObfuscatedServer)
+		return errors.New(AutoConnectToSpecificServer)
 	case internal.CodeSuccess:
 		color.Green(fmt.Sprintf(MsgSetSuccess, "Auto-connect", nstrings.GetBoolLabel(flag)))
 	}

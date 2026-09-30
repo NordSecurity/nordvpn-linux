@@ -203,7 +203,27 @@ func TestMigrateDeprecatedAutoconnectToSpecificServer(t *testing.T) {
 		Locations: testServerLocation,
 	}
 
-	testServersList := core.Servers{testServer}
+	testDoubleVPNServerTag := "ts-st123"
+	testDoubleVPNCountryName := "Test Double VPN Country"
+	testDoubleVPNCityName := "Test Double VPN City"
+
+	testDoubleVPNServerLocation := core.Locations{
+		core.Location{
+			Country: core.Country{
+				Name: testDoubleVPNCountryName,
+				City: core.City{
+					Name: testDoubleVPNCityName,
+				},
+			},
+		},
+	}
+
+	testDoubleVPNServer := core.Server{
+		Hostname:  testDoubleVPNServerTag + ".nordvpn.com",
+		Locations: testDoubleVPNServerLocation,
+	}
+
+	testServersList := core.Servers{testServer, testDoubleVPNServer}
 
 	tests := []struct {
 		name                string
@@ -220,6 +240,14 @@ func TestMigrateDeprecatedAutoconnectToSpecificServer(t *testing.T) {
 			expectedTag:         strings.ToLower(testCityName),
 			expectedCountryName: testCountryName,
 			expectedCityName:    testCityName,
+		},
+		{
+			name:                "server set to specific double VPN, fallback to country",
+			currentServerTag:    testDoubleVPNServerTag,
+			serversList:         testServersList,
+			expectedTag:         strings.ToLower(testDoubleVPNCityName),
+			expectedCountryName: testDoubleVPNCountryName,
+			expectedCityName:    testDoubleVPNCityName,
 		},
 		{
 			name:             "server set to country, no fallback",

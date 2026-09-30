@@ -601,10 +601,6 @@ func main() {
 	)
 	daemonEvents.User.Logout.Subscribe(dm.NotifyLogout)
 
-	if err := daemon.MigrateDeprecatedAutoconnectToSpecificServer(fsystem, dm); err != nil {
-		log.Warn("failed to migrate autoconnect to a specific server:", err)
-	}
-
 	pauseEvents := daemonevents.NewPauseEvents()
 	pauseEvents.Subscribe(statePublisher)
 
@@ -781,6 +777,10 @@ func main() {
 			log.Info("data successfully loaded from disk")
 		}
 	}()
+
+	if err := daemon.MigrateDeprecatedAutoconnectToSpecificServer(fsystem, dm); err != nil {
+		log.Warn("failed to migrate autoconnect to a specific server:", err)
+	}
 
 	rpc.StartKillSwitch()
 	rpc.StartJobs(statePublisher, heartBeatSubject)

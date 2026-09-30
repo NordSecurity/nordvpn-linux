@@ -11,7 +11,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
-var tagRegExp = regexp.MustCompile(`^[a-z]{2}[0-9]{2,4}$`)
+var tagRegExp = regexp.MustCompile(`^([a-zA-Z]{2})-?([a-zA-Z]*)(\d+)$`)
 
 func IsServerTag(tag string) bool {
 	if strings.EqualFold(tag, "uk") {
