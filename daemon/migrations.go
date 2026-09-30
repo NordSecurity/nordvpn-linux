@@ -77,13 +77,15 @@ func MigrateDeprecatedAutoconnectToSpecificServer(configManager config.Manager, 
 		return nil
 	}
 
-	if !serverpicker.IsServerTag(cfg.AutoConnectData.ServerTag) {
+	serverTag := serverpicker.UnitedKingdomServerTagFix(cfg.AutoConnectData.ServerTag)
+
+	if !serverpicker.IsServerTag(serverTag) {
 		return nil
 	}
 
 	serversData := dataManager.GetServersData()
 	serverIndex := slices.IndexFunc(serversData.Servers, func(server core.Server) bool {
-		return serverpicker.MatchTagToHostname(cfg.AutoConnectData.ServerTag, server)
+		return serverpicker.MatchTagToHostname(serverTag, server)
 	})
 
 	if serverIndex != -1 {
@@ -98,7 +100,7 @@ func MigrateDeprecatedAutoconnectToSpecificServer(configManager config.Manager, 
 		cfg.AutoConnectData.ServerTag = strings.ToLower(serversCountry.City.Name)
 	} else {
 		serverNameRegEx := regexp.MustCompile(`^([a-zA-Z]{2}(?:-[a-zA-Z]{2})?)(\d+)$`)
-		match := serverNameRegEx.FindStringSubmatch(cfg.AutoConnectData.ServerTag)
+		match := serverNameRegEx.FindStringSubmatch(serverTag)
 		// it has 3 elements, [0] - full, [1] - country code, [2] - server number
 		if len(match) == 3 {
 			countryCode := match[1]
