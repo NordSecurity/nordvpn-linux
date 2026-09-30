@@ -78,12 +78,19 @@ func (r *resolverWithBackoff) setBackoff() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if r.backoff == 0 {
-		r.backoff = 5 * time.Minute
-	} else if r.backoff == 5*time.Minute {
-		r.backoff = 30 * time.Minute
-	} else {
-		r.backoff = 60 * time.Minute
+	const (
+		initialBackoff = 5 * time.Minute
+		secondBackoff  = 30 * time.Minute
+		maxBackoff     = 60 * time.Minute
+	)
+
+	switch r.backoff {
+	case 0:
+		r.backoff = initialBackoff
+	case initialBackoff:
+		r.backoff = secondBackoff
+	default:
+		r.backoff = maxBackoff
 	}
 
 	log.Info("backing off from internal DNS resolution for", r.backoff)
