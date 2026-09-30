@@ -97,7 +97,7 @@ func MigrateDeprecatedAutoconnectToSpecificServer(configManager config.Manager, 
 		cfg.AutoConnectData.CountryCode = serversCountry.Code
 		cfg.AutoConnectData.ServerTag = strings.ToLower(serversCountry.City.Name)
 	} else {
-		serverNameRegEx := regexp.MustCompile(`^([a-zA-Z]{2})(\d+)$`)
+		serverNameRegEx := regexp.MustCompile(`^([a-zA-Z]{2}(?:-[a-zA-Z]{2})?)(\d+)$`)
 		match := serverNameRegEx.FindStringSubmatch(cfg.AutoConnectData.ServerTag)
 		// it has 3 elements, [0] - full, [1] - country code, [2] - server number
 		if len(match) == 3 {
@@ -106,8 +106,19 @@ func MigrateDeprecatedAutoconnectToSpecificServer(configManager config.Manager, 
 				"autoconnection target set to a specific server tag, server not found, falling back to server's country code:",
 				countryCode,
 			)
+
 			cfg.AutoConnectData.ServerTag = countryCode
 			cfg.AutoConnectData.CountryCode = strings.ToUpper(countryCode)
+
+			if dataManager.CountryDataExists() {
+				countries := dataManager.GetCountryData().Countries
+				countryIndex := slices.IndexFunc(countries, func(c core.Country) bool {
+					return c.Code == countryCode
+				})
+				if countryIndex != -1 {
+					cfg.AutoConnectData.Country = countries[countryIndex].Name
+				}
+			}
 		} else {
 			cfg.AutoConnectData.ServerTag = ""
 			log.Warn("failed to extract country code out of the server name, will fall back to fastest server")
