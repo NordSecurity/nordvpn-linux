@@ -1,10 +1,8 @@
-import warnings
-
 import pytest
 import sh
 
 import lib
-from lib import daemon, network, server, settings, IS_NIGHTLY
+from lib import daemon, network, settings, IS_NIGHTLY
 from lib.shell import sh_no_tty
 from lib.dynamic_parametrize import dynamic_parametrize
 
