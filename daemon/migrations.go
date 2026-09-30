@@ -63,10 +63,16 @@ func ConfigCleanup(c config.Config) config.Config {
 	return c
 }
 
-// MigrateDeprecatedAutoconnectToSpecificServer checks if autoconnect target is a specific server. If it is, it sets the target to it's
-// country/city.
+// strToServerTag converts a regular string to a server tag style string, i.e it changes all spaces to underscores and
+// all upper case letters to lowercase.
+func strToServerTag(tag string) string {
+	return strings.ReplaceAll(strings.ToLower(tag), " ", "_")
+}
+
+// MigrateDeprecatedAutoconnectToSpecificServer checks if autoconnect target is a specific server. If it is, it sets the
+// target to its country/city.
 //
-// Autconnect to a specific server was deprecated in version 6.0.0.
+// Autoconnect to a specific server was deprecated in version 6.0.0.
 func MigrateDeprecatedAutoconnectToSpecificServer(configManager config.Manager, dataManager *DataManager) error {
 	var cfg config.Config
 	if err := configManager.Load(&cfg); err != nil {
@@ -97,7 +103,7 @@ func MigrateDeprecatedAutoconnectToSpecificServer(configManager config.Manager, 
 		cfg.AutoConnectData.City = serversCountry.City.Name
 		cfg.AutoConnectData.Country = serversCountry.Name
 		cfg.AutoConnectData.CountryCode = serversCountry.Code
-		cfg.AutoConnectData.ServerTag = strings.ToLower(serversCountry.City.Name)
+		cfg.AutoConnectData.ServerTag = strToServerTag(serversCountry.City.Name)
 	} else {
 		serverNameRegEx := regexp.MustCompile(`^([a-zA-Z]{2}(?:-[a-zA-Z]{2})?)(\d+)$`)
 		match := serverNameRegEx.FindStringSubmatch(serverTag)
@@ -118,7 +124,7 @@ func MigrateDeprecatedAutoconnectToSpecificServer(configManager config.Manager, 
 					return c.Code == countryCode
 				})
 				if countryIndex != -1 {
-					cfg.AutoConnectData.Country = countries[countryIndex].Name
+					cfg.AutoConnectData.Country = strToServerTag(countries[countryIndex].Name)
 				}
 			}
 		} else {
