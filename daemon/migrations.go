@@ -71,7 +71,7 @@ func migrateObfuscatedSettingsToNordWhisper(c config.Config, isNordWhisperEnable
 	if isNordWhisperEnabled {
 		c.Technology = config.Technology_NORDWHISPER
 		c.AutoConnectData.Protocol = config.Protocol_Webtunnel
-	} else if c.AutoConnectData.Group == config.ServerGroup_OBFUSCATED {
+	} else if c.AutoConnectData.Group == config.ServerGroup_OVPN_OBFUSCATED {
 		// for open source builds change the group to non obfuscated
 		c.AutoConnectData.Group = config.ServerGroup_UNDEFINED
 	}

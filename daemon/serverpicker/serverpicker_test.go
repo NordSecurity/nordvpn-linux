@@ -208,7 +208,7 @@ func TestResolveServerGroup(t *testing.T) {
 		},
 		{
 			input:         NewSearchParams("", "Obfuscated_servers", ""),
-			expectedGroup: config.ServerGroup_OBFUSCATED,
+			expectedGroup: config.ServerGroup_NW_OBFUSCATED,
 			err:           nil,
 		},
 	}
@@ -258,21 +258,21 @@ func TestSearchGroup(t *testing.T) {
 	}{
 		{
 			name:      "obfuscated over nordwhisper is searched as standard",
-			requested: config.ServerGroup_OBFUSCATED,
+			requested: config.ServerGroup_NW_OBFUSCATED,
 			tech:      config.Technology_NORDWHISPER,
 			expected:  config.ServerGroup_STANDARD_VPN_SERVERS,
 		},
 		{
 			name:      "obfuscated over nordlynx is left alone",
-			requested: config.ServerGroup_OBFUSCATED,
+			requested: config.ServerGroup_NW_OBFUSCATED,
 			tech:      config.Technology_NORDLYNX,
-			expected:  config.ServerGroup_OBFUSCATED,
+			expected:  config.ServerGroup_NW_OBFUSCATED,
 		},
 		{
 			name:      "obfuscated over openvpn is left alone",
-			requested: config.ServerGroup_OBFUSCATED,
+			requested: config.ServerGroup_NW_OBFUSCATED,
 			tech:      config.Technology_OPENVPN,
-			expected:  config.ServerGroup_OBFUSCATED,
+			expected:  config.ServerGroup_NW_OBFUSCATED,
 		},
 		{
 			name:      "other groups are never touched",
@@ -306,8 +306,8 @@ func TestEffectiveGroups(t *testing.T) {
 
 	standard := core.Group{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"}
 	p2p := core.Group{ID: config.ServerGroup_P2P, Title: "P2P"}
-	xor := core.Group{ID: config.ServerGroup_OBFUSCATED, Title: "Obfuscated"}
-	obfuscated := core.Group{ID: config.ServerGroup_OBFUSCATED, Title: ObfuscatedServersGroupTitle}
+	xor := core.Group{ID: config.ServerGroup_OVPN_OBFUSCATED, Title: "Obfuscated"}
+	obfuscated := core.Group{ID: config.ServerGroup_NW_OBFUSCATED, Title: ObfuscatedServersGroupTitle}
 
 	nordWhisper := core.Technologies{{ID: core.NordWhisperTech, Pivot: core.Pivot{Status: core.Online}}}
 	nordWhisperOffline := core.Technologies{{ID: core.NordWhisperTech, Pivot: core.Pivot{Status: core.Offline}}}

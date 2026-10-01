@@ -172,7 +172,7 @@ func TestRecentConnectionsFileMigration(t *testing.T) {
 			},
 		},
 		{
-			name: "obfuscated group is deleted",
+			name: "OpenVPN obfuscated group is deleted",
 			connections: []Model{
 				{
 					Country:            "Germany",
@@ -190,7 +190,7 @@ func TestRecentConnectionsFileMigration(t *testing.T) {
 				{
 					Country:        "Lithuania",
 					CountryCode:    "LT",
-					Group:          config.ServerGroup_OBFUSCATED,
+					Group:          config.ServerGroup_OVPN_OBFUSCATED,
 					ConnectionType: config.ServerSelectionRule_COUNTRY,
 				},
 			},

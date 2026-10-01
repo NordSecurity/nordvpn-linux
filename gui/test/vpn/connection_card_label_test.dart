@@ -70,7 +70,7 @@ void main() {
       // todo: change this later when OVPN drops obfuscation
       name: "the obfuscated group is still labelled as obfuscated",
       protocol: VpnProtocol.openVpnTcp,
-      group: ServerGroup.OBFUSCATED,
+      group: ServerGroup.NW_OBFUSCATED,
       serverType: t.ui.obfuscated,
     ),
     (

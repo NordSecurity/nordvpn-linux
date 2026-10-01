@@ -38,7 +38,7 @@ func groupsToProtobuf(server core.Server, technology config.Technology) []config
 		config.ServerGroup_ONION_OVER_VPN,
 		config.ServerGroup_DEDICATED_IP,
 		config.ServerGroup_STANDARD_VPN_SERVERS,
-		config.ServerGroup_OBFUSCATED,
+		config.ServerGroup_NW_OBFUSCATED,
 	}
 
 	groups := serverpicker.EffectiveGroups(server, technology)

@@ -190,7 +190,9 @@ func TestMigrateObfuscatedSettingsToNordWhisper(t *testing.T) {
 				AutoConnectData: config.AutoConnectData{
 					Obfuscate: true,
 					Protocol:  config.Protocol_TCP,
+					Group:     config.ServerGroup_OVPN_OBFUSCATED,
 				},
+
 				Technology: config.Technology_OPENVPN,
 			},
 			isNordWhisperEnabled: false,
@@ -198,6 +200,7 @@ func TestMigrateObfuscatedSettingsToNordWhisper(t *testing.T) {
 				AutoConnectData: config.AutoConnectData{
 					Obfuscate: false,
 					Protocol:  config.Protocol_TCP,
+					Group:     config.ServerGroup_UNDEFINED,
 				},
 				Technology: config.Technology_OPENVPN,
 			},
@@ -208,7 +211,7 @@ func TestMigrateObfuscatedSettingsToNordWhisper(t *testing.T) {
 				AutoConnectData: config.AutoConnectData{
 					Obfuscate: true,
 					Protocol:  config.Protocol_TCP,
-					Group:     config.ServerGroup_OBFUSCATED,
+					Group:     config.ServerGroup_OVPN_OBFUSCATED,
 				},
 				Technology: config.Technology_OPENVPN,
 			},

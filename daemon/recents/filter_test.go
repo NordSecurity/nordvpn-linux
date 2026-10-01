@@ -160,7 +160,7 @@ func TestMatches(t *testing.T) {
 				{
 					Country:        "Germany",
 					City:           "Berlin",
-					Group:          config.ServerGroup_OBFUSCATED,
+					Group:          config.ServerGroup_NW_OBFUSCATED,
 					ConnectionType: config.ServerSelectionRule_CITY,
 				},
 			},
@@ -184,14 +184,14 @@ func TestMatches(t *testing.T) {
 			target: Model{
 				Country:        "Germany",
 				City:           "Berlin",
-				Group:          config.ServerGroup_OBFUSCATED,
+				Group:          config.ServerGroup_NW_OBFUSCATED,
 				ConnectionType: config.ServerSelectionRule_CITY,
 			},
 			candidates: []Model{
 				{
 					Country:        "Germany",
 					City:           "Berlin",
-					Group:          config.ServerGroup_OBFUSCATED,
+					Group:          config.ServerGroup_NW_OBFUSCATED,
 					ConnectionType: config.ServerSelectionRule_CITY,
 				},
 				{
@@ -211,7 +211,7 @@ func TestMatches(t *testing.T) {
 				{
 					Country:        "Germany",
 					City:           "Berlin",
-					Group:          config.ServerGroup_OBFUSCATED,
+					Group:          config.ServerGroup_NW_OBFUSCATED,
 					ConnectionType: config.ServerSelectionRule_CITY,
 				},
 			},

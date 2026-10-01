@@ -73,7 +73,7 @@ extension Daemon on ServerType {
       case ServerType.standardVpn:
         return config.ServerGroup.STANDARD_VPN_SERVERS;
       case ServerType.obfuscated:
-        return config.ServerGroup.OBFUSCATED;
+        return config.ServerGroup.NW_OBFUSCATED;
     }
   }
 }
@@ -83,7 +83,7 @@ const Map<config.ServerGroup, ServerType> _groupTitles = {
   config.ServerGroup.ONION_OVER_VPN: ServerType.onionOverVpn,
   config.ServerGroup.STANDARD_VPN_SERVERS: ServerType.standardVpn,
   config.ServerGroup.P2P: ServerType.p2p,
-  config.ServerGroup.OBFUSCATED: ServerType.obfuscated,
+  config.ServerGroup.NW_OBFUSCATED: ServerType.obfuscated,
   config.ServerGroup.DEDICATED_IP: ServerType.dedicatedIP,
   config.ServerGroup.DEDICATED_SERVER: ServerType.dedicatedServer,
 };
