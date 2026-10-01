@@ -1,5 +1,4 @@
 import contextlib
-import random
 
 import pytest
 import socket
@@ -243,7 +242,6 @@ def test_firewall_lan_discovery(tech, proto, obfuscated, before_connect):
     with lib.Defer(lambda: sh.nordvpn.set("lan-discovery", "off", _ok_code=(0, 1))):
         with lib.Defer(sh.nordvpn.disconnect):
             lib.set_technology_and_protocol(tech, proto, obfuscated)
-            rand_lan_subnet = random.choice(firewall.LAN_DISCOVERY_SUBNETS)
 
             if before_connect:
                 sh.nordvpn.set("lan-discovery", "on")
@@ -253,11 +251,13 @@ def test_firewall_lan_discovery(tech, proto, obfuscated, before_connect):
             if not before_connect:
                 sh.nordvpn.set("lan-discovery", "on")
 
-            assert not firewall.is_ip_routed_via_VPN([rand_lan_subnet])
+            for ip in firewall.LAN_DISCOVERY_IPS:
+                assert not firewall.is_ip_routed_via_VPN([ip]), f"{ip} is routed via VPN with LAN discovery on"
+            assert firewall.is_ip_routed_via_VPN(firewall.NON_LAN_DISCOVERY_MULTICAST_IPS), "Multicast outside LAN discovery ranges bypasses VPN"
 
             sh.nordvpn.set("lan-discovery", "off")
 
-            assert firewall.is_ip_routed_via_VPN([rand_lan_subnet])
+            assert firewall.is_ip_routed_via_VPN(firewall.LAN_DISCOVERY_IPS), "LAN discovery IPs are not routed via VPN with LAN discovery off"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
