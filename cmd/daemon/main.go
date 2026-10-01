@@ -778,6 +778,10 @@ func main() {
 		}
 	}()
 
+	if err := daemon.MigrateDeprecatedAutoconnectToSpecificServer(fsystem, dm); err != nil {
+		log.Warn("failed to migrate autoconnect to a specific server:", err)
+	}
+
 	rpc.StartKillSwitch()
 	rpc.StartJobs(statePublisher, heartBeatSubject)
 	rpc.StartRemoteConfigLoaderJob(rcConfig)
