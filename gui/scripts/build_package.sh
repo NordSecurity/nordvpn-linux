@@ -134,12 +134,18 @@ envsubst <templates/nordvpn-gui_template.desktop >"${APP_BUNDLE_DIR}/${NAME}.des
 
 # create install scripts
 mkdir -p "${APP_BUNDLE_DIR}"/scriptlets/{deb,rpm}
+envsubst '' <templates/scriptlets/deb/preinst_template >"${APP_BUNDLE_DIR}"/scriptlets/deb/preinst
+# shellcheck disable=SC2016
 envsubst '${INSTALL_SCRIPT} ${SUCCESS_INSTALL_MESSAGE}' <templates/scriptlets/deb/postinst_template >"${APP_BUNDLE_DIR}"/scriptlets/deb/postinst
 envsubst '' <templates/scriptlets/deb/prerm_template >"${APP_BUNDLE_DIR}"/scriptlets/deb/prerm
+# shellcheck disable=SC2016
 envsubst '${UNINSTALL_SCRIPT}' <templates/scriptlets/deb/postrm_template >"${APP_BUNDLE_DIR}"/scriptlets/deb/postrm
 
+envsubst '' <templates/scriptlets/rpm/pre_template >"${APP_BUNDLE_DIR}"/scriptlets/rpm/pre
+# shellcheck disable=SC2016
 envsubst '${INSTALL_SCRIPT} ${SUCCESS_INSTALL_MESSAGE}' <templates/scriptlets/rpm/post_template >"${APP_BUNDLE_DIR}"/scriptlets/rpm/post
 envsubst '' <templates/scriptlets/rpm/preun_template >"${APP_BUNDLE_DIR}"/scriptlets/rpm/preun
+# shellcheck disable=SC2016
 envsubst '${UNINSTALL_SCRIPT}' <templates/scriptlets/rpm/postun_template >"${APP_BUNDLE_DIR}"/scriptlets/rpm/postun
 
 # value expected by `nfpm` template and must be given from outside, break here if not set
