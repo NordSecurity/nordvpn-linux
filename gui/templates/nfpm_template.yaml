@@ -71,6 +71,7 @@ overrides:
       - "${DAEMON_DEPENDENCY_DEB}"
     # Deb specific scripts.
     scripts:
+      preinstall: ${APP_BUNDLE_DIR}/scriptlets/deb/preinst
       postinstall: ${APP_BUNDLE_DIR}/scriptlets/deb/postinst
       preremove: ${APP_BUNDLE_DIR}/scriptlets/deb/prerm
       postremove: ${APP_BUNDLE_DIR}/scriptlets/deb/postrm
@@ -79,6 +80,7 @@ overrides:
       - "${DAEMON_DEPENDENCY_RPM}"
     # RPM specific scripts.
     scripts:
+      preinstall: ${APP_BUNDLE_DIR}/scriptlets/rpm/pre
       postinstall: ${APP_BUNDLE_DIR}/scriptlets/rpm/post
       preremove: ${APP_BUNDLE_DIR}/scriptlets/rpm/preun
       postremove: ${APP_BUNDLE_DIR}/scriptlets/rpm/postun
