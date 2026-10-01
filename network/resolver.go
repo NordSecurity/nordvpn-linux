@@ -64,7 +64,6 @@ func (r *Resolver) resolveWithNameservers(ctx context.Context, domain string, na
 	var ipAddrs []netip.Addr
 	var err error
 	for _, nameserver := range nameservers {
-
 		var fwmark = r.fwmark
 		if r.isVpnConnected.Load() {
 			// While connected to VPN, send the DNS requests thru the tunnel so no fwmark
