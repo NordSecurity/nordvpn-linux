@@ -267,7 +267,7 @@ func TestResolverWrapper_ResolveDomainName(t *testing.T) {
 			}
 			assert.Equal(t, test.expectedBackoff, resolverWrapper.backoff,
 				"Unexpected backoff value after DNS resolution attempt.")
-			assert.Equal(t, test.expectedBackoffSet, resolverWrapper.isInBackoffMode(),
+			assert.Equal(t, test.expectedBackoffSet, resolverWrapper.isInBackoffModeThreadSafe(),
 				"Backoff not set as expected after DNS resolution attempt.")
 		})
 	}

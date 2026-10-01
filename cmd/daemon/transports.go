@@ -63,20 +63,34 @@ func newResolverWithBackoff(resolver network.DNSResolver) *resolverWithBackoff {
 	}
 }
 
-func (r *resolverWithBackoff) isInBackoffMode() bool {
+func (r *resolverWithBackoff) isInBackoffModeThreadSafe() bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
+	return r.isInBackoffMode()
+}
+
+func (r *resolverWithBackoff) isInBackoffMode() bool {
 	return time.Now().Before(r.nextInternalDNSAttempt)
 }
 
 // setBackoff sets the new backoff based on the previous backoff:
+//
 //  1. initial backoff is 5 minutes long
+//
 //  2. subsequent backoff is 30 minutes long
+//
 //  3. all backoffs after that are 60 minutes long
-func (r *resolverWithBackoff) setBackoff() {
+//
+// Backoff is set only if backoff is not currently enabled, to prevent backoff saturation.
+// Returns true if new backoff was set.
+func (r *resolverWithBackoff) setBackoff() bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+
+	if r.isInBackoffMode() {
+		return false
+	}
 
 	const (
 		initialBackoff = 5 * time.Minute
@@ -96,6 +110,8 @@ func (r *resolverWithBackoff) setBackoff() {
 
 	log.Info("backing off from internal DNS resolution for", r.backoff)
 	r.nextInternalDNSAttempt = time.Now().Add(r.backoff)
+
+	return true
 }
 
 func (r *resolverWithBackoff) unsetBackoff() {
@@ -117,7 +133,7 @@ func (r *resolverWithBackoff) unsetBackoff() {
 //   - if killswitch is off and the internal resolver fails or backoff is on, domain will be returned as is to be
 //     resolved by the OS resolver
 func (r *resolverWithBackoff) resolveDomainName(ctx context.Context, domain string) (string, error) {
-	inBackoff := r.isInBackoffMode()
+	inBackoff := r.isInBackoffModeThreadSafe()
 
 	if inBackoff {
 		return domain, nil
@@ -132,9 +148,8 @@ func (r *resolverWithBackoff) resolveDomainName(ctx context.Context, domain stri
 
 		// only set backoff if it was not set(or the previous backoff has expired) so that it won't be saturated by
 		// multiple failed DNS calls.
-		if !r.isInBackoffMode() {
+		if r.setBackoff() {
 			log.Warn("failed to resolve domain name with internal resolver, enabling backoff:", err)
-			r.setBackoff()
 		}
 
 		return domain, nil
