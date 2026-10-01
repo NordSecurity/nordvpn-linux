@@ -1,12 +1,11 @@
 package networker
 
 import (
-	"errors"
-	"testing"
-
 	"context"
+	"errors"
 	"net"
 	"net/netip"
+	"testing"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -1220,6 +1219,217 @@ func TestCombined_SetARPIgnore(t *testing.T) {
 			}
 
 			assert.Equal(t, test.expectedARPIgnore, arpIgnoreSetter.IsSet, "ARP ignore was set to unexpected value.")
+		})
+	}
+}
+
+func TestCombined_ApplySettings(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	firewallErr := errors.New("firewall failed")
+	routerErr := errors.New("router failed")
+	allowlist := config.Allowlist{Subnets: []string{"1.2.3.0/24"}}
+	oldAllowlist := config.Allowlist{Subnets: []string{"5.6.7.0/24"}}
+
+	tests := []struct {
+		name                   string
+		firewallEnabled        bool
+		routingEnabled         bool
+		firewallErr            error
+		routerErr              error
+		fwConfig               firewall.Config
+		settings               Settings
+		expectedFirewall       bool
+		expectedRouting        bool
+		expectedEnableCalls    int
+		expectedAppliedConfigs []firewall.Config
+		expectedErrs           []error
+		expectedFailedSettings []string
+	}{
+		{
+			name:                "disabled firewall and routing get enabled",
+			firewallEnabled:     false,
+			routingEnabled:      false,
+			settings:            Settings{Firewall: true, Routing: true},
+			expectedFirewall:    true,
+			expectedRouting:     true,
+			expectedEnableCalls: 1,
+		},
+		{
+			name:                "already enabled firewall is not enabled again",
+			firewallEnabled:     true,
+			routingEnabled:      true,
+			settings:            Settings{Firewall: true, Routing: true},
+			expectedFirewall:    true,
+			expectedRouting:     true,
+			expectedEnableCalls: 0,
+		},
+		{
+			name:                "enabled firewall and routing get disabled",
+			firewallEnabled:     true,
+			routingEnabled:      true,
+			settings:            Settings{Firewall: false, Routing: false},
+			expectedFirewall:    false,
+			expectedRouting:     false,
+			expectedEnableCalls: 0,
+		},
+		{
+			name:            "lan discovery, arp ignore and allowlist are applied",
+			firewallEnabled: true,
+			routingEnabled:  true,
+			settings: Settings{
+				Firewall:     true,
+				Routing:      true,
+				LanDiscovery: true,
+				ARPIgnore:    true,
+				Allowlist:    allowlist,
+			},
+			expectedFirewall:    true,
+			expectedRouting:     true,
+			expectedEnableCalls: 0,
+		},
+		{
+			name:            "failures are joined and remaining settings are still applied",
+			firewallEnabled: false,
+			routingEnabled:  false,
+			firewallErr:     firewallErr,
+			routerErr:       routerErr,
+			settings: Settings{
+				Firewall:     true,
+				Routing:      true,
+				LanDiscovery: true,
+				ARPIgnore:    true,
+				Allowlist:    allowlist,
+			},
+			expectedFirewall:    false,
+			expectedRouting:     false,
+			expectedEnableCalls: 1,
+			expectedErrs:        []error{firewallErr, routerErr},
+			// mocked firewall error fails configuring the allowlist in the firewall too
+			expectedFailedSettings: []string{"routing", "allowlist", "firewall"},
+		},
+		{
+			name:            "enabling firewall applies config with new allowlist once",
+			firewallEnabled: false,
+			routingEnabled:  true,
+			fwConfig:        firewall.Config{TunnelInterface: "nordlynx", Allowlist: oldAllowlist},
+			settings: Settings{
+				Firewall:  true,
+				Routing:   true,
+				Allowlist: allowlist,
+			},
+			expectedFirewall:    true,
+			expectedRouting:     true,
+			expectedEnableCalls: 1,
+			expectedAppliedConfigs: []firewall.Config{
+				{TunnelInterface: "nordlynx", Allowlist: allowlist},
+			},
+		},
+		{
+			name:            "disabling firewall does not apply config with new allowlist",
+			firewallEnabled: true,
+			routingEnabled:  true,
+			fwConfig:        firewall.Config{TunnelInterface: "nordlynx", Allowlist: oldAllowlist},
+			settings: Settings{
+				Firewall:  false,
+				Routing:   true,
+				Allowlist: allowlist,
+			},
+			expectedFirewall:       false,
+			expectedRouting:        true,
+			expectedEnableCalls:    0,
+			expectedAppliedConfigs: nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			fw := firewallmock.NewFirewall()
+			if test.firewallEnabled {
+				assert.NoError(t, fw.Enable())
+			}
+			fw.EnableCalls = 0
+			fw.Err = test.firewallErr
+
+			policyRouter := &mock.TogglePolicyRouter{Enabled: test.routingEnabled}
+			routers := []*mock.ToggleRouter{
+				{Enabled: test.routingEnabled, Err: test.routerErr},
+				{Enabled: test.routingEnabled, Err: test.routerErr},
+				{Enabled: test.routingEnabled, Err: test.routerErr},
+			}
+
+			netw := GetTestCombined()
+			netw.fw = fw
+			netw.policyRouter = policyRouter
+			netw.allowlistRouter = routers[0]
+			netw.router = routers[1]
+			netw.peerRouter = routers[2]
+			netw.fwConfig = test.fwConfig
+
+			err := netw.ApplySettings(test.settings)
+			if len(test.expectedErrs) == 0 {
+				assert.NoError(t, err)
+			}
+			for _, expectedErr := range test.expectedErrs {
+				assert.ErrorIs(t, err, expectedErr)
+			}
+			if test.expectedFailedSettings != nil {
+				applyErr, ok := errors.AsType[*ApplySettingsError](err)
+				if assert.True(t, ok) {
+					assert.Equal(t, test.expectedFailedSettings, applyErr.FailedSettings())
+				}
+			}
+
+			assert.Equal(t, test.expectedFirewall, fw.IsEnabled())
+			assert.Equal(t, test.expectedEnableCalls, fw.EnableCalls)
+			assert.Equal(t, test.expectedAppliedConfigs, fw.AppliedConfigs)
+			assert.Equal(t, test.settings.Routing, policyRouter.IsEnabled())
+			for _, router := range routers {
+				assert.Equal(t, test.expectedRouting, router.IsEnabled())
+			}
+			assert.Equal(t, test.settings.LanDiscovery, netw.lanDiscovery)
+			assert.Equal(t, test.settings.ARPIgnore, netw.ignoreARP)
+			assert.Subset(t, netw.allowlist.Subnets, test.settings.Allowlist.Subnets)
+		})
+	}
+}
+
+func TestApplySettingsError(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	errFirewall := errors.New("firewall failure")
+	errRouting := errors.New("routing failure")
+
+	tests := []struct {
+		name                   string
+		err                    *ApplySettingsError
+		expectedMsg            string
+		expectedFailedSettings []string
+	}{
+		{
+			name:                   "no errors",
+			err:                    &ApplySettingsError{},
+			expectedMsg:            "",
+			expectedFailedSettings: []string{},
+		},
+		{
+			name: "multiple errors",
+			err: &ApplySettingsError{Errors: []*SettingError{
+				{Setting: SettingRouting, Err: errRouting},
+				{Setting: SettingFirewall, Err: errFirewall},
+			}},
+			expectedMsg:            "routing: routing failure\nfirewall: firewall failure",
+			expectedFailedSettings: []string{"routing", "firewall"},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			assert.Equal(t, test.expectedMsg, test.err.Error())
+			assert.Equal(t, test.expectedFailedSettings, test.err.FailedSettings())
+			for _, settingErr := range test.err.Errors {
+				assert.ErrorIs(t, test.err, settingErr.Err)
+			}
 		})
 	}
 }

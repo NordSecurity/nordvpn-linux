@@ -15,6 +15,7 @@ type MockDaemonClient struct {
 	CountriesResponse []*pb.ServerGroup
 	PingFn            func() (*pb.PingResponse, error)
 	LoginWithTokenFn  func(ctx context.Context, in *pb.LoginWithTokenRequest) (*pb.LoginResponse, error)
+	SetDefaultsFn     func(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.Payload, error)
 }
 
 func (c MockDaemonClient) Cities(ctx context.Context, in *pb.CitiesRequest, opts ...grpc.CallOption) (*pb.ServerGroupsList, error) {
@@ -71,4 +72,11 @@ func (c MockDaemonClient) LoginWithToken(ctx context.Context, in *pb.LoginWithTo
 
 func (c MockDaemonClient) ReportUIEvent(ctx context.Context, in *pb.UIEvent, opts ...grpc.CallOption) (*pb.Payload, error) {
 	return &pb.Payload{}, nil
+}
+
+func (c MockDaemonClient) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest, opts ...grpc.CallOption) (*pb.Payload, error) {
+	if c.SetDefaultsFn != nil {
+		return c.SetDefaultsFn(ctx, in)
+	}
+	return &pb.Payload{Type: internal.CodeSuccess}, nil
 }

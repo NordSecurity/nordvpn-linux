@@ -228,3 +228,22 @@ def test_routing_when_iprule_already_exists(tech, proto, obfuscated):
 
         routes = sh.ip.route.show.table("main")
         assert f"default dev {get_network_interface(tech)}" not in routes, "Network interface should not be in main route table"
+
+
+def test_routing_applied_after_set_defaults_with_routing_disabled():
+    """Manual TC: LVPN-11185"""
+    """Routing disabled before setting defaults is enabled again, so routing rules are applied on connect."""
+
+    lib.set_routing("off")
+    assert not settings.is_routing_enabled(), "Routing should be disabled before setting defaults"
+
+    sh.nordvpn.set.defaults()
+    assert settings.is_routing_enabled(), "Routing should be enabled after setting defaults"
+
+    print(sh.nordvpn.connect())
+
+    routes = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
+    rules = sh.ip.rule()
+    assert f"default dev {get_network_interface('nordlynx')}" in routes, "Default route should include network interface when connected"
+    assert "fwmark" in rules, "fwmark should be in rules when routing is enabled"
+    assert network.is_available(), "Network should be available when connected"

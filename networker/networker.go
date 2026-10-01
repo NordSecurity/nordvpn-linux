@@ -83,6 +83,83 @@ type Networker interface {
 	GetConnectionParameters() (vpn.ServerData, bool)
 	SetARPIgnore(bool) error
 	CancelConnecting(error) bool
+	ApplySettings(Settings) error
+}
+
+// Settings holds the user settings which networker applies at runtime.
+type Settings struct {
+	Firewall     bool
+	Routing      bool
+	LanDiscovery bool
+	ARPIgnore    bool
+	Allowlist    config.Allowlist
+}
+
+// Setting identifies one of the Settings applied by ApplySettings.
+type Setting string
+
+const (
+	SettingFirewall     Setting = "firewall"
+	SettingRouting      Setting = "routing"
+	SettingLanDiscovery Setting = "lan-discovery"
+	SettingARPIgnore    Setting = "arp-ignore"
+	SettingAllowlist    Setting = "allowlist"
+)
+
+// SettingError is returned when a single setting failed to be applied.
+type SettingError struct {
+	Setting Setting
+	Err     error
+}
+
+func (e *SettingError) Error() string {
+	return fmt.Sprintf("%s: %s", e.Setting, e.Err)
+}
+
+func (e *SettingError) Unwrap() error {
+	return e.Err
+}
+
+// ApplySettingsError holds all the settings which failed to be applied by ApplySettings.
+type ApplySettingsError struct {
+	Errors []*SettingError
+}
+
+func (e *ApplySettingsError) Error() string {
+	msgs := make([]string, 0, len(e.Errors))
+	for _, err := range e.Errors {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "\n")
+}
+
+func (e *ApplySettingsError) Unwrap() []error {
+	errs := make([]error, 0, len(e.Errors))
+	for _, err := range e.Errors {
+		errs = append(errs, err)
+	}
+	return errs
+}
+
+func (e *ApplySettingsError) add(setting Setting, err error) {
+	if err != nil {
+		e.Errors = append(e.Errors, &SettingError{Setting: setting, Err: err})
+	}
+}
+
+func (e *ApplySettingsError) err() error {
+	if len(e.Errors) == 0 {
+		return nil
+	}
+	return e
+}
+
+func (e *ApplySettingsError) FailedSettings() []string {
+	settings := make([]string, 0, len(e.Errors))
+	for _, err := range e.Errors {
+		settings = append(settings, string(err.Setting))
+	}
+	return settings
 }
 
 type killSwitchState int
@@ -655,7 +732,10 @@ func (netw *Combined) resetAllowlist() error {
 func (netw *Combined) EnableFirewall() error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
+	return netw.enableFirewall()
+}
 
+func (netw *Combined) enableFirewall() error {
 	if err := netw.fw.Enable(); err != nil {
 		return fmt.Errorf("enabling firewall: %w", err)
 	}
@@ -672,6 +752,10 @@ func (netw *Combined) EnableFirewall() error {
 func (netw *Combined) DisableFirewall() error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
+	return netw.disableFirewall()
+}
+
+func (netw *Combined) disableFirewall() error {
 	if err := netw.fw.Disable(); err != nil {
 		return fmt.Errorf("disabling firewall: %w", err)
 	}
@@ -682,42 +766,89 @@ func (netw *Combined) DisableFirewall() error {
 func (netw *Combined) EnableRouting() {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
+	if err := netw.enableRouting(); err != nil {
+		log.Warn("enabling routing wasn't successful:", err)
+	}
+}
+
+// enableRouting enables all the routers, it does not stop on failure
+func (netw *Combined) enableRouting() error {
+	var errs []error
 	if err := netw.policyRouter.Enable(); err != nil {
-		log.Warn(err)
+		errs = append(errs, fmt.Errorf("enabling policy router: %w", err))
 	}
 
 	tableID := netw.policyRouter.TableID()
 	if err := netw.allowlistRouter.Enable(tableID); err != nil {
-		log.Warn(err)
+		errs = append(errs, fmt.Errorf("enabling allowlist router: %w", err))
 	}
 
 	if err := netw.router.Enable(tableID); err != nil {
-		log.Warn(err)
+		errs = append(errs, fmt.Errorf("enabling router: %w", err))
 	}
 
 	if err := netw.peerRouter.Enable(tableID); err != nil {
-		log.Warn(err)
+		errs = append(errs, fmt.Errorf("enabling peer router: %w", err))
 	}
+	return errors.Join(errs...)
 }
 
 func (netw *Combined) DisableRouting() {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
+	if err := netw.disableRouting(); err != nil {
+		log.Warn("disabling routing wasn't successful:", err)
+	}
+}
+
+// disableRouting disables all the routers, it does not stop on failure
+func (netw *Combined) disableRouting() error {
+	var errs []error
 	if err := netw.allowlistRouter.Disable(); err != nil {
-		log.Warn(err)
+		errs = append(errs, fmt.Errorf("disabling allowlist router: %w", err))
 	}
 
 	if err := netw.router.Disable(); err != nil {
-		log.Warn(err)
+		errs = append(errs, fmt.Errorf("disabling router: %w", err))
 	}
 
 	if err := netw.peerRouter.Disable(); err != nil {
-		log.Warn(err)
+		errs = append(errs, fmt.Errorf("disabling peer router: %w", err))
 	}
 
 	if err := netw.policyRouter.Disable(); err != nil {
-		log.Warn(err)
+		errs = append(errs, fmt.Errorf("disabling policy router: %w", err))
 	}
+	return errors.Join(errs...)
+}
+
+func (netw *Combined) ApplySettings(newSettings Settings) error {
+	netw.mu.Lock()
+	defer netw.mu.Unlock()
+
+	var applyErr ApplySettingsError
+
+	// if disabling - disable firewall at the beginning, but enable
+	// after all other settings (like allowlist) are applied first
+	if netw.fw.IsEnabled() && !newSettings.Firewall {
+		applyErr.add(SettingFirewall, netw.disableFirewall())
+	}
+
+	if newSettings.Routing {
+		applyErr.add(SettingRouting, netw.enableRouting())
+	} else {
+		applyErr.add(SettingRouting, netw.disableRouting())
+	}
+
+	applyErr.add(SettingLanDiscovery, netw.setLanDiscovery(newSettings.LanDiscovery))
+	applyErr.add(SettingARPIgnore, netw.setARPIgnore(newSettings.ARPIgnore))
+	applyErr.add(SettingAllowlist, netw.applyAllowlist(newSettings.Allowlist))
+
+	if !netw.fw.IsEnabled() && newSettings.Firewall {
+		applyErr.add(SettingFirewall, netw.enableFirewall())
+	}
+
+	return applyErr.err()
 }
 
 func (netw *Combined) blockIPv6() {
@@ -739,7 +870,10 @@ func (netw *Combined) unblockIPv6() {
 func (netw *Combined) SetAllowlist(allowlist config.Allowlist) error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
+	return netw.applyAllowlist(allowlist)
+}
 
+func (netw *Combined) applyAllowlist(allowlist config.Allowlist) error {
 	if netw.isNetworkSet {
 		if err := netw.unsetAllowlist(); err != nil {
 			return err
@@ -1046,9 +1180,8 @@ func (netw *Combined) setMesh(
 		firewall.WithMeshnetInfo(firewall.NewMeshInfo(netw.cfg, netw.mesh.Tun().Interface().Name)),
 	)
 	// If nordlynx was used as vpnet, the interface will change IP, we refresh it here
-	var tunnelIP, ok = netip.Addr{}, false
 	if netw.isVpnSet {
-		if tunnelIP, ok = netw.vpnet.Tun().IP(); ok {
+		if tunnelIP, ok := netw.vpnet.Tun().IP(); ok {
 			newCfg = newCfg.CopyWith(
 				firewall.WithTunnelIP(tunnelIP),
 			)
@@ -1248,6 +1381,12 @@ func (netw *Combined) SetLanDiscovery(enabled bool) {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
 
+	if err := netw.setLanDiscovery(enabled); err != nil {
+		log.Error("setting lan discovery failed:", err)
+	}
+}
+
+func (netw *Combined) setLanDiscovery(enabled bool) error {
 	netw.lanDiscovery = enabled
 
 	// if routing rules were set - they will be adjusted as needed
@@ -1257,9 +1396,10 @@ func (netw *Combined) SetLanDiscovery(enabled bool) {
 			netw.lanDiscovery,
 			netw.allowlist.Subnets,
 		); err != nil {
-			log.Error("failed to set routing rules up after enabling lan discovery:", err)
+			return fmt.Errorf("failed to set routing rules up after enabling lan discovery: %w", err)
 		}
 	}
+	return nil
 }
 
 func (netw *Combined) GetConnectionParameters() (vpn.ServerData, bool) {
@@ -1274,7 +1414,10 @@ func (netw *Combined) GetConnectionParameters() (vpn.ServerData, bool) {
 func (netw *Combined) SetARPIgnore(ignoreARP bool) error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
+	return netw.setARPIgnore(ignoreARP)
+}
 
+func (netw *Combined) setARPIgnore(ignoreARP bool) error {
 	if !netw.isConnectedToVPN() {
 		netw.ignoreARP = ignoreARP
 		return nil
