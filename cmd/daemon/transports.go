@@ -108,7 +108,7 @@ func (r *resolverWithBackoff) setBackoff() bool {
 		r.backoff = maxBackoff
 	}
 
-	log.Info("backing off from internal DNS resolution for", r.backoff)
+	log.DNS.Info("backing off from internal DNS resolution for", r.backoff)
 	r.nextInternalDNSAttempt = time.Now().Add(r.backoff)
 
 	return true
@@ -119,7 +119,7 @@ func (r *resolverWithBackoff) unsetBackoff() {
 	defer r.mu.Unlock()
 
 	if r.backoff != 0 {
-		log.Info("unsetting internal DNS resolution backoff")
+		log.DNS.Info("unsetting internal DNS resolution backoff")
 	}
 
 	r.backoff = 0
@@ -149,7 +149,7 @@ func (r *resolverWithBackoff) resolveDomainName(ctx context.Context, domain stri
 		// only set backoff if it was not set(or the previous backoff has expired) so that it won't be saturated by
 		// multiple failed DNS calls.
 		if r.setBackoff() {
-			log.Warn("failed to resolve domain name with internal resolver, enabling backoff:", err)
+			log.DNS.Warn("failed to resolve domain name with internal resolver, enabling backoff:", err)
 		}
 
 		return domain, nil

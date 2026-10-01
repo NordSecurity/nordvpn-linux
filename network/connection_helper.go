@@ -14,9 +14,7 @@ func lookupAddress(ctx context.Context, addr string, dns string, protocol string
 	resolver := net.Resolver{
 		PreferGo: true,
 		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
-			dialer := &net.Dialer{
-				Timeout: time.Second * 5,
-			}
+			dialer := &net.Dialer{Timeout: 5 * time.Second}
 
 			if fwmark != noFwMark {
 				dialer.Control = NewFwmarkControlFn(fwmark)

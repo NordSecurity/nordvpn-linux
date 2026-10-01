@@ -6,6 +6,7 @@ import (
 	"net/netip"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
@@ -63,12 +64,16 @@ func (r *Resolver) resolveWithNameservers(ctx context.Context, domain string, na
 	var ipAddrs []netip.Addr
 	var err error
 	for _, nameserver := range nameservers {
+
 		var fwmark = r.fwmark
 		if r.isVpnConnected.Load() {
 			// While connected to VPN, send the DNS requests thru the tunnel so no fwmark
 			fwmark = noFwMark
 		}
-		ipAddrs, err = lookupAddress(ctx, domain, nameserver, protocol, fwmark)
+
+		resolveCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		ipAddrs, err = lookupAddress(resolveCtx, domain, nameserver, protocol, fwmark)
+		cancel()
 
 		if err == nil {
 			return ipAddrs, nil
