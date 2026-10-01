@@ -220,22 +220,25 @@ func (d *DNSServiceSetter) getManagementServiceBasedOnResolvconfLinkTarget() (dn
 }
 
 func (d *DNSServiceSetter) getManagementService() dnsManagementService {
+	log.DNS.Trace("probing NetworkManager config")
 	managementService, err := d.getManagementServiceBasedOnNetworkManagerConfiguration()
 	if err == nil {
-		log.DNS.Info("management service inferred from NetworkManager config")
+		log.DNS.Infof("management service inferred from NetworkManager config: %s", managementService)
 		return managementService
 	}
+	log.DNS.Tracef("NetworkManager probe failed: %v, probing resolv.conf comment", err)
 
 	managementService, err = d.getManagementServiceBasedOnResolvconfComment()
 	if err == nil {
-		log.DNS.Info("management service inferred from resolv.conf comment")
+		log.DNS.Infof("management service inferred from resolv.conf comment: %s", managementService)
 		return managementService
 	}
 
 	log.DNS.Warn("couldn't determine management service based on resolv.conf comment:", err)
+	log.DNS.Trace("probing resolv.conf link target")
 	managementService, err = d.getManagementServiceBasedOnResolvconfLinkTarget()
 	if err == nil {
-		log.DNS.Info("management service inferred from link target")
+		log.DNS.Infof("management service inferred from link target: %s", managementService)
 		return managementService
 	}
 	log.DNS.Error("couldn't determine management service based on resolv.conf link target:", err)
@@ -306,9 +309,11 @@ func (d *DNSServiceSetter) setUsingAvailable(iface string, nameservers []string)
 //  3. If the above fails, it attempts to use best available method(see setUsingAvailable)
 //  4. If all of the above fail, it returns an error
 func (d *DNSServiceSetter) Set(iface string, nameservers []string) error {
+	log.DNS.Tracef("iface=%q nameserverCount=%d", iface, len(nameservers))
 	// stop resolv.conf monitoring in case it is already running
 	d.resolvConfMonitor.stop()
 	d.currentManagementService = d.getManagementService()
+	log.DNS.Tracef("resolved management service=%s", d.currentManagementService)
 
 	var err error
 	if d.currentManagementService != unknownManagementService &&
@@ -352,6 +357,7 @@ func (d *DNSServiceSetter) Set(iface string, nameservers []string) error {
 
 // Unset unsets the DNS using the same family of methods that was used to set it
 func (d *DNSServiceSetter) Unset(iface string) error {
+	log.DNS.Tracef("iface=%q managementService=%s", iface, d.currentManagementService)
 	if d.unsetter == nil {
 		return errDNSMissingUnsetter
 	}

@@ -21,7 +21,7 @@ func NewPubkeyProvider(meshClient meshpb.MeshnetClient) *PubkeyProvider {
 func (c *PubkeyProvider) PubkeyFunc(peerIP string) []byte {
 	peers, err := getPeers(c.meshClient)
 	if err != nil {
-		log.Error(err)
+		log.Error("getting mesh peers:", err)
 	}
 
 	for _, peer := range peers {

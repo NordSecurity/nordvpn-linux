@@ -18,18 +18,21 @@ import (
 // Login the user with given token
 func (r *RPC) LoginWithToken(ctx context.Context, in *pb.LoginWithTokenRequest) (*pb.LoginResponse, error) {
 	if !r.consentChecker.IsConsentFlowCompleted() {
+		log.RPCLogin.Trace("consent flow not completed, rejecting token login")
 		return &pb.LoginResponse{
 			Type: internal.CodeConsentMissing,
 		}, nil
 	}
 
 	if in.GetToken() == "" {
+		log.RPCLogin.Trace("token is empty, rejecting login")
 		return &pb.LoginResponse{
 			Type: internal.CodeTokenLoginFailure,
 		}, nil
 	}
 
 	if !internal.AccessTokenFormatValidatorFunc(in.GetToken()) {
+		log.RPCLogin.Trace("token format invalid, rejecting login")
 		return &pb.LoginResponse{
 			Type: internal.CodeTokenInvalid,
 		}, nil
@@ -41,12 +44,15 @@ func (r *RPC) LoginWithToken(ctx context.Context, in *pb.LoginWithTokenRequest) 
 
 // loginCommon common login
 func (r *RPC) loginWithToken(token string) (payload *pb.LoginResponse, retErr error) {
+	log.RPCLogin.Trace("starting token login")
 	if ok, _ := r.ac.IsLoggedIn(); ok {
+		log.RPCLogin.Trace("already logged in, rejecting token login")
 		return nil, internal.ErrAlreadyLoggedIn
 	}
 
 	// check if previous login/signup process was started
 	if r.initialLoginType.wasStarted() {
+		log.RPCLogin.Trace("previous login was unfinished, emitting failure event before proceeding")
 		r.events.User.Login.Publish(events.DataAuthorization{
 			DurationMs:   -1,
 			EventTrigger: events.TriggerUser,
@@ -83,11 +89,12 @@ func (r *RPC) loginWithToken(token string) (payload *pb.LoginResponse, retErr er
 		r.initialLoginType.reset()
 	}()
 
+	log.RPCLogin.Trace("fetching service credentials via token")
 	credentials, err := r.credentialsAPI.ServiceCredentials(token)
 	if err != nil {
 		eventReason = events.ReasonLoginGetUserInfoFailed
 
-		log.Error("retrieving credentials:", err)
+		log.RPCLogin.Error("retrieving credentials:", err)
 		if errors.Is(err, core.ErrServerInternal) {
 			return &pb.LoginResponse{
 				Type: internal.CodeInternalError,
@@ -105,7 +112,7 @@ func (r *RPC) loginWithToken(token string) (payload *pb.LoginResponse, retErr er
 
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Error(err)
+		log.RPCLogin.Error("loading config:", err)
 		return &pb.LoginResponse{
 			Type: internal.CodeConfigError,
 		}, nil
@@ -115,6 +122,7 @@ func (r *RPC) loginWithToken(token string) (payload *pb.LoginResponse, retErr er
 	// This value remains unchanged until the user logs out and logs in again.
 	tokenRenewDate := time.Now().UTC().Format(internal.ServerDateFormat)
 
+	log.RPCLogin.Trace("saving token login credentials to config")
 	if err := r.cm.SaveWith(func(c config.Config) config.Config {
 		c.TokensData[credentials.ID] = config.TokenData{
 			Token:              token,
@@ -128,7 +136,7 @@ func (r *RPC) loginWithToken(token string) (payload *pb.LoginResponse, retErr er
 		c.AutoConnectData.ID = credentials.ID
 		return c
 	}); err != nil {
-		log.Error(err)
+		log.RPCLogin.Error("saving token login credentials:", err)
 		return &pb.LoginResponse{
 			Type: internal.CodeConfigError,
 		}, nil
@@ -141,7 +149,7 @@ func (r *RPC) loginWithToken(token string) (payload *pb.LoginResponse, retErr er
 	go StartNC(r.ncClient)
 
 	if err := r.RegisterDedicatedServers(); err != nil {
-		log.Error("failed to sync device for dedicated servers:", err)
+		log.RPCLogin.Error("failed to sync device for dedicated servers:", err)
 	}
 
 	r.publisher.Publish("user logged in")
@@ -154,12 +162,14 @@ func (r *RPC) loginWithToken(token string) (payload *pb.LoginResponse, retErr er
 // LoginOAuth2 is called when logging in with OAuth2.
 func (r *RPC) LoginOAuth2(ctx context.Context, in *pb.LoginOAuth2Request) (payload *pb.LoginOAuth2Response, retErr error) {
 	if !r.consentChecker.IsConsentFlowCompleted() {
+		log.RPCLogin.Trace("consent flow not completed, rejecting OAuth2 login")
 		return &pb.LoginOAuth2Response{
 			Status: pb.LoginStatus_CONSENT_MISSING,
 		}, nil
 	}
 
 	if ok, _ := r.ac.IsLoggedIn(); ok {
+		log.RPCLogin.Trace("already logged in, rejecting OAuth2 login")
 		return &pb.LoginOAuth2Response{
 			Status: pb.LoginStatus_ALREADY_LOGGED_IN,
 		}, nil
@@ -228,11 +238,13 @@ func (r *RPC) LoginOAuth2(ctx context.Context, in *pb.LoginOAuth2Request) (paylo
 // LoginOAuth2Callback is called by the browser via cli during OAuth2 login.
 func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.LoginOAuth2CallbackRequest) (payload *pb.LoginOAuth2CallbackResponse, retErr error) {
 	if !r.consentChecker.IsConsentFlowCompleted() {
+		log.RPCLogin.Trace("consent flow not completed, rejecting OAuth2 callback")
 		return &pb.LoginOAuth2CallbackResponse{
 			Status: pb.LoginStatus_CONSENT_MISSING,
 		}, nil
 	}
 	if ok, _ := r.ac.IsLoggedIn(); ok {
+		log.RPCLogin.Trace("already logged in, rejecting OAuth2 callback")
 		return nil, internal.ErrAlreadyLoggedIn
 	}
 
@@ -262,11 +274,13 @@ func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.LoginOAuth2Callbac
 	}()
 
 	if in.GetToken() == "" {
+		log.RPCLogin.Trace("OAuth2 exchange token is empty, aborting callback")
 		eventReason = events.ReasonLoginExchangeTokenMissing
 		r.publisher.Publish(internal.ErrMissingExchangeToken.Error())
 		return nil, internal.ErrMissingExchangeToken
 	}
 
+	log.RPCLogin.Trace("exchanging OAuth2 token for access token")
 	resp, err := r.authentication.Token(in.GetToken())
 	if err != nil {
 		eventReason = events.ReasonLoginExchangeTokenFailed
@@ -274,6 +288,7 @@ func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.LoginOAuth2Callbac
 		return nil, err
 	}
 
+	log.RPCLogin.Trace("fetching service credentials")
 	credentials, err := r.credentialsAPI.ServiceCredentials(resp.Token)
 	if err != nil {
 		eventReason = events.ReasonLoginGetUserInfoFailed
@@ -284,6 +299,7 @@ func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.LoginOAuth2Callbac
 	// Set token renewal timestamp to login time (when the fresh token was issued)
 	tokenRenewDate := time.Now().UTC().Format(internal.ServerDateFormat)
 
+	log.RPCLogin.Trace("saving credentials to config")
 	if err := r.cm.SaveWith(func(c config.Config) config.Config {
 		c.TokensData[credentials.ID] = config.TokenData{
 			Token:              resp.Token,
@@ -308,7 +324,7 @@ func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.LoginOAuth2Callbac
 	go StartNC(r.ncClient)
 
 	if err := r.RegisterDedicatedServers(); err != nil {
-		log.Error("failed to sync device for dedicated servers:", err)
+		log.RPCLogin.Error("failed to sync device for dedicated servers:", err)
 	}
 
 	return &pb.LoginOAuth2CallbackResponse{

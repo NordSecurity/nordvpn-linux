@@ -12,9 +12,10 @@ import (
 )
 
 func (r *RPC) SetTechnology(ctx context.Context, in *pb.SetTechnologyRequest) (*pb.Payload, error) {
+	log.RPCSetTechnology.Tracef("requested technology=%v vpnActive=%v", in.GetTechnology(), r.netw.IsVPNActive())
 	if in.Technology == config.Technology_NORDWHISPER {
 		if !features.NordWhisperEnabled {
-			log.Debug("user requested a NordWhisper technology but the feature is hidden based on compile flag.")
+			log.RPCSetTechnology.Debug("user requested a NordWhisper technology but the feature is hidden based on compile flag.")
 			return &pb.Payload{
 				Type: internal.CodeFeatureHidden,
 			}, nil
@@ -23,10 +24,11 @@ func (r *RPC) SetTechnology(ctx context.Context, in *pb.SetTechnologyRequest) (*
 
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Error(err)
+		log.RPCSetTechnology.Error("loading config:", err)
 	}
 
 	if cfg.Technology == in.GetTechnology() {
+		log.RPCSetTechnology.Tracef("technology already set to %v, nothing to do", in.GetTechnology())
 		return &pb.Payload{
 			Type: internal.CodeNothingToDo,
 			Data: []string{config.TechNameToUpperCamelCase(in.GetTechnology())},
@@ -36,14 +38,17 @@ func (r *RPC) SetTechnology(ctx context.Context, in *pb.SetTechnologyRequest) (*
 	if cfg.AutoConnect &&
 		cfg.AutoConnectData.Group == config.ServerGroup_DEDICATED_SERVER &&
 		in.GetTechnology() != config.Technology_NORDLYNX {
+		log.RPCSetTechnology.Tracef("auto-connect is set to dedicated server group, technology must be NordLynx, requested=%v", in.GetTechnology())
 		return &pb.Payload{
 			Type: internal.CodeDedicatedServersNoNordlynx,
 		}, nil
 	}
 
+	log.RPCSetTechnology.Tracef("creating VPN factory: technology=%v currentTechnology=%v",
+		in.GetTechnology(), cfg.Technology)
 	v, err := r.factory(in.GetTechnology())
 	if err != nil {
-		log.Error(err)
+		log.RPCSetTechnology.Error("creating VPN factory:", err)
 		return &pb.Payload{
 			Type: internal.CodeConfigError,
 		}, nil
@@ -74,7 +79,10 @@ func (r *RPC) SetTechnology(ctx context.Context, in *pb.SetTechnologyRequest) (*
 		protocol = config.Protocol_UDP
 	}
 
+	log.RPCSetTechnology.Tracef("derived settings: protocol=%v obfuscate=%v ech=%v", protocol, obfuscate, ech)
+
 	if in.GetTechnology() != config.Technology_NORDLYNX && cfg.AutoConnectData.PostquantumVpn {
+		log.RPCSetTechnology.Tracef("post-quantum requires NordLynx, rejecting technology change to %v", in.GetTechnology())
 		return &pb.Payload{
 			Type: internal.CodePqWithoutNordlynx,
 			Data: []string{config.TechNameToUpperCamelCase(in.GetTechnology())},
@@ -88,13 +96,14 @@ func (r *RPC) SetTechnology(ctx context.Context, in *pb.SetTechnologyRequest) (*
 		c.AutoConnectData.ECH = ech
 		return c
 	}); err != nil {
-		log.Error(err)
+		log.RPCSetTechnology.Error("saving technology config:", err)
 		return &pb.Payload{
 			Type: internal.CodeConfigError,
 		}, nil
 	}
 
 	// change vpn only when all above checks succeed
+	log.RPCSetTechnology.Tracef("applying technology change to %v", in.GetTechnology())
 	r.netw.SetVPN(v)
 
 	r.events.Settings.Technology.Publish(in.GetTechnology())

@@ -13,7 +13,7 @@ import (
 func (r *RPC) Disconnect(_ *pb.Empty, srv pb.Daemon_DisconnectServer) error {
 	connectionStateBeforeDisconnect, err := r.DoDisconnect()
 	if err != nil {
-		log.Error(err)
+		log.RPCDisconnect.Error("disconnecting:", err)
 		return internal.ErrUnhandled
 	}
 	if connectionStateBeforeDisconnect == pb.ConnectionState_DISCONNECTED {
@@ -29,12 +29,15 @@ func (r *RPC) Disconnect(_ *pb.Empty, srv pb.Daemon_DisconnectServer) error {
 
 // DoDisconnect is the non-gRPC function for Disconnect to be used directly.
 func (r *RPC) DoDisconnect() (pb.ConnectionState, error) {
+	log.RPCDisconnect.Trace("initiating disconnect")
 	connectionStateBeforeDisconnect := pb.ConnectionState_DISCONNECTED
 	if r.connectionInfo.IsPaused() {
+		log.RPCDisconnect.Trace("connection is paused, canceling pause timer before disconnect")
 		connectionStateBeforeDisconnect = pb.ConnectionState_PAUSED
 		r.CancelPause()
 	}
 	wasConnected, err := r.doDisconnect(0)
+	log.RPCDisconnect.Tracef("wasConnected=%v err=%v", wasConnected, err)
 	if wasConnected {
 		connectionStateBeforeDisconnect = pb.ConnectionState_CONNECTED
 	}
@@ -47,14 +50,16 @@ func (r *RPC) DoPause(interval time.Duration) (bool, error) {
 }
 
 func (r *RPC) doDisconnect(pauseInterval time.Duration) (bool, error) {
+	log.RPCDisconnect.Tracef("pauseInterval=%v", pauseInterval)
 	var recommendationUUID string
 	// Not sure if it can be nil in the real scenarios
 	if r.connectionInfo != nil {
 		recommendationUUID = r.connectionInfo.Status().RecommendationUUID
 	} else {
-		log.Warn("connection info is nil and it shouldn't be")
+		log.RPCDisconnect.Warn("connection info is nil and it shouldn't be")
 	}
 
+	log.RPCDisconnect.Trace("calling access.Disconnect")
 	wasConnected, err := access.Disconnect(access.DisconnectInput{
 		Networker:     r.netw,
 		ConfigManager: r.cm,

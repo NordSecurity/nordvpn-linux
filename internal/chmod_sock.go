@@ -13,6 +13,6 @@ func UpdateFilePermissions(name string, mode os.FileMode) {
 	}
 	// #nosec G302 -- need world writable permissions
 	if err := os.Chmod(name, mode); err != nil {
-		log.Error(err)
+		log.Error("changing file permissions:", err)
 	}
 }

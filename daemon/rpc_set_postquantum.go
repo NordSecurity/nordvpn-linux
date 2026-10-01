@@ -13,7 +13,7 @@ import (
 func (r *RPC) SetPostQuantum(ctx context.Context, in *pb.SetGenericRequest) (*pb.Payload, error) {
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Error(err)
+		log.Error("loading config:", err)
 	}
 
 	if cfg.AutoConnectData.PostquantumVpn == in.GetEnabled() {
@@ -37,7 +37,7 @@ func (r *RPC) SetPostQuantum(ctx context.Context, in *pb.SetGenericRequest) (*pb
 		c.AutoConnectData.PostquantumVpn = in.GetEnabled()
 		return c
 	}); err != nil {
-		log.Error(err)
+		log.Error("saving post-quantum config:", err)
 		return &pb.Payload{
 			Type: internal.CodeConfigError,
 		}, nil

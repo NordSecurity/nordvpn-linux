@@ -93,13 +93,13 @@ func systemDFile(unsetEnv bool) *os.File {
 	defer func() {
 		if unsetEnv {
 			if err := os.Unsetenv(ListenPID); err != nil {
-				log.Error(err)
+				log.Error("unsetting ListenPID:", err)
 			}
 			if err := os.Unsetenv(ListenFDS); err != nil {
-				log.Error(err)
+				log.Error("unsetting ListenFDS:", err)
 			}
 			if err := os.Unsetenv(ListenFDNames); err != nil {
-				log.Error(err)
+				log.Error("unsetting ListenFDNames:", err)
 			}
 		}
 	}()
@@ -125,7 +125,7 @@ func SystemDListener() (net.Listener, error) {
 	file := systemDFile(true)
 	defer func() {
 		if err := file.Close(); err != nil {
-			log.Error(err)
+			log.Error("closing systemd file:", err)
 		}
 	}()
 	return net.FileListener(file)

@@ -788,7 +788,7 @@ func (l *Libtelio) openTunnel(prefix netip.Prefix, privateKey string) (err error
 	if _, err := net.InterfaceByName(nordlynx.InterfaceName); err == nil {
 		// #nosec G204 -- input is properly sanitized
 		if err := exec.Command("ip", "link", "del", nordlynx.InterfaceName).Run(); err != nil {
-			log.Warn(err)
+			log.Warn("deleting leftover nordlynx interface:", err)
 		}
 	}
 

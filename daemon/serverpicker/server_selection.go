@@ -114,12 +114,14 @@ func PickServer(
 			Tag:   serverTag,
 			Limit: apiServersLimit,
 		}
+		log.ServerSel.Tracef("fetching from API: tag=%v group=%v tech=%v limit=%d", serverTag, serverGroup, serverTech, apiServersLimit)
 		selectedServers, recommendationUUID, err = fetchServersFromAPI(api, insights, serverTag, apiFilter, filterServersFn)
 	}
 
 	if len(selectedServers) == 0 {
 		// if no servers were received from the API, try from locally cached servers
 		log.ServerSel.Error("failed to select server from remote", err)
+		log.ServerSel.Trace("falling back to local server cache")
 		remote = false
 		selectedServers, err = findServersLocally(servers, serverTag, filterServersFn)
 	}
@@ -135,9 +137,11 @@ func PickServer(
 		return ServerSelection{}, internal.ErrServerIsUnavailable
 	}
 
+	log.ServerSel.Tracef("selecting random server from %d candidates (remote=%v)", len(selectedServers), remote)
 	// #nosec G404 -- not used for cryptographic purposes
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	selectedServer = &selectedServers[rng.Int63n(int64(len(selectedServers)))]
+	log.ServerSel.Tracef("selected server: hostname=%q", selectedServer.Hostname)
 
 	return ServerSelection{
 		Server:             selectedServer,

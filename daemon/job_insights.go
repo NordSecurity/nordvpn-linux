@@ -27,7 +27,7 @@ func JobInsights(
 					Latitude:    32.77859397576304,
 					Longitude:   -96.80300999652735,
 				}); err != nil {
-					log.Warn(err)
+					log.Warn("setting build insights data:", err)
 				}
 				return
 			}
@@ -40,7 +40,7 @@ func JobInsights(
 				return
 			}
 			if err := dm.SetInsightsData(*insights); err != nil {
-				log.Warn(err)
+				log.Warn("setting insights data:", err)
 			}
 			if events != nil {
 				events.Service.DeviceLocation.Publish(*insights)

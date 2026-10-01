@@ -13,7 +13,7 @@ import (
 func (r *RPC) SetAnalytics(ctx context.Context, in *pb.SetGenericRequest) (*pb.Payload, error) {
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Error(err)
+		log.Error("loading config:", err)
 		return &pb.Payload{Type: internal.CodeConfigError}, nil
 	}
 
@@ -37,7 +37,7 @@ func (r *RPC) SetAnalytics(ctx context.Context, in *pb.SetGenericRequest) (*pb.P
 
 	if in.GetEnabled() {
 		if err := r.analytics.Enable(); err != nil {
-			log.Error(err)
+			log.Error("enabling analytics:", err)
 
 			return &pb.Payload{
 				Type: internal.CodeConfigError,
@@ -45,7 +45,7 @@ func (r *RPC) SetAnalytics(ctx context.Context, in *pb.SetGenericRequest) (*pb.P
 		}
 	} else {
 		if err := r.analytics.Disable(); err != nil {
-			log.Error(err)
+			log.Error("disabling analytics:", err)
 			return &pb.Payload{
 				Type: internal.CodeConfigError,
 			}, nil
@@ -56,7 +56,7 @@ func (r *RPC) SetAnalytics(ctx context.Context, in *pb.SetGenericRequest) (*pb.P
 		c.AnalyticsConsent = newConsentLevel
 		return c
 	}); err != nil {
-		log.Error(err)
+		log.Error("saving analytics config:", err)
 		return &pb.Payload{
 			Type: internal.CodeConfigError,
 		}, nil

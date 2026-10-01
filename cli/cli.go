@@ -1086,7 +1086,7 @@ func (c *cmd) action(err error, f func(*cli.Context) error) func(*cli.Context) e
 	return func(ctx *cli.Context) error {
 		c.loaderInterceptor.enabled = isLoaderEnabled()
 		if err != nil {
-			log.Error(err)
+			log.Error("daemon connection:", err)
 			color.Red(internal.ErrDaemonConnectionRefused.Error())
 			os.Exit(1)
 		}
@@ -1128,7 +1128,7 @@ func (c *cmd) action(err error, f func(*cli.Context) error) func(*cli.Context) e
 				color.Red("The NordVPN background service isn't running. Execute the \"systemctl enable --now nordvpnd\" command with root privileges to start the background service. If you're using NordVPN in an environment without systemd (a container, for example), use the \"/etc/init.d/nordvpn start\" command.")
 				os.Exit(1)
 			default:
-				log.Error(err)
+				log.Error("pinging daemon:", err)
 				color.Red(internal.UnhandledMessage)
 				os.Exit(1)
 			}
