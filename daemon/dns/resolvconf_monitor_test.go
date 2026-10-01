@@ -133,6 +133,7 @@ func Test_ResolvConfMonitoring(t *testing.T) {
 			getMockWatcherFunc := func(...string) (*fsnotify.Watcher, error) {
 				watcher, err := fsnotify.NewWatcher()
 				assert.NoError(t, err)
+				assert.NotNil(t, watcher)
 				watcher.Events = eventsChan
 				watcher.Errors = errorChan
 				return watcher, nil

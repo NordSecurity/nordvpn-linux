@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
+	core_test "github.com/NordSecurity/nordvpn-linux/test/mock/core"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	"github.com/stretchr/testify/assert"
 )
@@ -202,4 +204,111 @@ func TestSetTechnology_DedicatedServer(t *testing.T) {
 	assert.Equal(t, internal.CodeDedicatedServersNoNordlynx, resp.Type, "Invalid response code by the daemon.")
 	assert.Equal(t, config.Technology_NORDLYNX, configManager.Cfg.Technology,
 		"Technology should not be changed when daemon responds with a non-success code.")
+}
+
+func TestSetTechnologyCheckAutoConnectData(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name                  string
+		isNordWhisperDisabled bool
+		cfg                   config.Config
+		toTechnology          config.Technology
+		expectedResponse      *pb.Payload
+	}{
+		{
+			name: "set technology works when autoconnect is off",
+			cfg: config.Config{
+				Technology:  config.Technology_NORDLYNX,
+				AutoConnect: false,
+				AutoConnectData: config.AutoConnectData{
+					Group: config.ServerGroup_DOUBLE_VPN,
+				},
+			},
+			toTechnology: config.Technology_NORDWHISPER,
+			expectedResponse: &pb.Payload{
+				Type: internal.CodeSuccess,
+				Data: []string{"false", config.TechNameToUpperCamelCase(config.Technology_NORDWHISPER)},
+			},
+		},
+		{
+			name: "works when autoconnect is on and autoconnect has compatible settings",
+			cfg: config.Config{
+				Technology:  config.Technology_NORDLYNX,
+				AutoConnect: true,
+				AutoConnectData: config.AutoConnectData{
+					Group: config.ServerGroup_DOUBLE_VPN,
+				},
+			},
+			toTechnology: config.Technology_OPENVPN,
+			expectedResponse: &pb.Payload{
+				Type: internal.CodeSuccess,
+				Data: []string{"false", config.TechNameToUpperCamelCase(config.Technology_OPENVPN)},
+			},
+		},
+		{
+			name: "fails when autoconnect is on and autoconnect is with incompatible settings",
+			cfg: config.Config{
+				Technology:  config.Technology_NORDLYNX,
+				AutoConnect: true,
+				AutoConnectData: config.AutoConnectData{
+					Group: config.ServerGroup_DOUBLE_VPN,
+				},
+			},
+			toTechnology:          config.Technology_NORDWHISPER,
+			isNordWhisperDisabled: false,
+			expectedResponse: &pb.Payload{
+				Type: internal.CodeTechnologyIncompatibleWithAutoconnect,
+			},
+		},
+		{
+			name: "fails always for NordWhisper when feature is disabled",
+			cfg: config.Config{
+				Technology:  config.Technology_NORDLYNX,
+				AutoConnect: true,
+				AutoConnectData: config.AutoConnectData{
+					Group: config.ServerGroup_DOUBLE_VPN,
+				},
+			},
+			toTechnology:          config.Technology_NORDWHISPER,
+			isNordWhisperDisabled: true,
+			expectedResponse: &pb.Payload{
+				Type: internal.CodeFeatureHidden,
+			},
+		},
+	}
+
+	networker := networker.Mock{}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			configManager := mock.NewMockConfigManager()
+			configManager.Cfg = &test.cfg
+
+			remoteConfigGetter := mock.NewRemoteConfigMock()
+			remoteConfigGetter.NordWhisperEnabled = !test.isNordWhisperDisabled
+			dm := DataManager{serversData: ServersData{Servers: core_test.ServersList()}}
+
+			r := RPC{
+				remoteConfigGetter: remoteConfigGetter,
+				cm:                 configManager,
+				netw:               &networker,
+				factory:            func(t config.Technology) (vpn.VPN, error) { return nil, nil },
+				events:             events.NewEventsEmpty(),
+				dm:                 &dm,
+				serversAPI:         core_test.NewMockFailingServersAPI(errors.New("500")),
+			}
+
+			resp, err := r.setTechnologyImpl(&pb.SetTechnologyRequest{
+				Technology: test.toTechnology,
+			}, !test.isNordWhisperDisabled)
+			assert.NoError(t, err)
+			assert.Equal(t, test.expectedResponse, resp)
+			if resp.Type == internal.CodeSuccess {
+				assert.Equal(t, test.toTechnology, configManager.Cfg.Technology)
+			} else {
+				assert.Equal(t, test.cfg.Technology, configManager.Cfg.Technology)
+			}
+		})
+	}
 }

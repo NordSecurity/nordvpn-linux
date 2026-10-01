@@ -32,6 +32,8 @@ final class DaemonStatusCode {
   static const allowlistSubnetTooWideWarn = 3060;
   static const allowlistSubnetWiderConfirm = 3061;
   static const connectionLimitReached = 3076;
+  static const technologyIsIncompatibleWithAutoconnect = 3078;
+
 
   // custom GUI defined error codes
   static const invalidTechnology = 5000;
