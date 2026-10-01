@@ -33,9 +33,6 @@ import (
 var (
 	// ErrTunnelClosed while enabling meshnet.
 	ErrTunnelClosed = errors.New("tunnel was closed")
-	// MsgMeshnetInviteSendSameAccountEmail is a string used to identify same account error
-	// returned when invite destination address is the same as sender email address
-	MsgMeshnetInviteSendSameAccountEmail = "Bad Request: Email should belong to a different user"
 )
 
 // Server is an implementation of pb.MeshnetServer. It represents the
@@ -520,14 +517,14 @@ func (s *Server) Invite(
 				},
 			}, nil
 		}
-		if strings.Contains(err.Error(), "must be a valid email address") {
+		if errors.Is(err, core.ErrInvalidFormData) {
 			return &pb.InviteResponse{
 				Response: &pb.InviteResponse_InviteResponseErrorCode{
 					InviteResponseErrorCode: pb.InviteResponseErrorCode_INVALID_EMAIL,
 				},
 			}, nil
 		}
-		if strings.Contains(err.Error(), MsgMeshnetInviteSendSameAccountEmail) {
+		if errors.Is(err, core.ErrInvitationReceivedSameUser) {
 			return &pb.InviteResponse{
 				Response: &pb.InviteResponse_InviteResponseErrorCode{
 					InviteResponseErrorCode: pb.InviteResponseErrorCode_SAME_ACCOUNT_EMAIL,
