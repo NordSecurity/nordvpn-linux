@@ -2,16 +2,16 @@
 
 case "$1" in
 install | abort-upgrade)
-	# Nothing to do yet
-	;;
+    # Nothing to do yet
+    ;;
 upgrade)
-	# Stopping the old process
-	pkill -TERM -x nordvpn-gui || :
-	;;
+    # Stopping the old process
+    pkill -TERM -x nordvpn-gui || :
+    ;;
 *)
-	echo "preinst called with unknown argument '$1'" >&2
-	# deliberately no error returned
-	;;
+    echo "preinst called with unknown argument '$1'" >&2
+    # deliberately no error returned
+    ;;
 esac
 
 exit 0
