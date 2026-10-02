@@ -294,7 +294,7 @@ func TestAutoconnect_ObfuscatedGroupNeedsNordWhisper(t *testing.T) {
 
 			resp, err := r.SetAutoConnect(context.Background(), &pb.SetAutoconnectRequest{
 				Enabled:     true,
-				ServerGroup: "obfuscated_servers",
+				ServerGroup: "obfuscated",
 			})
 
 			assert.Equal(t, internal.ErrServerIsUnavailable, err)
@@ -328,7 +328,7 @@ func TestAutoconnect_SavesCorrectAutoconnectData(t *testing.T) {
 		},
 		{
 			testName:    "for obfuscated servers over nordwhisper",
-			serverGroup: "obfuscated_servers",
+			serverGroup: "obfuscated",
 			technology:  config.Technology_NORDWHISPER,
 			expected:    config.AutoConnectData{Group: config.ServerGroup_NW_OBFUSCATED},
 		},

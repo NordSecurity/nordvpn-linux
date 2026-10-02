@@ -86,7 +86,7 @@ DEDICATED_IP_GROUPS = [
 
 # Used for test parametrization of the Obfuscated_Servers group, which NordWhisper aliases for its standard servers.
 OBFUSCATED_GROUPS = [
-    "Obfuscated_Servers"
+    "Obfuscated"
 ]
 
 # Used for test parametrization, when the same test has to be run for different countries.

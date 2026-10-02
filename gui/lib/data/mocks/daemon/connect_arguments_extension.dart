@@ -1,18 +1,19 @@
+import 'package:nordvpn/constants.dart';
 import 'package:nordvpn/pb/daemon/config/group.pbenum.dart' as config;
 import 'package:nordvpn/pb/daemon/connect.pb.dart';
 
 extension Conversions on ConnectRequest {
   config.ServerGroup toServerGroup() {
     switch (serverGroup) {
-      case "Double_vpn":
+      case doubleVpn:
         return config.ServerGroup.DOUBLE_VPN;
-      case "Dedicated_IP":
+      case dedicatedIp:
         return config.ServerGroup.DEDICATED_IP;
-      case "Onion_Over_VPN":
+      case onionOverVpn:
         return config.ServerGroup.ONION_OVER_VPN;
       case "p2p":
         return config.ServerGroup.P2P;
-      case "Obfuscated_Servers":
+      case obfuscatedServers:
         return config.ServerGroup.NW_OBFUSCATED;
       default:
         return config.ServerGroup.STANDARD_VPN_SERVERS;

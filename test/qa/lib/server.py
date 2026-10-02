@@ -37,7 +37,7 @@ GROUP_IDS = {
     "Dedicated_IP": GROUP_DEDICATED_IP,
     "Standard_VPN_Servers": GROUP_STANDARD_VPN_SERVERS,
     "P2P": GROUP_P2P,
-    "Obfuscated_Servers": GROUP_OBFUSCATED_SERVERS,
+    "Obfuscated_Server": GROUP_OBFUSCATED_SERVERS,
 }
 
 class ServerInfo:

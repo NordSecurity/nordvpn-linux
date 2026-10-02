@@ -7,9 +7,9 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core"
 )
 
-// ObfuscatedServersGroupTitle is the title of the synthesized "Obfuscated Servers" group. No server
+// ObfuscatedServersGroupTitle is the title of the synthesized "Obfuscated" group. No server
 // carries that group anymore, so the title is not taken from the API.
-const ObfuscatedServersGroupTitle = "Obfuscated Servers"
+const ObfuscatedServersGroupTitle = "Obfuscated"
 
 // IsObfuscatedTech reports whether connections over the technology are obfuscated.
 func IsObfuscatedTech(tech config.Technology) bool {
