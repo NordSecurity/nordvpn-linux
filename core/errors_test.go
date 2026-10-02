@@ -153,7 +153,7 @@ func TestExtractError(t *testing.T) {
 		},
 		{
 			name:          "dedicated server: invalid form data",
-			resp:          newMockJSONResponse(t, 400, map[string]map[string]any{"errors": {"message": "error message", "code": InvalidFormData}}),
+			resp:          newMockJSONResponse(t, 400, map[string]map[string]any{"errors": {"message": "error message", "code": DedicatedServersInvalidFormData}}),
 			expectedError: ErrDedicatedServersInvalidFormData,
 		},
 		{
