@@ -2,11 +2,13 @@
 package config
 
 import (
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
 
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
 const defaultFWMarkValue uint32 = 0xe1f1
@@ -139,4 +141,10 @@ func (ac AnalyticsConsent) String() string {
 	default:
 		return "ConsentUndefined"
 	}
+}
+
+func ServerTagFromAutoconnectData(data AutoConnectData) string {
+	country := internal.SnakeCase(data.Country)
+	city := internal.SnakeCase(data.City)
+	return strings.ToLower(strings.Join(strings.Fields(country+" "+city), " "))
 }

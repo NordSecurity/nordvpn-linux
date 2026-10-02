@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -333,12 +334,53 @@ func (r *RPC) fallbackDedicatedServer(cfg config.Config) config.Config {
 	if !serviceData.Active || !r.remoteConfigGetter.IsFeatureEnabled(remote.FeatureDedicatedServer) {
 		cfg.AutoConnectData.Group = config.ServerGroup_UNDEFINED
 		cfg.AutoConnectData.ServerTag = ""
+		cfg.AutoConnectData.Country = ""
+		cfg.AutoConnectData.CountryCode = ""
+		cfg.AutoConnectData.City = ""
 		if err := r.cm.SaveWith(func(c config.Config) config.Config {
 			c.AutoConnectData = cfg.AutoConnectData
 			return c
 		}); err != nil {
 			log.Error("failed to save config after a fallback from dedicated server:", err)
 		}
+	}
+
+	return cfg
+}
+
+// fallbackSpecificServer checks if autoconnect's target is a specific server.
+// If true, then it sets the target to its country/city.
+// Otherwise, it falls back to the fastest one.
+func (r *RPC) fallbackSpecificServer(cfg config.Config) config.Config {
+	if cfg.AutoConnectData.ServerTag == "" {
+		return cfg
+	}
+
+	if !serverpicker.IsServerTag(cfg.AutoConnectData.ServerTag) {
+		return cfg
+	}
+
+	serversData := r.dm.GetServersData()
+	serverIndex := slices.IndexFunc(serversData.Servers, func(server core.Server) bool {
+		return serverpicker.MatchTagToHostname(cfg.AutoConnectData.ServerTag, server)
+	})
+
+	cfg.AutoConnectData.ServerTag = ""
+	if serverIndex != -1 {
+		log.Info("autoconnection target set to a specific server tag, falling back to server's country/city")
+		server := serversData.Servers[serverIndex]
+		cfg.AutoConnectData.City = server.Country().City.Name
+		cfg.AutoConnectData.Country = server.Country().Name
+		cfg.AutoConnectData.ServerTag = strings.ToLower(server.Country().City.Name)
+	} else {
+		log.Warn("autoconnection target set to a specific server tag, server not found, falling back to fastest server")
+	}
+
+	if err := r.cm.SaveWith(func(c config.Config) config.Config {
+		c.AutoConnectData = cfg.AutoConnectData
+		return c
+	}); err != nil {
+		log.Error("failed to save config after a fallback from specific server:", err)
 	}
 
 	return cfg
@@ -413,18 +455,18 @@ func (r *RPC) doAutoConnect() error {
 		cfg = r.fallbackDedicatedServer(cfg)
 	}
 
+	cfg = r.fallbackSpecificServer(cfg)
+
 	server := connectServer{}
 
 	groupTag := ""
-	if cfg.AutoConnectData.Group != config.ServerGroup_UNDEFINED &&
-		cfg.AutoConnectData.ServerTag != strings.ToLower(cfg.AutoConnectData.Group.String()) &&
-		cfg.AutoConnectData.ServerTag != config.GroupTitleForId(cfg.AutoConnectData.Group) {
-		groupTag = cfg.AutoConnectData.Group.String()
+	if cfg.AutoConnectData.Group != config.ServerGroup_UNDEFINED {
+		groupTag = config.GroupTitleForId(cfg.AutoConnectData.Group)
 	}
 
 	err = r.executeConnect(&server, func(ctx context.Context) (bool, error) {
 		param := &pb.ConnectRequest{
-			ServerTag:   cfg.AutoConnectData.ServerTag,
+			ServerTag:   config.ServerTagFromAutoconnectData(cfg.AutoConnectData),
 			ServerGroup: groupTag,
 		}
 		return r.connectWithParameters(ctx, param, &server, pb.ConnectionSource_AUTO, "", events.VPNConnectionReasonAutoConnect)
