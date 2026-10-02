@@ -348,10 +348,9 @@ func (r *RPC) fallbackDedicatedServer(cfg config.Config) config.Config {
 	return cfg
 }
 
-// fallbackSpecificServer checks if autoconnect target is a specific server. If it is, it sets the target to it's
-// country/city.
-//
-// Autconnect to a specific server was deprecated in version 6.0.0.
+// fallbackSpecificServer checks if autoconnect's target is a specific server.
+// If true, then it sets the target to its country/city.
+// Otherwise, it falls back to the fastest one.
 func (r *RPC) fallbackSpecificServer(cfg config.Config) config.Config {
 	if cfg.AutoConnectData.ServerTag == "" {
 		return cfg
