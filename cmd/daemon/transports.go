@@ -129,9 +129,6 @@ func (r *resolverWithBackoff) unsetBackoff() {
 // resolveDomainName resolves domain via the internal resolver, applying the
 // backoff and killswitch rules:
 //   - a backoff of 5 => 30 => 60 will be set after DNS resolution failures
-//   - if killswitch is on, internal resolver will always be used
-//   - if killswitch is off and the internal resolver fails or backoff is on, domain will be returned as is to be
-//     resolved by the OS resolver
 func (r *resolverWithBackoff) resolveDomainName(ctx context.Context, domain string) (string, error) {
 	inBackoff := r.isInBackoffModeThreadSafe()
 
@@ -191,8 +188,8 @@ func createH1Transport(
 					return nil, fmt.Errorf("malformed address: %s", addr)
 				}
 
-				// resolverWrapper will return unresolved address if DNS resolution fails and killswitch is off.
-				// In such cases this address will be resolved by the OS resolver when it's passed on to the dialer.
+				// resolverWrapper will return unresolved address. In such cases this address will be resolved by the OS
+				// resolver when it's passed on to the dialer.
 				resolvedAddr, err := resolverWrapper.resolveDomainName(ctx, domain)
 				if err != nil {
 					return nil, err
