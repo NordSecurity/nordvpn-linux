@@ -6,8 +6,13 @@ import 'package:nordvpn/pb/daemon/servers.pb.dart';
 
 class MockRecentConnections {
   final MockServersList _serversList;
+  List<RecentConnectionModel>? _override;
 
   MockRecentConnections(this._serversList);
+
+  void setConnections(List<RecentConnectionModel> connections) {
+    _override = connections;
+  }
 
   ServerCountry? _findCountry(List<ServerCountry> servers, String code) {
     for (var server in servers) {
@@ -28,6 +33,8 @@ class MockRecentConnections {
   }
 
   List<RecentConnectionModel> getConnections() {
+    if (_override != null) return _override!;
+
     final servers = _serversList.serversList.servers.serversByCountry;
     final List<RecentConnectionModel> recentConnections = [];
 
