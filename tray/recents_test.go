@@ -86,7 +86,7 @@ func TestRecentConnDisplayLabel(t *testing.T) {
 				Group:          config.ServerGroup_NW_OBFUSCATED,
 				ConnectionType: config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP,
 			},
-			expectedLabel: "Obfuscated Servers (Lithuania, Vilnius)",
+			expectedLabel: "Obfuscated (Lithuania, Vilnius)",
 		},
 		{
 			name: "Obfuscated with Country only for ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP",
@@ -95,7 +95,7 @@ func TestRecentConnDisplayLabel(t *testing.T) {
 				ConnectionType: config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP,
 				Group:          config.ServerGroup_NW_OBFUSCATED,
 			},
-			expectedLabel: "Obfuscated Servers (Lithuania)",
+			expectedLabel: "Obfuscated (Lithuania)",
 		},
 		{
 			name: "Obfuscated with ServerSelectionRule_COUNTRY_WITH_GROUP",
@@ -104,7 +104,7 @@ func TestRecentConnDisplayLabel(t *testing.T) {
 				ConnectionType: config.ServerSelectionRule_COUNTRY_WITH_GROUP,
 				Group:          config.ServerGroup_NW_OBFUSCATED,
 			},
-			expectedLabel: "Obfuscated Servers (Lithuania)",
+			expectedLabel: "Obfuscated (Lithuania)",
 		},
 		{
 			name: "NordWhisper with ConnectionType country and obfuscate group",
@@ -113,7 +113,7 @@ func TestRecentConnDisplayLabel(t *testing.T) {
 				Group:          config.ServerGroup_NW_OBFUSCATED,
 				ConnectionType: config.ServerSelectionRule_COUNTRY_WITH_GROUP,
 			},
-			expectedLabel: "Obfuscated Servers (Lithuania)",
+			expectedLabel: "Obfuscated (Lithuania)",
 		},
 	}
 

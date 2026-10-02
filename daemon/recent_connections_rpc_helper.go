@@ -43,7 +43,7 @@ func applyObfuscationToRecentModel(
 	if cityExplicitlySpecified || isSingleCityCountry(model.CountryCode, dm, cfg) {
 		model.ConnectionType = config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP
 		model.City = event.TargetServerCity
-	} else {
+	} else if model.CountryCode != "" {
 		model.ConnectionType = config.ServerSelectionRule_COUNTRY_WITH_GROUP
 		model.City = ""
 	}

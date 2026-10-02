@@ -53,4 +53,4 @@ const dedicatedIp = "Dedicated_IP";
 const dedicatedServer = "Dedicated_Server";
 const onionOverVpn = "Onion_Over_VPN";
 const p2p = "p2p";
-const obfuscatedServers = "Obfuscated_Servers";
+const obfuscatedServers = "Obfuscated";

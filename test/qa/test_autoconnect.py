@@ -193,7 +193,7 @@ def test_autoconnect_to_unavailable_groups(tech, proto):
 
     for group in unavailable_groups:
         # TODO(LVPN-10935)
-        if group == "Obfuscated_Servers" and tech == "nordwhisper":
+        if group == "Obfuscated" and tech == "nordwhisper":
             continue
 
         with pytest.raises(sh.ErrorReturnCode_1) as ex:
