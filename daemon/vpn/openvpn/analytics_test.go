@@ -28,10 +28,8 @@ func TestDCOStatusEvent_ToDebuggerEvent(t *testing.T) {
 		Namespace:       ovpnNamespace,
 		Subscope:        ovpnSubscope,
 		Event:           dcoStatusEventName,
-		DCOActive:       true,
-		LinkKind:        "ovpn-dco",
-		ModuleAvailable: true,
-		ModuleVersion:   "0.2.20260519",
+		LinkKind:        "ovpn",
+		KernelVersion:   "Linux 7.0.0-31-generic",
 	}
 	debuggerEvent := event.ToDebuggerEvent()
 
@@ -46,9 +44,7 @@ func TestDCOStatusEvent_ToDebuggerEvent(t *testing.T) {
 	assert.Equal(t, "openvpn", decoded.Subscope)
 	assert.Equal(t, "openvpn_dco_status", decoded.Event)
 
-	assert.Equal(t, true, contextValueByPath(debuggerEvent.KeyBasedContextPaths, "openvpn.dco_active"))
-	assert.Equal(t, "ovpn-dco", contextValueByPath(debuggerEvent.KeyBasedContextPaths, "openvpn.link_kind"))
-	assert.Equal(t, true, contextValueByPath(debuggerEvent.KeyBasedContextPaths, "openvpn.module_available"))
+	assert.Equal(t, "ovpn", contextValueByPath(debuggerEvent.KeyBasedContextPaths, "openvpn.link_kind"))
 	assert.NotEmpty(t, debuggerEvent.GeneralContextPaths)
 }
 
