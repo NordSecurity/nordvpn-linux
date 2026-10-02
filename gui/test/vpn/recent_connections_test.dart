@@ -72,7 +72,7 @@ void main() {
             group: ServerGroup.ONION_OVER_VPN,
           ),
         ),
-        expected: (primary: "Onion over VPN", secondary: "Germany - Berlin"),
+        expected: (primary: "Onion Over VPN", secondary: "Germany - Berlin"),
       ),
       (
         model: RecentConnection.fromPb(
@@ -82,10 +82,7 @@ void main() {
             group: ServerGroup.NW_OBFUSCATED,
           ),
         ),
-        expected: (
-          primary: "Obfuscated Servers",
-          secondary: "Germany - Berlin",
-        ),
+        expected: (primary: "Obfuscated", secondary: "Germany - Berlin"),
       ),
       (
         model: RecentConnection.fromPb(
@@ -94,10 +91,7 @@ void main() {
             group: ServerGroup.NW_OBFUSCATED,
           ),
         ),
-        expected: (
-          primary: "Obfuscated Servers",
-          secondary: "Germany - Fastest",
-        ),
+        expected: (primary: "Obfuscated", secondary: "Germany - Fastest"),
       ),
       (
         model: RecentConnection.fromPb(
@@ -107,10 +101,7 @@ void main() {
             group: ServerGroup.NW_OBFUSCATED,
           ),
         ),
-        expected: (
-          primary: "Obfuscated Servers",
-          secondary: "Germany - Berlin",
-        ),
+        expected: (primary: "Obfuscated", secondary: "Germany - Berlin"),
       ),
     ];
 

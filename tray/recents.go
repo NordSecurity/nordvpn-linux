@@ -73,7 +73,6 @@ func tryApplyVirtualLocationSuffix(label string, isVirtualLoc bool) string {
 }
 
 func makeDisplayLabel(conn *RecentConnection) string {
-	log.Debug(conn)
 	switch conn.ConnectionType {
 	case config.ServerSelectionRule_CITY:
 		if conn.Country != "" && conn.City != "" {

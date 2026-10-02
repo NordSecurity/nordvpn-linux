@@ -230,7 +230,7 @@ def get_unavailable_groups():
     """Returns groups that are not available with current connection settings."""
     all_groups = ['Dedicated_IP',
                   'Double_VPN',
-                  'Obfuscated',
+                  'Obfuscated_Servers',
                   'Onion_Over_VPN',
                   'P2P',
                   'Standard_VPN_Servers']

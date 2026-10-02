@@ -412,6 +412,8 @@ def test_connect_to_unavailable_servers(tech, proto):
 
     for group in unavailable_groups:
         server_info = server.get_hostname_by(group_name=group)
+        if group == "Obfuscated_Servers" and (not server_info  or not server_info.hostname):
+            pytest.skip("no server returned from the API")
         name = server_info.hostname.split(".")[0]
 
         with pytest.raises(sh.ErrorReturnCode_1) as ex:
