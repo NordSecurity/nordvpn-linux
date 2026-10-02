@@ -91,16 +91,14 @@ final class RecentConnectionsItemFactory {
   }
 
   _TitleParts _buildTitleParts(RecentConnection model, bool isSpecialtyServer) {
-    if (isSpecialtyServer) {
-      if (model.country.isNotEmpty) {
-        final country = Country.fromCodeOrName(model.countryCode);
-        final city = model.city;
-        final location = city.isEmpty ? t.ui.fastest : City(city).localizedName;
-        final subtitle = "${country.localizedName} - $location";
+    if (isSpecialtyServer && model.country.isNotEmpty) {
+      final country = Country.fromCodeOrName(model.countryCode);
+      final city = model.city;
+      final location = city.isEmpty ? t.ui.fastest : City(city).localizedName;
+      final subtitle = "${country.localizedName} - $location";
 
-        return (primary: model.specialtyServer, secondary: subtitle);
-      }
-
+      return (primary: model.specialtyServer, secondary: subtitle);
+    } else if (model.country.isEmpty) {
       return (primary: model.specialtyServer, secondary: t.ui.fastest);
     }
 
