@@ -99,6 +99,9 @@ class Translations$a11y$en {
 
 	/// en: '$title. $message'
 	String popupWithContent({required Object title, required Object message}) => '${title}. ${message}';
+
+	/// en: 'Link $name'
+	String link({required Object name}) => 'Link ${name}';
 }
 
 // Path: cities
@@ -2251,6 +2254,7 @@ extension on Translations {
 			'a11y.expandibleEntryCollapsed' => 'Collapsed',
 			'a11y.clear' => 'Clear',
 			'a11y.popupWithContent' => ({required Object title, required Object message}) => '${title}. ${message}',
+			'a11y.link' => ({required Object name}) => 'Link ${name}',
 			'cities.tirana' => 'Tirana',
 			'cities.algiers' => 'Algiers',
 			'cities.addis_ababa' => 'Addis Ababa',
@@ -2747,9 +2751,9 @@ extension on Translations {
 			'ui.noResultsFound' => 'No results found. Try another keyword.',
 			'ui.searchServersHint' => 'Search countries, cities, or servers',
 			'ui.citiesAvailable' => ({required Object n}) => '${n} cities available',
-			'ui.dedicatedIp' => 'Dedicated IP',
 			_ => null,
 		} ?? switch (path) {
+			'ui.dedicatedIp' => 'Dedicated IP',
 			'ui.dedicatedServer' => 'Dedicated Server',
 			'ui.doubleVpn' => 'Double VPN',
 			'ui.onionOverVpn' => 'Onion over VPN',
