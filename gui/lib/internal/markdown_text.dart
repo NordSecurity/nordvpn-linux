@@ -28,7 +28,7 @@ final class MarkdownLink extends MarkdownPart {
   const MarkdownLink({required this.label, required this.url});
 
   @override
-  String get semanticsText => t.a11y.linkWithinPopup(name: label);
+  String get semanticsText => t.a11y.link(name: label);
 }
 
 // Holds both raw and parsed markdown for further reuse

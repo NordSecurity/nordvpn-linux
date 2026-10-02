@@ -101,7 +101,7 @@ class Translations$a11y$en {
 	String popupWithContent({required Object title, required Object message}) => '${title}. ${message}';
 
 	/// en: 'Link $name'
-	String linkWithinPopup({required Object name}) => 'Link ${name}';
+	String link({required Object name}) => 'Link ${name}';
 }
 
 // Path: cities
@@ -2254,7 +2254,7 @@ extension on Translations {
 			'a11y.expandibleEntryCollapsed' => 'Collapsed',
 			'a11y.clear' => 'Clear',
 			'a11y.popupWithContent' => ({required Object title, required Object message}) => '${title}. ${message}',
-			'a11y.linkWithinPopup' => ({required Object name}) => 'Link ${name}',
+			'a11y.link' => ({required Object name}) => 'Link ${name}',
 			'cities.tirana' => 'Tirana',
 			'cities.algiers' => 'Algiers',
 			'cities.addis_ababa' => 'Addis Ababa',

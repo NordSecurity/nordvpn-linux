@@ -28,7 +28,7 @@ sealed class PopupMetadata {
   }
 
   // Provides parsed message in a form that's a11y friendly
-  // (e.g. in-line links are stripped from their URLs, labels remained untouched)
+  // Links are announced as "Link " without their URL
   String semanticsMessage(WidgetRef ref) => parsedMessage(ref).semanticsText;
 
   @override

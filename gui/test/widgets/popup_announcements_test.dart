@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nordvpn/data/models/popup_metadata.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
@@ -130,7 +129,7 @@ void main() {
         t.a11y.popupWithContent(
           title: title,
           message:
-              "Check the ${t.a11y.linkWithinPopup(name: "test name URL")}.",
+              "Check the ${t.a11y.link(name: "test name URL")}.",
         ),
       );
       expect(announced, isNot(contains("example.com")));
