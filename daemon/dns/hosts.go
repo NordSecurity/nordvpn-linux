@@ -41,6 +41,22 @@ func NewHostsFileSetter(filePath string) *HostsFileSetter {
 	}
 }
 
+// NoopHostsSetter is a HostnameSetter that never touches the filesystem.
+// Use it when /etc/hosts is managed externally (e.g. NixOS).
+type NoopHostsSetter struct{}
+
+func (NoopHostsSetter) SetHosts(Hosts) error { return nil }
+func (NoopHostsSetter) UnsetHosts() error    { return nil }
+
+// NewHostnameSetter picks the HostnameSetter implementation based on
+// hostsReadOnly: true means /etc/hosts is never modified.
+func NewHostnameSetter(hostsReadOnly bool, path string) HostnameSetter {
+	if hostsReadOnly {
+		return NoopHostsSetter{}
+	}
+	return NewHostsFileSetter(path)
+}
+
 func (h Host) String() string {
 	return fmt.Sprintf("%s\t%s\t%s\t%s", h.IP, h.FQDN, strings.Join(h.DomainNames, "\t"), mark)
 }

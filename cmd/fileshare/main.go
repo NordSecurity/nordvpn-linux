@@ -102,11 +102,20 @@ func main() {
 		log.Warn("failed to remove old socket file:", err)
 	}
 
-	listener, err := internal.ManualListener(internal.FileshareSocket, internal.PermUserRWX)()
+	listener, err := internal.ManualListener(internal.FileshareSocket, internal.PermUserRWGroupRW)()
 	if err != nil {
 		log.Error("failed to open unix socket:", err)
 		os.Exit(int(childprocess.CodeFailedToCreateUnixScoket))
 	}
+
+	if gid, err := internal.GetNordvpnGid(); err != nil {
+		log.Error("failed to look up nordvpn group:", err)
+		os.Exit(int(childprocess.CodeFailedToCreateUnixScoket))
+	} else if err := os.Chown(internal.FileshareSocket, -1, gid); err != nil {
+		log.Error("failed to chown unix socket:", err)
+		os.Exit(int(childprocess.CodeFailedToCreateUnixScoket))
+	}
+
 	limitedListener := netutil.LimitListener(listener, 100)
 
 	defer func() {

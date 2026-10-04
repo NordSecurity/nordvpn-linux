@@ -298,12 +298,19 @@ func start() {
 	if err := os.Remove(connURL); err != nil && !errors.Is(err, os.ErrNotExist) {
 		log.Error("Failed to remove old socket file:", err)
 	}
-	listenerFunction := internal.ManualListener(connURL, internal.PermUserRWX)
+	listenerFunction := internal.ManualListener(connURL, internal.PermUserRWGroupRW)
 
 	listener, err := listenerFunction()
 	if err != nil {
 		log.Fatalf("Error on listening to UNIX domain socket: %s", err)
 	}
+
+	if gid, err := internal.GetNordvpnGid(); err != nil {
+		log.Fatalf("Error looking up nordvpn group: %s", err)
+	} else if err := os.Chown(connURL, -1, gid); err != nil {
+		log.Fatalf("Error chowning unix socket: %s", err)
+	}
+
 	listener = netutil.LimitListener(listener, 100)
 
 	usr, err := user.Current()
