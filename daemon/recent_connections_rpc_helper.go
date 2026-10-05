@@ -72,8 +72,7 @@ func isSingleCityCountry(countryCode string, dm *DataManager, cfg config.Config)
 
 	cities, err := dm.Cities(
 		countryCode,
-		cfg.Technology,
-		cfg.AutoConnectData.Protocol,
+		cfg.VPNProtocol,
 	)
 	if err != nil {
 		return false
@@ -141,7 +140,7 @@ func buildRecentConnectionModel(
 		return recents.Model{}, fmt.Errorf("unexpected connection type in recent connections: %d", recentModel.ConnectionType)
 	}
 
-	if cfg.Technology == config.Technology_NORDWHISPER {
+	if cfg.VPNProtocol.IsNordWhisper() {
 		recentModel = applyObfuscationToRecentModel(recentModel, event, dm, cfg)
 	}
 

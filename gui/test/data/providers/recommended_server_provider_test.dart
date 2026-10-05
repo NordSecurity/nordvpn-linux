@@ -5,8 +5,7 @@ import 'package:nordvpn/data/providers/app_state_provider.dart';
 import 'package:nordvpn/data/providers/recommended_server_provider.dart';
 import 'package:nordvpn/data/repository/vpn_repository.dart';
 import 'package:nordvpn/data/repository/vpn_settings_repository.dart';
-import 'package:nordvpn/pb/daemon/config/protocol.pbenum.dart';
-import 'package:nordvpn/pb/daemon/config/technology.pbenum.dart';
+import 'package:nordvpn/pb/daemon/config/vpn_protocol.pbenum.dart';
 import 'package:nordvpn/pb/daemon/settings.pb.dart';
 // servers.pb.dart exports a different Technology (the per-server one), so hide it here
 import 'package:nordvpn/pb/daemon/servers.pb.dart' hide Technology;
@@ -69,10 +68,8 @@ void main() {
     cityName: "Bucharest",
   );
 
-  ApplicationSettings settingsFor(Technology technology, Protocol protocol) {
-    return ApplicationSettings.fromSettings(
-      Settings(technology: technology, protocol: protocol),
-    );
+  ApplicationSettings settingsFor(VPNProtocol vpnProtocol) {
+    return ApplicationSettings.fromSettings(Settings(vpnProtocol: vpnProtocol));
   }
 
   // Builds the provider and returns it alongside the fakes it was given.
@@ -106,7 +103,7 @@ void main() {
 
   test("the first settings change after startup refetches the location", () async {
     final (notifier, vpnRepository) = await build(
-      initialSettings: settingsFor(Technology.NORDLYNX, Protocol.UDP),
+      initialSettings: settingsFor(VPNProtocol.VPN_PROTOCOL_NORDLYNX),
     );
 
     expect(vpnRepository.fetchCount, 1, reason: "the initial fetch on build");
@@ -115,7 +112,7 @@ void main() {
     // The very first change the observer ever sees must still be acted on. Before the
     // baseline was seeded in build(), this change only filled it in and was swallowed.
     await notifier.onSettingsChanged(
-      settingsFor(Technology.NORDWHISPER, Protocol.Webtunnel),
+      settingsFor(VPNProtocol.VPN_PROTOCOL_NORDWHISPER),
     );
 
     expect(vpnRepository.fetchCount, 2, reason: "the protocol changed");
@@ -126,11 +123,11 @@ void main() {
     "a settings change that leaves the protocol alone does not refetch",
     () async {
       final (notifier, vpnRepository) = await build(
-        initialSettings: settingsFor(Technology.NORDLYNX, Protocol.UDP),
+        initialSettings: settingsFor(VPNProtocol.VPN_PROTOCOL_NORDLYNX),
       );
 
       await notifier.onSettingsChanged(
-        settingsFor(Technology.NORDLYNX, Protocol.UDP),
+        settingsFor(VPNProtocol.VPN_PROTOCOL_NORDLYNX),
       );
 
       expect(vpnRepository.fetchCount, 1);

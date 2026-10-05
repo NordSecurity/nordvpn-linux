@@ -9,7 +9,7 @@ import 'package:nordvpn/data/mocks/daemon/mock_daemon.dart';
 import 'package:nordvpn/data/models/servers_list.dart';
 import 'package:nordvpn/data/providers/servers_list_controller.dart';
 import 'package:nordvpn/main.dart';
-import 'package:nordvpn/pb/daemon/config/technology.pbenum.dart';
+import 'package:nordvpn/pb/daemon/config/vpn_protocol.pbenum.dart';
 // Technology is also declared there, the config one is the settings value
 import 'package:nordvpn/pb/daemon/servers.pb.dart' hide Technology;
 import 'package:nordvpn/pb/daemon/settings.pb.dart';
@@ -134,17 +134,17 @@ extension Helper on WidgetTester {
     return AppCtl(tester: this, urlLauncher: urlLauncher);
   }
 
-  // The servers list the mocked daemon reports for [technology], grouped the
+  // The servers list the mocked daemon reports for [vpnProtocol], grouped the
   // same way the app groups it.
   Future<ServersList> mockedServersList({
-    required Technology technology,
+    required VPNProtocol vpnProtocol,
   }) async {
     final daemon = MockDaemon();
     addTearDown(daemon.serversList.dispose);
 
     // the mock replies on the real event loop, not on the test's fake clock
     await runAsync(() async {
-      await daemon.appSettings.setSettings(technology: technology);
+      await daemon.appSettings.setSettings(vpnProtocol: vpnProtocol);
       await pumpEventQueue();
     });
 

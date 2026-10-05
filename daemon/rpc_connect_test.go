@@ -1323,7 +1323,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 			}
 
 			configManagerMock := rpc.cm.(*mockConfigManager)
-			configManagerMock.c.Technology = test.technology
+			configManagerMock.c.VPNProtocol = vpnProtocolFor(test.technology, config.Protocol_UDP)
 			configManagerMock.c.AutoConnectData.PostquantumVpn = test.postQuantum
 
 			mockRPCServer := &mockRPCServer{}
@@ -1384,7 +1384,7 @@ func TestDedicatedServers_Internals(t *testing.T) {
 	}
 
 	configManagerMock := rpc.cm.(*mockConfigManager)
-	configManagerMock.c.Technology = config.Technology_NORDLYNX
+	configManagerMock.c.VPNProtocol = config.VPNProtocol_VPN_PROTOCOL_NORDLYNX
 
 	networkerMock := rpc.netw.(*testnetworker.Mock)
 
@@ -1457,7 +1457,7 @@ func TestDedicatedServers_ForceRegistration(t *testing.T) {
 	rpc.dedicatedServerKeyManager = &deviceKeyManagerMock
 
 	configManagerMock := rpc.cm.(*mockConfigManager)
-	configManagerMock.c.Technology = config.Technology_NORDLYNX
+	configManagerMock.c.VPNProtocol = config.VPNProtocol_VPN_PROTOCOL_NORDLYNX
 
 	mockRPCServer := &mockRPCServer{}
 	err := rpc.Connect(&pb.ConnectRequest{ServerTag: "dedicated_server"}, mockRPCServer)
@@ -1497,7 +1497,7 @@ func TestConnect_ConnectionLimitReachedKeepsVPNConnReason(t *testing.T) {
 			rpc := testRPCLocal(t)
 			rpc.netw = &testnetworker.Mock{StartErr: events.ErrConnectionLimitReached}
 			_ = rpc.cm.SaveWith(func(c config.Config) config.Config {
-				return config.Config{Technology: config.Technology_NORDLYNX}
+				return config.Config{VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX}
 			})
 			connectEvents := &daemonEvents.MockPublisherSubscriber[events.DataConnect]{}
 			rpc.events.Service.Connect = connectEvents
@@ -1537,7 +1537,7 @@ func TestReconnectOnServerMaintenance(t *testing.T) {
 	// select NordLynx because servers list has 2 servers in Italy
 	_ = rpc.cm.SaveWith(func(c config.Config) config.Config {
 		return config.Config{
-			Technology: config.Technology_NORDLYNX,
+			VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 		}
 	})
 
@@ -1613,7 +1613,7 @@ func TestReconnectOnServerMaintenance_ConnectionGuard(t *testing.T) {
 				ActiveServerData: tt.connParams,
 			}
 			_ = rpc.cm.SaveWith(func(c config.Config) config.Config {
-				return config.Config{Technology: config.Technology_NORDLYNX}
+				return config.Config{VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX}
 			})
 			rpc.RequestedConnParams.Set(pb.ConnectionSource_AUTO, serverpicker.ServerParameters{
 				CountryCode: "IT",
@@ -1647,7 +1647,7 @@ func TestReconnectOnServerMaintenance_CountryOnly(t *testing.T) {
 
 	_ = rpc.cm.SaveWith(func(c config.Config) config.Config {
 		return config.Config{
-			Technology: config.Technology_NORDLYNX,
+			VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 		}
 	})
 
@@ -1721,5 +1721,63 @@ func TestLocationTag(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			assert.Equal(t, tt.expected, locationTag(tt.code, tt.city))
 		})
+	}
+}
+
+type recordingServersAPI struct {
+	*deterministicServersAPI
+	requestedTech []core.ServerTechnology
+}
+
+func (r *recordingServersAPI) RecommendedServers(filter core.ServersFilter, lon float64, lat float64) (core.Servers, http.Header, error) {
+	r.requestedTech = append(r.requestedTech, filter.Tech)
+	return r.deterministicServersAPI.RecommendedServers(filter, lon, lat)
+}
+
+func TestSetVPNProtocolThenConnect_ConnectsWithSelectedProtocol(t *testing.T) {
+	category.Set(t, category.Unit)
+	defer testsCleanup()
+
+	tests := []struct {
+		target             config.VPNProtocol
+		expectedTech       config.Technology
+		expectedProtocol   config.Protocol
+		expectedServerTech core.ServerTechnology
+	}{
+		{config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP, config.Technology_OPENVPN, config.Protocol_UDP, core.OpenVPNUDP},
+		{config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP, config.Technology_OPENVPN, config.Protocol_TCP, core.OpenVPNTCP},
+	}
+
+	for _, test := range tests {
+		rpc := testRPCLocal(t)
+		serversAPI := &recordingServersAPI{deterministicServersAPI: &deterministicServersAPI{}}
+		rpc.serversAPI = serversAPI
+		netw := &testnetworker.Mock{}
+		rpc.netw = netw
+		rpc.pauseManager = &mock.PauseSchedulerMock{}
+		var builtTech []config.Technology
+		rpc.factory = func(tech config.Technology) (vpn.VPN, error) {
+			builtTech = append(builtTech, tech)
+			return &mock.WorkingVPN{}, nil
+		}
+		_ = rpc.cm.SaveWith(func(c config.Config) config.Config {
+			c.VPNProtocol = config.VPNProtocol_VPN_PROTOCOL_NORDLYNX
+			return c
+		})
+
+		setResp, err := rpc.SetVPNProtocol(context.Background(), &pb.SetVPNProtocolRequest{VpnProtocol: test.target})
+		assert.NoError(t, err)
+		assert.Equal(t, internal.CodeSuccess, setResp.Type, "set protocol %v", test.target)
+		assert.Equal(t, []config.Technology{test.expectedTech}, builtTech, "VPN backend built for %v", test.target)
+
+		server := &mockRPCServer{}
+		err = rpc.Connect(&pb.ConnectRequest{}, server)
+
+		assert.NoError(t, err, "connect with %v", test.target)
+		assert.Equal(t, internal.CodeConnected, server.msg.Type, "connect with %v", test.target)
+		assert.Equal(t, []core.ServerTechnology{test.expectedServerTech}, serversAPI.requestedTech, "servers requested for %v", test.target)
+		assert.Equal(t, test.expectedProtocol, netw.ProvidedServerData.Protocol, "server data protocol for %v", test.target)
+		assert.Empty(t, netw.ProvidedServerData.NordLynxPublicKey, "%v must not get NordLynx server data", test.target)
+		assert.NotEmpty(t, netw.ProvidedServerData.Hostname, "a server must be picked for %v", test.target)
 	}
 }

@@ -15,9 +15,9 @@ import (
 
 type countingSettingsClient struct {
 	pb.DaemonClient
-	calls      int
-	technology config.Technology
-	err        error
+	calls       int
+	vpnProtocol config.VPNProtocol
+	err         error
 }
 
 func (c *countingSettingsClient) Settings(ctx context.Context, in *pb.Empty, opts ...grpc.CallOption) (*pb.SettingsResponse, error) {
@@ -26,14 +26,14 @@ func (c *countingSettingsClient) Settings(ctx context.Context, in *pb.Empty, opt
 		return nil, c.err
 	}
 	return &pb.SettingsResponse{
-		Data: &pb.Settings{Technology: c.technology},
+		Data: &pb.Settings{VpnProtocol: c.vpnProtocol},
 	}, nil
 }
 
 func TestExceptMemoizesSettings(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	client := &countingSettingsClient{technology: config.Technology_NORDLYNX}
+	client := &countingSettingsClient{vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX}
 	c := &cmd{client: client}
 
 	assert.False(t, c.Except(config.Technology_NORDLYNX), "matching technology is not excepted")

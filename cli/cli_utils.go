@@ -32,7 +32,7 @@ func (c *cmd) Except(tech config.Technology) bool {
 	if err != nil {
 		return false
 	}
-	return settings.GetTechnology() != tech
+	return settings.GetVpnProtocol().Technology() != tech
 }
 
 // SetBoolAutocomplete shows booleans suggestions

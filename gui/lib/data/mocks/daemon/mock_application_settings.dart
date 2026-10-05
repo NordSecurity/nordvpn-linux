@@ -9,8 +9,7 @@ import 'package:nordvpn/data/models/allow_list.dart';
 import 'package:nordvpn/data/repository/daemon_status_codes.dart';
 import 'package:nordvpn/pb/daemon/common.pb.dart';
 import 'package:nordvpn/pb/daemon/config/analytics_consent.pbenum.dart';
-import 'package:nordvpn/pb/daemon/config/protocol.pbenum.dart';
-import 'package:nordvpn/pb/daemon/config/technology.pbenum.dart';
+import 'package:nordvpn/pb/daemon/config/vpn_protocol.pbenum.dart';
 import 'package:nordvpn/pb/daemon/connect.pb.dart';
 import 'package:nordvpn/pb/daemon/ping.pb.dart';
 import 'package:nordvpn/pb/daemon/set.pb.dart';
@@ -33,9 +32,15 @@ final class MockApplicationSettings extends CancelableDelayed {
   String? error;
   int? errorCode;
   SetErrorCode? errorLanDiscovery;
-  SetErrorCode? errorSetProtocol;
   SetErrorCode? errorRealTimeProtection;
   SetErrorCode? errorDns;
+
+  List<VPNProtocol> availableVpnProtocols = [
+    VPNProtocol.VPN_PROTOCOL_NORDLYNX,
+    VPNProtocol.VPN_PROTOCOL_OPENVPN_UDP,
+    VPNProtocol.VPN_PROTOCOL_OPENVPN_TCP,
+    VPNProtocol.VPN_PROTOCOL_NORDWHISPER,
+  ];
 
   SettingsResponse get settings => _settings;
   Settings get currentSettings => settings.data;
@@ -43,17 +48,15 @@ final class MockApplicationSettings extends CancelableDelayed {
   void replaceSettings(Settings value) {
     setSettings(
       killSwitch: value.hasKillSwitch() ? value.killSwitch : null,
-      protocol: value.hasProtocol() ? value.protocol : null,
-      technology: value.hasTechnology() ? value.technology : null,
+      vpnProtocol: value.hasVpnProtocol() ? value.vpnProtocol : null,
     );
-}
+  }
 
   Future<Payload> setSettings({
     ConsentMode? analyticsConsent,
     bool? firewall,
     int? fwmark,
-    Technology? technology,
-    Protocol? protocol,
+    VPNProtocol? vpnProtocol,
     bool? killSwitch,
     bool? lanDiscovery,
     bool? postquantumVpn,
@@ -79,8 +82,7 @@ final class MockApplicationSettings extends CancelableDelayed {
       analyticsConsent: analyticsConsent ?? val.analyticsConsent,
       firewall: firewall ?? val.firewall,
       fwmark: fwmark ?? val.fwmark,
-      technology: technology ?? val.technology,
-      protocol: protocol ?? val.protocol,
+      vpnProtocol: vpnProtocol ?? val.vpnProtocol,
       killSwitch: killSwitch ?? val.killSwitch,
       lanDiscovery: lanDiscovery ?? val.lanDiscovery,
       postquantumVpn: postquantumVpn ?? val.postquantumVpn,
@@ -122,8 +124,7 @@ final class MockApplicationSettings extends CancelableDelayed {
       analyticsConsent: ConsentMode.UNDEFINED,
       firewall: true,
       fwmark: 0xAB12,
-      technology: Technology.NORDLYNX,
-      protocol: Protocol.UDP,
+      vpnProtocol: VPNProtocol.VPN_PROTOCOL_NORDLYNX,
       killSwitch: false,
       lanDiscovery: false,
       notify: false,
@@ -270,29 +271,35 @@ final class MockApplicationSettings extends CancelableDelayed {
     );
   }
 
-  Future<SetProtocolResponse> setProtocol(SetProtocolRequest request) async {
+  Future<Payload> setVpnProtocol(VPNProtocol vpnProtocol) async {
     await delayed(delayDuration);
     if (error != null) {
       throw error!;
     }
 
-    if (errorSetProtocol != null) {
-      return SetProtocolResponse(errorCode: errorSetProtocol!);
+    if (!availableVpnProtocols.contains(vpnProtocol)) {
+      return Payload(type: Int64(DaemonStatusCode.featureHidden));
     }
 
-    final res = await setSettings(protocol: request.protocol);
+    if (currentSettings.vpnProtocol == vpnProtocol) {
+      return Payload(type: Int64(DaemonStatusCode.nothingToDo));
+    }
+
+    final res = await setSettings(vpnProtocol: vpnProtocol);
     if (res.type.toInt() != DaemonStatusCode.success) {
-      return SetProtocolResponse(errorCode: SetErrorCode.FAILURE);
+      return res;
     }
 
-    // Check if VPN is connected to determine whether to show reconnect popup
-    final isConnected = vpnStatus.status.state == ConnectionState.CONNECTED;
+    final isVpnActive =
+        vpnStatus.status.state == ConnectionState.CONNECTED ||
+        vpnStatus.status.state == ConnectionState.CONNECTING;
 
-    return SetProtocolResponse(
-      setProtocolStatus: isConnected
-          ? SetProtocolStatus
-                .PROTOCOL_CONFIGURED_VPN_ON // Show reconnect popup
-          : SetProtocolStatus.PROTOCOL_CONFIGURED, // No popup
+    return Payload(
+      type: Int64(
+        isVpnActive
+            ? DaemonStatusCode.successReconnectRequired
+            : DaemonStatusCode.success,
+      ),
     );
   }
 
@@ -327,8 +334,7 @@ final class MockApplicationSettings extends CancelableDelayed {
     }
 
     return SetRealTimeProtectionResponse(
-      setRealTimeProtectionStatus:
-          SetRealTimeProtectionStatus.RTP_CONFIGURED,
+      setRealTimeProtectionStatus: SetRealTimeProtectionStatus.RTP_CONFIGURED,
     );
   }
 

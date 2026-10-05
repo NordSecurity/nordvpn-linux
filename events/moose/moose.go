@@ -867,7 +867,7 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 		s.connectionToMeshnetPeer = data.IsMeshnetPeer
 		if !data.IsMeshnetPeer {
 			// the event carries what the tunnel really uses, not the current settings
-			s.connectedTechProto = techProto{technology: data.Technology, protocol: data.Protocol}
+			s.connectedTechProto = techProto{technology: data.VPNProtocol.Technology(), protocol: analyticsProtocol(data.VPNProtocol)}
 			connected = s.connectedTechProto
 		}
 	}
@@ -950,12 +950,12 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 			TargetServerType:          moose.NordvpnappServerTypeNone,
 		},
 		moose.TargetConnectionAdditionalParams{
-			TargetProtocol:      connectionProtocolToInternalType(data.Protocol),
+			TargetProtocol:      connectionProtocolToInternalType(analyticsProtocol(data.VPNProtocol)),
 			TargetServerCity:    data.TargetServerCity,
 			TargetServerCountry: data.TargetServerCountryCode,
 			TargetServerDomain:  targetServerDomain,
 			TargetServerGroup:   serverGroupToInternalType(data.TargetServerGroupID),
-			TargetTechnology:    connectionTechnologyToInternalType(data.Technology),
+			TargetTechnology:    connectionTechnologyToInternalType(data.VPNProtocol.Technology()),
 		},
 		moose.ConnectionParams{
 			ConnectionFunnel:     connectionFunnel,
@@ -1715,6 +1715,14 @@ func connectionProtocolToInternalType(proto config.Protocol) moose.NordvpnappVpn
 	default:
 		return moose.NordvpnappVpnConnectionProtocolRecommended
 	}
+}
+
+// analyticsProtocol returns the transport reported to analytics, with NordLynx as UDP.
+func analyticsProtocol(p config.VPNProtocol) config.Protocol {
+	if p.IsNordLynx() {
+		return config.Protocol_UDP
+	}
+	return p.Transport()
 }
 
 // connectionTechnologyToInternalType converts connection technology to the internal representation

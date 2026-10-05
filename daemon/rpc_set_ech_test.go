@@ -165,7 +165,7 @@ func TestSetECH(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			cm := mock.NewMockConfigManager()
-			cm.Cfg.Technology = test.tech
+			cm.Cfg.VPNProtocol = vpnProtocolFor(test.tech, config.Protocol_UDP)
 			cm.Cfg.AutoConnectData.ECH.Set(test.currentECH)
 			if test.loadErr {
 				cm.LoadErr = assert.AnError

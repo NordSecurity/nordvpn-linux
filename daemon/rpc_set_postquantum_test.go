@@ -25,7 +25,7 @@ func (m *mockPostquantumVpnConfigManager) Load(c *config.Config) error {
 	c.Mesh = m.c.Mesh
 	c.AutoConnect = m.c.AutoConnect
 	c.AutoConnectData = m.c.AutoConnectData
-	c.Technology = m.c.Technology
+	c.VPNProtocol = m.c.VPNProtocol
 	return nil
 }
 
@@ -176,7 +176,7 @@ func TestSetPostquantumVpn(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.testName, func(t *testing.T) {
 			mockConfigManager.c.Mesh = test.meshnet
-			mockConfigManager.c.Technology = test.tech
+			mockConfigManager.c.VPNProtocol = vpnProtocolFor(test.tech, config.Protocol_UDP)
 			mockConfigManager.c.AutoConnect = test.autoconnect
 			mockConfigManager.c.AutoConnectData.Group = test.autoconnectTargetGroup
 			mockConfigManager.c.AutoConnectData.PostquantumVpn = !test.pq

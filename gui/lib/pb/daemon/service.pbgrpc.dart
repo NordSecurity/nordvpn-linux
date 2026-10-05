@@ -216,18 +216,11 @@ class DaemonClient extends $grpc.Client {
     return $createUnaryCall(_$setAutoConnect, request, options: options);
   }
 
-  $grpc.ResponseFuture<$15.SetProtocolResponse> setProtocol(
-    $15.SetProtocolRequest request, {
+  $grpc.ResponseFuture<$0.Payload> setVPNProtocol(
+    $15.SetVPNProtocolRequest request, {
     $grpc.CallOptions? options,
   }) {
-    return $createUnaryCall(_$setProtocol, request, options: options);
-  }
-
-  $grpc.ResponseFuture<$0.Payload> setTechnology(
-    $15.SetTechnologyRequest request, {
-    $grpc.CallOptions? options,
-  }) {
-    return $createUnaryCall(_$setTechnology, request, options: options);
+    return $createUnaryCall(_$setVPNProtocol, request, options: options);
   }
 
   $grpc.ResponseFuture<$0.Payload> setPostQuantum(
@@ -310,18 +303,11 @@ class DaemonClient extends $grpc.Client {
   }
 
   /// ==================== Configuration Info ====================
-  $grpc.ResponseFuture<$0.Payload> settingsProtocols(
+  $grpc.ResponseFuture<$13.SettingsVPNProtocolsResponse> settingsVPNProtocols(
     $0.Empty request, {
     $grpc.CallOptions? options,
   }) {
-    return $createUnaryCall(_$settingsProtocols, request, options: options);
-  }
-
-  $grpc.ResponseFuture<$0.Payload> settingsTechnologies(
-    $0.Empty request, {
-    $grpc.CallOptions? options,
-  }) {
-    return $createUnaryCall(_$settingsTechnologies, request, options: options);
+    return $createUnaryCall(_$settingsVPNProtocols, request, options: options);
   }
 
   $grpc.ResponseFuture<$17.FeatureToggles> getFeatureToggles(
@@ -520,15 +506,10 @@ class DaemonClient extends $grpc.Client {
           '/pb.Daemon/SetAutoConnect',
           ($15.SetAutoconnectRequest value) => value.writeToBuffer(),
           $0.Payload.fromBuffer);
-  static final _$setProtocol =
-      $grpc.ClientMethod<$15.SetProtocolRequest, $15.SetProtocolResponse>(
-          '/pb.Daemon/SetProtocol',
-          ($15.SetProtocolRequest value) => value.writeToBuffer(),
-          $15.SetProtocolResponse.fromBuffer);
-  static final _$setTechnology =
-      $grpc.ClientMethod<$15.SetTechnologyRequest, $0.Payload>(
-          '/pb.Daemon/SetTechnology',
-          ($15.SetTechnologyRequest value) => value.writeToBuffer(),
+  static final _$setVPNProtocol =
+      $grpc.ClientMethod<$15.SetVPNProtocolRequest, $0.Payload>(
+          '/pb.Daemon/SetVPNProtocol',
+          ($15.SetVPNProtocolRequest value) => value.writeToBuffer(),
           $0.Payload.fromBuffer);
   static final _$setPostQuantum =
       $grpc.ClientMethod<$15.SetGenericRequest, $0.Payload>(
@@ -583,15 +564,11 @@ class DaemonClient extends $grpc.Client {
       '/pb.Daemon/SetTray',
       ($15.SetTrayRequest value) => value.writeToBuffer(),
       $0.Payload.fromBuffer);
-  static final _$settingsProtocols = $grpc.ClientMethod<$0.Empty, $0.Payload>(
-      '/pb.Daemon/SettingsProtocols',
-      ($0.Empty value) => value.writeToBuffer(),
-      $0.Payload.fromBuffer);
-  static final _$settingsTechnologies =
-      $grpc.ClientMethod<$0.Empty, $0.Payload>(
-          '/pb.Daemon/SettingsTechnologies',
+  static final _$settingsVPNProtocols =
+      $grpc.ClientMethod<$0.Empty, $13.SettingsVPNProtocolsResponse>(
+          '/pb.Daemon/SettingsVPNProtocols',
           ($0.Empty value) => value.writeToBuffer(),
-          $0.Payload.fromBuffer);
+          $13.SettingsVPNProtocolsResponse.fromBuffer);
   static final _$getFeatureToggles =
       $grpc.ClientMethod<$0.Empty, $17.FeatureToggles>(
           '/pb.Daemon/GetFeatureToggles',
@@ -817,22 +794,13 @@ abstract class DaemonServiceBase extends $grpc.Service {
         ($core.List<$core.int> value) =>
             $15.SetAutoconnectRequest.fromBuffer(value),
         ($0.Payload value) => value.writeToBuffer()));
-    $addMethod(
-        $grpc.ServiceMethod<$15.SetProtocolRequest, $15.SetProtocolResponse>(
-            'SetProtocol',
-            setProtocol_Pre,
-            false,
-            false,
-            ($core.List<$core.int> value) =>
-                $15.SetProtocolRequest.fromBuffer(value),
-            ($15.SetProtocolResponse value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$15.SetTechnologyRequest, $0.Payload>(
-        'SetTechnology',
-        setTechnology_Pre,
+    $addMethod($grpc.ServiceMethod<$15.SetVPNProtocolRequest, $0.Payload>(
+        'SetVPNProtocol',
+        setVPNProtocol_Pre,
         false,
         false,
         ($core.List<$core.int> value) =>
-            $15.SetTechnologyRequest.fromBuffer(value),
+            $15.SetVPNProtocolRequest.fromBuffer(value),
         ($0.Payload value) => value.writeToBuffer()));
     $addMethod($grpc.ServiceMethod<$15.SetGenericRequest, $0.Payload>(
         'SetPostQuantum',
@@ -920,20 +888,13 @@ abstract class DaemonServiceBase extends $grpc.Service {
         false,
         ($core.List<$core.int> value) => $15.SetTrayRequest.fromBuffer(value),
         ($0.Payload value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$0.Empty, $0.Payload>(
-        'SettingsProtocols',
-        settingsProtocols_Pre,
+    $addMethod($grpc.ServiceMethod<$0.Empty, $13.SettingsVPNProtocolsResponse>(
+        'SettingsVPNProtocols',
+        settingsVPNProtocols_Pre,
         false,
         false,
         ($core.List<$core.int> value) => $0.Empty.fromBuffer(value),
-        ($0.Payload value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$0.Empty, $0.Payload>(
-        'SettingsTechnologies',
-        settingsTechnologies_Pre,
-        false,
-        false,
-        ($core.List<$core.int> value) => $0.Empty.fromBuffer(value),
-        ($0.Payload value) => value.writeToBuffer()));
+        ($13.SettingsVPNProtocolsResponse value) => value.writeToBuffer()));
     $addMethod($grpc.ServiceMethod<$0.Empty, $17.FeatureToggles>(
         'GetFeatureToggles',
         getFeatureToggles_Pre,
@@ -1205,22 +1166,13 @@ abstract class DaemonServiceBase extends $grpc.Service {
   $async.Future<$0.Payload> setAutoConnect(
       $grpc.ServiceCall call, $15.SetAutoconnectRequest request);
 
-  $async.Future<$15.SetProtocolResponse> setProtocol_Pre(
-      $grpc.ServiceCall $call,
-      $async.Future<$15.SetProtocolRequest> $request) async {
-    return setProtocol($call, await $request);
+  $async.Future<$0.Payload> setVPNProtocol_Pre($grpc.ServiceCall $call,
+      $async.Future<$15.SetVPNProtocolRequest> $request) async {
+    return setVPNProtocol($call, await $request);
   }
 
-  $async.Future<$15.SetProtocolResponse> setProtocol(
-      $grpc.ServiceCall call, $15.SetProtocolRequest request);
-
-  $async.Future<$0.Payload> setTechnology_Pre($grpc.ServiceCall $call,
-      $async.Future<$15.SetTechnologyRequest> $request) async {
-    return setTechnology($call, await $request);
-  }
-
-  $async.Future<$0.Payload> setTechnology(
-      $grpc.ServiceCall call, $15.SetTechnologyRequest request);
+  $async.Future<$0.Payload> setVPNProtocol(
+      $grpc.ServiceCall call, $15.SetVPNProtocolRequest request);
 
   $async.Future<$0.Payload> setPostQuantum_Pre($grpc.ServiceCall $call,
       $async.Future<$15.SetGenericRequest> $request) async {
@@ -1312,20 +1264,12 @@ abstract class DaemonServiceBase extends $grpc.Service {
   $async.Future<$0.Payload> setTray(
       $grpc.ServiceCall call, $15.SetTrayRequest request);
 
-  $async.Future<$0.Payload> settingsProtocols_Pre(
+  $async.Future<$13.SettingsVPNProtocolsResponse> settingsVPNProtocols_Pre(
       $grpc.ServiceCall $call, $async.Future<$0.Empty> $request) async {
-    return settingsProtocols($call, await $request);
+    return settingsVPNProtocols($call, await $request);
   }
 
-  $async.Future<$0.Payload> settingsProtocols(
-      $grpc.ServiceCall call, $0.Empty request);
-
-  $async.Future<$0.Payload> settingsTechnologies_Pre(
-      $grpc.ServiceCall $call, $async.Future<$0.Empty> $request) async {
-    return settingsTechnologies($call, await $request);
-  }
-
-  $async.Future<$0.Payload> settingsTechnologies(
+  $async.Future<$13.SettingsVPNProtocolsResponse> settingsVPNProtocols(
       $grpc.ServiceCall call, $0.Empty request);
 
   $async.Future<$17.FeatureToggles> getFeatureToggles_Pre(

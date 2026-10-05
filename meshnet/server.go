@@ -1831,7 +1831,7 @@ func (s *Server) connect(
 		}
 	}
 
-	if cfg.Technology != config.Technology_NORDLYNX {
+	if !cfg.VPNProtocol.IsNordLynx() {
 		return &pb.ConnectResponse{
 			Response: &pb.ConnectResponse_UpdatePeerError{
 				UpdatePeerError: updatePeerMeshError(pb.MeshnetErrorCode_TECH_FAILURE),
@@ -1867,8 +1867,7 @@ func (s *Server) connect(
 	// Measure the time it takes to obtain tokens as the connection attempt event duration
 	connectingStartTime := time.Now()
 	event := events.DataConnect{
-		Technology:         cfg.Technology,
-		Protocol:           cfg.AutoConnectData.Protocol,
+		VPNProtocol:        cfg.VPNProtocol,
 		IsMeshnetPeer:      true,
 		TargetServerIP:     peer.Address,
 		TargetServerDomain: peer.Hostname,
@@ -1885,8 +1884,7 @@ func (s *Server) connect(
 	connectingStartTime = time.Now()
 
 	disconnectSender := events.NewDisconnectSender(events.DataDisconnect{
-		Protocol:           cfg.AutoConnectData.Protocol,
-		Technology:         cfg.Technology,
+		VPNProtocol:        cfg.VPNProtocol,
 		RealTimeProtection: cfg.AutoConnectData.RealTimeProtection,
 	}, s.daemonEvents.Service.Disconnect.Publish)
 

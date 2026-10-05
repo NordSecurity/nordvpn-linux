@@ -79,8 +79,7 @@ func setupTest(t *testing.T) *testSetup {
 func verifyConnectionStatus(t *testing.T, expected types.ConnectionStatus, actual *pb.StatusResponse) {
 	t.Helper()
 	assert.Equal(t, expected.State, actual.State)
-	assert.Equal(t, expected.Technology, actual.Technology)
-	assert.Equal(t, expected.Protocol, actual.Protocol)
+	assert.Equal(t, expected.VPNProtocol, actual.VpnProtocol)
 	assert.Equal(t, expected.IP.String(), actual.Ip)
 	assert.Equal(t, expected.Name, actual.Name)
 }
@@ -179,22 +178,20 @@ func TestRpcState_HandleDataConnectChangedEvents(t *testing.T) {
 		{
 			name: "when disconnected connection parameters shall not be provided",
 			connectionStatus: types.ConnectionStatus{
-				State:      pb.ConnectionState_DISCONNECTED,
-				Technology: config.Technology_NORDLYNX,
-				Protocol:   config.Protocol_UDP,
-				IP:         netip.MustParseAddr(testIP),
-				Name:       testServerDefault,
+				State:       pb.ConnectionState_DISCONNECTED,
+				VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+				IP:          netip.MustParseAddr(testIP),
+				Name:        testServerDefault,
 			},
 			connectionParamsProvided: false,
 		},
 		{
 			name: "when connected connection parameters shall be provided",
 			connectionStatus: types.ConnectionStatus{
-				State:      pb.ConnectionState_CONNECTED,
-				Technology: config.Technology_NORDLYNX,
-				Protocol:   config.Protocol_UDP,
-				IP:         netip.MustParseAddr(testIP),
-				Name:       testServerDefault,
+				State:       pb.ConnectionState_CONNECTED,
+				VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+				IP:          netip.MustParseAddr(testIP),
+				Name:        testServerDefault,
 			},
 			connectionParamsProvided: true,
 		},

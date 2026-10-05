@@ -315,23 +315,18 @@ func IsConnectableVia(tech ServerTechnology) Predicate {
 	}
 }
 
-// IsConnectableWithProtocol behaves like IsConnectableVia, but also includes protocol.
-func IsConnectableWithProtocol(tech config.Technology, proto config.Protocol) Predicate {
+// IsConnectableWithProtocol behaves like IsConnectableVia, but takes a VPN protocol.
+func IsConnectableWithProtocol(p config.VPNProtocol) Predicate {
 	return func(s Server) bool {
-		switch tech {
-		case config.Technology_NORDLYNX:
+		switch p {
+		case config.VPNProtocol_VPN_PROTOCOL_NORDLYNX:
 			return IsConnectableVia(WireguardTech)(s)
-		case config.Technology_OPENVPN:
-			if proto == config.Protocol_UDP {
-				return IsConnectableVia(OpenVPNUDP)(s)
-			}
-			if proto == config.Protocol_TCP {
-				return IsConnectableVia(OpenVPNTCP)(s)
-			}
-		case config.Technology_NORDWHISPER:
+		case config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP:
+			return IsConnectableVia(OpenVPNUDP)(s)
+		case config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP:
+			return IsConnectableVia(OpenVPNTCP)(s)
+		case config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER:
 			return IsConnectableVia(NordWhisperTech)(s)
-		case config.Technology_UNKNOWN_TECHNOLOGY:
-			break
 		}
 		return false
 	}

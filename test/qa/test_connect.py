@@ -455,14 +455,7 @@ def test_status_connected(tech, proto):
     assert server_info.country in status_info["country"], "Country should match server location"
     assert server_info.city in status_info["city"], "City should match server location"
 
-    assert tech.upper() in status_info["current technology"], "Technology should match current setting"
-
-    if tech == "openvpn":
-        assert proto.upper() in status_info["current protocol"], "Protocol should match current setting"
-    elif tech == "nordwhisper":
-        assert "Webtunnel" in status_info["current protocol"], "Protocol should be Webtunnel for Nordwhisper"
-    else:
-        assert "UDP" in status_info["current protocol"], "Protocol should be UDP by default"
+    assert status_info["protocol"] == lib.vpn_protocol_display_name(tech, proto), "Protocol should match current setting"
 
     transfer_received = float(status_info["transfer"].split(" ")[0])
     transfer_sent = float(status_info["transfer"].split(" ")[3])
@@ -560,7 +553,7 @@ def test_ens_connection_limit(reconnect: bool, pause: bool):
 
     ens_conn_limit_reached = 2
 
-    sh.nordvpn.set.technology("nordlynx")
+    lib.set_technology_and_protocol("nordlynx", "")
 
     with lib.Defer(sh.nordvpn.disconnect):
         if reconnect:

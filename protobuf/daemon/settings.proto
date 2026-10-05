@@ -5,14 +5,18 @@ package pb;
 import "common.proto";
 import "config/analytics_consent.proto";
 import "config/group.proto";
-import "config/protocol.proto";
-import "config/technology.proto";
+import "config/vpn_protocol.proto";
 
 option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
 
 message SettingsResponse {
   int64    type = 1;
   Settings data = 2;
+}
+
+// SettingsVPNProtocolsResponse lists VPN protocols available on this build.
+message SettingsVPNProtocolsResponse {
+  repeated config.VPNProtocol vpn_protocols = 1;
 }
 
 message AutoconnectData {
@@ -24,7 +28,8 @@ message AutoconnectData {
 }
 
 message Settings {
-  config.Technology   technology             = 1;
+  reserved 1;
+  reserved "technology";
   bool                firewall               = 2;
   bool                kill_switch            = 3;
   AutoconnectData     auto_connect_data      = 4;
@@ -34,7 +39,8 @@ message Settings {
   consent.ConsentMode analytics_consent      = 9;
   repeated string     dns                    = 10;
   bool                real_time_protection   = 11;
-  config.Protocol     protocol               = 12;
+  reserved 12;
+  reserved "protocol";
   bool                lan_discovery          = 13;
   Allowlist           allowlist              = 14;
   reserved 15;
@@ -44,6 +50,7 @@ message Settings {
   UserSpecificSettings user_settings   = 18;
   bool                 arp_ignore      = 19;
   bool                 ech             = 20;
+  config.VPNProtocol   vpn_protocol    = 21;
 }
 
 message UserSpecificSettings {

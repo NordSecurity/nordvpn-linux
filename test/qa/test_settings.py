@@ -20,16 +20,17 @@ def teardown_function(function):  # noqa: ARG001
     daemon.stop()
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES_BASIC2 + lib.TECHNOLOGIES_BASIC1 + lib.NORDWHISPER_TECHNOLOGY)
-def test_set_technology(tech, proto):  # noqa: ARG001
+@pytest.mark.parametrize(("tech", "proto"), lib.STANDARD_TECHNOLOGIES)
+def test_set_vpn_protocol(tech, proto):  # noqa: ARG001
     """Manual TC: LVPN-601"""
 
     if tech == "nordlynx":
-        sh.nordvpn.set.technology("OPENVPN")
+        lib.set_technology_and_protocol("openvpn", "udp")
 
-    tech_name =  lib.technology_to_upper_camel_case(tech)
-    assert f"Technology has been successfully set to '{tech_name}'." in sh.nordvpn.set.technology(tech), "Technology should be successfully set"
-    assert tech.upper() in sh.nordvpn.settings(), "Technology should appear in settings"
+    name = lib.vpn_protocol_display_name(tech, proto)
+    output = sh.nordvpn.set.protocol(lib.vpn_protocol_arg(tech, proto))
+    assert f"VPN Protocol has been successfully set to '{name}'." in output, "VPN protocol should be successfully set"
+    assert settings.Settings().get("Protocol") == name.lower(), "VPN protocol should appear in settings"
 
 
 @pytest.mark.parametrize(("tech", "proto"), lib.OVPN_STANDARD_TECHNOLOGIES)
@@ -320,25 +321,29 @@ def test_set_post_quantum_on_nordwhisper(tech, proto):
 
     assert "Post-quantum encryption is not compatible with NordWhisper. Switch to NordLynx to use this encryption." in ex.value.stdout.decode("utf-8")
 
-def test_set_technology_openvpn_post_quantum_enabled():
+@pytest.mark.parametrize(("tech", "proto"), lib.OVPN_STANDARD_TECHNOLOGIES)
+def test_set_protocol_openvpn_post_quantum_enabled(tech, proto):  # noqa: ARG001
     """Manual TC: LVPN-6835"""
 
     sh.nordvpn.set(settings.get_pq_alias(), "on")
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.set.technology("OPENVPN")
+        sh.nordvpn.set.protocol(lib.vpn_protocol_arg(tech, proto))
 
-    assert "This setting is not compatible with post-quantum encryption. To use OpenVPN, turn off post-quantum encryption first." in ex.value.stdout.decode("utf-8")
+    name = lib.vpn_protocol_display_name(tech, proto)
+    assert f"This setting is not compatible with post-quantum encryption. To use {name}, turn off post-quantum encryption first." in ex.value.stdout.decode("utf-8")
+    assert settings.Settings().get("Protocol") == "nordlynx", "VPN protocol should stay NordLynx"
 
-def test_set_technology_nordwhisper_post_quantum_enabled():
+def test_set_protocol_nordwhisper_post_quantum_enabled():
     """Manual TC: LVPN-6835"""
 
     sh.nordvpn.set(settings.get_pq_alias(), "on")
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.set.technology("NORDWHISPER")
+        sh.nordvpn.set.protocol("nordwhisper")
 
-    assert "This setting is not compatible with post-quantum encryption. To use NordWhisper, turn off post-quantum encryption first." in ex.value.stdout.decode("utf-8")
+    assert "This setting is not compatible with post-quantum encryption. To use NordWhisper (WebTunnel), turn off post-quantum encryption first." in ex.value.stdout.decode("utf-8")
+    assert settings.Settings().get("Protocol") == "nordlynx", "VPN protocol should stay NordLynx"
 
 @pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
 def test_autoconnect_enable_twice(tech, proto):
@@ -384,15 +389,17 @@ def test_set_defaults_killswitch_interaction(killswitch_initial, killswitch_flag
     assert network.is_not_available(2) is expected_killswitch_state, f"Network availability should be {not expected_killswitch_state}"
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES_BASIC1 + lib.NORDWHISPER_TECHNOLOGY)
-def test_set_protocol_openvpn_only(tech, proto):
+@pytest.mark.parametrize("value", ["udp", "tcp", "openvpn", "unspecified"])
+def test_set_protocol_rejects_invalid_value(value):
     """Manual TC: LVPN-8537"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    protocol_before = settings.Settings().get("Protocol")
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.set.protocol("TCP")
-        assert "This setting is only available when the selected protocol is OpenVPN." in ex.value.stdout.decode("utf-8")
+        sh.nordvpn.set.protocol(value)
+
+    assert "The command you entered is not valid." in ex.value.stdout.decode("utf-8")
+    assert settings.Settings().get("Protocol") == protocol_before, "VPN protocol should not change"
 
 
 @pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)

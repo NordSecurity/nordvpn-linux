@@ -59,14 +59,8 @@ def test_reconnect_matrix(
 
     status_info = daemon.get_status_data()
 
-    assert target_tech.upper() in status_info["current technology"], "Current technology should match target technology"
-
-    if target_tech == "openvpn":
-        assert target_proto.upper() in status_info["current protocol"], "Current protocol should match target protocol"
-    elif target_tech == "nordwhisper":
-        assert "Webtunnel" in status_info["current protocol"], "Current protocol should be Webtunnel for nordwhisper"
-    else:
-        assert "UDP" in status_info["current protocol"], "Current protocol should be UDP"
+    assert status_info["protocol"] == lib.vpn_protocol_display_name(target_tech, target_proto), \
+        "Current protocol should match target protocol"
 
     disconnect_base_test()
 
@@ -117,24 +111,12 @@ def test_status_change_technology_and_protocol(
     sh.nordvpn(get_alias())
     status_info = daemon.get_status_data()
 
-    assert source_tech.upper() in status_info["current technology"], "Current technology should match source technology"
-
-    if source_tech == "openvpn":
-        assert source_proto.upper() in status_info["current protocol"], "Current protocol should match source protocol"
-    elif source_tech == "nordwhisper":
-        assert "Webtunnel" in status_info["current protocol"], "Current protocol should be Webtunnel for nordwhisper"
-    else:
-        assert "UDP" in status_info["current protocol"], "Current protocol should be UDP"
+    source_name = lib.vpn_protocol_display_name(source_tech, source_proto)
+    assert status_info["protocol"] == source_name, "Current protocol should match source protocol"
 
     lib.set_technology_and_protocol(target_tech, target_proto)
-    assert source_tech.upper() in status_info["current technology"], "Current technology should remain source technology"
-
-    if source_tech == "openvpn":
-        assert source_proto.upper() in status_info["current protocol"], "Current protocol should remain source protocol"
-    elif source_tech == "nordwhisper":
-        assert "Webtunnel" in status_info["current protocol"], "Current protocol should remain Webtunnel for nordwhisper"
-    else:
-        assert "UDP" in status_info["current protocol"], "Current protocol should remain UDP"
+    status_info = daemon.get_status_data()
+    assert status_info["protocol"] == source_name, "Connection protocol should remain source protocol until reconnect"
 
     disconnect_base_test()
 

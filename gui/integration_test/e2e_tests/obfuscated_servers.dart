@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
-import 'package:nordvpn/pb/daemon/config/technology.pbenum.dart';
+import 'package:nordvpn/pb/daemon/config/vpn_protocol.pbenum.dart';
 
 import '../../test/utils/test_helpers.dart';
 
@@ -10,7 +10,7 @@ void runObfuscatedServersTests() async {
       final app = await tester.setupIntegrationTests();
 
       final vpnScreen = await app.goToVpnScreen();
-      await app.setTechnology(Technology.NORDWHISPER);
+      await app.setVpnProtocol(VPNProtocol.VPN_PROTOCOL_NORDWHISPER);
 
       await vpnScreen.quickConnect();
 
@@ -32,10 +32,10 @@ void runObfuscatedServersTests() async {
       // the tile is listed under every technology, but offers servers only under NordWhisper
       expect(vpnScreen.isObfuscatedGroupOffered(), isFalse);
 
-      await app.setTechnology(Technology.NORDWHISPER);
+      await app.setVpnProtocol(VPNProtocol.VPN_PROTOCOL_NORDWHISPER);
       await vpnScreen.waitFor(() => vpnScreen.isObfuscatedGroupOffered());
 
-      await app.setTechnology(Technology.NORDLYNX);
+      await app.setVpnProtocol(VPNProtocol.VPN_PROTOCOL_NORDLYNX);
       await vpnScreen.clickSpecialtyServersTab();
       await vpnScreen.scrollToObfuscatedGroup();
       await vpnScreen.waitFor(() => !vpnScreen.isObfuscatedGroupOffered());

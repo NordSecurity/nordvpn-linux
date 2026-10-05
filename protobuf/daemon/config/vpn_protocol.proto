@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+// buf:lint:ignore PACKAGE_DIRECTORY_MATCH
+// buf:lint:ignore PACKAGE_VERSION_SUFFIX
+package config;
+
+option go_package = "github.com/NordSecurity/nordvpn-linux/config";
+
+enum VPNProtocol {
+  VPN_PROTOCOL_UNSPECIFIED = 0;
+  VPN_PROTOCOL_NORDLYNX = 1;
+  VPN_PROTOCOL_OPENVPN_UDP = 2;
+  VPN_PROTOCOL_OPENVPN_TCP = 3;
+  VPN_PROTOCOL_NORDWHISPER = 4;
+}

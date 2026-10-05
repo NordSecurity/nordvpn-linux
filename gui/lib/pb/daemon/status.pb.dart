@@ -18,8 +18,7 @@ import 'package:protobuf/well_known_types/google/protobuf/timestamp.pb.dart'
     as $0;
 
 import 'config/group.pbenum.dart' as $1;
-import 'config/protocol.pbenum.dart' as $3;
-import 'config/technology.pbenum.dart' as $2;
+import 'config/vpn_protocol.pbenum.dart' as $2;
 import 'status.pbenum.dart';
 
 export 'package:protobuf/protobuf.dart' show GeneratedMessageGenericExtensions;
@@ -145,8 +144,6 @@ class ConnectionParameters extends $pb.GeneratedMessage {
 class StatusResponse extends $pb.GeneratedMessage {
   factory StatusResponse({
     ConnectionState? state,
-    $2.Technology? technology,
-    $3.Protocol? protocol,
     $core.String? ip,
     $core.String? hostname,
     $core.String? country,
@@ -164,11 +161,10 @@ class StatusResponse extends $pb.GeneratedMessage {
     $0.Timestamp? pausedAt,
     $core.int? pauseRemainingDurationSec,
     $core.bool? ech,
+    $2.VPNProtocol? vpnProtocol,
   }) {
     final result = create();
     if (state != null) result.state = state;
-    if (technology != null) result.technology = technology;
-    if (protocol != null) result.protocol = protocol;
     if (ip != null) result.ip = ip;
     if (hostname != null) result.hostname = hostname;
     if (country != null) result.country = country;
@@ -187,6 +183,7 @@ class StatusResponse extends $pb.GeneratedMessage {
     if (pauseRemainingDurationSec != null)
       result.pauseRemainingDurationSec = pauseRemainingDurationSec;
     if (ech != null) result.ech = ech;
+    if (vpnProtocol != null) result.vpnProtocol = vpnProtocol;
     return result;
   }
 
@@ -205,10 +202,6 @@ class StatusResponse extends $pb.GeneratedMessage {
       createEmptyInstance: create)
     ..aE<ConnectionState>(1, _omitFieldNames ? '' : 'state',
         enumValues: ConnectionState.values)
-    ..aE<$2.Technology>(2, _omitFieldNames ? '' : 'technology',
-        enumValues: $2.Technology.values)
-    ..aE<$3.Protocol>(3, _omitFieldNames ? '' : 'protocol',
-        enumValues: $3.Protocol.values)
     ..aOS(4, _omitFieldNames ? '' : 'ip')
     ..aOS(5, _omitFieldNames ? '' : 'hostname')
     ..aOS(6, _omitFieldNames ? '' : 'country')
@@ -232,6 +225,8 @@ class StatusResponse extends $pb.GeneratedMessage {
     ..aI(20, _omitFieldNames ? '' : 'pauseRemainingDurationSec',
         fieldType: $pb.PbFieldType.OU3)
     ..aOB(21, _omitFieldNames ? '' : 'ech')
+    ..aE<$2.VPNProtocol>(22, _omitFieldNames ? '' : 'vpnProtocol',
+        enumValues: $2.VPNProtocol.values)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -262,181 +257,172 @@ class StatusResponse extends $pb.GeneratedMessage {
   @$pb.TagNumber(1)
   void clearState() => $_clearField(1);
 
-  @$pb.TagNumber(2)
-  $2.Technology get technology => $_getN(1);
-  @$pb.TagNumber(2)
-  set technology($2.Technology value) => $_setField(2, value);
-  @$pb.TagNumber(2)
-  $core.bool hasTechnology() => $_has(1);
-  @$pb.TagNumber(2)
-  void clearTechnology() => $_clearField(2);
-
-  @$pb.TagNumber(3)
-  $3.Protocol get protocol => $_getN(2);
-  @$pb.TagNumber(3)
-  set protocol($3.Protocol value) => $_setField(3, value);
-  @$pb.TagNumber(3)
-  $core.bool hasProtocol() => $_has(2);
-  @$pb.TagNumber(3)
-  void clearProtocol() => $_clearField(3);
-
   @$pb.TagNumber(4)
-  $core.String get ip => $_getSZ(3);
+  $core.String get ip => $_getSZ(1);
   @$pb.TagNumber(4)
-  set ip($core.String value) => $_setString(3, value);
+  set ip($core.String value) => $_setString(1, value);
   @$pb.TagNumber(4)
-  $core.bool hasIp() => $_has(3);
+  $core.bool hasIp() => $_has(1);
   @$pb.TagNumber(4)
   void clearIp() => $_clearField(4);
 
   @$pb.TagNumber(5)
-  $core.String get hostname => $_getSZ(4);
+  $core.String get hostname => $_getSZ(2);
   @$pb.TagNumber(5)
-  set hostname($core.String value) => $_setString(4, value);
+  set hostname($core.String value) => $_setString(2, value);
   @$pb.TagNumber(5)
-  $core.bool hasHostname() => $_has(4);
+  $core.bool hasHostname() => $_has(2);
   @$pb.TagNumber(5)
   void clearHostname() => $_clearField(5);
 
   @$pb.TagNumber(6)
-  $core.String get country => $_getSZ(5);
+  $core.String get country => $_getSZ(3);
   @$pb.TagNumber(6)
-  set country($core.String value) => $_setString(5, value);
+  set country($core.String value) => $_setString(3, value);
   @$pb.TagNumber(6)
-  $core.bool hasCountry() => $_has(5);
+  $core.bool hasCountry() => $_has(3);
   @$pb.TagNumber(6)
   void clearCountry() => $_clearField(6);
 
   @$pb.TagNumber(7)
-  $core.String get city => $_getSZ(6);
+  $core.String get city => $_getSZ(4);
   @$pb.TagNumber(7)
-  set city($core.String value) => $_setString(6, value);
+  set city($core.String value) => $_setString(4, value);
   @$pb.TagNumber(7)
-  $core.bool hasCity() => $_has(6);
+  $core.bool hasCity() => $_has(4);
   @$pb.TagNumber(7)
   void clearCity() => $_clearField(7);
 
   @$pb.TagNumber(8)
-  $fixnum.Int64 get download => $_getI64(7);
+  $fixnum.Int64 get download => $_getI64(5);
   @$pb.TagNumber(8)
-  set download($fixnum.Int64 value) => $_setInt64(7, value);
+  set download($fixnum.Int64 value) => $_setInt64(5, value);
   @$pb.TagNumber(8)
-  $core.bool hasDownload() => $_has(7);
+  $core.bool hasDownload() => $_has(5);
   @$pb.TagNumber(8)
   void clearDownload() => $_clearField(8);
 
   @$pb.TagNumber(9)
-  $fixnum.Int64 get upload => $_getI64(8);
+  $fixnum.Int64 get upload => $_getI64(6);
   @$pb.TagNumber(9)
-  set upload($fixnum.Int64 value) => $_setInt64(8, value);
+  set upload($fixnum.Int64 value) => $_setInt64(6, value);
   @$pb.TagNumber(9)
-  $core.bool hasUpload() => $_has(8);
+  $core.bool hasUpload() => $_has(6);
   @$pb.TagNumber(9)
   void clearUpload() => $_clearField(9);
 
   @$pb.TagNumber(10)
-  $fixnum.Int64 get uptime => $_getI64(9);
+  $fixnum.Int64 get uptime => $_getI64(7);
   @$pb.TagNumber(10)
-  set uptime($fixnum.Int64 value) => $_setInt64(9, value);
+  set uptime($fixnum.Int64 value) => $_setInt64(7, value);
   @$pb.TagNumber(10)
-  $core.bool hasUptime() => $_has(9);
+  $core.bool hasUptime() => $_has(7);
   @$pb.TagNumber(10)
   void clearUptime() => $_clearField(10);
 
   @$pb.TagNumber(11)
-  $core.String get name => $_getSZ(10);
+  $core.String get name => $_getSZ(8);
   @$pb.TagNumber(11)
-  set name($core.String value) => $_setString(10, value);
+  set name($core.String value) => $_setString(8, value);
   @$pb.TagNumber(11)
-  $core.bool hasName() => $_has(10);
+  $core.bool hasName() => $_has(8);
   @$pb.TagNumber(11)
   void clearName() => $_clearField(11);
 
   @$pb.TagNumber(13)
-  ConnectionParameters get parameters => $_getN(11);
+  ConnectionParameters get parameters => $_getN(9);
   @$pb.TagNumber(13)
   set parameters(ConnectionParameters value) => $_setField(13, value);
   @$pb.TagNumber(13)
-  $core.bool hasParameters() => $_has(11);
+  $core.bool hasParameters() => $_has(9);
   @$pb.TagNumber(13)
   void clearParameters() => $_clearField(13);
   @$pb.TagNumber(13)
-  ConnectionParameters ensureParameters() => $_ensure(11);
+  ConnectionParameters ensureParameters() => $_ensure(9);
 
   @$pb.TagNumber(14)
-  $core.bool get postQuantum => $_getBF(12);
+  $core.bool get postQuantum => $_getBF(10);
   @$pb.TagNumber(14)
-  set postQuantum($core.bool value) => $_setBool(12, value);
+  set postQuantum($core.bool value) => $_setBool(10, value);
   @$pb.TagNumber(14)
-  $core.bool hasPostQuantum() => $_has(12);
+  $core.bool hasPostQuantum() => $_has(10);
   @$pb.TagNumber(14)
   void clearPostQuantum() => $_clearField(14);
 
   @$pb.TagNumber(15)
-  $core.bool get isMeshPeer => $_getBF(13);
+  $core.bool get isMeshPeer => $_getBF(11);
   @$pb.TagNumber(15)
-  set isMeshPeer($core.bool value) => $_setBool(13, value);
+  set isMeshPeer($core.bool value) => $_setBool(11, value);
   @$pb.TagNumber(15)
-  $core.bool hasIsMeshPeer() => $_has(13);
+  $core.bool hasIsMeshPeer() => $_has(11);
   @$pb.TagNumber(15)
   void clearIsMeshPeer() => $_clearField(15);
 
   @$pb.TagNumber(16)
-  $core.bool get byUser => $_getBF(14);
+  $core.bool get byUser => $_getBF(12);
   @$pb.TagNumber(16)
-  set byUser($core.bool value) => $_setBool(14, value);
+  set byUser($core.bool value) => $_setBool(12, value);
   @$pb.TagNumber(16)
-  $core.bool hasByUser() => $_has(14);
+  $core.bool hasByUser() => $_has(12);
   @$pb.TagNumber(16)
   void clearByUser() => $_clearField(16);
 
   @$pb.TagNumber(17)
-  $core.String get countryCode => $_getSZ(15);
+  $core.String get countryCode => $_getSZ(13);
   @$pb.TagNumber(17)
-  set countryCode($core.String value) => $_setString(15, value);
+  set countryCode($core.String value) => $_setString(13, value);
   @$pb.TagNumber(17)
-  $core.bool hasCountryCode() => $_has(15);
+  $core.bool hasCountryCode() => $_has(13);
   @$pb.TagNumber(17)
   void clearCountryCode() => $_clearField(17);
 
   @$pb.TagNumber(18)
-  $core.bool get obfuscated => $_getBF(16);
+  $core.bool get obfuscated => $_getBF(14);
   @$pb.TagNumber(18)
-  set obfuscated($core.bool value) => $_setBool(16, value);
+  set obfuscated($core.bool value) => $_setBool(14, value);
   @$pb.TagNumber(18)
-  $core.bool hasObfuscated() => $_has(16);
+  $core.bool hasObfuscated() => $_has(14);
   @$pb.TagNumber(18)
   void clearObfuscated() => $_clearField(18);
 
   @$pb.TagNumber(19)
-  $0.Timestamp get pausedAt => $_getN(17);
+  $0.Timestamp get pausedAt => $_getN(15);
   @$pb.TagNumber(19)
   set pausedAt($0.Timestamp value) => $_setField(19, value);
   @$pb.TagNumber(19)
-  $core.bool hasPausedAt() => $_has(17);
+  $core.bool hasPausedAt() => $_has(15);
   @$pb.TagNumber(19)
   void clearPausedAt() => $_clearField(19);
   @$pb.TagNumber(19)
-  $0.Timestamp ensurePausedAt() => $_ensure(17);
+  $0.Timestamp ensurePausedAt() => $_ensure(15);
 
   @$pb.TagNumber(20)
-  $core.int get pauseRemainingDurationSec => $_getIZ(18);
+  $core.int get pauseRemainingDurationSec => $_getIZ(16);
   @$pb.TagNumber(20)
   set pauseRemainingDurationSec($core.int value) =>
-      $_setUnsignedInt32(18, value);
+      $_setUnsignedInt32(16, value);
   @$pb.TagNumber(20)
-  $core.bool hasPauseRemainingDurationSec() => $_has(18);
+  $core.bool hasPauseRemainingDurationSec() => $_has(16);
   @$pb.TagNumber(20)
   void clearPauseRemainingDurationSec() => $_clearField(20);
 
   @$pb.TagNumber(21)
-  $core.bool get ech => $_getBF(19);
+  $core.bool get ech => $_getBF(17);
   @$pb.TagNumber(21)
-  set ech($core.bool value) => $_setBool(19, value);
+  set ech($core.bool value) => $_setBool(17, value);
   @$pb.TagNumber(21)
-  $core.bool hasEch() => $_has(19);
+  $core.bool hasEch() => $_has(17);
   @$pb.TagNumber(21)
   void clearEch() => $_clearField(21);
+
+  @$pb.TagNumber(22)
+  $2.VPNProtocol get vpnProtocol => $_getN(18);
+  @$pb.TagNumber(22)
+  set vpnProtocol($2.VPNProtocol value) => $_setField(22, value);
+  @$pb.TagNumber(22)
+  $core.bool hasVpnProtocol() => $_has(18);
+  @$pb.TagNumber(22)
+  void clearVpnProtocol() => $_clearField(22);
 }
 
 const $core.bool _omitFieldNames =

@@ -65,8 +65,7 @@ func (ti *Instance) handleSettingsChangeState(st *pb.AppState_SettingsChange) bo
 	changed := ti.setSettings(st.SettingsChange)
 	// identify whether we need to also update connections
 	ti.connSensor.Set(connectionSettings{
-		Protocol:   st.SettingsChange.Protocol,
-		Technology: st.SettingsChange.Technology,
+		VPNProtocol: st.SettingsChange.GetVpnProtocol(),
 	})
 
 	if ti.connSensor.ChangeDetected() {

@@ -1,50 +1,42 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nordvpn/data/models/vpn_protocol.dart';
-import 'package:nordvpn/pb/daemon/config/protocol.pbenum.dart';
-import 'package:nordvpn/pb/daemon/config/technology.pbenum.dart';
+import 'package:nordvpn/pb/daemon/config/vpn_protocol.pbenum.dart' as pb;
 
 void main() {
-  // The daemon reports a (technology, protocol) pair, the GUI works with a
-  // single protocol value.
-  final cases = [
-    (
-      name: "NordLynx ignores the protocol field",
-      technology: Technology.NORDLYNX,
-      protocol: Protocol.UDP,
-      expected: VpnProtocol.nordlynx,
-    ),
-    (
-      name: "OpenVPN over UDP",
-      technology: Technology.OPENVPN,
-      protocol: Protocol.UDP,
-      expected: VpnProtocol.openVpnUdp,
-    ),
-    (
-      name: "OpenVPN over TCP",
-      technology: Technology.OPENVPN,
-      protocol: Protocol.TCP,
-      expected: VpnProtocol.openVpnTcp,
-    ),
-    (
-      name: "NordWhisper is reported with the Webtunnel protocol",
-      technology: Technology.NORDWHISPER,
-      protocol: Protocol.Webtunnel,
-      expected: VpnProtocol.nordWhisper,
-    ),
-    (
-      name: "unknown technology maps to unknown",
-      technology: Technology.UNKNOWN_TECHNOLOGY,
-      protocol: Protocol.UNKNOWN_PROTOCOL,
-      expected: VpnProtocol.unknown,
-    ),
-  ];
+  const pairs = {
+    pb.VPNProtocol.VPN_PROTOCOL_NORDLYNX: VpnProtocol.nordlynx,
+    pb.VPNProtocol.VPN_PROTOCOL_OPENVPN_UDP: VpnProtocol.openVpnUdp,
+    pb.VPNProtocol.VPN_PROTOCOL_OPENVPN_TCP: VpnProtocol.openVpnTcp,
+    pb.VPNProtocol.VPN_PROTOCOL_NORDWHISPER: VpnProtocol.nordWhisper,
+  };
 
-  for (final testCase in cases) {
-    test(testCase.name, () {
-      expect(
-        convertToVpnProtocol(testCase.technology, testCase.protocol),
-        testCase.expected,
-      );
+  test('vpnProtocolFromPb maps every daemon protocol', () {
+    pairs.forEach((daemon, gui) {
+      expect(vpnProtocolFromPb(daemon), gui, reason: '$daemon');
     });
-  }
+  });
+
+  test('vpnProtocolFromPb maps UNSPECIFIED to unknown', () {
+    expect(
+      vpnProtocolFromPb(pb.VPNProtocol.VPN_PROTOCOL_UNSPECIFIED),
+      VpnProtocol.unknown,
+    );
+  });
+
+  test('toPb is the inverse of vpnProtocolFromPb', () {
+    pairs.forEach((daemon, gui) {
+      expect(gui.toPb(), daemon, reason: '$gui');
+    });
+  });
+
+  test('toPb asserts on unknown', () {
+    expect(() => VpnProtocol.unknown.toPb(), throwsA(isA<AssertionError>()));
+  });
+
+  test('every daemon protocol has a GUI mapping', () {
+    for (final p in pb.VPNProtocol.values) {
+      if (p == pb.VPNProtocol.VPN_PROTOCOL_UNSPECIFIED) continue;
+      expect(vpnProtocolFromPb(p), isNot(VpnProtocol.unknown), reason: '$p');
+    }
+  });
 }

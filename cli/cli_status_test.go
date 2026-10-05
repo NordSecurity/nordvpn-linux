@@ -21,24 +21,22 @@ func TestStatus(t *testing.T) {
 		{
 			name: "connected",
 			resp: &pb.StatusResponse{
-				State:      pb.ConnectionState_CONNECTED,
-				Technology: config.Technology_NORDLYNX,
-				Protocol:   config.Protocol_UDP,
-				Hostname:   "Verona",
-				Ip:         "127.0.0.1",
-				Country:    "Lithuania",
-				City:       "Vilnius",
-				Download:   69,
-				Upload:     69,
-				Uptime:     13e9,
+				State:       pb.ConnectionState_CONNECTED,
+				VpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+				Hostname:    "Verona",
+				Ip:          "127.0.0.1",
+				Country:     "Lithuania",
+				City:        "Vilnius",
+				Download:    69,
+				Upload:      69,
+				Uptime:      13e9,
 			},
 			expected: `Status: Connected
 Hostname: Verona
 IP: 127.0.0.1
 Country: Lithuania
 City: Vilnius
-Current technology: NORDLYNX
-Current protocol: UDP
+Protocol: NordLynx
 Post-quantum VPN: Disabled
 Transfer: 69 B received, 69 B sent
 Uptime: 13 seconds
@@ -47,24 +45,21 @@ Uptime: 13 seconds
 		{
 			name: "nordwhisper with ech enabled",
 			resp: &pb.StatusResponse{
-				State:      pb.ConnectionState_CONNECTED,
-				Technology: config.Technology_NORDWHISPER,
-				Protocol:   config.Protocol_UDP,
-				Hostname:   "Verona",
-				Ip:         "127.0.0.1",
-				Country:    "Lithuania",
-				City:       "Vilnius",
-				Uptime:     13e9,
-				Ech:        true,
+				State:       pb.ConnectionState_CONNECTED,
+				VpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
+				Hostname:    "Verona",
+				Ip:          "127.0.0.1",
+				Country:     "Lithuania",
+				City:        "Vilnius",
+				Uptime:      13e9,
+				Ech:         true,
 			},
 			expected: `Status: Connected
 Hostname: Verona
 IP: 127.0.0.1
 Country: Lithuania
 City: Vilnius
-Current technology: NORDWHISPER
-Current protocol: UDP
-Post-quantum VPN: Disabled
+Protocol: NordWhisper (WebTunnel)
 ECH: Enabled
 Uptime: 13 seconds
 `,
@@ -72,24 +67,21 @@ Uptime: 13 seconds
 		{
 			name: "nordwhisper with ech disabled",
 			resp: &pb.StatusResponse{
-				State:      pb.ConnectionState_CONNECTED,
-				Technology: config.Technology_NORDWHISPER,
-				Protocol:   config.Protocol_UDP,
-				Hostname:   "Verona",
-				Ip:         "127.0.0.1",
-				Country:    "Lithuania",
-				City:       "Vilnius",
-				Uptime:     13e9,
-				Ech:        false,
+				State:       pb.ConnectionState_CONNECTED,
+				VpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
+				Hostname:    "Verona",
+				Ip:          "127.0.0.1",
+				Country:     "Lithuania",
+				City:        "Vilnius",
+				Uptime:      13e9,
+				Ech:         false,
 			},
 			expected: `Status: Connected
 Hostname: Verona
 IP: 127.0.0.1
 Country: Lithuania
 City: Vilnius
-Current technology: NORDWHISPER
-Current protocol: UDP
-Post-quantum VPN: Disabled
+Protocol: NordWhisper (WebTunnel)
 ECH: Disabled
 Uptime: 13 seconds
 `,
@@ -97,23 +89,21 @@ Uptime: 13 seconds
 		{
 			name: "non-nordwhisper hides ech line even when ech is set",
 			resp: &pb.StatusResponse{
-				State:      pb.ConnectionState_CONNECTED,
-				Technology: config.Technology_NORDLYNX,
-				Protocol:   config.Protocol_UDP,
-				Hostname:   "Verona",
-				Ip:         "127.0.0.1",
-				Country:    "Lithuania",
-				City:       "Vilnius",
-				Uptime:     13e9,
-				Ech:        true,
+				State:       pb.ConnectionState_CONNECTED,
+				VpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+				Hostname:    "Verona",
+				Ip:          "127.0.0.1",
+				Country:     "Lithuania",
+				City:        "Vilnius",
+				Uptime:      13e9,
+				Ech:         true,
 			},
 			expected: `Status: Connected
 Hostname: Verona
 IP: 127.0.0.1
 Country: Lithuania
 City: Vilnius
-Current technology: NORDLYNX
-Current protocol: UDP
+Protocol: NordLynx
 Post-quantum VPN: Disabled
 Uptime: 13 seconds
 `,
@@ -121,15 +111,14 @@ Uptime: 13 seconds
 		{
 			name: "connected to specialty group",
 			resp: &pb.StatusResponse{
-				State:      pb.ConnectionState_CONNECTED,
-				Technology: config.Technology_NORDLYNX,
-				Protocol:   config.Protocol_UDP,
-				Hostname:   "Verona",
-				Ip:         "127.0.0.1",
-				Country:    "Lithuania",
-				City:       "Vilnius",
-				Uptime:     13e9,
-				Parameters: &pb.ConnectionParameters{Group: config.ServerGroup_DOUBLE_VPN},
+				State:       pb.ConnectionState_CONNECTED,
+				VpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+				Hostname:    "Verona",
+				Ip:          "127.0.0.1",
+				Country:     "Lithuania",
+				City:        "Vilnius",
+				Uptime:      13e9,
+				Parameters:  &pb.ConnectionParameters{Group: config.ServerGroup_DOUBLE_VPN},
 			},
 			expected: `Status: Connected
 Hostname: Verona
@@ -137,8 +126,7 @@ IP: 127.0.0.1
 Country: Lithuania
 City: Vilnius
 Group: Double VPN
-Current technology: NORDLYNX
-Current protocol: UDP
+Protocol: NordLynx
 Post-quantum VPN: Disabled
 Uptime: 13 seconds
 `,
@@ -146,17 +134,15 @@ Uptime: 13 seconds
 		{
 			name: "connected to non-specialty group hides group line",
 			resp: &pb.StatusResponse{
-				State:      pb.ConnectionState_CONNECTED,
-				Technology: config.Technology_NORDLYNX,
-				Protocol:   config.Protocol_UDP,
-				Hostname:   "Verona",
-				Uptime:     13e9,
-				Parameters: &pb.ConnectionParameters{Group: config.ServerGroup_STANDARD_VPN_SERVERS},
+				State:       pb.ConnectionState_CONNECTED,
+				VpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+				Hostname:    "Verona",
+				Uptime:      13e9,
+				Parameters:  &pb.ConnectionParameters{Group: config.ServerGroup_STANDARD_VPN_SERVERS},
 			},
 			expected: `Status: Connected
 Hostname: Verona
-Current technology: NORDLYNX
-Current protocol: UDP
+Protocol: NordLynx
 Post-quantum VPN: Disabled
 Uptime: 13 seconds
 `,
@@ -164,19 +150,16 @@ Uptime: 13 seconds
 		{
 			name: "connected to obfuscated server",
 			resp: &pb.StatusResponse{
-				State:      pb.ConnectionState_CONNECTED,
-				Technology: config.Technology_NORDWHISPER,
-				Protocol:   config.Protocol_UDP,
-				Hostname:   "Verona",
-				Uptime:     13e9,
-				Obfuscated: true,
+				State:       pb.ConnectionState_CONNECTED,
+				VpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
+				Hostname:    "Verona",
+				Uptime:      13e9,
+				Obfuscated:  true,
 			},
 			expected: `Status: Connected
 Hostname: Verona
 Group: Obfuscated
-Current technology: NORDWHISPER
-Current protocol: UDP
-Post-quantum VPN: Disabled
+Protocol: NordWhisper (WebTunnel)
 ECH: Disabled
 Uptime: 13 seconds
 `,

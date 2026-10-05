@@ -9,7 +9,7 @@ import 'package:nordvpn/data/mocks/daemon/mock_application_settings.dart';
 import 'package:nordvpn/data/mocks/daemon/mock_vpn_status.dart';
 import 'package:nordvpn/data/models/server_info.dart';
 import 'package:nordvpn/pb/daemon/account.pb.dart';
-import 'package:nordvpn/pb/daemon/config/technology.pbenum.dart';
+import 'package:nordvpn/pb/daemon/config/vpn_protocol.pbenum.dart';
 import 'package:nordvpn/pb/daemon/status.pb.dart';
 import 'package:nordvpn/pb/daemon/uievent.pb.dart';
 import 'package:nordvpn/router/router.dart';
@@ -134,8 +134,8 @@ final class AppCtl {
     await refreshAppState();
   }
 
-  Future<void> setTechnology(Technology technology) async {
-    await appSettings.setSettings(technology: technology);
+  Future<void> setVpnProtocol(VPNProtocol vpnProtocol) async {
+    await appSettings.setSettings(vpnProtocol: vpnProtocol);
     await refreshAppState();
   }
 

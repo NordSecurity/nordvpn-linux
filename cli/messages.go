@@ -46,7 +46,6 @@ Example: nordvpn set %s on`
 
 	AutoConnectOnNonObfuscatedServerObfuscateOn = "Your selected server doesn’t support obfuscation. Choose a different server or turn off obfuscation."
 	AutoConnectOnObfuscatedServerObfuscateOff   = "Turn on obfuscation to connect to obfuscated servers."
-	SetAutoConnectForceOff                      = "Auto-connect was turned off because the setting change is incompatible with your current auto-connect preferences. Please turn on auto-connect again if you wish to continue using it."
 	AutoConnectToSpecificServer                 = "Auto-connect to a specific server is no longer supported. Use a country, city, or server group instead."
 
 	SetRealTimeProtectionDisableDNS = "Disabling DNS."
@@ -63,11 +62,6 @@ Example: nordvpn set %s on`
 
 	SetTraySuccess      = "Tray set to '%s' successfully."
 	SetTrayNothingToSet = "Tray is already set to '%s'."
-
-	SetProtocolUnavailable = "This setting is only available when the selected protocol is OpenVPN."
-	SetProtocolAlreadySet  = "Protocol is already set to %s"
-
-	SetTechnologyDepsError = "%s kernel module or configuration utility is missing."
 
 	SetDNSDisableRealTimeProtection = "Turning off Real-time protection"
 	SetDNSInvalidAddress            = "The provided IP address is invalid."
@@ -363,11 +357,11 @@ Provide a [transfer_id] argument to list files in the specified transfer.`
 
 	MsgShowListOfServers = "Shows a list of %s where servers are available."
 
-	SetPqUnavailable       = "Post-quantum encryption is not compatible with %s. Switch to NordLynx to use this encryption."
-	SetTechnologyDisablePQ = "This setting is not compatible with post-quantum encryption. To use %s, turn off post-quantum encryption first."
-	SetPqAndMeshnet        = "The post-quantum VPN and Meshnet can't run at the same time. Please turn off one feature to use the other."
-	SetPqAndMeshnetServer  = "Meshnet isn’t compatible with post-quantum encryption. Reconnect to the VPN to fully disable post-quantum protection and try again."
-	SetPqUsageText         = "Enables or disables post-quantum encryption. When enabled, the encryption protects your VPN connection against potential quantum computer attacks.\nNote: Currently, post-quantum encryption works only with standard NordLynx servers, so it won’t activate when you use a dedicated IP, OpenVPN or NordWhisper.\nThe feature is not compatible with Meshnet."
+	SetPqUnavailable      = "Post-quantum encryption is not compatible with %s. Switch to NordLynx to use this encryption."
+	SetProtocolDisablePQ  = "This setting is not compatible with post-quantum encryption. To use %s, turn off post-quantum encryption first."
+	SetPqAndMeshnet       = "The post-quantum VPN and Meshnet can't run at the same time. Please turn off one feature to use the other."
+	SetPqAndMeshnetServer = "Meshnet isn’t compatible with post-quantum encryption. Reconnect to the VPN to fully disable post-quantum protection and try again."
+	SetPqUsageText        = "Enables or disables post-quantum encryption. When enabled, the encryption protects your VPN connection against potential quantum computer attacks.\nNote: Currently, post-quantum encryption works only with standard NordLynx servers, so it won’t activate when you use a dedicated IP, OpenVPN or NordWhisper.\nThe feature is not compatible with Meshnet."
 
 	SetDefaultsLogoutFlagText        = "Log out after restoring settings to their default values. Example: nordvpn set defaults --logout"
 	SetDefaultsOffKillswitchFlagText = "Turn off Kill Switch when restoring settings to their default values. Example: nordvpn set defaults --off-killswitch"

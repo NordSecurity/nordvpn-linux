@@ -164,14 +164,9 @@ class DaemonStub(object):
                 request_serializer=set__pb2.SetAutoconnectRequest.SerializeToString,
                 response_deserializer=common__pb2.Payload.FromString,
                 _registered_method=True)
-        self.SetProtocol = channel.unary_unary(
-                '/pb.Daemon/SetProtocol',
-                request_serializer=set__pb2.SetProtocolRequest.SerializeToString,
-                response_deserializer=set__pb2.SetProtocolResponse.FromString,
-                _registered_method=True)
-        self.SetTechnology = channel.unary_unary(
-                '/pb.Daemon/SetTechnology',
-                request_serializer=set__pb2.SetTechnologyRequest.SerializeToString,
+        self.SetVPNProtocol = channel.unary_unary(
+                '/pb.Daemon/SetVPNProtocol',
+                request_serializer=set__pb2.SetVPNProtocolRequest.SerializeToString,
                 response_deserializer=common__pb2.Payload.FromString,
                 _registered_method=True)
         self.SetPostQuantum = channel.unary_unary(
@@ -229,15 +224,10 @@ class DaemonStub(object):
                 request_serializer=set__pb2.SetTrayRequest.SerializeToString,
                 response_deserializer=common__pb2.Payload.FromString,
                 _registered_method=True)
-        self.SettingsProtocols = channel.unary_unary(
-                '/pb.Daemon/SettingsProtocols',
+        self.SettingsVPNProtocols = channel.unary_unary(
+                '/pb.Daemon/SettingsVPNProtocols',
                 request_serializer=common__pb2.Empty.SerializeToString,
-                response_deserializer=common__pb2.Payload.FromString,
-                _registered_method=True)
-        self.SettingsTechnologies = channel.unary_unary(
-                '/pb.Daemon/SettingsTechnologies',
-                request_serializer=common__pb2.Empty.SerializeToString,
-                response_deserializer=common__pb2.Payload.FromString,
+                response_deserializer=settings__pb2.SettingsVPNProtocolsResponse.FromString,
                 _registered_method=True)
         self.GetFeatureToggles = channel.unary_unary(
                 '/pb.Daemon/GetFeatureToggles',
@@ -442,13 +432,7 @@ class DaemonServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def SetProtocol(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def SetTechnology(self, request, context):
+    def SetVPNProtocol(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -522,15 +506,9 @@ class DaemonServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def SettingsProtocols(self, request, context):
+    def SettingsVPNProtocols(self, request, context):
         """==================== Configuration Info ====================
         """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def SettingsTechnologies(self, request, context):
-        """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -725,14 +703,9 @@ def add_DaemonServicer_to_server(servicer, server):
                     request_deserializer=set__pb2.SetAutoconnectRequest.FromString,
                     response_serializer=common__pb2.Payload.SerializeToString,
             ),
-            'SetProtocol': grpc.unary_unary_rpc_method_handler(
-                    servicer.SetProtocol,
-                    request_deserializer=set__pb2.SetProtocolRequest.FromString,
-                    response_serializer=set__pb2.SetProtocolResponse.SerializeToString,
-            ),
-            'SetTechnology': grpc.unary_unary_rpc_method_handler(
-                    servicer.SetTechnology,
-                    request_deserializer=set__pb2.SetTechnologyRequest.FromString,
+            'SetVPNProtocol': grpc.unary_unary_rpc_method_handler(
+                    servicer.SetVPNProtocol,
+                    request_deserializer=set__pb2.SetVPNProtocolRequest.FromString,
                     response_serializer=common__pb2.Payload.SerializeToString,
             ),
             'SetPostQuantum': grpc.unary_unary_rpc_method_handler(
@@ -790,15 +763,10 @@ def add_DaemonServicer_to_server(servicer, server):
                     request_deserializer=set__pb2.SetTrayRequest.FromString,
                     response_serializer=common__pb2.Payload.SerializeToString,
             ),
-            'SettingsProtocols': grpc.unary_unary_rpc_method_handler(
-                    servicer.SettingsProtocols,
+            'SettingsVPNProtocols': grpc.unary_unary_rpc_method_handler(
+                    servicer.SettingsVPNProtocols,
                     request_deserializer=common__pb2.Empty.FromString,
-                    response_serializer=common__pb2.Payload.SerializeToString,
-            ),
-            'SettingsTechnologies': grpc.unary_unary_rpc_method_handler(
-                    servicer.SettingsTechnologies,
-                    request_deserializer=common__pb2.Empty.FromString,
-                    response_serializer=common__pb2.Payload.SerializeToString,
+                    response_serializer=settings__pb2.SettingsVPNProtocolsResponse.SerializeToString,
             ),
             'GetFeatureToggles': grpc.unary_unary_rpc_method_handler(
                     servicer.GetFeatureToggles,
@@ -1466,7 +1434,7 @@ class Daemon(object):
             _registered_method=True)
 
     @staticmethod
-    def SetProtocol(request,
+    def SetVPNProtocol(request,
             target,
             options=(),
             channel_credentials=None,
@@ -1479,35 +1447,8 @@ class Daemon(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/pb.Daemon/SetProtocol',
-            set__pb2.SetProtocolRequest.SerializeToString,
-            set__pb2.SetProtocolResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def SetTechnology(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/pb.Daemon/SetTechnology',
-            set__pb2.SetTechnologyRequest.SerializeToString,
+            '/pb.Daemon/SetVPNProtocol',
+            set__pb2.SetVPNProtocolRequest.SerializeToString,
             common__pb2.Payload.FromString,
             options,
             channel_credentials,
@@ -1817,7 +1758,7 @@ class Daemon(object):
             _registered_method=True)
 
     @staticmethod
-    def SettingsProtocols(request,
+    def SettingsVPNProtocols(request,
             target,
             options=(),
             channel_credentials=None,
@@ -1830,36 +1771,9 @@ class Daemon(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/pb.Daemon/SettingsProtocols',
+            '/pb.Daemon/SettingsVPNProtocols',
             common__pb2.Empty.SerializeToString,
-            common__pb2.Payload.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def SettingsTechnologies(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/pb.Daemon/SettingsTechnologies',
-            common__pb2.Empty.SerializeToString,
-            common__pb2.Payload.FromString,
+            settings__pb2.SettingsVPNProtocolsResponse.FromString,
             options,
             channel_credentials,
             insecure,

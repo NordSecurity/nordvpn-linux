@@ -205,21 +205,33 @@ class Defer:
         print(self.command())
 
 
+def vpn_protocol_arg(tech: str, proto: str) -> str:
+    """Returns the `nordvpn set protocol` value for a technology and transport pair, e.g. `openvpn_udp`."""
+    if tech.lower() == "openvpn":
+        return f"openvpn_{(proto or 'udp').lower()}"
+    return tech.lower()
+
+
+def vpn_protocol_display_name(tech: str, proto: str) -> str:
+    """Returns the protocol name shown by `nordvpn status` and `nordvpn settings`, e.g. `OpenVPN (UDP)`."""
+    return {
+        "nordlynx": "NordLynx",
+        "openvpn_udp": "OpenVPN (UDP)",
+        "openvpn_tcp": "OpenVPN (TCP)",
+        "nordwhisper": "NordWhisper (WebTunnel)",
+    }[vpn_protocol_arg(tech, proto)]
+
+
 def set_technology_and_protocol(tech, proto):
     """
-    Allows setting technology and protocol regardless of whether they are already set or not.
+    Allows setting VPN protocol regardless of whether it is already set or not.
 
+    `tech` and `proto` are mapped to a single `nordvpn set protocol` value.
     Tests do not break on reordering when using this.
     """
     if tech:
         try:
-            print(sh.nordvpn.set.technology(tech))
-        except sh.ErrorReturnCode_1 as ex:
-            print("WARNING:", ex)
-
-    if proto:
-        try:
-            print(sh.nordvpn.set.protocol(proto))
+            print(sh.nordvpn.set.protocol(vpn_protocol_arg(tech, proto)))
         except sh.ErrorReturnCode_1 as ex:
             print("WARNING:", ex)
 
@@ -340,16 +352,6 @@ class CommandExecutor:
         if self.ssh_client is None:
             return sh.Command(command.split()[0])(*command.split()[1:], tty_out=False)
         return self.ssh_client.exec_command(command)
-
-def technology_to_upper_camel_case(tech: str) -> str:
-    match tech.upper():
-        case "NORDLYNX":
-            return "NordLynx"
-        case "OPENVPN":
-            return "OpenVPN"
-        case "NORDWHISPER":
-            return "NordWhisper"
-
 
 def squash_whitespace(text: str) -> str:
     """Normalize whitespace by collapsing all sequences of whitespace into single spaces."""

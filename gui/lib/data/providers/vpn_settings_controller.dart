@@ -17,14 +17,16 @@ part 'vpn_settings_controller.g.dart';
 
 // Don't show popups for those codes:
 // - success
+// - successReconnectRequired - saved, the caller handles the reconnect popup
 // - dnsListModified - error that happens when enabling Real time Protection
 //   and Custom DNS is set, if user allows resetting Custom DNS, this "error"
 //   will happen
 // - realTimeProtectionDisabled - error that happens when enabling Custom DNS
-//   Real Time Protection is enabled, if user allows disabling RTP, 
+//   Real Time Protection is enabled, if user allows disabling RTP,
 //   this "error" will happen
 const _popupIgnoreCodes = [
   DaemonStatusCode.success,
+  DaemonStatusCode.successReconnectRequired,
   DaemonStatusCode.dnsListModified,
   DaemonStatusCode.realTimeProtectionDisabled,
   DaemonStatusCode.allowListModified,
@@ -46,7 +48,6 @@ class VpnSettingsController extends _$VpnSettingsController
   Future<int> setVpnProtocol(VpnProtocol protocol) async {
     // We need to check VPN status here because protocol change requires
     // a different flow: store pending protocol and show confirmation popup.
-    // The daemon doesn't return vpnIsRunning for protocol changes.
     final vpnStatus = ref.read(vpnStatusControllerProvider).value;
     if (vpnStatus != null) {
       if (vpnStatus.isConnected() || vpnStatus.isPaused()) {
@@ -79,15 +80,11 @@ class VpnSettingsController extends _$VpnSettingsController
     // Apply the protocol change
     final status = await _setValue(
       (repository) => repository.setVpnProtocol(pendingVPNProtocol),
-      popupCodeOverrides: {
-        // Ignore vpnIsRunning here - we already showed the reconnect popup
-        DaemonStatusCode.vpnIsRunning: DaemonStatusCode.success,
-      },
     );
-    // Accept success, nothingToDo, or vpnIsRunning as valid statuses
+    // successReconnectRequired counts as success, the reconnect popup was already shown.
     if (status != DaemonStatusCode.success &&
-        status != DaemonStatusCode.nothingToDo &&
-        status != DaemonStatusCode.vpnIsRunning) {
+        status != DaemonStatusCode.successReconnectRequired &&
+        status != DaemonStatusCode.nothingToDo) {
       logger.e('Failed to apply protocol change: $status');
       return false;
     }

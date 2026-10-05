@@ -2392,3 +2392,64 @@ func TestNotifyDisconnect_TriggerAndExceptionFields(t *testing.T) {
 		})
 	}
 }
+
+func TestAnalyticsProtocol(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		vpnProtocol config.VPNProtocol
+		expected    config.Protocol
+	}{
+		{config.VPNProtocol_VPN_PROTOCOL_NORDLYNX, config.Protocol_UDP},
+		{config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP, config.Protocol_UDP},
+		{config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP, config.Protocol_TCP},
+		{config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER, config.Protocol_Webtunnel},
+		{config.VPNProtocol_VPN_PROTOCOL_UNSPECIFIED, config.Protocol_UNKNOWN_PROTOCOL},
+	}
+
+	for _, test := range tests {
+		assert.Equal(t, test.expected, analyticsProtocol(test.vpnProtocol), "vpn protocol %v", test.vpnProtocol)
+	}
+}
+
+func TestNotifyConnect_ReportsTechnologyAndProtocolFromVPNProtocol(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		vpnProtocol        config.VPNProtocol
+		expectedTechnology moose.NordvpnappVpnConnectionTechnology
+		expectedProtocol   moose.NordvpnappVpnConnectionProtocol
+	}{
+		{config.VPNProtocol_VPN_PROTOCOL_NORDLYNX, moose.NordvpnappVpnConnectionTechnologyNordlynx, moose.NordvpnappVpnConnectionProtocolUdp},
+		{config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP, moose.NordvpnappVpnConnectionTechnologyOpenvpn, moose.NordvpnappVpnConnectionProtocolUdp},
+		{config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP, moose.NordvpnappVpnConnectionTechnologyOpenvpn, moose.NordvpnappVpnConnectionProtocolTcp},
+		{config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER, moose.NordvpnappVpnConnectionTechnologyNordwhisper, moose.NordvpnappVpnConnectionProtocolWebtunnel},
+	}
+
+	for _, test := range tests {
+		sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
+		var additional moose.TargetConnectionAdditionalParams
+		sub.mooseFuncs.sendConnect = func(
+			_ moose.EventParams,
+			_ moose.TargetConnectionParams,
+			a moose.TargetConnectionAdditionalParams,
+			_ moose.ConnectionParams,
+			_ moose.NordvpnappOptBool,
+			_ int32,
+			_ string,
+			_ *string,
+		) uint32 {
+			additional = a
+			return 0
+		}
+
+		err := sub.NotifyConnect(events.DataConnect{
+			VPNProtocol: test.vpnProtocol,
+			EventStatus: events.StatusAttempt,
+		})
+
+		assert.NilError(t, err, "vpn protocol %v", test.vpnProtocol)
+		assert.Equal(t, test.expectedTechnology, additional.TargetTechnology, "vpn protocol %v", test.vpnProtocol)
+		assert.Equal(t, test.expectedProtocol, additional.TargetProtocol, "vpn protocol %v", test.vpnProtocol)
+	}
+}

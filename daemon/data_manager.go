@@ -217,38 +217,18 @@ func (dm *DataManager) SetVersionData(version semver.Version, newerAvailable boo
 	}
 }
 
-func toServerTechnology(
-	technology config.Technology,
-	protocol config.Protocol,
-) (core.ServerTechnology, error) {
-	var serverTechnology core.ServerTechnology
-	switch technology {
-	case config.Technology_NORDLYNX:
-		serverTechnology = core.WireguardTech
-	case config.Technology_OPENVPN:
-		switch protocol {
-		case config.Protocol_TCP:
-			serverTechnology = core.OpenVPNTCP
-		case config.Protocol_UDP:
-			serverTechnology = core.OpenVPNUDP
-		case config.Protocol_Webtunnel:
-			return 0, errors.New("webtunnel protocol is not compatible with opevpn")
-		case config.Protocol_UNKNOWN_PROTOCOL:
-			return 0, errors.New("invalid protocol")
-		}
-	case config.Technology_NORDWHISPER:
-		serverTechnology = core.NordWhisperTech
-	case config.Technology_UNKNOWN_TECHNOLOGY:
-		return 0, errors.New("invalid technology")
+func toServerTechnology(vpnProtocol config.VPNProtocol) (core.ServerTechnology, error) {
+	serverTechnology := serverpicker.TechToServerTech(vpnProtocol)
+	if serverTechnology == core.Unknown {
+		return 0, fmt.Errorf("invalid vpn protocol: %v", vpnProtocol)
 	}
 	return serverTechnology, nil
 }
 
 func (dm *DataManager) Countries(
-	technology config.Technology,
-	protocol config.Protocol,
+	vpnProtocol config.VPNProtocol,
 ) ([]*pb.ServerGroup, error) {
-	serverTechnology, err := toServerTechnology(technology, protocol)
+	serverTechnology, err := toServerTechnology(vpnProtocol)
 	if err != nil {
 		return nil, err
 	}
@@ -289,10 +269,9 @@ func (dm *DataManager) Countries(
 
 func (dm *DataManager) Cities(
 	countryName string,
-	technology config.Technology,
-	protocol config.Protocol,
+	vpnProtocol config.VPNProtocol,
 ) ([]*pb.ServerGroup, error) {
-	serverTechnology, err := toServerTechnology(technology, protocol)
+	serverTechnology, err := toServerTechnology(vpnProtocol)
 	if err != nil {
 		return nil, err
 	}
@@ -331,10 +310,9 @@ func (dm *DataManager) Cities(
 }
 
 func (dm *DataManager) Groups(
-	technology config.Technology,
-	protocol config.Protocol,
+	vpnProtocol config.VPNProtocol,
 ) ([]*pb.ServerGroup, error) {
-	serverTechnology, err := toServerTechnology(technology, protocol)
+	serverTechnology, err := toServerTechnology(vpnProtocol)
 	if err != nil {
 		return nil, err
 	}
@@ -347,7 +325,7 @@ func (dm *DataManager) Groups(
 			continue
 		}
 
-		for _, group := range serverpicker.EffectiveGroups(server, technology) {
+		for _, group := range serverpicker.EffectiveGroups(server, vpnProtocol.Technology()) {
 			if groupsSet.Contains(group.Title) {
 				continue
 			}

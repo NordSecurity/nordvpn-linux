@@ -7,8 +7,6 @@ import 'package:nordvpn/data/models/vpn_protocol.dart';
 import 'package:nordvpn/data/repository/daemon_status_codes.dart';
 import 'package:nordvpn/grpc/grpc_service.dart';
 import 'package:nordvpn/pb/daemon/common.pb.dart';
-import 'package:nordvpn/pb/daemon/config/protocol.pbenum.dart';
-import 'package:nordvpn/pb/daemon/config/technology.pbenum.dart';
 import 'package:nordvpn/pb/daemon/defaults.pb.dart';
 import 'package:nordvpn/pb/daemon/service.pbgrpc.dart';
 import 'package:nordvpn/pb/daemon/set.pb.dart';
@@ -31,61 +29,10 @@ class VpnSettingsRepository {
   }
 
   Future<int> setVpnProtocol(VpnProtocol vpnProtocol) async {
-    final (technology, protocol) = toTechnologyAndProtocol(vpnProtocol);
-
-    final technologyStatus = await _setTechnology(technology);
-    if ((technologyStatus != DaemonStatusCode.success) &&
-        (technologyStatus != DaemonStatusCode.nothingToDo) &&
-        (technologyStatus != DaemonStatusCode.vpnIsRunning)) {
-      return technologyStatus;
-    }
-
-    final protocolStatus = await _setProtocol(protocol);
-    if ((protocolStatus != DaemonStatusCode.success) &&
-        (protocolStatus != DaemonStatusCode.nothingToDo) &&
-        (protocolStatus != DaemonStatusCode.vpnIsRunning)) {
-      return protocolStatus;
-    }
-
-    if (technologyStatus == DaemonStatusCode.vpnIsRunning ||
-        protocolStatus == DaemonStatusCode.vpnIsRunning) {
-      return DaemonStatusCode.vpnIsRunning;
-    }
-
-    return DaemonStatusCode.success;
-  }
-
-  Future<int> _setTechnology(Technology technology) async {
-    final response = await _client.setTechnology(
-      SetTechnologyRequest(technology: technology),
+    final response = await _client.setVPNProtocol(
+      SetVPNProtocolRequest(vpnProtocol: vpnProtocol.toPb()),
     );
-    return _checkSettingsUpdate(response);
-  }
-
-  Future<int> _setProtocol(Protocol protocol) async {
-    final response = await _client.setProtocol(
-      SetProtocolRequest(protocol: protocol),
-    );
-
-    if (response.hasErrorCode()) {
-      final code = _codeToDaemonStatusCode(response.errorCode);
-      if (code != DaemonStatusCode.success) {
-        return code;
-      }
-    }
-
-    if (response.hasSetProtocolStatus()) {
-      switch (response.setProtocolStatus) {
-        case SetProtocolStatus.INVALID_TECHNOLOGY:
-          return DaemonStatusCode.invalidTechnology;
-        case SetProtocolStatus.PROTOCOL_CONFIGURED:
-          break;
-        case SetProtocolStatus.PROTOCOL_CONFIGURED_VPN_ON:
-          return DaemonStatusCode.vpnIsRunning;
-      }
-    }
-
-    return DaemonStatusCode.success;
+    return response.type.toInt();
   }
 
   Future<int> setAnalytics(bool value) async {

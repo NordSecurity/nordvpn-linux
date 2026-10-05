@@ -36,8 +36,7 @@ func (r *RPC) Status(context.Context, *pb.Empty) (*pb.StatusResponse, error) {
 
 	return &pb.StatusResponse{
 		State:       status.State,
-		Technology:  status.Technology,
-		Protocol:    status.Protocol,
+		VpnProtocol: status.VPNProtocol,
 		Ip:          status.IP.String(),
 		Hostname:    status.Hostname,
 		Name:        status.Name,

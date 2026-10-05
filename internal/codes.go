@@ -14,6 +14,7 @@ const (
 	CodeSuccessWithoutAC         int64 = 1007
 	CodeTokenStillValid          int64 = 1008
 	CodeTokenRevokedSuccessfully int64 = 1009
+	CodeSuccessReconnectRequired int64 = 1010
 
 	// Warning
 	CodeNothingToDo   int64 = 2000
@@ -24,7 +25,7 @@ const (
 	// Error
 	CodeFailure      int64 = 3000
 	CodeUnauthorized int64 = 3001
-	CodeFormatError  int64 = 3003
+	// CodeFormatError  int64 = 3003
 	// CodeConfigError is returned when config loading and/or saving fails.
 	CodeConfigError                            int64 = 3004
 	CodeEmptyPayloadError                      int64 = 3005
@@ -92,6 +93,7 @@ const (
 	CodeP2PDeprecated                          int64 = 3077
 	CodeSetDefaultsNotApplied                  int64 = 3078
 	CodeAutoconnectToSpecificServer            int64 = 3079
+	CodeObfuscatedNeedsNordwhisper             int64 = 3080
 )
 
 type ErrorWithCode struct {

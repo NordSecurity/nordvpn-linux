@@ -114,14 +114,8 @@ func (c *cmd) AllowlistAddPortAutoComplete(ctx *cli.Context) {
 		fmt.Println(stringProtocol)
 	case 2:
 		// show available protocols
-		resp, err := c.client.SettingsProtocols(context.Background(), &pb.Empty{})
-		if err != nil {
-			return
-		}
-
-		for _, item := range resp.Data {
-			fmt.Println(item)
-		}
+		fmt.Println(config.Protocol_UDP.String())
+		fmt.Println(config.Protocol_TCP.String())
 	default:
 		return
 	}

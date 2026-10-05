@@ -237,8 +237,7 @@ def test_route_to_peer_status_valid():
     assert peer_hostname in status_info["hostname"], "Status should show peer hostname"
     assert peer_nick in status_info["server"], "Status should show peer nickname as server"
     assert socket.gethostbyname(peer_nick) in status_info["ip"], "Status should show peer IP"
-    assert "NORDLYNX" in status_info["current technology"], "Current technology should be NORDLYNX"
-    assert "UDP" in status_info["current protocol"], "Current protocol should be UDP"
+    assert status_info["protocol"] == "NordLynx", "Current protocol should be NordLynx"
 
     transfer_data = status_info["transfer"].split(" ")
     transfer_received = float(transfer_data[0])

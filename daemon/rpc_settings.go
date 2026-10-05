@@ -73,20 +73,9 @@ func (r *RPC) Settings(ctx context.Context, in *pb.Empty) (*pb.SettingsResponse,
 	}, nil
 }
 
-func (r *RPC) SettingsProtocols(ctx context.Context, _ *pb.Empty) (*pb.Payload, error) {
-	return &pb.Payload{
-		Type: internal.CodeSuccess,
-		Data: []string{config.Protocol_UDP.String(), config.Protocol_TCP.String()},
-	}, nil
-}
-
-func (r *RPC) SettingsTechnologies(ctx context.Context, _ *pb.Empty) (*pb.Payload, error) {
-	return &pb.Payload{
-		Type: internal.CodeSuccess,
-		Data: []string{
-			config.Technology_OPENVPN.String(),
-			config.Technology_NORDLYNX.String(),
-			config.Technology_NORDWHISPER.String(),
-		},
-	}, nil
+func (r *RPC) SettingsVPNProtocols(
+	context.Context,
+	*pb.Empty,
+) (*pb.SettingsVPNProtocolsResponse, error) {
+	return &pb.SettingsVPNProtocolsResponse{VpnProtocols: config.AvailableVPNProtocols()}, nil
 }

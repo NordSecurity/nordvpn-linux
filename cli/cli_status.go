@@ -85,16 +85,17 @@ func Status(resp *pb.StatusResponse) string {
 
 	if resp.Uptime != -1 {
 		b.WriteString(
-			fmt.Sprintf("Current technology: %s\n", resp.Technology.String()),
+			fmt.Sprintf("Protocol: %s\n", resp.VpnProtocol.DisplayName()),
 		)
-		b.WriteString(
-			fmt.Sprintf("Current protocol: %s\n", resp.Protocol.String()),
-		)
-		b.WriteString(
-			fmt.Sprintf("Post-quantum VPN: %s\n",
-				internal.Title(nstrings.GetBoolLabel(resp.PostQuantum))),
-		)
-		if resp.Technology == config.Technology_NORDWHISPER {
+
+		if resp.VpnProtocol.Technology() == config.Technology_NORDLYNX {
+			b.WriteString(
+				fmt.Sprintf("Post-quantum VPN: %s\n",
+					internal.Title(nstrings.GetBoolLabel(resp.PostQuantum))),
+			)
+		}
+
+		if resp.VpnProtocol.Technology() == config.Technology_NORDWHISPER {
 			b.WriteString(
 				fmt.Sprintf("ECH: %s\n",
 					internal.Title(nstrings.GetBoolLabel(resp.Ech))),

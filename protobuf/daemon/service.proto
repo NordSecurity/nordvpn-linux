@@ -60,8 +60,7 @@ service Daemon {
 
   // ==================== Connection Settings ====================
   rpc SetAutoConnect(SetAutoconnectRequest) returns (Payload);
-  rpc SetProtocol(SetProtocolRequest) returns (SetProtocolResponse);
-  rpc SetTechnology(SetTechnologyRequest) returns (Payload);
+  rpc SetVPNProtocol(SetVPNProtocolRequest) returns (Payload);
   rpc SetPostQuantum(SetGenericRequest) returns (Payload);
   rpc SetECH(SetGenericRequest) returns (Payload);
   rpc GetRecentConnections(RecentConnectionsRequest) returns (RecentConnectionsResponse);
@@ -79,8 +78,7 @@ service Daemon {
   rpc SetTray(SetTrayRequest) returns (Payload);
 
   // ==================== Configuration Info ====================
-  rpc SettingsProtocols(Empty) returns (Payload);
-  rpc SettingsTechnologies(Empty) returns (Payload);
+  rpc SettingsVPNProtocols(Empty) returns (SettingsVPNProtocolsResponse);
   rpc GetFeatureToggles(Empty) returns (FeatureToggles);
 
   // ==================== Allowlist Management ====================

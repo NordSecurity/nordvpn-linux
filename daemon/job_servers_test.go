@@ -42,15 +42,31 @@ func newMockConfigManager() *mockConfigManager {
 			},
 		},
 		AutoConnectData: config.AutoConnectData{
-			ID:       1337,
-			Protocol: config.Protocol_UDP,
+			ID: 1337,
 		},
-		Technology: config.Technology_OPENVPN,
-		Mesh:       true,
+		VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP,
+		Mesh:        true,
 		MeshDevice: &mesh.Machine{
 			ID: uuid.New(),
 		},
 	}}
+}
+
+// vpnProtocolFor maps a test's technology and protocol to a VPN protocol.
+func vpnProtocolFor(tech config.Technology, proto config.Protocol) config.VPNProtocol {
+	//exhaustive:ignore
+	switch tech {
+	case config.Technology_OPENVPN:
+		if proto == config.Protocol_TCP {
+			return config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP
+		}
+		return config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP
+	case config.Technology_NORDLYNX:
+		return config.VPNProtocol_VPN_PROTOCOL_NORDLYNX
+	case config.Technology_NORDWHISPER:
+		return config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER
+	}
+	return config.VPNProtocol_VPN_PROTOCOL_UNSPECIFIED
 }
 
 func (m *mockConfigManager) SaveWith(f config.SaveFunc) error {
@@ -59,7 +75,7 @@ func (m *mockConfigManager) SaveWith(f config.SaveFunc) error {
 }
 
 func (m *mockConfigManager) Load(c *config.Config) error {
-	c.Technology = m.c.Technology
+	c.VPNProtocol = m.c.VPNProtocol
 	c.Firewall = m.c.Firewall
 	c.Routing = m.c.Routing
 	c.KillSwitch = m.c.KillSwitch

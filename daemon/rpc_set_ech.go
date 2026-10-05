@@ -32,7 +32,7 @@ func (r *RPC) SetECH(ctx context.Context, in *pb.SetGenericRequest) (*pb.Payload
 
 	// Guard 1: ECH only applies to NordWhisper. Checked against the configured technology,
 	// like post-quantum's CodePqWithoutNordlynx.
-	if cfg.Technology != config.Technology_NORDWHISPER {
+	if !cfg.VPNProtocol.IsNordWhisper() {
 		return &pb.Payload{
 			Type: internal.CodeECHTechUnsupported,
 		}, nil

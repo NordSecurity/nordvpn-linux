@@ -1,6 +1,5 @@
-from config import protocol_pb2 as _protocol_pb2
-from config import technology_pb2 as _technology_pb2
 from config import group_pb2 as _group_pb2
+from config import vpn_protocol_pb2 as _vpn_protocol_pb2
 from google.protobuf import timestamp_pb2 as _timestamp_pb2
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
@@ -48,10 +47,8 @@ class ConnectionParameters(_message.Message):
     def __init__(self, source: _Optional[_Union[ConnectionSource, str]] = ..., country: _Optional[str] = ..., city: _Optional[str] = ..., group: _Optional[_Union[_group_pb2.ServerGroup, str]] = ..., server_name: _Optional[str] = ..., country_code: _Optional[str] = ...) -> None: ...
 
 class StatusResponse(_message.Message):
-    __slots__ = ("state", "technology", "protocol", "ip", "hostname", "country", "city", "download", "upload", "uptime", "name", "parameters", "postQuantum", "is_mesh_peer", "by_user", "country_code", "obfuscated", "paused_at", "pause_remaining_duration_sec", "ech")
+    __slots__ = ("state", "ip", "hostname", "country", "city", "download", "upload", "uptime", "name", "parameters", "postQuantum", "is_mesh_peer", "by_user", "country_code", "obfuscated", "paused_at", "pause_remaining_duration_sec", "ech", "vpn_protocol")
     STATE_FIELD_NUMBER: _ClassVar[int]
-    TECHNOLOGY_FIELD_NUMBER: _ClassVar[int]
-    PROTOCOL_FIELD_NUMBER: _ClassVar[int]
     IP_FIELD_NUMBER: _ClassVar[int]
     HOSTNAME_FIELD_NUMBER: _ClassVar[int]
     COUNTRY_FIELD_NUMBER: _ClassVar[int]
@@ -69,9 +66,8 @@ class StatusResponse(_message.Message):
     PAUSED_AT_FIELD_NUMBER: _ClassVar[int]
     PAUSE_REMAINING_DURATION_SEC_FIELD_NUMBER: _ClassVar[int]
     ECH_FIELD_NUMBER: _ClassVar[int]
+    VPN_PROTOCOL_FIELD_NUMBER: _ClassVar[int]
     state: ConnectionState
-    technology: _technology_pb2.Technology
-    protocol: _protocol_pb2.Protocol
     ip: str
     hostname: str
     country: str
@@ -89,4 +85,5 @@ class StatusResponse(_message.Message):
     paused_at: _timestamp_pb2.Timestamp
     pause_remaining_duration_sec: int
     ech: bool
-    def __init__(self, state: _Optional[_Union[ConnectionState, str]] = ..., technology: _Optional[_Union[_technology_pb2.Technology, str]] = ..., protocol: _Optional[_Union[_protocol_pb2.Protocol, str]] = ..., ip: _Optional[str] = ..., hostname: _Optional[str] = ..., country: _Optional[str] = ..., city: _Optional[str] = ..., download: _Optional[int] = ..., upload: _Optional[int] = ..., uptime: _Optional[int] = ..., name: _Optional[str] = ..., parameters: _Optional[_Union[ConnectionParameters, _Mapping]] = ..., postQuantum: bool = ..., is_mesh_peer: bool = ..., by_user: bool = ..., country_code: _Optional[str] = ..., obfuscated: bool = ..., paused_at: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ..., pause_remaining_duration_sec: _Optional[int] = ..., ech: bool = ...) -> None: ...
+    vpn_protocol: _vpn_protocol_pb2.VPNProtocol
+    def __init__(self, state: _Optional[_Union[ConnectionState, str]] = ..., ip: _Optional[str] = ..., hostname: _Optional[str] = ..., country: _Optional[str] = ..., city: _Optional[str] = ..., download: _Optional[int] = ..., upload: _Optional[int] = ..., uptime: _Optional[int] = ..., name: _Optional[str] = ..., parameters: _Optional[_Union[ConnectionParameters, _Mapping]] = ..., postQuantum: bool = ..., is_mesh_peer: bool = ..., by_user: bool = ..., country_code: _Optional[str] = ..., obfuscated: bool = ..., paused_at: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ..., pause_remaining_duration_sec: _Optional[int] = ..., ech: bool = ..., vpn_protocol: _Optional[_Union[_vpn_protocol_pb2.VPNProtocol, str]] = ...) -> None: ...

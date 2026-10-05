@@ -25,14 +25,16 @@ func (s *Subscriber) isVPNConnected() bool {
 
 // initTechProto reports the configured technology/protocol on Init. Called with s.mux held.
 func (s *Subscriber) initTechProto(cfg config.Config) error {
-	if cfg.Technology == config.Technology_UNKNOWN_TECHNOLOGY {
+	technology := cfg.VPNProtocol.Technology()
+	if technology == config.Technology_UNKNOWN_TECHNOLOGY {
 		return fmt.Errorf("setting moose technology: %w", errUnknownTechnology)
 	}
-	s.configuredTechProto = techProto{technology: cfg.Technology, protocol: cfg.AutoConnectData.Protocol}
-	if err := s.response(s.mooseFuncs.setProtocolUserPreference(connectionProtocolToInternalType(cfg.AutoConnectData.Protocol))); err != nil {
+	protocol := analyticsProtocol(cfg.VPNProtocol)
+	s.configuredTechProto = techProto{technology: technology, protocol: protocol}
+	if err := s.response(s.mooseFuncs.setProtocolUserPreference(connectionProtocolToInternalType(protocol))); err != nil {
 		return fmt.Errorf("setting moose protocol: %w", err)
 	}
-	if err := s.response(s.mooseFuncs.setTechnologyUserPreference(connectionTechnologyToInternalType(cfg.Technology))); err != nil {
+	if err := s.response(s.mooseFuncs.setTechnologyUserPreference(connectionTechnologyToInternalType(technology))); err != nil {
 		return fmt.Errorf("setting moose technology: %w", err)
 	}
 	effective := s.configuredTechProto
@@ -45,34 +47,22 @@ func (s *Subscriber) initTechProto(cfg config.Config) error {
 	return nil
 }
 
-func (s *Subscriber) NotifyTechnology(data config.Technology) error {
-	if data == config.Technology_UNKNOWN_TECHNOLOGY {
+// NotifyVPNProtocol reports the VPN protocol as separate moose technology and protocol values.
+func (s *Subscriber) NotifyVPNProtocol(data config.VPNProtocol) error {
+	technology := data.Technology()
+	if technology == config.Technology_UNKNOWN_TECHNOLOGY {
 		return errUnknownTechnology
 	}
+	protocol := analyticsProtocol(data)
 
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
-	s.configuredTechProto.technology = data
-	if err := s.response(s.mooseFuncs.setTechnologyUserPreference(connectionTechnologyToInternalType(data))); err != nil {
+	s.configuredTechProto = techProto{technology: technology, protocol: protocol}
+	if err := s.response(s.mooseFuncs.setTechnologyUserPreference(connectionTechnologyToInternalType(technology))); err != nil {
 		return fmt.Errorf("setting technology user preference (%v): %w", data, err)
 	}
-	if s.isVPNConnected() {
-		// while connected the change takes effect on the next connect or on disconnect
-		return nil
-	}
-	if err := s.reportEffectiveConnection(s.configuredTechProto); err != nil {
-		return fmt.Errorf("setting technology current state (%v): %w", data, err)
-	}
-	return nil
-}
-
-func (s *Subscriber) NotifyProtocol(data config.Protocol) error {
-	s.mux.Lock()
-	defer s.mux.Unlock()
-
-	s.configuredTechProto.protocol = data
-	if err := s.response(s.mooseFuncs.setProtocolUserPreference(connectionProtocolToInternalType(data))); err != nil {
+	if err := s.response(s.mooseFuncs.setProtocolUserPreference(connectionProtocolToInternalType(protocol))); err != nil {
 		return fmt.Errorf("setting protocol user preference (%v): %w", data, err)
 	}
 	if s.isVPNConnected() {
@@ -80,7 +70,7 @@ func (s *Subscriber) NotifyProtocol(data config.Protocol) error {
 		return nil
 	}
 	if err := s.reportEffectiveConnection(s.configuredTechProto); err != nil {
-		return fmt.Errorf("setting protocol current state (%v): %w", data, err)
+		return fmt.Errorf("setting vpn protocol current state (%v): %w", data, err)
 	}
 	return nil
 }

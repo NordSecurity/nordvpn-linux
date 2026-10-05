@@ -1,12 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nordvpn/data/models/vpn_protocol.dart';
 import 'package:nordvpn/data/providers/app_state_provider.dart';
 import 'package:nordvpn/data/providers/vpn_status_controller.dart';
 import 'package:nordvpn/data/repository/vpn_repository.dart';
 import 'package:nordvpn/i18n/country_names_service.dart';
-import 'package:nordvpn/pb/daemon/config/protocol.pbenum.dart';
-import 'package:nordvpn/pb/daemon/config/technology.pbenum.dart';
+import 'package:nordvpn/pb/daemon/config/vpn_protocol.pbenum.dart';
 import 'package:nordvpn/pb/daemon/status.pb.dart';
 import 'package:nordvpn/service_locator.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
@@ -51,14 +49,10 @@ void main() {
     sl<CountryNamesService>().register(code: "LT", name: "Lithuania");
   });
 
-  StatusResponse statusResponse({
-    required Technology technology,
-    required Protocol protocol,
-  }) {
+  StatusResponse statusResponse({required VPNProtocol vpnProtocol}) {
     return StatusResponse(
       state: ConnectionState.CONNECTED,
-      technology: technology,
-      protocol: protocol,
+      vpnProtocol: vpnProtocol,
       ip: "127.0.0.1",
       hostname: "lt123.nordvpn.com",
       country: "Lithuania",
@@ -68,12 +62,10 @@ void main() {
   }
 
   final nordLynx = statusResponse(
-    technology: Technology.NORDLYNX,
-    protocol: Protocol.UDP,
+    vpnProtocol: VPNProtocol.VPN_PROTOCOL_NORDLYNX,
   );
   final nordWhisper = statusResponse(
-    technology: Technology.NORDWHISPER,
-    protocol: Protocol.Webtunnel,
+    vpnProtocol: VPNProtocol.VPN_PROTOCOL_NORDWHISPER,
   );
 
   Future<ProviderContainer> buildController() async {
