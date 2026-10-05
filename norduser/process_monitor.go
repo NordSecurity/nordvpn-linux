@@ -1,8 +1,11 @@
 package norduser
 
 import (
+	"context"
 	"fmt"
+	"path/filepath"
 	"slices"
+	"time"
 
 	"github.com/fsnotify/fsnotify"
 
@@ -15,7 +18,6 @@ import (
 const (
 	etcPath       = "/etc"
 	groupFilePath = etcPath + "/group"
-	utmpFilePath  = "/var/run/utmp"
 )
 
 type norduserState int
@@ -54,12 +56,12 @@ func (s *norduserState) changeState(newState norduserState,
 		(newState == loginGUI || newState == loginText) { // user logged in, start norduserd
 		userIDs, err := userIDGetter.getUserID(username)
 		if err != nil {
-			log.Error("getting user IDs when enabling norduser:", err)
+			log.ProcessMonitor.Error("getting user IDs when enabling norduser:", err)
 			return
 		}
 
 		if err := norduserSrevice.Enable(userIDs.uid, userIDs.gid, userIDs.home); err != nil {
-			log.Error("enabling norduserd for member:", err)
+			log.ProcessMonitor.Error("enabling norduserd for member:", err)
 			return
 		}
 
@@ -72,12 +74,12 @@ func (s *norduserState) changeState(newState norduserState,
 		newState == notActive { // user logged out when norduser was running, stop norduserd
 		userIDs, err := userIDGetter.getUserID(username)
 		if err != nil {
-			log.Error("getting user IDs when disabling norduser:", err)
+			log.ProcessMonitor.Error("getting user IDs when disabling norduser:", err)
 			return
 		}
 
 		if err := norduserSrevice.Stop(userIDs.uid, false); err != nil {
-			log.Error("disabling norduserd for user:", err.Error())
+			log.ProcessMonitor.Error("disabling norduserd for user:", err.Error())
 			return
 		}
 
@@ -86,12 +88,12 @@ func (s *norduserState) changeState(newState norduserState,
 		// to restart norduserd in order to re-enable tray when user logs back in to GUI
 		userIDs, err := userIDGetter.getUserID(username)
 		if err != nil {
-			log.Error("getting user IDs when restarting norduser:", err)
+			log.ProcessMonitor.Error("getting user IDs when restarting norduser:", err)
 			return
 		}
 
 		if err := norduserSrevice.Restart(userIDs.uid); err != nil {
-			log.Error("failed to restart norduserd:", err)
+			log.ProcessMonitor.Error("failed to restart norduserd:", err)
 			return
 		}
 
@@ -108,8 +110,9 @@ type userSet map[string]norduserState
 // NorduserProcessMonitor monitors the nordvpn system group and starts/stops norduserd for users added/removed from the
 // group.
 type NorduserProcessMonitor struct {
-	norduserd service.Service
-	isSnap    bool
+	norduserd     service.Service
+	sessionGetter sessionGetter
+	isSnap        bool
 	userIDGetter
 }
 
@@ -127,7 +130,7 @@ func (n *NorduserProcessMonitor) handleGroupFileUpdate(currentGroupMembers userS
 		return currentGroupMembers, fmt.Errorf("getting nordvpn group members: %w", err)
 	}
 
-	activeUsers, err := getActiveUsers()
+	activeUsers, err := n.sessionGetter.getActiveUsers()
 	if err != nil {
 		return currentGroupMembers, fmt.Errorf("getting active users after group file update: %w", err)
 	}
@@ -159,7 +162,7 @@ func (n *NorduserProcessMonitor) handleGroupFileUpdate(currentGroupMembers userS
 }
 
 func (n *NorduserProcessMonitor) handleUTMPFileUpdate(currentGroupMembers userSet) (userSet, error) {
-	activeUsers, err := getActiveUsers()
+	activeUsers, err := n.sessionGetter.getActiveUsers()
 	if err != nil {
 		return currentGroupMembers, fmt.Errorf("getting active users after utmp file update: %w", err)
 	}
@@ -179,17 +182,40 @@ func (n *NorduserProcessMonitor) handleUTMPFileUpdate(currentGroupMembers userSe
 }
 
 // Start blocks the thread and starts monitoring for changes in the nordvpn group.
-func (n *NorduserProcessMonitor) Start() error {
-	watcher, err := filewatch.GetFileWatcher(etcPath, utmpFilePath)
+func (n *NorduserProcessMonitor) Start(ctx context.Context) error {
+	sessionGetter, err := newSessionGetter()
+	if err != nil {
+		return fmt.Errorf("creating session getter: %w", err)
+	}
+	defer sessionGetter.close()
+	n.sessionGetter = sessionGetter
+
+	sessionDatabasePath := sessionGetter.getDatabasePath()
+	if databaseLinkPath, err := filepath.EvalSymlinks(sessionDatabasePath); err != nil {
+		log.ProcessMonitor.Warn(
+			"failed to read session database link path, will attempt monitoring with unresolved link:", err)
+	} else {
+		sessionDatabasePath = databaseLinkPath
+	}
+	log.ProcessMonitor.Info("monitoring", sessionDatabasePath, "for session state changes")
+
+	watcher, err := filewatch.GetFileWatcher(etcPath, sessionDatabasePath)
 	if err != nil {
 		return fmt.Errorf("creating file watcher: %w", err)
 	}
 	defer watcher.Close()
 
-	currentGrupMembers, err := n.handleGroupFileUpdate(make(userSet))
+	currentGroupMembers, err := n.handleGroupFileUpdate(make(userSet))
 	if err != nil {
 		return fmt.Errorf("starting norduserd for the initial group members: %w", err)
 	}
+
+	// Instead of performing state update right away, a monitored file update arms one of the state update timers. When
+	// the timer fires, an appropriate state update will be performed. This is done to throttle the state update in case
+	// of multiple file update events arriving in short succession.
+	updateCoalesceTimer := time.Millisecond * 100
+	var sessionUpdate <-chan time.Time
+	var groupUpdate <-chan time.Time
 
 	for {
 		select {
@@ -202,25 +228,35 @@ func (n *NorduserProcessMonitor) Start() error {
 			case groupFilePath:
 				// Because utilities used to modify the group do so atomically, we also need to monitor for creation of
 				// the file instead of modifications.
-				if event.Has(fsnotify.Create) || event.Has(fsnotify.Write) {
-					if newGroupMembers, err := n.handleGroupFileUpdate(currentGrupMembers); err != nil {
-						log.Error("failed to handle change of groupfile:", err)
-					} else {
-						currentGrupMembers = newGroupMembers
-					}
+				if groupUpdate == nil && (event.Has(fsnotify.Create) || event.Has(fsnotify.Write)) {
+					groupUpdate = time.After(updateCoalesceTimer)
 				}
-			case utmpFilePath:
-				if newGroupMembers, err := n.handleUTMPFileUpdate(currentGrupMembers); err != nil {
-					log.Error("failed to handle change of utmp file:", err)
-				} else {
-					currentGrupMembers = newGroupMembers
+			case sessionDatabasePath:
+				if sessionUpdate == nil {
+					sessionUpdate = time.After(updateCoalesceTimer)
 				}
+			}
+		case <-groupUpdate:
+			groupUpdate = nil
+			if newGroupMembers, err := n.handleGroupFileUpdate(currentGroupMembers); err != nil {
+				log.ProcessMonitor.Error("failed to handle change of groupfile:", err)
+			} else {
+				currentGroupMembers = newGroupMembers
+			}
+		case <-sessionUpdate:
+			sessionUpdate = nil
+			if newGroupMembers, err := n.handleUTMPFileUpdate(currentGroupMembers); err != nil {
+				log.ProcessMonitor.Error("failed to handle change of session database file:", err)
+			} else {
+				currentGroupMembers = newGroupMembers
 			}
 		case err, ok := <-watcher.Errors:
 			if !ok {
 				return fmt.Errorf("groupfile monitor error channel closed")
 			}
-			log.Error("group monitor error:", err)
+			log.ProcessMonitor.Error("group monitor error:", err)
+		case <-ctx.Done():
+			return nil
 		}
 	}
 }

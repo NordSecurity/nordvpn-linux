@@ -35,14 +35,14 @@ func fileshareManagementLoop(managementChan <-chan FileshareManagementMsg, shutd
 		case Start:
 			fileshareStartupLoop(fileshareProcessManager, managementChan, shutdownChan)
 		case Stop:
-			log.Info("stopping fileshare")
+			log.ProcessMonitor.Info("stopping fileshare")
 			if err := fileshareProcessManager.StopProcess(true); err != nil {
-				log.Error("failed to stop fileshare:", err)
+				log.ProcessMonitor.Error("failed to stop fileshare:", err)
 			}
 		case Shutdown:
-			log.Info("stopping fileshare at shutdown")
+			log.ProcessMonitor.Info("stopping fileshare at shutdown")
 			if err := fileshareProcessManager.StopProcess(true); err != nil {
-				log.Error("failed to stop fileshare on shutdown:", err)
+				log.ProcessMonitor.Error("failed to stop fileshare on shutdown:", err)
 			}
 			close(shutdownChan)
 		}
@@ -52,7 +52,7 @@ func fileshareManagementLoop(managementChan <-chan FileshareManagementMsg, shutd
 func startFileshare(fileshareProcessManager *childprocess.GRPCChildProcessManager) bool {
 	result, err := fileshareProcessManager.StartProcess()
 	if err != nil {
-		log.Error("error when starting fileshare:", err)
+		log.ProcessMonitor.Error("error when starting fileshare:", err)
 		return false
 	}
 
@@ -67,11 +67,11 @@ func startFileshare(fileshareProcessManager *childprocess.GRPCChildProcessManage
 	case childprocess.CodeFailedToCreateUnixScoket:
 		fallthrough
 	case childprocess.CodeAlreadyRunning:
-		log.Info("fileshare started, final result:", result)
+		log.ProcessMonitor.Info("fileshare started, final result:", result)
 		return true
 	}
 
-	log.Error("failed to start fileshare (will retry):", result)
+	log.ProcessMonitor.Error("failed to start fileshare (will retry):", result)
 	return false
 }
 
