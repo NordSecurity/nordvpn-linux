@@ -1,5 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
+import 'package:nordvpn/pb/daemon/config/group.pb.dart';
+import 'package:nordvpn/pb/daemon/recent_connections.pb.dart';
+import 'package:nordvpn/pb/daemon/server_selection_rule.pb.dart';
 import 'package:nordvpn/pb/daemon/servers.pb.dart';
 import 'package:nordvpn/pb/daemon/config/technology.pbenum.dart' as settings;
 
@@ -107,5 +110,25 @@ void runVpnScreenTests() async {
         find.textContaining("Dallas, United States"),
       );
     });
+  });
+
+  group("test recent connections", () {
+    testWidgets(
+      "standard VPN servers without location does not crash recents list",
+      (tester) async {
+        final app = await tester.setupIntegrationTests();
+        app.daemon.recentConnections.setConnections([
+          RecentConnectionModel(
+            group: ServerGroup.STANDARD_VPN_SERVERS,
+            connectionType: ServerSelectionRule.GROUP,
+          ),
+        ]);
+
+        final screen = await app.goToVpnScreen();
+        await screen.waitUntilFound(find.text(t.ui.fastest));
+
+        expect(find.text(t.ui.fastest), findsOneWidget);
+      },
+    );
   });
 }
