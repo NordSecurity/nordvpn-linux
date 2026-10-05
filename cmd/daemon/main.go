@@ -683,13 +683,14 @@ func main() {
 	}
 
 	norduserMonitor := norduser.NewNorduserProcessMonitor(norduserService)
+	norduserMonitorCtx, norduserMonitorCancelFunc := context.WithCancel(context.Background())
 	go func() {
 		if snapconf.IsUnderSnap() {
 			if err := norduserMonitor.StartSnap(); err != nil {
 				log.Error("Error when starting norduser monitor for snap:", err.Error())
 			}
 		} else {
-			if err := norduserMonitor.Start(); err != nil {
+			if err := norduserMonitor.Start(norduserMonitorCtx); err != nil {
 				log.Error("Error when starting norduser monitor:", err.Error())
 			}
 		}
@@ -811,6 +812,7 @@ func main() {
 	log.Info("Received signal:", sig)
 	ensMonitor.Stop()
 	s.Stop()
+	norduserMonitorCancelFunc()
 	norduserService.StopAll()
 
 	httpCancel()
