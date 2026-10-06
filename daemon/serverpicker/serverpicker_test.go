@@ -207,7 +207,7 @@ func TestResolveServerGroup(t *testing.T) {
 			err:           internal.ErrGroupDoesNotExist,
 		},
 		{
-			input:         NewSearchParams("", "Obfuscated_servers", ""),
+			input:         NewSearchParams("", "Obfuscated", ""),
 			expectedGroup: config.ServerGroup_NW_OBFUSCATED,
 			err:           nil,
 		},
@@ -861,7 +861,7 @@ func TestPickServer(t *testing.T) {
 			api:                core_test.NewMockFailingServersAPI(errors.New("500")),
 			servers:            core_test.ServersList(),
 			tech:               config.Technology_NORDWHISPER,
-			group:              "obfuscated_servers",
+			group:              "obfuscated",
 			expectedServerName: "Germany #4",
 		},
 		{
@@ -869,7 +869,7 @@ func TestPickServer(t *testing.T) {
 			api:                  core_test.NewMockServersAPI(),
 			servers:              core_test.ServersList(),
 			tech:                 config.Technology_NORDWHISPER,
-			group:                "obfuscated_servers",
+			group:                "obfuscated",
 			expectedServerName:   "Germany #4",
 			expectedRemoteServer: true,
 		},
@@ -878,7 +878,7 @@ func TestPickServer(t *testing.T) {
 			api:                core_test.NewMockFailingServersAPI(errors.New("500")),
 			servers:            core_test.ServersList(),
 			tech:               config.Technology_NORDWHISPER,
-			tag:                "obfuscated_servers",
+			tag:                "obfuscated",
 			expectedServerName: "Germany #4",
 		},
 		{
@@ -894,7 +894,7 @@ func TestPickServer(t *testing.T) {
 			api:           core_test.NewMockFailingServersAPI(errors.New("500")),
 			servers:       core_test.ServersList(),
 			tech:          config.Technology_NORDLYNX,
-			group:         "obfuscated_servers",
+			group:         "obfuscated",
 			expectedError: internal.ErrServerIsUnavailable,
 		},
 		{

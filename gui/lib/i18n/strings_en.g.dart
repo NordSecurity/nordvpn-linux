@@ -1423,9 +1423,6 @@ class Translations$ui$en {
 	/// en: 'Double VPN'
 	String get double_vpn => 'Double VPN';
 
-	/// en: 'Onion Over VPN'
-	String get onion_over_vpn => 'Onion Over VPN';
-
 	/// en: 'Fatal error'
 	String get fatalErrorMessage => 'Fatal error';
 
@@ -1633,8 +1630,8 @@ class Translations$ui$en {
 	/// en: 'Double VPN'
 	String get doubleVpn => 'Double VPN';
 
-	/// en: 'Onion over VPN'
-	String get onionOverVpn => 'Onion over VPN';
+	/// en: 'Onion Over VPN'
+	String get onionOverVpn => 'Onion Over VPN';
 
 	/// en: 'P2P'
 	String get p2p => 'P2P';
@@ -1642,8 +1639,8 @@ class Translations$ui$en {
 	/// en: 'Obfuscated'
 	String get obfuscated => 'Obfuscated';
 
-	/// en: 'Obfuscated Servers'
-	String get obfuscatedServers => 'Obfuscated Servers';
+	/// en: 'Obfuscated'
+	String get obfuscatedServers => 'Obfuscated';
 
 	/// en: 'Pick a location for your IP'
 	String get selectServerForDip => 'Pick a location for your IP';
@@ -1891,8 +1888,8 @@ class Translations$ui$en {
 	/// en: 'Enjoy the best download speed'
 	String get p2pDesc => 'Enjoy the best download speed';
 
-	/// en: 'Avoid detection by traffic sensors in restricted networks'
-	String get obfuscatedServersDesc => 'Avoid detection by traffic sensors in restricted networks';
+	/// en: 'Hide signs of VPN usage on restricted networks'
+	String get obfuscatedServersDesc => 'Hide signs of VPN usage on restricted networks';
 
 	/// en: 'Save'
 	String get save => 'Save';
@@ -2125,8 +2122,8 @@ class Translations$ui$en {
 	/// en: 'Inactive'
 	String get subscriptionInactive => 'Inactive';
 
-	/// en: 'Recent connections'
-	String get recentConnections => 'Recent connections';
+	/// en: 'Recent Connections'
+	String get recentConnections => 'Recent Connections';
 
 	/// en: 'Standard VPN Servers'
 	String get standardVpnServer => 'Standard VPN Servers';
@@ -2656,7 +2653,6 @@ extension on Translations {
 			'ui.signIn' => 'Sign in',
 			'ui.disconnect' => 'Disconnect',
 			'ui.double_vpn' => 'Double VPN',
-			'ui.onion_over_vpn' => 'Onion Over VPN',
 			'ui.fatalErrorMessage' => 'Fatal error',
 			'ui.connected' => 'Connected',
 			'ui.connectOrPickCountry' => 'Connect now or pick a country',
@@ -2724,13 +2720,13 @@ extension on Translations {
 			'ui.virtual' => 'Virtual',
 			'ui.dedicatedIp' => 'Dedicated IP',
 			'ui.dedicatedServer' => 'Dedicated Server',
+			'ui.doubleVpn' => 'Double VPN',
 			_ => null,
 		} ?? switch (path) {
-			'ui.doubleVpn' => 'Double VPN',
-			'ui.onionOverVpn' => 'Onion over VPN',
+			'ui.onionOverVpn' => 'Onion Over VPN',
 			'ui.p2p' => 'P2P',
 			'ui.obfuscated' => 'Obfuscated',
-			'ui.obfuscatedServers' => 'Obfuscated Servers',
+			'ui.obfuscatedServers' => 'Obfuscated',
 			'ui.selectServerForDip' => 'Pick a location for your IP',
 			'ui.selectLocation' => 'Select location',
 			'ui.dipSelectLocationDescription' => 'You have successfully purchased a dedicated IP – great! To start using it, select a location for your dedicated IP from the many options that we offer.',
@@ -2813,7 +2809,7 @@ extension on Translations {
 			'ui.doubleVpnDesc' => 'Encrypt your traffic twice for extra security',
 			'ui.onionOverVpnDesc' => 'Use the Onion network with VPN protection',
 			'ui.p2pDesc' => 'Enjoy the best download speed',
-			'ui.obfuscatedServersDesc' => 'Avoid detection by traffic sensors in restricted networks',
+			'ui.obfuscatedServersDesc' => 'Hide signs of VPN usage on restricted networks',
 			'ui.save' => 'Save',
 			'ui.close' => 'Close',
 			'ui.to' => 'to',
@@ -2891,7 +2887,7 @@ extension on Translations {
 			'ui.changePassword' => 'Change password',
 			'ui.productHub' => 'Product Hub',
 			'ui.subscriptionInactive' => 'Inactive',
-			'ui.recentConnections' => 'Recent connections',
+			'ui.recentConnections' => 'Recent Connections',
 			'ui.standardVpnServer' => 'Standard VPN Servers',
 			'ui.reconnectNow' => 'Reconnect now',
 			'ui.reconnectToChangeProtocol' => 'Reconnect to change protocol',

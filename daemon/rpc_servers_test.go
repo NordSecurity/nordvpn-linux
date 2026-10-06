@@ -535,9 +535,9 @@ func TestLegacyXORServersNeverSurface(t *testing.T) {
 				names = append(names, group.Name)
 			}
 			if test.tech == config.Technology_NORDWHISPER {
-				assert.Contains(t, names, "Obfuscated_Servers")
+				assert.Contains(t, names, "Obfuscated")
 			} else {
-				assert.NotContains(t, names, "Obfuscated_Servers")
+				assert.NotContains(t, names, "Obfuscated")
 			}
 		})
 	}
@@ -556,7 +556,7 @@ func TestObfuscatedGroupNeverComesFromAServerTag(t *testing.T) {
 	tagged := getServer(1, "tagged1", "Germany", "de", "Berlin", false,
 		core.Groups{
 			{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
-			{ID: config.ServerGroup_OVPN_OBFUSCATED, Title: "Obfuscated Servers"},
+			{ID: config.ServerGroup_OVPN_OBFUSCATED, Title: "Obfuscated"},
 		},
 		[]core.ServerTechnology{
 			core.OpenVPNTCP,
@@ -599,9 +599,9 @@ func TestObfuscatedGroupNeverComesFromAServerTag(t *testing.T) {
 			}
 			if test.expectObfuscated {
 				// the group is listed because it can be connected to, not because a server is tagged
-				assert.Contains(t, names, "Obfuscated_Servers")
+				assert.Contains(t, names, "Obfuscated")
 			} else {
-				assert.NotContains(t, names, "Obfuscated_Servers")
+				assert.NotContains(t, names, "Obfuscated")
 			}
 
 			cfgManager := mock.NewMockConfigManager()

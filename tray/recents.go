@@ -49,7 +49,7 @@ var groupTitles = map[config.ServerGroup]string{
 	config.ServerGroup_ONION_OVER_VPN:       "Onion Over VPN",
 	config.ServerGroup_STANDARD_VPN_SERVERS: "Standard VPN Servers",
 	config.ServerGroup_P2P:                  "P2P",
-	config.ServerGroup_NW_OBFUSCATED:        "Obfuscated Servers",
+	config.ServerGroup_NW_OBFUSCATED:        "Obfuscated",
 	config.ServerGroup_DEDICATED_IP:         "Dedicated IP",
 	config.ServerGroup_ULTRA_FAST_TV:        "Ultra Fast TV",
 	config.ServerGroup_ANTI_DDOS:            "Anti DDOS",
@@ -150,19 +150,19 @@ func connectByConnectionModel(ti *Instance, model *RecentConnection) bool {
 
 	case config.ServerSelectionRule_GROUP:
 		if model.Group != config.ServerGroup_UNDEFINED {
-			group := normalizeForAPI(model.Group.String())
+			group := config.GroupTitleForId(model.Group)
 			return ti.connectWithUIEvent("", group, pb.UIEvent_CONNECT_RECENTS, itemValue)
 		}
 
 	case config.ServerSelectionRule_COUNTRY_WITH_GROUP:
 		if model.CountryCode != "" && model.Group != config.ServerGroup_UNDEFINED {
-			group := normalizeForAPI(model.Group.String())
+			group := config.GroupTitleForId(model.Group)
 			return ti.connectWithUIEvent(model.CountryCode, group, pb.UIEvent_CONNECT_RECENTS, itemValue)
 		}
 
 	case config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP:
 		if model.SpecificServer != "" && model.Group != config.ServerGroup_UNDEFINED {
-			group := normalizeForAPI(model.Group.String())
+			group := config.GroupTitleForId(model.Group)
 			return ti.connectWithUIEvent(model.SpecificServer, group, pb.UIEvent_CONNECT_RECENTS, itemValue)
 		}
 
