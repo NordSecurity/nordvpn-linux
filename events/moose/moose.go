@@ -83,6 +83,9 @@ type (
 		int32,
 		*string,
 	) uint32
+	mooseSendAuthorizationFunc func(moose.EventParams, moose.NordvpnappOptBool, int32, *string) uint32
+	mooseSendLogoutFunc        func(moose.EventParams, int32, *string) uint32
+
 	mooseSetDSIsActiveFunc   func(bool) uint32
 	mooseUnsetDSIsActiveFunc func() uint32
 	mooseSetDSEnabledFunc    func(bool) uint32
@@ -96,6 +99,8 @@ type (
 	// technology / protocol context setters (user preference and current state)
 	mooseSetTechnologyFunc func(moose.NordvpnappVpnConnectionTechnology) uint32
 	mooseSetProtocolFunc   func(moose.NordvpnappVpnConnectionProtocol) uint32
+
+	mooseSetIsLoggedInCurrentStateFunc func(bool) uint32
 )
 
 type mooseFunctions struct {
@@ -119,6 +124,9 @@ type mooseFunctions struct {
 	setIsOnVpnCurrentState          mooseSetIsOnVpnCurrentStateFunc
 	sendConnect                     mooseSendConnectFunc
 	sendDisconnect                  mooseSendDisconnectFunc
+	sendLogin                       mooseSendAuthorizationFunc
+	sendRegister                    mooseSendAuthorizationFunc
+	sendLogout                      mooseSendLogoutFunc
 	setDSIsActive                   mooseSetDSIsActiveFunc
 	unsetDSIsActive                 mooseUnsetDSIsActiveFunc
 	setDSEnabled                    mooseSetDSEnabledFunc
@@ -133,6 +141,8 @@ type mooseFunctions struct {
 	setTechnologyCurrentState   mooseSetTechnologyFunc
 	setProtocolUserPreference   mooseSetProtocolFunc
 	setProtocolCurrentState     mooseSetProtocolFunc
+
+	setIsLoggedInCurrentState mooseSetIsLoggedInCurrentStateFunc
 }
 
 // Subscriber listen events, send to moose engine
@@ -200,6 +210,9 @@ func NewSubscriber(
 			setIsOnVpnCurrentState:          moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateIsOnVpnValue,
 			sendConnect:                     moose.NordvpnappSendServiceQualityServersConnect,
 			sendDisconnect:                  moose.NordvpnappSendServiceQualityServersDisconnect,
+			sendLogin:                       moose.NordvpnappSendServiceQualityAuthorizationLogin,
+			sendRegister:                    moose.NordvpnappSendServiceQualityAuthorizationRegister,
+			sendLogout:                      moose.NordvpnappSendServiceQualityAuthorizationLogout,
 			setDSIsActive:                   moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStateDedicatedServerIsActive,
 			unsetDSIsActive:                 moose.NordvpnappUnsetContextUserNordvpnappSubscriptionCurrentStateDedicatedServerIsActive,
 			setDSEnabled:                    moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateDedicatedServerEnabled,
@@ -213,6 +226,7 @@ func NewSubscriber(
 			setTechnologyCurrentState:       moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateTechnologyValue,
 			setProtocolUserPreference:       moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesProtocolValue,
 			setProtocolCurrentState:         moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateProtocolValue,
+			setIsLoggedInCurrentState:       moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateIsLoggedIn,
 		},
 	}
 	// Add more handlers here as needed
@@ -408,6 +422,11 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 		return fmt.Errorf("setting moose is on vpn: %w", err)
 	}
 
+	isLoggedIn := cfg.AutoConnectData.ID != 0 && len(cfg.TokensData) > 0
+	if err := s.response(s.mooseFuncs.setIsLoggedInCurrentState(isLoggedIn)); err != nil {
+		return fmt.Errorf("setting moose is logged in: %w", err)
+	}
+
 	if err := s.response(s.mooseFuncs.unsetServerGroupCurrentState()); err != nil {
 		return fmt.Errorf("unsetting initial server group: %w", err)
 	}
@@ -554,15 +573,22 @@ func (s *Subscriber) NotifyIpv6(data bool) error {
 }
 
 func (s *Subscriber) NotifyLogin(data events.DataAuthorization) error { // regular login, or login after signup
-	mooseFn := moose.NordvpnappSendServiceQualityAuthorizationLogin
+	mooseFn := s.mooseFuncs.sendLogin
 	if data.EventType == events.LoginSignUp {
-		mooseFn = moose.NordvpnappSendServiceQualityAuthorizationRegister
+		mooseFn = s.mooseFuncs.sendRegister
 	}
 
 	loginFlowAltered := moose.NordvpnappOptBoolNone
 	if data.EventStatus != events.StatusAttempt {
 		if data.IsAlteredFlowOnNordAccount {
 			loginFlowAltered = moose.NordvpnappOptBoolTrue
+		}
+	}
+
+	var loggedInErr error
+	if data.EventStatus == events.StatusSuccess {
+		if err := s.response(s.mooseFuncs.setIsLoggedInCurrentState(true)); err != nil {
+			loggedInErr = fmt.Errorf("setting is logged in current state (true): %w", err)
 		}
 	}
 
@@ -576,17 +602,24 @@ func (s *Subscriber) NotifyLogin(data events.DataAuthorization) error { // regul
 		int32(data.Reason),
 		nil,
 	)); err != nil {
-		return fmt.Errorf("sending login/register event (status=%v, type=%v): %w", data.EventStatus, data.EventType, err)
+		return errors.Join(loggedInErr, fmt.Errorf("sending login/register event (status=%v, type=%v): %w", data.EventStatus, data.EventType, err))
 	}
 
 	if data.EventStatus == events.StatusSuccess {
-		return errors.Join(s.fetchSubscriptions(), s.fetchAndSetServiceContext())
+		return errors.Join(loggedInErr, s.fetchSubscriptions(), s.fetchAndSetServiceContext())
 	}
 	return nil
 }
 
 func (s *Subscriber) NotifyLogout(data events.DataAuthorization) error {
-	if err := s.response(moose.NordvpnappSendServiceQualityAuthorizationLogout(
+	var errs []error
+	if data.EventStatus == events.StatusSuccess {
+		if err := s.response(s.mooseFuncs.setIsLoggedInCurrentState(false)); err != nil {
+			errs = append(errs, fmt.Errorf("setting is logged in current state (false): %w", err))
+		}
+	}
+
+	if err := s.response(s.mooseFuncs.sendLogout(
 		moose.EventParams{
 			EventDuration: int32(data.DurationMs),
 			EventStatus:   eventStatusToInternalType(data.EventStatus),
@@ -595,13 +628,15 @@ func (s *Subscriber) NotifyLogout(data events.DataAuthorization) error {
 		int32(data.Reason),
 		nil,
 	)); err != nil {
-		return fmt.Errorf("sending logout event (status=%v): %w", data.EventStatus, err)
+		errs = append(errs, fmt.Errorf("sending logout event (status=%v): %w", data.EventStatus, err))
+		return errors.Join(errs...)
 	}
 
 	if data.EventStatus == events.StatusSuccess {
 		if err := s.clearSubscriptions(); err != nil {
-			return fmt.Errorf("clearing subscriptions after logout: %w", err)
+			errs = append(errs, fmt.Errorf("clearing subscriptions after logout: %w", err))
 		}
+		return errors.Join(errs...)
 	}
 	return nil
 }
