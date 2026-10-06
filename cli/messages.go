@@ -366,7 +366,7 @@ Provide a [transfer_id] argument to list files in the specified transfer.`
 	SetTechnologyDisablePQ = "This setting is not compatible with post-quantum encryption. To use %s, turn off post-quantum encryption first."
 	SetPqAndMeshnet        = "The post-quantum VPN and Meshnet can't run at the same time. Please turn off one feature to use the other."
 	SetPqAndMeshnetServer  = "Meshnet isn’t compatible with post-quantum encryption. Reconnect to the VPN to fully disable post-quantum protection and try again."
-	SetPqUsageText         = "Enables or disables post-quantum encryption. When enabled, the encryption protects your VPN connection against potential quantum computer attacks.\nNote: Currently, post-quantum encryption works only with standard NordLynx servers, so it won’t activate when you use a dedicated IP, OpenVPN, NordWhisper or obfuscated servers.\nThe feature is not compatible with Meshnet."
+	SetPqUsageText         = "Enables or disables post-quantum encryption. When enabled, the encryption protects your VPN connection against potential quantum computer attacks.\nNote: Currently, post-quantum encryption works only with standard NordLynx servers, so it won’t activate when you use a dedicated IP, OpenVPN or NordWhisper.\nThe feature is not compatible with Meshnet."
 
 	SetDefaultsLogoutFlagText        = "Log out after restoring settings to their default values. Example: nordvpn set defaults --logout"
 	SetDefaultsOffKillswitchFlagText = "Turn off Kill Switch when restoring settings to their default values. Example: nordvpn set defaults --off-killswitch"
