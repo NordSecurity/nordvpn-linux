@@ -113,8 +113,6 @@ func itemValueToString(value pb.UIEvent_ItemValue) string {
 		return "onion_over_vpn"
 	case pb.UIEvent_DOUBLE_VPN:
 		return "double_vpn"
-	case pb.UIEvent_P2P:
-		return "p2p"
 	case pb.UIEvent_PAUSE_5_MIN:
 		return "5_minutes"
 	case pb.UIEvent_PAUSE_15_MIN:

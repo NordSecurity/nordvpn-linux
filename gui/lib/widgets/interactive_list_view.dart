@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:nordvpn/theme/interactive_list_view_theme.dart';
 import 'package:searchable_listview/searchable_listview.dart';
+import 'package:nordvpn/i18n/strings.g.dart';
 
 // A list with a text field to support filtering the items
 final class InteractiveListView extends StatefulWidget {
@@ -42,6 +46,11 @@ final class InteractiveListView extends StatefulWidget {
 class _InteractiveListViewState extends State<InteractiveListView> {
   final _searchController = TextEditingController();
   final _searchFieldNodeFocus = FocusNode();
+  String _lastAnnouncedQuery = '';
+  Timer? _announcementTimer;
+
+  String _cachedQuery = '';
+  List<dynamic> _cachedFilteredResults = const [];
 
   TextEditingController get _activeController =>
       widget.searchTextController ?? _searchController;
@@ -55,10 +64,23 @@ class _InteractiveListViewState extends State<InteractiveListView> {
 
   @override
   void dispose() {
+    _announcementTimer?.cancel();
     _activeController.removeListener(_onQueryChanged);
     _searchController.dispose();
     _searchFieldNodeFocus.dispose();
     super.dispose();
+  }
+
+  List<dynamic> _getFilteredResults(String query) {
+    if (query != _cachedQuery) {
+      _cachedQuery = query;
+      if (query.isEmpty || query.length < widget.beginSearchAfter) {
+        _cachedFilteredResults = widget.items;
+      } else {
+        _cachedFilteredResults = widget.filter(query, widget.items);
+      }
+    }
+    return _cachedFilteredResults;
   }
 
   void _onQueryChanged() {
@@ -67,14 +89,37 @@ class _InteractiveListViewState extends State<InteractiveListView> {
     final query = _activeController.text;
 
     if (query.isEmpty || query.length < widget.beginSearchAfter) {
+      _lastAnnouncedQuery = '';
+      _announcementTimer?.cancel();
       setState(() {});
       return;
     }
 
-    if (widget.showEmptyListAtStartup &&
-        widget.filter(query, widget.items).isEmpty) {
-      setState(() {});
+    final filteredResults = _getFilteredResults(query);
+
+    if (filteredResults.isEmpty && query != _lastAnnouncedQuery) {
+      // Cancel any pending announcement before scheduling a new one
+      _announcementTimer?.cancel();
+
+      // Debounce: only announce if user stops typing for 300ms
+      _announcementTimer = Timer(const Duration(milliseconds: 300), () {
+        if (mounted && _activeController.text == query) {
+          _lastAnnouncedQuery = query;
+          _announceNoResults(query);
+        }
+      });
     }
+
+    setState(() {});
+  }
+
+  void _announceNoResults(String query) {
+    final message = t.ui.noResultsFor(searchStr: query);
+    SemanticsService.sendAnnouncement(
+      View.of(context),
+      message,
+      Directionality.of(context),
+    );
   }
 
   @override
@@ -99,12 +144,7 @@ class _InteractiveListViewState extends State<InteractiveListView> {
       textStyle: widget.searchBarSize,
       itemBuilder: (item) => widget.itemBuilder(context, item),
       initialList: initialItems,
-      filter: (query) {
-        if (query.isEmpty || query.length < widget.beginSearchAfter) {
-          return widget.items;
-        }
-        return widget.filter(query, widget.items);
-      },
+      filter: (query) => _getFilteredResults(query),
       emptyWidget: _emptyResultsWidget(),
       inputDecoration: InputDecoration(
         enabledBorder: OutlineInputBorder(

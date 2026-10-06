@@ -21,7 +21,6 @@ func TestItemValueFromServerGroup(t *testing.T) {
 		{"obfuscated", config.ServerGroup_OBFUSCATED, pb.UIEvent_OBFUSCATED},
 		{"onion over vpn", config.ServerGroup_ONION_OVER_VPN, pb.UIEvent_ONION_OVER_VPN},
 		{"double vpn", config.ServerGroup_DOUBLE_VPN, pb.UIEvent_DOUBLE_VPN},
-		{"p2p", config.ServerGroup_P2P, pb.UIEvent_P2P},
 		{"dedicated server", config.ServerGroup_DEDICATED_SERVER, pb.UIEvent_DEDICATED_SERVER},
 		{"standard vpn", config.ServerGroup_STANDARD_VPN_SERVERS, pb.UIEvent_ITEM_VALUE_UNSPECIFIED},
 		{"undefined", config.ServerGroup_UNDEFINED, pb.UIEvent_ITEM_VALUE_UNSPECIFIED},

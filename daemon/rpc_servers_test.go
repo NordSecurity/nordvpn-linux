@@ -157,11 +157,11 @@ func TestServers(t *testing.T) {
 			core.Groups{
 				{
 					ID:    config.ServerGroup_STANDARD_VPN_SERVERS,
-					Title: "P2P",
+					Title: "Standard_VPN_Servers",
 				},
 				{
-					ID:    config.ServerGroup_P2P,
-					Title: "P2P",
+					ID:    config.ServerGroup_DOUBLE_VPN,
+					Title: "Double_VPN",
 				},
 				{
 					ID:    config.ServerGroup_NETFLIX_USA,
@@ -279,7 +279,7 @@ func TestServers(t *testing.T) {
 	expectedServer1 := pb.Server{
 		Id:           int64(server1ID),
 		HostName:     server1Hostname,
-		ServerGroups: []config.ServerGroup{config.ServerGroup_P2P, config.ServerGroup_STANDARD_VPN_SERVERS},
+		ServerGroups: []config.ServerGroup{config.ServerGroup_DOUBLE_VPN, config.ServerGroup_STANDARD_VPN_SERVERS},
 		Technologies: []pb.Technology{
 			pb.Technology_NORDLYNX,
 			pb.Technology_OPENVPN_TCP,

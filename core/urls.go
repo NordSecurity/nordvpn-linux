@@ -12,9 +12,6 @@ const (
 	// Used by JobInsights every 30mins to set the user country
 	InsightsURL = "/v1/helpers/ips/insights"
 
-	// PlanURL defines endpoint to fetch plans
-	PlanURL = "/v1/plans?filters[plans.active]=1&filters[plans.type]=linux"
-
 	// ServersURL defines url to get servers list
 	// Used as a fallback if /v1/servers/recommendations returns
 	// an empty list or a http error

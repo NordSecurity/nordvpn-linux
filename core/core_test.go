@@ -94,22 +94,6 @@ func TestCreateUser_DoesNotParsePasswordExpiresAt(t *testing.T) {
 	assert.NotContains(t, string(out), "password_expires_at")
 }
 
-func TestPlans(t *testing.T) {
-	category.Set(t, category.Integration)
-
-	api := testNewSimpleAPI(GeneralInfo)
-	_, err := api.Plans()
-	assert.NoError(t, err)
-}
-
-func TestPlans_Error(t *testing.T) {
-	category.Set(t, category.Integration)
-
-	api := testNewSimpleAPI(InvalidInfo)
-	_, err := api.Plans()
-	assert.Error(t, err)
-}
-
 func TestSimpleAPI_CurrentUser(t *testing.T) {
 	category.Set(t, category.Integration)
 	tests := []testCase{
@@ -317,7 +301,7 @@ func TestSimpleAPI_SizeLimitAppliedToCompressedResponse(t *testing.T) {
 	)
 
 	// The request should succeed because the compressed size is well under the limit
-	_, err := api.Plans()
+	_, err := api.Insights()
 	// We'll get a JSON decode error since our data isn't valid JSON,
 	// but that's fine - we're testing that we don't get a size limit error
 	if err != nil {
@@ -361,7 +345,7 @@ func TestSimpleAPI_OversizedCompressedResponseRejected(t *testing.T) {
 		response.NoopValidator{},
 	)
 
-	_, err := api.Plans()
+	_, err := api.Insights()
 	assert.ErrorContains(t, err, "max limit")
 }
 
@@ -403,7 +387,7 @@ func TestSimpleAPI_DecompressionBombRejected(t *testing.T) {
 		response.NoopValidator{},
 	)
 
-	_, err := api.Plans()
+	_, err := api.Insights()
 	// A correctly-hardened client must reject the oversized DECOMPRESSED body.
 	// Current code does not -> this fails, proving the vulnerability.
 	assert.ErrorContains(t, err, "max limit")

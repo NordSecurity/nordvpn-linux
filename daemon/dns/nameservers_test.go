@@ -186,3 +186,45 @@ func TestNameserversRetriesToFetchRTPOnError(t *testing.T) {
 	assert.ElementsMatch(t, servers, nameservers.Get(true))
 	assert.Equal(t, int32(0), retries.Load())
 }
+
+func TestAreOnlyNordDNSServers(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name      string
+		addresses []string
+		expected  bool
+	}{
+		{
+			name:      "all default servers",
+			addresses: defaultServers,
+			expected:  true,
+		},
+		{
+			name:      "all TP servers",
+			addresses: defaultRTPServers,
+			expected:  true,
+		},
+		{
+			name:      "non NordDNS servers",
+			addresses: []string{"1.1.1.1"},
+			expected:  false,
+		},
+		{
+			name:      "combined NordDNS and external servers",
+			addresses: []string{"1.1.1.1", primaryNameserver4, realTimeProtectionPrimaryNameserver4},
+			expected:  false,
+		},
+		{
+			name:      "empty list",
+			addresses: []string{},
+			expected:  false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			assert.Equal(t, test.expected, areOnlyNordDNSServers(test.addresses))
+		})
+	}
+}

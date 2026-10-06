@@ -3,6 +3,7 @@ package tray
 import (
 	"testing"
 
+	"github.com/NordSecurity/nordvpn-linux/alert"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/stretchr/testify/assert"
@@ -114,4 +115,194 @@ func Test_sortedConnections(t *testing.T) {
 			assert.Equal(t, tt.want, sortedConnections(tt.args))
 		})
 	}
+}
+
+func Test_buildTimerString(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name         string
+		remainingMin int
+		expected     string
+	}{
+		{name: "zero minutes", remainingMin: 0, expected: "VPN connection resumes in 0min"},
+		{name: "single digit minutes", remainingMin: 5, expected: "VPN connection resumes in 5min"},
+		{name: "ten minutes", remainingMin: 10, expected: "VPN connection resumes in 10min"},
+		{name: "59 minutes", remainingMin: 59, expected: "VPN connection resumes in 59min"},
+		{name: "1 hour", remainingMin: 60, expected: "VPN connection resumes in 1h"},
+		{name: "1 hour 5 minutes", remainingMin: 65, expected: "VPN connection resumes in 1h 5min"},
+		{name: "2 hours 30 minutes", remainingMin: 150, expected: "VPN connection resumes in 2h 30min"},
+		{name: "24 hours", remainingMin: 1440, expected: "VPN connection resumes in 24h"},
+		{name: "99 hours 59 minutes", remainingMin: 5999, expected: "VPN connection resumes in 99h 59min"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := buildTimerString(tt.remainingMin)
+			assert.Equal(t, tt.expected, got)
+		})
+	}
+}
+
+func Test_setVpnStatus_pauseRemaining(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name                      string
+		previousStatus            pb.ConnectionState
+		newStatus                 pb.ConnectionState
+		pauseRemainingDurationSec uint32
+		expectedPauseRemainingMin int
+		expectedStatusChanged     bool
+		serverNameChange          bool
+	}{
+		{
+			name:                      "CONNECTED state clears pause remaining",
+			previousStatus:            pb.ConnectionState_PAUSED,
+			newStatus:                 pb.ConnectionState_CONNECTED,
+			pauseRemainingDurationSec: 0,
+			expectedPauseRemainingMin: 0,
+			expectedStatusChanged:     true,
+			serverNameChange:          false,
+		},
+		{
+			name:                      "PAUSED with 300 sec converts to 5 minutes",
+			previousStatus:            pb.ConnectionState_CONNECTED,
+			newStatus:                 pb.ConnectionState_PAUSED,
+			pauseRemainingDurationSec: 300,
+			expectedPauseRemainingMin: 5,
+			expectedStatusChanged:     true,
+			serverNameChange:          false,
+		},
+		{
+			name:                      "PAUSED with 60 sec converts to 1 minute",
+			previousStatus:            pb.ConnectionState_DISCONNECTED,
+			newStatus:                 pb.ConnectionState_PAUSED,
+			pauseRemainingDurationSec: 60,
+			expectedPauseRemainingMin: 1,
+			expectedStatusChanged:     true,
+			serverNameChange:          false,
+		},
+		{
+			name:                      "PAUSED with 0 sec stores as 0 minutes",
+			previousStatus:            pb.ConnectionState_DISCONNECTED,
+			newStatus:                 pb.ConnectionState_PAUSED,
+			pauseRemainingDurationSec: 0,
+			expectedPauseRemainingMin: 0,
+			expectedStatusChanged:     true,
+			serverNameChange:          false,
+		},
+		{
+			name:                      "UNKNOWN_STATE clears pause remaining",
+			previousStatus:            pb.ConnectionState_CONNECTED,
+			newStatus:                 pb.ConnectionState_UNKNOWN_STATE,
+			pauseRemainingDurationSec: 0,
+			expectedPauseRemainingMin: 0,
+			expectedStatusChanged:     true,
+			serverNameChange:          false,
+		},
+		{
+			name:                      "CONNECTING clears pause remaining",
+			previousStatus:            pb.ConnectionState_PAUSED,
+			newStatus:                 pb.ConnectionState_CONNECTING,
+			pauseRemainingDurationSec: 0,
+			expectedPauseRemainingMin: 0,
+			expectedStatusChanged:     true,
+			serverNameChange:          false,
+		},
+		{
+			name:                      "24 hour pause converts correctly",
+			previousStatus:            pb.ConnectionState_CONNECTED,
+			newStatus:                 pb.ConnectionState_PAUSED,
+			pauseRemainingDurationSec: 86400,
+			expectedPauseRemainingMin: 1440,
+			expectedStatusChanged:     true,
+			serverNameChange:          false,
+		},
+		{
+			name:                      "rounding: 45 seconds rounds up to 1 minute",
+			previousStatus:            pb.ConnectionState_CONNECTED,
+			newStatus:                 pb.ConnectionState_PAUSED,
+			pauseRemainingDurationSec: 45,
+			expectedPauseRemainingMin: 1,
+			expectedStatusChanged:     true,
+			serverNameChange:          false,
+		},
+		{
+			name:                      "rounding: 1 second rounds up to 1 minute",
+			previousStatus:            pb.ConnectionState_CONNECTED,
+			newStatus:                 pb.ConnectionState_PAUSED,
+			pauseRemainingDurationSec: 1,
+			expectedPauseRemainingMin: 1,
+			expectedStatusChanged:     true,
+			serverNameChange:          false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ti := &Instance{
+				client:     nil,
+				n:          &mockNotifier{},
+				pauseTimer: nil,
+				state: trayState{
+					vpnStatus: tt.previousStatus,
+					vpnName:   "OldServer",
+				},
+			}
+
+			// Function signature: setVpnStatus(vpnStatus, vpnName, vpnHostname, vpnCity, vpnCountry, isMeshPeer, pauseRemainingDurationSec)
+			changed := ti.setVpnStatus(
+				tt.newStatus,
+				"TestServer",
+				"test.example.com",
+				"Test City",
+				"Test Country",
+				false,
+				tt.pauseRemainingDurationSec,
+			)
+
+			assert.Equal(t, tt.expectedStatusChanged, changed,
+				"status change should match expected")
+
+			// Verify pause timer state matches expectations
+			// Use RLock to safely read pauseTimer without race condition with goroutine
+			ti.pauseTimerMu.RLock()
+			pauseTimer := ti.pauseTimer
+			var lastDisplayedMin int
+			if pauseTimer != nil {
+				lastDisplayedMin = pauseTimer.lastDisplayedMin
+			}
+			ti.pauseTimerMu.RUnlock()
+
+			if tt.newStatus == pb.ConnectionState_PAUSED && tt.pauseRemainingDurationSec > 0 {
+				// Non-zero pause: timer should be started
+				assert.NotNil(t, pauseTimer, "pauseTimer should be started for non-zero pause duration")
+				if pauseTimer != nil {
+					assert.Equal(t, tt.expectedPauseRemainingMin, lastDisplayedMin,
+						"pauseTimer.lastDisplayedMin should match expected minute value")
+					// Stop timer to prevent goroutine from running after test
+					ti.stopPauseTimer()
+				}
+			} else {
+				// Any other case: timer should not be created/running
+				// (either not PAUSED, or PAUSED with zero duration which doesn't need a timer)
+				assert.Nil(t, pauseTimer, "pauseTimer should not be running in this state")
+			}
+		})
+	}
+}
+
+type mockNotifier struct{}
+
+func (m *mockNotifier) Alert(body string) *alert.AlertBuilder {
+	return alert.NewAlertBuilder(func(a alert.Alert) bool { return true }, body)
+}
+
+func (m *mockNotifier) Mute() {}
+
+func (m *mockNotifier) Unmute() {}
+
+func (m *mockNotifier) Close() error {
+	return nil
 }

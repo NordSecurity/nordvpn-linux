@@ -90,6 +90,11 @@ func setDNSWithSystemdResolve(ifname string, addresses []string) error {
 		return fmt.Errorf("setting link default route for %s via dbus: %s: %w", iface.Name, strings.TrimSpace(string(out)), err)
 	}
 
+	dnsSECOption := "allow-downgrade"
+	if areOnlyNordDNSServers(addresses) {
+		dnsSECOption = "no"
+	}
+
 	// Use secure DNS extension, but allow to downgrade if it's unsupported
 	// #nosec G204 -- input is properly validated
 	out, err = exec.Command(execBusctl,
@@ -97,7 +102,7 @@ func setDNSWithSystemdResolve(ifname string, addresses []string) error {
 		"org.freedesktop.resolve1",
 		"/org/freedesktop/resolve1",
 		"org.freedesktop.resolve1.Manager",
-		"SetLinkDNSSEC", "is", fmt.Sprintf("%d", iface.Index), "allow-downgrade",
+		"SetLinkDNSSEC", "is", fmt.Sprintf("%d", iface.Index), dnsSECOption,
 	).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("setting link dns sec for %s via dbus: %s: %w", iface.Name, strings.TrimSpace(string(out)), err)

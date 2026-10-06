@@ -10,7 +10,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/core"
-	"github.com/NordSecurity/nordvpn-linux/daemon/ens"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/serverpicker"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
@@ -271,10 +270,15 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 		return false, internal.ErrNotLoggedIn
 	}
 
+	if serverpicker.IsP2PGroup(in.ServerTag, in.ServerGroup) {
+		return false, srv.Send(&pb.Payload{Type: internal.CodeP2PDeprecated})
+	}
+
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
 		log.Error(err)
 	}
+
 	prelimParams := serverpicker.GetServerParameters(in.GetServerTag(), in.GetServerGroup(), r.dm.GetCountryData().Countries)
 	r.RequestedConnParams.Set(source, serverpicker.ServerParameters{Group: prelimParams.Group})
 	r.connectionInfo.SetInitialConnecting()
@@ -534,10 +538,8 @@ func (r *RPC) connect(
 			event.EventStatus = events.StatusCanceled
 			event.Error = nil
 
-		case errors.Is(err, ens.ErrConnectionLimitReached):
+		case errors.Is(err, events.ErrConnectionLimitReached):
 			t = internal.CodeConnectionLimitReached
-			event.VPNConnReason = events.VPNConnectionReasonConnectionLimitReached
-			event.Error = nil
 		}
 		r.events.Service.Connect.Publish(event)
 		if err := srv.Send(&pb.Payload{

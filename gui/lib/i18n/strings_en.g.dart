@@ -747,6 +747,12 @@ class Translations$cities$en {
 
 	/// en: 'Lome'
 	String get lome => 'Lome';
+
+	/// en: 'Calgary'
+	String get calgary => 'Calgary';
+
+	/// en: 'Saint John'
+	String get saint_john => 'Saint John';
 }
 
 // Path: countries
@@ -1390,6 +1396,9 @@ class Translations$ui$en {
 	/// en: 'No results found.'
 	String get noResults => 'No results found.';
 
+	/// en: 'No results found for ${searchStr: String}'
+	String noResultsFor({required String searchStr}) => 'No results found for ${searchStr}';
+
 	/// en: 'Connecting to the daemon...'
 	String get waitingToConnectToDaemon => 'Connecting to the daemon...';
 
@@ -1630,9 +1639,6 @@ class Translations$ui$en {
 	/// en: 'Onion over VPN'
 	String get onionOverVpn => 'Onion over VPN';
 
-	/// en: 'P2P'
-	String get p2p => 'P2P';
-
 	/// en: 'Obfuscated'
 	String get obfuscated => 'Obfuscated';
 
@@ -1804,11 +1810,11 @@ class Translations$ui$en {
 	/// en: 'Continue'
 	String get continueWord => 'Continue';
 
-	/// en: 'Scam and phishing protection will be turned off'
-	String get realTimeProtectionWillTurnOff => 'Scam and phishing protection will be turned off';
+	/// en: 'Real-time protection will be turned off'
+	String get realTimeProtectionWillTurnOff => 'Real-time protection will be turned off';
 
-	/// en: 'Scam and phishing protection works only with the default DNS. Set a custom DNS server anyway?'
-	String get realTimeProtectionWillTurnOffDescription => 'Scam and phishing protection works only with the default DNS. Set a custom DNS server anyway?';
+	/// en: 'Real-time protection works only with the default DNS. Set a custom DNS server anyway?'
+	String get realTimeProtectionWillTurnOffDescription => 'Real-time protection works only with the default DNS. Set a custom DNS server anyway?';
 
 	/// en: 'Set custom DNS'
 	String get setCustomDns => 'Set custom DNS';
@@ -1887,9 +1893,6 @@ class Translations$ui$en {
 
 	/// en: 'Use the Onion network with VPN protection'
 	String get onionOverVpnDesc => 'Use the Onion network with VPN protection';
-
-	/// en: 'Enjoy the best download speed'
-	String get p2pDesc => 'Enjoy the best download speed';
 
 	/// en: 'Save'
 	String get save => 'Save';
@@ -2452,6 +2455,8 @@ extension on Translations {
 			'cities.dodoma' => 'Dodoma',
 			'cities.sanaa' => 'Sanaa',
 			'cities.lome' => 'Lome',
+			'cities.calgary' => 'Calgary',
+			'cities.saint_john' => 'Saint John',
 			'countries.AL' => 'Albania',
 			'countries.DZ' => 'Algeria',
 			'countries.AD' => 'Andorra',
@@ -2657,6 +2662,7 @@ extension on Translations {
 			'ui.specialServers' => 'Specialty servers',
 			'ui.cities' => 'Cities',
 			'ui.noResults' => 'No results found.',
+			'ui.noResultsFor' => ({required String searchStr}) => 'No results found for ${searchStr}',
 			'ui.waitingToConnectToDaemon' => 'Connecting to the daemon...',
 			'ui.fetchingData' => 'Fetching data',
 			'ui.failedToFetchData' => 'Failed to fetch data',
@@ -2733,12 +2739,11 @@ extension on Translations {
 			'ui.searchServersHint' => 'Search countries, cities, or servers',
 			'ui.citiesAvailable' => ({required Object n}) => '${n} cities available',
 			'ui.dedicatedIp' => 'Dedicated IP',
+			_ => null,
+		} ?? switch (path) {
 			'ui.dedicatedServer' => 'Dedicated Server',
 			'ui.doubleVpn' => 'Double VPN',
 			'ui.onionOverVpn' => 'Onion over VPN',
-			_ => null,
-		} ?? switch (path) {
-			'ui.p2p' => 'P2P',
 			'ui.obfuscated' => 'Obfuscated',
 			'ui.obfuscatedServers' => 'Obfuscated Servers',
 			'ui.selectServerForDip' => 'Pick a location for your IP',
@@ -2796,8 +2801,8 @@ extension on Translations {
 			'ui.realTimeDisableCustomDNS' => 'Turn off custom DNS?',
 			'ui.realTimeDisableCustomDNSDescription' => 'Real-time protection works with our default DNS servers only.',
 			'ui.continueWord' => 'Continue',
-			'ui.realTimeProtectionWillTurnOff' => 'Scam and phishing protection will be turned off',
-			'ui.realTimeProtectionWillTurnOffDescription' => 'Scam and phishing protection works only with the default DNS. Set a custom DNS server anyway?',
+			'ui.realTimeProtectionWillTurnOff' => 'Real-time protection will be turned off',
+			'ui.realTimeProtectionWillTurnOffDescription' => 'Real-time protection works only with the default DNS. Set a custom DNS server anyway?',
 			'ui.setCustomDns' => 'Set custom DNS',
 			'ui.turnOffCustomDns' => 'Turn off custom DNS?',
 			'ui.turnOffCustomDnsDescription' => 'This will remove all your previously added DNS servers.',
@@ -2824,7 +2829,6 @@ extension on Translations {
 			'ui.settingAutoconnectTo' => ({required Object target}) => 'Setting auto-connect to [${target}]...',
 			'ui.doubleVpnDesc' => 'Encrypt your traffic twice for extra security',
 			'ui.onionOverVpnDesc' => 'Use the Onion network with VPN protection',
-			'ui.p2pDesc' => 'Enjoy the best download speed',
 			'ui.save' => 'Save',
 			'ui.close' => 'Close',
 			'ui.to' => 'to',

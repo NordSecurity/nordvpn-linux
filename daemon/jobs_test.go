@@ -181,7 +181,7 @@ func TestDoAutoConnect(t *testing.T) {
 				rpc.serversAPI = core_test.NewMockServersAPI()
 				mockConfigManager := newMockConfigManager()
 
-				updateAutoconnectData(mockConfigManager, config.AutoConnectData{Country: "DE", City: "Berlin", Group: config.ServerGroup_P2P, ServerTag: "p2p"})
+				updateAutoconnectData(mockConfigManager, config.AutoConnectData{Country: "DE", City: "Berlin", Group: config.ServerGroup_DOUBLE_VPN, ServerTag: "double_vpn"})
 
 				rpc.cm = mockConfigManager
 			},

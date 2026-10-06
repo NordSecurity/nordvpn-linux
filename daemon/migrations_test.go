@@ -17,6 +17,9 @@ import (
 // regionalGroupEurope is the deprecated EUROPE group ID.
 const regionalGroupEurope config.ServerGroup = 19
 
+// p2pGroup is the deprecated P2P group ID.
+const p2pGroup config.ServerGroup = 15
+
 func TestMigrateDeprecatedRegionalAutoconnect_PreservesCountryAndClearsGroup(t *testing.T) {
 	category.Set(t, category.Unit)
 
@@ -27,7 +30,26 @@ func TestMigrateDeprecatedRegionalAutoconnect_PreservesCountryAndClearsGroup(t *
 	cm.Cfg.AutoConnectData.City = ""
 	cm.Cfg.AutoConnectData.Group = regionalGroupEurope
 
-	assert.NilError(t, MigrateDeprecatedRegionalAutoconnect(cm))
+	assert.NilError(t, MigrateDeprecatedGroupsAutoconnect(cm))
+
+	assert.Equal(t, cm.SaveCallCount, 1)
+	assert.Equal(t, cm.Cfg.AutoConnectData.Group, config.ServerGroup_UNDEFINED)
+	assert.Equal(t, cm.Cfg.AutoConnectData.ServerTag, "germany")
+	assert.Equal(t, cm.Cfg.AutoConnectData.Country, "de")
+	assert.Equal(t, cm.Cfg.AutoConnectData.City, "")
+}
+
+func TestMigrateDeprecatedP2PAutoconnect_PreservesCountryAndClearsGroup(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	cm := mock.NewMockConfigManager()
+	cm.Cfg.AutoConnect = true
+	cm.Cfg.AutoConnectData.ServerTag = "germany"
+	cm.Cfg.AutoConnectData.Country = "de"
+	cm.Cfg.AutoConnectData.City = ""
+	cm.Cfg.AutoConnectData.Group = p2pGroup
+
+	assert.NilError(t, MigrateDeprecatedGroupsAutoconnect(cm))
 
 	assert.Equal(t, cm.SaveCallCount, 1)
 	assert.Equal(t, cm.Cfg.AutoConnectData.Group, config.ServerGroup_UNDEFINED)
@@ -46,7 +68,7 @@ func TestMigrateDeprecatedRegionalAutoconnect_PreservesCityAndClearsGroup(t *tes
 	cm.Cfg.AutoConnectData.City = "berlin"
 	cm.Cfg.AutoConnectData.Group = regionalGroupEurope
 
-	assert.NilError(t, MigrateDeprecatedRegionalAutoconnect(cm))
+	assert.NilError(t, MigrateDeprecatedGroupsAutoconnect(cm))
 
 	assert.Equal(t, cm.SaveCallCount, 1)
 	assert.Equal(t, cm.Cfg.AutoConnectData.Group, config.ServerGroup_UNDEFINED)
@@ -65,7 +87,7 @@ func TestMigrateDeprecatedRegionalAutoconnect_OnlyRegionalFallsBackToQuickConnec
 	cm.Cfg.AutoConnectData.City = ""
 	cm.Cfg.AutoConnectData.Group = regionalGroupEurope
 
-	assert.NilError(t, MigrateDeprecatedRegionalAutoconnect(cm))
+	assert.NilError(t, MigrateDeprecatedGroupsAutoconnect(cm))
 
 	assert.Equal(t, cm.SaveCallCount, 1)
 	assert.Equal(t, cm.Cfg.AutoConnectData.Group, config.ServerGroup_UNDEFINED)
@@ -82,7 +104,7 @@ func TestMigrateDeprecatedRegionalAutoconnect_NonRegionalGroup_NoSave(t *testing
 	cm.Cfg.AutoConnectData.City = ""
 	cm.Cfg.AutoConnectData.Group = config.ServerGroup_DOUBLE_VPN
 
-	assert.NilError(t, MigrateDeprecatedRegionalAutoconnect(cm))
+	assert.NilError(t, MigrateDeprecatedGroupsAutoconnect(cm))
 
 	assert.Equal(t, cm.SaveCallCount, 0)
 	assert.Equal(t, cm.Cfg.AutoConnectData.Group, config.ServerGroup_DOUBLE_VPN)
@@ -98,10 +120,10 @@ func TestMigrateDeprecatedRegionalAutoconnect_Idempotent(t *testing.T) {
 	cm.Cfg.AutoConnectData.ServerTag = "europe"
 	cm.Cfg.AutoConnectData.Group = regionalGroupEurope
 
-	assert.NilError(t, MigrateDeprecatedRegionalAutoconnect(cm))
+	assert.NilError(t, MigrateDeprecatedGroupsAutoconnect(cm))
 	assert.Equal(t, cm.SaveCallCount, 1)
 
-	assert.NilError(t, MigrateDeprecatedRegionalAutoconnect(cm))
+	assert.NilError(t, MigrateDeprecatedGroupsAutoconnect(cm))
 	assert.Equal(t, cm.SaveCallCount, 1)
 }
 
