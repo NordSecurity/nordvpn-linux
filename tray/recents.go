@@ -150,19 +150,19 @@ func connectByConnectionModel(ti *Instance, model *RecentConnection) bool {
 
 	case config.ServerSelectionRule_GROUP:
 		if model.Group != config.ServerGroup_UNDEFINED {
-			group := normalizeForAPI(model.Group.String())
+			group := config.GroupTitleForId(model.Group)
 			return ti.connectWithUIEvent("", group, pb.UIEvent_CONNECT_RECENTS, itemValue)
 		}
 
 	case config.ServerSelectionRule_COUNTRY_WITH_GROUP:
 		if model.CountryCode != "" && model.Group != config.ServerGroup_UNDEFINED {
-			group := normalizeForAPI(model.Group.String())
+			group := config.GroupTitleForId(model.Group)
 			return ti.connectWithUIEvent(model.CountryCode, group, pb.UIEvent_CONNECT_RECENTS, itemValue)
 		}
 
 	case config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP:
 		if model.SpecificServer != "" && model.Group != config.ServerGroup_UNDEFINED {
-			group := normalizeForAPI(model.Group.String())
+			group := config.GroupTitleForId(model.Group)
 			return ti.connectWithUIEvent(model.SpecificServer, group, pb.UIEvent_CONNECT_RECENTS, itemValue)
 		}
 
