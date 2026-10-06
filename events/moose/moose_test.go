@@ -2390,3 +2390,256 @@ func TestNotifyDisconnect_TriggerAndExceptionFields(t *testing.T) {
 		})
 	}
 }
+
+func TestNotifyLogin_SetsIsLoggedInContext(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	for _, tt := range []struct {
+		name          string
+		status        events.TypeEventStatus
+		eventType     events.TypeLoginType
+		respCode      uint32
+		expectedCalls int
+		expectedErr   string
+	}{
+		{
+			name:          "login success",
+			status:        events.StatusSuccess,
+			eventType:     events.LoginLogin,
+			expectedCalls: 1,
+		},
+		{
+			name:          "signup success",
+			status:        events.StatusSuccess,
+			eventType:     events.LoginSignUp,
+			expectedCalls: 1,
+		},
+		{
+			name:      "login attempt",
+			status:    events.StatusAttempt,
+			eventType: events.LoginLogin,
+		},
+		{
+			name:      "login failure",
+			status:    events.StatusFailure,
+			eventType: events.LoginLogin,
+		},
+		{
+			name:          "context set error",
+			status:        events.StatusSuccess,
+			eventType:     events.LoginLogin,
+			respCode:      7,
+			expectedCalls: 1,
+			expectedErr:   "setting is logged in current state (true)",
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			sub := newAuthorizationTestSubscriber()
+
+			var calls []bool
+			sub.mooseFuncs.setIsLoggedInCurrentState = func(value bool) uint32 {
+				calls = append(calls, value)
+				return tt.respCode
+			}
+
+			err := sub.NotifyLogin(events.DataAuthorization{EventStatus: tt.status, EventType: tt.eventType})
+
+			if tt.expectedErr != "" {
+				assert.ErrorContains(t, err, tt.expectedErr)
+			} else {
+				assert.NilError(t, err)
+			}
+			assert.Equal(t, tt.expectedCalls, len(calls))
+			for _, value := range calls {
+				assert.Equal(t, true, value)
+			}
+		})
+	}
+}
+
+func TestNotifyLogout_SetsIsLoggedInContext(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	for _, tt := range []struct {
+		name          string
+		status        events.TypeEventStatus
+		respCode      uint32
+		expectedCalls int
+		expectedErr   string
+	}{
+		{
+			name:          "logout success",
+			status:        events.StatusSuccess,
+			expectedCalls: 1,
+		},
+		{
+			name:   "logout attempt",
+			status: events.StatusAttempt,
+		},
+		{
+			name:   "logout failure",
+			status: events.StatusFailure,
+		},
+		{
+			name:          "context set error",
+			status:        events.StatusSuccess,
+			respCode:      7,
+			expectedCalls: 1,
+			expectedErr:   "setting is logged in current state (false)",
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			sub := newAuthorizationTestSubscriber()
+
+			var calls []bool
+			sub.mooseFuncs.setIsLoggedInCurrentState = func(value bool) uint32 {
+				calls = append(calls, value)
+				return tt.respCode
+			}
+
+			err := sub.NotifyLogout(events.DataAuthorization{EventStatus: tt.status})
+
+			if tt.expectedErr != "" {
+				assert.ErrorContains(t, err, tt.expectedErr)
+			} else {
+				assert.NilError(t, err)
+			}
+			assert.Equal(t, tt.expectedCalls, len(calls))
+			for _, value := range calls {
+				assert.Equal(t, false, value)
+			}
+		})
+	}
+}
+
+func TestLoginLogout_IsLoggedInContextFollowsState(t *testing.T) {
+	category.Set(t, category.Unit)
+	sub := newAuthorizationTestSubscriber()
+	loginEvent := events.DataAuthorization{
+		EventStatus: events.StatusSuccess,
+		EventType:   events.LoginLogin,
+	}
+	logoutEvent := events.DataAuthorization{EventStatus: events.StatusSuccess}
+	failedLoginEvent := events.DataAuthorization{
+		EventStatus: events.StatusFailure,
+		EventType:   events.LoginLogin,
+	}
+
+	var isLoggedIn *bool
+	sub.mooseFuncs.setIsLoggedInCurrentState = func(value bool) uint32 {
+		isLoggedIn = &value
+		return 0
+	}
+
+	assert.NilError(t, sub.NotifyLogin(loginEvent))
+	assert.Assert(t, isLoggedIn != nil)
+	assert.Equal(t, true, *isLoggedIn)
+
+	assert.NilError(t, sub.NotifyLogout(logoutEvent))
+	assert.Equal(t, false, *isLoggedIn)
+
+	// a failed login still holds false
+	assert.NilError(t, sub.NotifyLogin(failedLoginEvent))
+	assert.Equal(t, false, *isLoggedIn)
+}
+
+func TestLoginLogout_IsLoggedInContextSetBeforeEvent(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	for _, tt := range []struct {
+		name          string
+		notify        func(*Subscriber, events.DataAuthorization) error
+		status        events.TypeEventStatus
+		eventType     events.TypeLoginType
+		expectedCalls []string
+	}{
+		{
+			name:          "login success",
+			notify:        (*Subscriber).NotifyLogin,
+			status:        events.StatusSuccess,
+			eventType:     events.LoginLogin,
+			expectedCalls: []string{"setIsLoggedIn(true)", "sendLogin"},
+		},
+		{
+			name:          "signup success",
+			notify:        (*Subscriber).NotifyLogin,
+			status:        events.StatusSuccess,
+			eventType:     events.LoginSignUp,
+			expectedCalls: []string{"setIsLoggedIn(true)", "sendRegister"},
+		},
+		{
+			name:          "login failure",
+			notify:        (*Subscriber).NotifyLogin,
+			status:        events.StatusFailure,
+			eventType:     events.LoginLogin,
+			expectedCalls: []string{"sendLogin"},
+		},
+		{
+			name:          "logout success",
+			notify:        (*Subscriber).NotifyLogout,
+			status:        events.StatusSuccess,
+			expectedCalls: []string{"setIsLoggedIn(false)", "sendLogout"},
+		},
+		{
+			name:          "logout failure",
+			notify:        (*Subscriber).NotifyLogout,
+			status:        events.StatusFailure,
+			expectedCalls: []string{"sendLogout"},
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			sub := newAuthorizationTestSubscriber()
+
+			var calls []string
+			sub.mooseFuncs.setIsLoggedInCurrentState = func(value bool) uint32 {
+				calls = append(calls, fmt.Sprintf("setIsLoggedIn(%v)", value))
+				return 0
+			}
+			sub.mooseFuncs.sendLogin = func(moose.EventParams, moose.NordvpnappOptBool, int32, *string) uint32 {
+				calls = append(calls, "sendLogin")
+				return 0
+			}
+			sub.mooseFuncs.sendRegister = func(moose.EventParams, moose.NordvpnappOptBool, int32, *string) uint32 {
+				calls = append(calls, "sendRegister")
+				return 0
+			}
+			sub.mooseFuncs.sendLogout = func(moose.EventParams, int32, *string) uint32 {
+				calls = append(calls, "sendLogout")
+				return 0
+			}
+
+			err := tt.notify(sub, events.DataAuthorization{EventStatus: tt.status, EventType: tt.eventType})
+
+			assert.NilError(t, err)
+			assert.DeepEqual(t, tt.expectedCalls, calls)
+		})
+	}
+}
+
+func newAuthorizationTestSubscriber() *Subscriber {
+	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
+	configManagerMock := mock.NewMockConfigManager()
+	// undefined consent makes fetchSubscriptions a no-op
+	configManagerMock.Cfg.AnalyticsConsent = config.ConsentUndefined
+	sub.config = configManagerMock
+	sub.clientAPI = loginClientAPIStub{}
+	sub.mooseFuncs.setDSIsActive = func(bool) uint32 { return 0 }
+	sub.mooseFuncs.setDSEnabled = func(bool) uint32 { return 0 }
+	sub.mooseFuncs.sendLogin = func(moose.EventParams, moose.NordvpnappOptBool, int32, *string) uint32 { return 0 }
+	sub.mooseFuncs.sendRegister = func(moose.EventParams, moose.NordvpnappOptBool, int32, *string) uint32 { return 0 }
+	sub.mooseFuncs.sendLogout = func(moose.EventParams, int32, *string) uint32 { return 0 }
+	return sub
+}
+
+type loginClientAPIStub struct {
+	core.ClientAPI
+}
+
+func (loginClientAPIStub) Services() (core.ServicesResponse, error) {
+	return core.ServicesResponse{
+		core.ServiceData{
+			ExpiresAt: "2030-01-01 00:00:00",
+			Service:   core.Service{ID: auth.VPNServiceID},
+		},
+	}, nil
+}
