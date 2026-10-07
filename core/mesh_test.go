@@ -61,10 +61,10 @@ func TestMeshAPI_Update(t *testing.T) {
 	url := fmt.Sprintf(urlMeshMachines, id.String())
 	tests := []testCase{
 		testNewCase(t, http.StatusOK, url, "mesh_update", nil),
-		testNewCase(t, http.StatusBadRequest, url, "mesh_update", ErrBadRequest),
+		testNewCase(t, http.StatusBadRequest, url, "mesh_update", ErrInvalidFormData),
 		testNewCase(t, http.StatusUnauthorized, url, "mesh_update", ErrUnauthorized),
 		testNewCase(t, http.StatusForbidden, url, "mesh_update", ErrForbidden),
-		testNewCase(t, http.StatusNotFound, url, "mesh_update", ErrNotFound),
+		testNewCase(t, http.StatusNotFound, url, "mesh_update", ErrMeshMachineNotFound),
 	}
 
 	for _, test := range tests {
@@ -139,7 +139,7 @@ func TestMeshAPI_Unregister(t *testing.T) {
 		testNewCase(t, http.StatusBadRequest, url, "mesh_unregister", ErrBadRequest),
 		testNewCase(t, http.StatusUnauthorized, url, "mesh_unregister", ErrUnauthorized),
 		testNewCase(t, http.StatusForbidden, url, "mesh_unregister", ErrForbidden),
-		testNewCase(t, http.StatusNotFound, url, "mesh_unregister", ErrNotFound),
+		testNewCase(t, http.StatusNotFound, url, "mesh_unregister", ErrMeshMachineNotFound),
 	}
 
 	for _, test := range tests {
@@ -171,7 +171,7 @@ func TestMeshAPI_Unpair(t *testing.T) {
 		testNewCase(t, http.StatusBadRequest, url, "mesh_unpair", ErrBadRequest),
 		testNewCase(t, http.StatusUnauthorized, url, "mesh_unpair", ErrUnauthorized),
 		testNewCase(t, http.StatusForbidden, url, "mesh_unpair", ErrForbidden),
-		testNewCase(t, http.StatusNotFound, url, "mesh_unpair", ErrNotFound),
+		testNewCase(t, http.StatusNotFound, url, "mesh_unpair", ErrMeshMachineNotFound),
 		testNewCase(t, http.StatusConflict, url, "mesh_unpair", ErrConflict),
 	}
 
@@ -203,7 +203,7 @@ func TestMeshAPI_Invite(t *testing.T) {
 		testNewCase(t, http.StatusBadRequest, url, "mesh_send_invite", ErrMaximumDeviceCount),
 		testNewCase(t, http.StatusUnauthorized, url, "mesh_send_invite", ErrUnauthorized),
 		testNewCase(t, http.StatusForbidden, url, "mesh_send_invite", ErrForbidden),
-		testNewCase(t, http.StatusNotFound, url, "mesh_send_invite", ErrNotFound),
+		testNewCase(t, http.StatusNotFound, url, "mesh_send_invite", ErrMeshMachineNotFound),
 		testNewCase(t, http.StatusConflict, url, "mesh_send_invite", ErrConflict),
 		testNewCase(t, http.StatusTooManyRequests, url, "mesh_send_invite", ErrTooManyRequests),
 	}
@@ -235,7 +235,7 @@ func TestMeshAPI_Received(t *testing.T) {
 		testNewCase(t, http.StatusOK, url, "mesh_received_invitations", nil),
 		testNewCase(t, http.StatusBadRequest, url, "mesh_received_invitations", ErrBadRequest),
 		testNewCase(t, http.StatusForbidden, url, "mesh_received_invitations", ErrForbidden),
-		testNewCase(t, http.StatusNotFound, url, "mesh_received_invitations", ErrNotFound),
+		testNewCase(t, http.StatusNotFound, url, "mesh_received_invitations", ErrMeshMachineNotFound),
 	}
 
 	for _, test := range tests {
@@ -265,7 +265,7 @@ func TestMeshAPI_Sent(t *testing.T) {
 		testNewCase(t, http.StatusOK, url, "mesh_sent_invitations", nil),
 		testNewCase(t, http.StatusBadRequest, url, "mesh_sent_invitations", ErrBadRequest),
 		testNewCase(t, http.StatusForbidden, url, "mesh_sent_invitations", ErrForbidden),
-		testNewCase(t, http.StatusNotFound, url, "mesh_sent_invitations", ErrNotFound),
+		testNewCase(t, http.StatusNotFound, url, "mesh_sent_invitations", ErrMeshMachineNotFound),
 	}
 
 	for _, test := range tests {
@@ -297,7 +297,7 @@ func TestMeshAPI_Accept(t *testing.T) {
 		testNewCase(t, http.StatusBadRequest, url, "mesh_accept_invitation", ErrMaximumDeviceCount),
 		testNewCase(t, http.StatusUnauthorized, url, "mesh_accept_invitation", ErrUnauthorized),
 		testNewCase(t, http.StatusForbidden, url, "mesh_accept_invitation", ErrForbidden),
-		testNewCase(t, http.StatusNotFound, url, "mesh_accept_invitation", ErrNotFound),
+		testNewCase(t, http.StatusNotFound, url, "mesh_accept_invitation", ErrMeshMachineNotFound),
 	}
 
 	for _, test := range tests {
@@ -367,7 +367,7 @@ func TestMeshAPI_Revoke(t *testing.T) {
 		testNewCase(t, http.StatusNoContent, url, "", nil),
 		testNewCase(t, http.StatusBadRequest, url, "mesh_revoke_invitation", ErrBadRequest),
 		testNewCase(t, http.StatusForbidden, url, "mesh_revoke_invitation", ErrForbidden),
-		testNewCase(t, http.StatusNotFound, url, "mesh_revoke_invitation", ErrNotFound),
+		testNewCase(t, http.StatusNotFound, url, "mesh_revoke_invitation", ErrMeshMachineNotFound),
 	}
 
 	for _, test := range tests {
