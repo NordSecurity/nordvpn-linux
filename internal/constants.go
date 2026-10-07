@@ -173,8 +173,8 @@ var (
 	// MeshSubnet is the subnet used for meshnet
 	MeshSubnet = netip.MustParsePrefix("100.64.0.0/10")
 
-	// NordLynxSubnet is the subnet used for NordLynx VPN and Dedicated Server
-	NordLynxSubnet = netip.MustParsePrefix("10.5.0.0/16")
+	// DedicatedServerSubnet is the subnet used for Dedicated Server
+	DedicatedServerSubnet = netip.MustParsePrefix("10.5.0.1/32")
 
 	LocalNetworks = []string{
 		"10.0.0.0/8",
