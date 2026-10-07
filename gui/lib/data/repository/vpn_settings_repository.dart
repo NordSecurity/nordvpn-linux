@@ -197,8 +197,8 @@ class VpnSettingsRepository {
   }
 
   Future<int> setRealTimeProtection(bool value) async {
-    final response = await _client.setThreatProtectionLite(
-      SetThreatProtectionLiteRequest(threatProtectionLite: value),
+    final response = await _client.setRealTimeProtection(
+      SetRealTimeProtectionRequest(realTimeProtection: value),
     );
 
     if (response.hasErrorCode()) {
@@ -208,11 +208,11 @@ class VpnSettingsRepository {
       }
     }
 
-    if (response.hasSetThreatProtectionLiteStatus()) {
-      switch (response.setThreatProtectionLiteStatus) {
-        case SetThreatProtectionLiteStatus.TPL_CONFIGURED:
+    if (response.hasSetRealTimeProtectionStatus()) {
+      switch (response.setRealTimeProtectionStatus) {
+        case SetRealTimeProtectionStatus.RTP_CONFIGURED:
           break;
-        case SetThreatProtectionLiteStatus.TPL_CONFIGURED_DNS_RESET:
+        case SetRealTimeProtectionStatus.RTP_CONFIGURED_DNS_RESET:
           return DaemonStatusCode.dnsListModified;
       }
     }
@@ -233,8 +233,8 @@ class VpnSettingsRepository {
       switch (response.setDnsStatus) {
         case SetDNSStatus.DNS_CONFIGURED:
           break;
-        case SetDNSStatus.DNS_CONFIGURED_TPL_RESET:
-          return DaemonStatusCode.tpLiteDisabled;
+        case SetDNSStatus.DNS_CONFIGURED_RTP_RESET:
+          return DaemonStatusCode.realTimeProtectionDisabled;
 
         case SetDNSStatus.INVALID_DNS_ADDRESS:
           return DaemonStatusCode.invalidDnsAddress;
@@ -265,11 +265,11 @@ class VpnSettingsRepository {
     return result.type.toInt();
   }
 
-  Future<int> resetToDefaults() async {
+  Future<({int status, List<String> failedSettings})> resetToDefaults() async {
     final result = await _client.setDefaults(
       SetDefaultsRequest(noLogout: true),
     );
-    return result.type.toInt();
+    return (status: result.type.toInt(), failedSettings: result.data.toList());
   }
 
   Future<int> setPostQuantum(bool value) async {
@@ -277,13 +277,6 @@ class VpnSettingsRepository {
       SetGenericRequest(enabled: value),
     );
 
-    return _checkSettingsUpdate(result);
-  }
-
-  Future<int> useVirtualServers(bool value) async {
-    final result = await _client.setVirtualLocation(
-      SetGenericRequest(enabled: value),
-    );
     return _checkSettingsUpdate(result);
   }
 

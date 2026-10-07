@@ -46,6 +46,7 @@ type ServerData struct {
 	OpenVPNVersion      string
 	PostQuantum         bool
 	NordWhisperPort     int64
+	DedicatedServer     bool
 	DedicatedServerPort int64
 }
 

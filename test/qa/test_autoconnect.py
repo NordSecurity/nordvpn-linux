@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import random
+=======
+import warnings
+>>>>>>> origin/release/6.0.0
 
 import pytest
 import sh
@@ -148,6 +152,7 @@ def test_autoconnect_to_obfuscated_group(tech, proto, group):
     autoconnect_base_test(group)
 
 
+<<<<<<< HEAD
 @pytest.mark.parametrize(("tech", "proto"), lib.STANDARD_TECHNOLOGIES)
 def test_autoconnect_virtual_country(tech, proto):
     """Manual TC: LVPN-8549"""
@@ -185,6 +190,10 @@ def test_autoconnect_virtual_country_disabled(tech, proto):
 
 @pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
 def test_autoconnect_to_unavailable_groups(tech, proto):
+=======
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+def test_autoconnect_to_unavailable_groups(tech, proto, obfuscated):
+>>>>>>> origin/release/6.0.0
     """Manual TC: LVPN-8431"""
 
     lib.set_technology_and_protocol(tech, proto)

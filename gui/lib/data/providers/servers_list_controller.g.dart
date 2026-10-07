@@ -34,7 +34,7 @@ final class ServersListControllerProvider
 }
 
 String _$serversListControllerHash() =>
-    r'07666dc1ca4577a3d4ca71e654bbe065f4555b70';
+    r'0c1fb3c96e273e186581b3f2a168fe3b02ab0ad7';
 
 abstract class _$ServersListController extends $AsyncNotifier<ServersList> {
   FutureOr<ServersList> build();

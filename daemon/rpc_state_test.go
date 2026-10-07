@@ -257,8 +257,8 @@ func TestRpcState_PreliminaryGroupAttachedToConnectingStatus(t *testing.T) {
 	}{
 		{
 			name:          "specialty group is attached to connecting status",
-			prelimGroup:   config.ServerGroup_P2P,
-			expectedGroup: config.ServerGroup_P2P,
+			prelimGroup:   config.ServerGroup_DOUBLE_VPN,
+			expectedGroup: config.ServerGroup_DOUBLE_VPN,
 		},
 		{
 			name:          "undefined group when connecting by server name",

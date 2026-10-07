@@ -4,7 +4,7 @@ import '../../test/utils/test_helpers.dart';
 
 void runCustomDnsTests() async {
   group("custom DNS smoke tests", () {
-    testWidgets("can add DNS servers when TP is off", (tester) async {
+    testWidgets("can add DNS servers when RTP is off", (tester) async {
       final app = await tester.setupIntegrationTests();
 
       final dnsScreen = await app.goToCustomDnsSettingsScreen();
@@ -19,7 +19,7 @@ void runCustomDnsTests() async {
       // enable DNS toggle
       await dnsScreen.tapOnOffSwitch();
       await app.waitForUiUpdates();
-      expect(dnsScreen.isDisableTpPopupDisplayed(), isFalse);
+      expect(dnsScreen.isDisableRtpPopupDisplayed(), isFalse);
       expect(dnsScreen.isDnsEnabled(), isTrue);
       expect(dnsScreen.isAddDnsFormEnabled(), isTrue);
       expect(dnsScreen.isAddButtonEnabled(), isFalse);
@@ -71,7 +71,7 @@ void runCustomDnsTests() async {
     });
   });
 
-  testWidgets("enable custom DNS when TP is on", (tester) async {
+  testWidgets("enable custom DNS when RTP is on", (tester) async {
     final app = await tester.setupIntegrationTests();
     app.setRealTimeProtection(true);
 
@@ -81,7 +81,7 @@ void runCustomDnsTests() async {
     // enable DNS toggle
     await dnsScreen.tapOnOffSwitch();
     await app.waitForUiUpdates();
-    expect(dnsScreen.isDisableTpPopupDisplayed(), isTrue);
+    expect(dnsScreen.isDisableRtpPopupDisplayed(), isTrue);
   });
 
   testWidgets("check custom DNS warning message", (tester) async {

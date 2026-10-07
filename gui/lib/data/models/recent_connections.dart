@@ -15,7 +15,6 @@ class RecentConnection {
   final String specificServerName;
   final String specificServer;
   final ServerSelectionRule connectionType;
-  final bool isVirtual;
 
   RecentConnection({
     required this.country,
@@ -25,7 +24,6 @@ class RecentConnection {
     required this.specificServerName,
     required this.specificServer,
     required this.connectionType,
-    required this.isVirtual,
   });
 
   factory RecentConnection.fromPb(RecentConnectionModel pb) {
@@ -37,7 +35,6 @@ class RecentConnection {
       specificServerName: pb.specificServerName,
       specificServer: pb.specificServer,
       connectionType: pb.connectionType,
-      isVirtual: pb.isVirtual,
     );
   }
 
@@ -45,15 +42,14 @@ class RecentConnection {
   String toString() {
     return 'RecentConnection(country: $country, city: $city, group: $group, '
         'countryCode: $countryCode, specificServerName: $specificServerName, '
-        'specificServer: $specificServer, connectionType: $connectionType, virtual: $isVirtual)';
+        'specificServer: $specificServer, connectionType: $connectionType)';
   }
 
   final Map<cfg.ServerGroup, String> _groupTitles = {
     cfg.ServerGroup.DOUBLE_VPN: t.ui.doubleVpn,
     cfg.ServerGroup.ONION_OVER_VPN: t.ui.onionOverVpn,
     cfg.ServerGroup.STANDARD_VPN_SERVERS: t.ui.standardVpnServer,
-    cfg.ServerGroup.P2P: t.ui.p2p,
-    cfg.ServerGroup.NW_OBFUSCATED: t.ui.obfuscatedServers,
+    cfg.ServerGroup.OBFUSCATED: t.ui.obfuscatedServers,
     cfg.ServerGroup.DEDICATED_IP: t.ui.dedicatedIp,
     cfg.ServerGroup.DEDICATED_SERVER: t.ui.dedicatedServer,
   };

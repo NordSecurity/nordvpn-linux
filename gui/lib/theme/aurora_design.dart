@@ -100,6 +100,10 @@ abstract class SemanticColors {
   Color get bgGradientPrimaryEnd;
   Color get bgGradientSecondaryStart;
   Color get bgGradientSecondaryEnd;
+  Color get bgGradientProductAntiVirus;
+  Color get bgGradientProductScamProtection;
+  Color get bgGradientProductDarkWebMonitor;
+  Color get bgGradientProductMeshnet;
   Color get bgSkeletonStart;
   Color get bgSkeletonEnd;
   Color get bgChartData1;
@@ -211,6 +215,18 @@ final class AppSemanticColorsLight implements SemanticColors {
 
   @override
   Color get bgGradientSecondaryEnd => Color(0x00FFFFFF);
+
+  @override
+  Color get bgGradientProductAntiVirus => Color(0xFFEFE4FB);
+
+  @override
+  Color get bgGradientProductScamProtection => Color(0xFFF8ECDF);
+
+  @override
+  Color get bgGradientProductDarkWebMonitor => Color(0xFFF5DDDC);
+
+  @override
+  Color get bgGradientProductMeshnet => Color(0xFFD7E3F6);
 
   @override
   Color get bgSkeletonStart => appCoreColors.neutral150;
@@ -373,6 +389,18 @@ final class AppSemanticColorsDark implements SemanticColors {
 
   @override
   Color get bgGradientSecondaryEnd => Color(0x001D1E20);
+
+  @override
+  Color get bgGradientProductAntiVirus => Color(0xFF45226E);
+
+  @override
+  Color get bgGradientProductScamProtection => Color(0xFF5F4B30);
+
+  @override
+  Color get bgGradientProductDarkWebMonitor => Color(0xFF4B0D07);
+
+  @override
+  Color get bgGradientProductMeshnet => Color(0xFF172A62);
 
   @override
   Color get bgSkeletonStart => appCoreColors.neutral900;

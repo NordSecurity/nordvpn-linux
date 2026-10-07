@@ -40,6 +40,14 @@ final class _LoadingCheckboxState extends State<LoadingCheckbox> {
   }
 
   @override
+  void didUpdateWidget(LoadingCheckbox oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.value != widget.value && !_loadingManager.isLoading) {
+      _value = widget.value;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = context.appTheme;
     return GestureDetector(

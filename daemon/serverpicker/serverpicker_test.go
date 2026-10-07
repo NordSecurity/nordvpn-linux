@@ -166,29 +166,29 @@ func TestResolveServerGroup(t *testing.T) {
 			err:           nil,
 		},
 		{
-			input:         NewSearchParams("", "p2p", ""),
-			expectedGroup: config.ServerGroup_P2P,
+			input:         NewSearchParams("", "double_vpn", ""),
+			expectedGroup: config.ServerGroup_DOUBLE_VPN,
 			err:           nil,
 		},
 		{
-			input:         NewSearchParams("p2p", "", ""),
+			input:         NewSearchParams("double_vpn", "", ""),
 			tagChanged:    true,
-			expectedGroup: config.ServerGroup_P2P,
+			expectedGroup: config.ServerGroup_DOUBLE_VPN,
 			err:           nil,
 		},
 		{
-			input:         NewSearchParams("p2p", "p2p", ""),
+			input:         NewSearchParams("double_vpn", "double_vpn", ""),
 			expectedGroup: config.ServerGroup_UNDEFINED,
 			err:           internal.ErrDoubleGroup,
 		},
 		{
-			input:         NewSearchParams("p2p", "quantum_vpn", ""),
+			input:         NewSearchParams("double_vpn", "quantum_vpn", ""),
 			expectedGroup: config.ServerGroup_UNDEFINED,
 			err:           internal.ErrGroupDoesNotExist,
 		},
 		{
-			input:         NewSearchParams("quantum_vpn", "p2p", ""),
-			expectedGroup: config.ServerGroup_P2P,
+			input:         NewSearchParams("quantum_vpn", "double_vpn", ""),
+			expectedGroup: config.ServerGroup_DOUBLE_VPN,
 			err:           nil,
 		},
 		{
@@ -197,7 +197,7 @@ func TestResolveServerGroup(t *testing.T) {
 			err:           nil,
 		},
 		{
-			input:         NewSearchParams("p2p us1234", "", ""),
+			input:         NewSearchParams("double_vpn us1234", "", ""),
 			expectedGroup: config.ServerGroup_UNDEFINED,
 			err:           nil,
 		},
@@ -276,9 +276,9 @@ func TestSearchGroup(t *testing.T) {
 		},
 		{
 			name:      "other groups are never touched",
-			requested: config.ServerGroup_P2P,
+			requested: config.ServerGroup_DOUBLE_VPN,
 			tech:      config.Technology_NORDWHISPER,
-			expected:  config.ServerGroup_P2P,
+			expected:  config.ServerGroup_DOUBLE_VPN,
 		},
 		{
 			name:      "standard stays standard",
@@ -305,7 +305,7 @@ func TestEffectiveGroups(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	standard := core.Group{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"}
-	p2p := core.Group{ID: config.ServerGroup_P2P, Title: "P2P"}
+	doubleVpn := core.Group{ID: config.ServerGroup_DOUBLE_VPN, Title: "P2P"}
 	xor := core.Group{ID: config.ServerGroup_OVPN_OBFUSCATED, Title: "Obfuscated"}
 	obfuscated := core.Group{ID: config.ServerGroup_NW_OBFUSCATED, Title: ObfuscatedServersGroupTitle}
 
@@ -323,27 +323,27 @@ func TestEffectiveGroups(t *testing.T) {
 	}{
 		{
 			name:         "standard nordwhisper server over nordwhisper offers the obfuscated group too",
-			groups:       core.Groups{standard, p2p},
+			groups:       core.Groups{standard},
 			technologies: nordWhisper,
 			status:       core.Online,
 			tech:         config.Technology_NORDWHISPER,
-			expected:     core.Groups{standard, p2p, obfuscated},
+			expected:     core.Groups{standard, obfuscated},
 		},
 		{
 			name:         "standard server over nordlynx is left alone",
-			groups:       core.Groups{standard, p2p},
+			groups:       core.Groups{standard},
 			technologies: nordWhisper,
 			status:       core.Online,
 			tech:         config.Technology_NORDLYNX,
-			expected:     core.Groups{standard, p2p},
+			expected:     core.Groups{standard},
 		},
 		{
 			name:         "non-standard nordwhisper server over nordwhisper is not obfuscated",
-			groups:       core.Groups{p2p},
+			groups:       core.Groups{doubleVpn},
 			technologies: nordWhisper,
 			status:       core.Online,
 			tech:         config.Technology_NORDWHISPER,
-			expected:     core.Groups{p2p},
+			expected:     core.Groups{doubleVpn},
 		},
 		{
 			name:         "standard server not reachable over nordwhisper is not obfuscated",
@@ -436,7 +436,7 @@ func TestGroupConvert(t *testing.T) {
 		},
 		{
 			"P2P",
-			config.ServerGroup_P2P,
+			config.ServerGroup_UNDEFINED,
 		},
 		{
 			"Europe",
@@ -455,7 +455,7 @@ func TestGroupConvert(t *testing.T) {
 			config.ServerGroup_UNDEFINED,
 		},
 		{
-			"neflix & chill",
+			"netflix & chill",
 			config.ServerGroup_UNDEFINED,
 		},
 	}
@@ -610,8 +610,8 @@ func TestServerTagFromString(t *testing.T) {
 				},
 			},
 			tag:      "",
-			group:    config.ServerGroup_P2P,
-			expected: core.ServerTag{Action: core.ServerBySpeed, ID: int64(config.ServerGroup_P2P)},
+			group:    config.ServerGroup_DOUBLE_VPN,
+			expected: core.ServerTag{Action: core.ServerBySpeed, ID: int64(config.ServerGroup_DOUBLE_VPN)},
 			hasError: false,
 		},
 		{
@@ -639,7 +639,7 @@ func TestServerTagFromString(t *testing.T) {
 				},
 			},
 			tag:      "Spain",
-			group:    config.ServerGroup_P2P,
+			group:    config.ServerGroup_DOUBLE_VPN,
 			expected: core.ServerTag{Action: core.ServerByCountry, ID: 202},
 			hasError: false,
 		},
@@ -768,7 +768,6 @@ func TestPickServer(t *testing.T) {
 		tech                 config.Technology
 		tag                  string
 		group                string
-		onlyPhysicServers    bool
 		excludedServer       string
 		expectedServerName   string
 		expectedRemoteServer bool
@@ -822,22 +821,6 @@ func TestPickServer(t *testing.T) {
 			tag:                  "de3",
 			expectedServerName:   "Germany #3",
 			expectedRemoteServer: true,
-		},
-		{
-			name:              "find server when virtual locations are disabled",
-			api:               core_test.NewMockFailingServersAPI(errors.New("500")),
-			servers:           core_test.ServersList(),
-			tech:              config.Technology_NORDLYNX,
-			onlyPhysicServers: true,
-		},
-		{
-			name:              "virtual location disabled returns error when only virtual servers match",
-			api:               core_test.NewMockFailingServersAPI(errors.New("500")),
-			servers:           core_test.ServersList(),
-			tech:              config.Technology_NORDLYNX,
-			tag:               "algeria",
-			onlyPhysicServers: true,
-			expectedError:     internal.ErrVirtualServerSelected,
 		},
 		{
 			name:          "can't find a server",
@@ -913,9 +896,6 @@ func TestPickServer(t *testing.T) {
 			if test.tech == config.Technology_OPENVPN {
 				cfg.AutoConnectData.Protocol = config.Protocol_TCP
 			}
-			if test.onlyPhysicServers {
-				cfg.VirtualLocation.Set(false)
-			}
 
 			serverSelection, err := PickServer(
 				test.api,
@@ -945,15 +925,15 @@ func TestGetServerParameters(t *testing.T) {
 	}{
 		{
 			name:     "group found for group name",
-			group:    "p2p",
+			group:    "double_vpn",
 			tag:      "",
-			expected: ServerParameters{Group: config.ServerGroup_P2P},
+			expected: ServerParameters{Group: config.ServerGroup_DOUBLE_VPN},
 		},
 		{
 			name:     "group name is in tag field",
 			group:    "",
-			tag:      "p2p",
-			expected: ServerParameters{Group: config.ServerGroup_P2P},
+			tag:      "double_vpn",
+			expected: ServerParameters{Group: config.ServerGroup_DOUBLE_VPN},
 		},
 		{
 			name:     "country name",
@@ -969,9 +949,9 @@ func TestGetServerParameters(t *testing.T) {
 		},
 		{
 			name:     "country code + group",
-			group:    "p2p",
+			group:    "double_vpn",
 			tag:      "De",
-			expected: ServerParameters{Group: config.ServerGroup_P2P, Country: "Germany", CountryCode: "DE"},
+			expected: ServerParameters{Group: config.ServerGroup_DOUBLE_VPN, Country: "Germany", CountryCode: "DE"},
 		},
 		{
 			name:     "city name",
@@ -993,9 +973,9 @@ func TestGetServerParameters(t *testing.T) {
 		},
 		{
 			name:     "country code + city + group",
-			group:    "p2p",
+			group:    "double_vpn",
 			tag:      "de berlin",
-			expected: ServerParameters{Group: config.ServerGroup_P2P, Country: "Germany", CountryCode: "DE", City: "Berlin"},
+			expected: ServerParameters{Group: config.ServerGroup_DOUBLE_VPN, Country: "Germany", CountryCode: "DE", City: "Berlin"},
 		},
 		{
 			name:     "server name",
@@ -1005,9 +985,9 @@ func TestGetServerParameters(t *testing.T) {
 		},
 		{
 			name:     "server name + group",
-			group:    "p2p",
+			group:    "double_vpn",
 			tag:      "de123",
-			expected: ServerParameters{Group: config.ServerGroup_P2P, ServerName: "de123"},
+			expected: ServerParameters{Group: config.ServerGroup_DOUBLE_VPN, ServerName: "de123"},
 		},
 	}
 
@@ -1128,22 +1108,22 @@ func TestNewSearchParams(t *testing.T) {
 		{
 			name:           "plain values are kept as is",
 			tag:            "it rome",
-			group:          "P2P",
+			group:          "Double_VPN",
 			excludedServer: "it1.nordvpn.com",
 			expected: SearchParams{
 				Tag:            "it rome",
-				Group:          "P2P",
+				Group:          "Double_VPN",
 				ExcludedServer: "it1.nordvpn.com",
 			},
 		},
 		{
 			name:           "leading and trailing whitespace is trimmed from tag and group",
 			tag:            "  it rome  ",
-			group:          "  P2P ",
+			group:          "  Double_VPN ",
 			excludedServer: "it1.nordvpn.com",
 			expected: SearchParams{
 				Tag:            "it rome",
-				Group:          "P2P",
+				Group:          "Double_VPN",
 				ExcludedServer: "it1.nordvpn.com",
 			},
 		},

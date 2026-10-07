@@ -20,7 +20,7 @@ func (*dummyAnalytics) Init(config.AnalyticsConsent) error             { return 
 func (*dummyAnalytics) NotifyKillswitch(bool) error                    { return nil }
 func (*dummyAnalytics) NotifyAutoconnect(bool) error                   { return nil }
 func (*dummyAnalytics) NotifyDNS(events.DataDNS) error                 { return nil }
-func (*dummyAnalytics) NotifyThreatProtectionLite(bool) error          { return nil }
+func (*dummyAnalytics) NotifyRealTimeProtection(bool) error            { return nil }
 func (*dummyAnalytics) NotifyProtocol(config.Protocol) error           { return nil }
 func (*dummyAnalytics) NotifyAllowlist(events.DataAllowlist) error     { return nil }
 func (*dummyAnalytics) NotifyTechnology(config.Technology) error       { return nil }
@@ -46,7 +46,6 @@ func (*dummyAnalytics) NotifyDedicatedServerStatus(
 	return nil
 }
 func (*dummyAnalytics) NotifyLANDiscovery(bool) error                    { return nil }
-func (*dummyAnalytics) NotifyVirtualLocation(bool) error                 { return nil }
 func (*dummyAnalytics) NotifyPostquantumVpn(bool) error                  { return nil }
 func (*dummyAnalytics) NotifyAppStartTime(int64) error                   { return nil }
 func (*dummyAnalytics) OnPauseCancelled(events.DataPauseCancelled) error { return nil }

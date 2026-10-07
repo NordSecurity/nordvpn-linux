@@ -22,13 +22,12 @@ func TestRPCCities(t *testing.T) {
 	defer testsCleanup()
 
 	tests := []struct {
-		name                  string
-		cm                    config.Manager
-		servers               core.Servers
-		disableVirtualServers bool
-		countryName           string
-		statusCode            int64
-		expected              []*pb.ServerGroup
+		name        string
+		cm          config.Manager
+		servers     core.Servers
+		countryName string
+		statusCode  int64
+		expected    []*pb.ServerGroup
 	}{
 		{
 			name:        "missing configuration file",
@@ -51,42 +50,13 @@ func TestRPCCities(t *testing.T) {
 			expected:    []*pb.ServerGroup{},
 		},
 		{
-			name:        "results for country name with virtual servers only",
+			name:        "results for country name",
 			cm:          newMockConfigManager(),
 			servers:     coremock.ServersList(),
 			countryName: "alGeria",
 			statusCode:  internal.CodeSuccess,
 			expected: []*pb.ServerGroup{
-				{Name: "Algiers", VirtualLocation: true},
-			},
-		},
-		{
-			name:        "results for country code with virtual servers only",
-			cm:          newMockConfigManager(),
-			servers:     coremock.ServersList(),
-			countryName: "dz",
-			statusCode:  internal.CodeSuccess,
-			expected: []*pb.ServerGroup{
-				{Name: "Algiers", VirtualLocation: true},
-			},
-		},
-		{
-			name:                  "no servers for country with virtual servers only and virtual location is off",
-			cm:                    newMockConfigManager(),
-			servers:               coremock.ServersList(),
-			countryName:           "dZ",
-			disableVirtualServers: true,
-			statusCode:            internal.CodeSuccess,
-			expected:              []*pb.ServerGroup{},
-		},
-		{
-			name:        "results for country code with physical servers only",
-			cm:          newMockConfigManager(),
-			servers:     coremock.ServersList(),
-			countryName: "fR",
-			statusCode:  internal.CodeSuccess,
-			expected: []*pb.ServerGroup{
-				{Name: "Paris", VirtualLocation: false},
+				{Name: "Algiers"},
 			},
 		},
 	}
@@ -99,7 +69,6 @@ func TestRPCCities(t *testing.T) {
 			if cm, ok := test.cm.(*mockConfigManager); ok {
 				cm.c.AutoConnectData.Protocol = config.Protocol_UDP
 				cm.c.Technology = config.Technology_NORDLYNX
-				cm.c.VirtualLocation.Set(!test.disableVirtualServers)
 			}
 
 			rpc := RPC{

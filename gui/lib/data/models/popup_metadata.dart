@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:nordvpn/internal/markdown_text.dart';
 
 // Base class for popups metadata, specifies `id`, optional `title`
 // and popup `message`.
@@ -16,6 +17,19 @@ sealed class PopupMetadata {
     this.title,
     this.onShown,
   });
+
+  MarkdownText? _parsedMessage;
+
+  MarkdownText parsedMessage(WidgetRef ref) {
+    final raw = message(ref);
+    if (_parsedMessage?.raw == raw) return _parsedMessage!;
+
+    return _parsedMessage = MarkdownText.parse(raw);
+  }
+
+  // Provides parsed message in a form that's a11y friendly
+  // Links are announced as "Link " without their URL
+  String semanticsMessage(WidgetRef ref) => parsedMessage(ref).semanticsText;
 
   @override
   bool operator ==(Object other) {

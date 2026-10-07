@@ -11,8 +11,6 @@ extension Conversions on ConnectRequest {
         return config.ServerGroup.DEDICATED_IP;
       case onionOverVpn:
         return config.ServerGroup.ONION_OVER_VPN;
-      case "p2p":
-        return config.ServerGroup.P2P;
       case obfuscatedServers:
         return config.ServerGroup.NW_OBFUSCATED;
       default:

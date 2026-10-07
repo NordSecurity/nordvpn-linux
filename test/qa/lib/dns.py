@@ -7,14 +7,10 @@ import sh
 DNS_NORD = ["103.86.96.100", "103.86.99.100"]
 
 # Used for test parametrization.
-DNS_TPL = ["103.86.96.108", "103.86.99.108"]
+DNS_RTP = ["103.86.96.108", "103.86.99.108"]
 
-# Used for test parametrization, when the same test has to be run with different Threat Protection Lite alias.
-TPL_ALIAS = [
-    "threatprotectionlite",
-    "tplite",
-    "tpl",
-    "cybersec",
+# Used for test parametrization, when the same test has to be run with different Real Time Protection alias.
+RTP_ALIAS = [
     "protection",
     "protect"
 ]
@@ -27,7 +23,7 @@ DNS_CASES_CUSTOM = [DNS_CASE_CUSTOM_SINGLE, DNS_CASE_CUSTOM_DOUBLE, DNS_CASE_CUS
 
 ALL_TEST_DNS_ADDRESSES = \
     DNS_NORD + \
-    DNS_TPL + \
+    DNS_RTP + \
     DNS_CASE_CUSTOM_SINGLE.split(" ") + \
     DNS_CASE_CUSTOM_DOUBLE.split(" ") + \
     DNS_CASE_CUSTOM_TRIPLE.split(" ")
@@ -42,7 +38,7 @@ DNS_CASES_ERROR = [
 DNS_MSG_ERROR_ALREADY_SET = "DNS is already set to %s."
 DNS_MSG_ERROR_ALREADY_DISABLED = "DNS is already set to disabled."
 
-TPL_MSG_WARNING_DISABLING = "Turning off Real-time protection"
+RTP_MSG_WARNING_DISABLING = "Turning off Real-time protection"
 
 DNS_MSG_WARNING_DISABLING = "Disabling DNS."
 
@@ -80,11 +76,11 @@ def get_dns_servers():
     return dns.resolver.Resolver().nameservers
 
 
-def get_tpl_alias() -> str:
+def get_rtp_alias() -> str:
     """
-    This function randomly picks an alias from the predefined list 'TPL_ALIAS' and returns it.
+    This function randomly picks an alias from the predefined list 'RTP_ALIAS' and returns it.
 
     Returns:
-        str: A randomly selected alias from TPL_ALIAS.
+        str: A randomly selected alias from RTP_ALIAS.
     """
-    return random.choice(TPL_ALIAS)
+    return random.choice(RTP_ALIAS)

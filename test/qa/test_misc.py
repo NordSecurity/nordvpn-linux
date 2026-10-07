@@ -116,7 +116,7 @@ def test_account_output_contains_all_fields():
 
 def test_account_not_logged_in():
     """Verify account command shows error when not logged in."""
-    sh.nordvpn.logout("--persist-token", _ok_code=[0, 1])
+    sh.nordvpn.logout(_ok_code=[0, 1])
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.account()

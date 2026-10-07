@@ -42,9 +42,6 @@ final class ServerListItemFactory {
       subtitle = t.ui.citiesAvailable(n: country.cities.length);
     } else {
       subtitle = country.cities.first.localizedName;
-      if (country.isVirtual) {
-        subtitle += " - ${t.ui.virtual}";
-      }
     }
 
     assert(
@@ -117,8 +114,7 @@ final class ServerListItemFactory {
       (group) => group.city == status.city,
     );
     final groupMatches =
-        serverType?.toServerGroup() == status.connectionParameters.group ||
-        status.connectionParameters.group == ServerGroup.P2P;
+        serverType?.toServerGroup() == status.connectionParameters.group;
 
     if (status.connectionParameters.group != ServerGroup.UNDEFINED) {
       return (countryMatches || anyCityMatches) && groupMatches;

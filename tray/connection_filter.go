@@ -8,9 +8,8 @@ import (
 
 // connectionSettings represents a part of VPN connection configuration parameters
 type connectionSettings struct {
-	Protocol        config.Protocol
-	Technology      config.Technology
-	VirtualLocation bool
+	Protocol   config.Protocol
+	Technology config.Technology
 }
 
 // connectionSettingsChangeSensor monitors changes to connection settings

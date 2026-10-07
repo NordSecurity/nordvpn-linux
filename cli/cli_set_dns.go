@@ -52,7 +52,7 @@ func handleSetDNSStatus(code pb.SetDNSStatus, dns []string) error {
 		return errors.New(SetDNSInvalidAddress)
 	case pb.SetDNSStatus_TOO_MANY_VALUES:
 		return errors.New(SetDNSTooManyValues)
-	case pb.SetDNSStatus_DNS_CONFIGURED_TPL_RESET:
+	case pb.SetDNSStatus_DNS_CONFIGURED_RTP_RESET:
 		color.Yellow(SetDNSDisableRealTimeProtection)
 		fallthrough
 	case pb.SetDNSStatus_DNS_CONFIGURED:

@@ -166,10 +166,6 @@ func (s *smartClientAPI) Base() string {
 	return s.wrapped.Base()
 }
 
-func (s *smartClientAPI) Plans() (*Plans, error) {
-	return s.wrapped.Plans()
-}
-
 func (s *smartClientAPI) CreateUser(email, password string) (*UserCreateResponse, error) {
 	return s.wrapped.CreateUser(email, password)
 }

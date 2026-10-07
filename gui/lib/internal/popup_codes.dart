@@ -11,7 +11,6 @@ final class PopupCodes {
   static const resetSettingsAndDisconnect = 7008;
   static const reconnectToChangeProtocol = 7009;
   static const reconnectToChangePostQuantum = 7011;
-  static const reconnectToChangeVirtualLocation = 7012;
 
   PopupCodes._();
 }

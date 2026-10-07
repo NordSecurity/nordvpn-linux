@@ -108,6 +108,8 @@ func (c *cmd) SetAutoConnect(ctx *cli.Context) error {
 		return errors.New(internal.ServerUnavailableErrorMessage)
 	case internal.CodeDedicatedServersServerNotSetUp:
 		return errors.New(c.injectLinkIntoMessage(client.DedicatedServersSetupURL, client.DedicatedServersSetupURLLogin, DedicatedServersNoServersAvailable))
+	case internal.CodeP2PDeprecated:
+		return errors.New(internal.P2PDeprecatedMessage)
 	case internal.CodeSuccess:
 		color.Green(fmt.Sprintf(MsgSetSuccess, "Auto-connect", nstrings.GetBoolLabel(flag)))
 	}

@@ -7,13 +7,8 @@ import 'package:nordvpn/pb/daemon/config/group.pb.dart' as config;
 final class ServerInfo {
   final int id;
   final String hostname;
-  final bool isVirtual;
 
-  ServerInfo({
-    required this.id,
-    required this.hostname,
-    required this.isVirtual,
-  });
+  ServerInfo({required this.id, required this.hostname});
 
   String get serverNumber => RegExp(r'\d+').firstMatch(hostname)?[0] ?? "";
 
@@ -33,7 +28,6 @@ enum ServerType {
   dedicatedServer,
   doubleVpn,
   onionOverVpn,
-  p2p,
   standardVpn,
   obfuscated,
 }
@@ -49,8 +43,6 @@ extension Daemon on ServerType {
         return dedicatedServer;
       case ServerType.onionOverVpn:
         return onionOverVpn;
-      case ServerType.p2p:
-        return p2p;
       case ServerType.obfuscated:
         return obfuscatedServers;
       case ServerType.standardVpn:
@@ -68,8 +60,6 @@ extension Daemon on ServerType {
         return config.ServerGroup.DEDICATED_SERVER;
       case ServerType.onionOverVpn:
         return config.ServerGroup.ONION_OVER_VPN;
-      case ServerType.p2p:
-        return config.ServerGroup.P2P;
       case ServerType.standardVpn:
         return config.ServerGroup.STANDARD_VPN_SERVERS;
       case ServerType.obfuscated:
@@ -82,7 +72,6 @@ const Map<config.ServerGroup, ServerType> _groupTitles = {
   config.ServerGroup.DOUBLE_VPN: ServerType.doubleVpn,
   config.ServerGroup.ONION_OVER_VPN: ServerType.onionOverVpn,
   config.ServerGroup.STANDARD_VPN_SERVERS: ServerType.standardVpn,
-  config.ServerGroup.P2P: ServerType.p2p,
   config.ServerGroup.NW_OBFUSCATED: ServerType.obfuscated,
   config.ServerGroup.DEDICATED_IP: ServerType.dedicatedIP,
   config.ServerGroup.DEDICATED_SERVER: ServerType.dedicatedServer,

@@ -44,8 +44,7 @@ func selectServer(
 		case errors.Is(err, internal.ErrTagDoesNotExist),
 			errors.Is(err, internal.ErrGroupDoesNotExist),
 			errors.Is(err, internal.ErrServerIsUnavailable),
-			errors.Is(err, internal.ErrDoubleGroup),
-			errors.Is(err, internal.ErrVirtualServerSelected):
+			errors.Is(err, internal.ErrDoubleGroup):
 			return serverpicker.ServerSelection{}, err
 
 		case errors.Is(err, serverpicker.ErrDedicatedIPServer):

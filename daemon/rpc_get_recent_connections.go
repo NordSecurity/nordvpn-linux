@@ -32,13 +32,16 @@ func (r *RPC) GetRecentConnections(
 		if returnOnlyObfuscatedRecent != isObfuscated {
 			continue
 		}
-		// filter by virtual location setting
-		if !cfg.VirtualLocation.Get() && v.IsVirtual {
+		if config.IsRegionalGroup(v.Group) {
 			continue
 		}
 
-		if config.IsRegionalGroup(v.Group) {
-			continue
+		// This is a safe-guard in case the migration failed
+		if config.IsDeprecatedP2PGroup(v.Group) {
+			v.Group = config.ServerGroup_UNDEFINED
+			if v.Country == "" && v.City == "" {
+				continue
+			}
 		}
 
 		item := &pb.RecentConnectionModel{
@@ -49,7 +52,6 @@ func (r *RPC) GetRecentConnections(
 			SpecificServerName: v.SpecificServerName,
 			Group:              v.Group,
 			ConnectionType:     v.ConnectionType,
-			IsVirtual:          v.IsVirtual,
 		}
 		rcValues = append(rcValues, item)
 	}

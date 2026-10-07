@@ -361,11 +361,9 @@ class Ports extends $pb.GeneratedMessage {
 class ServerGroup extends $pb.GeneratedMessage {
   factory ServerGroup({
     $core.String? name,
-    $core.bool? virtualLocation,
   }) {
     final result = create();
     if (name != null) result.name = name;
-    if (virtualLocation != null) result.virtualLocation = virtualLocation;
     return result;
   }
 
@@ -383,8 +381,6 @@ class ServerGroup extends $pb.GeneratedMessage {
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'name')
-    ..aOB(2, _omitFieldNames ? '' : 'virtualLocation',
-        protoName: 'virtualLocation')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -414,15 +410,6 @@ class ServerGroup extends $pb.GeneratedMessage {
   $core.bool hasName() => $_has(0);
   @$pb.TagNumber(1)
   void clearName() => $_clearField(1);
-
-  @$pb.TagNumber(2)
-  $core.bool get virtualLocation => $_getBF(1);
-  @$pb.TagNumber(2)
-  set virtualLocation($core.bool value) => $_setBool(1, value);
-  @$pb.TagNumber(2)
-  $core.bool hasVirtualLocation() => $_has(1);
-  @$pb.TagNumber(2)
-  void clearVirtualLocation() => $_clearField(2);
 }
 
 class ServerGroupsList extends $pb.GeneratedMessage {

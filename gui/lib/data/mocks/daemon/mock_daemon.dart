@@ -285,24 +285,16 @@ final class MockDaemon extends DaemonServiceBase {
   }
 
   @override
-  Future<SetThreatProtectionLiteResponse> setThreatProtectionLite(
+  Future<SetRealTimeProtectionResponse> setRealTimeProtection(
     ServiceCall call,
-    SetThreatProtectionLiteRequest request,
+    SetRealTimeProtectionRequest request,
   ) {
-    return appSettings.setThreatProtectionLite(request);
+    return appSettings.setRealTimeProtection(request);
   }
 
   @override
   Future<Payload> setTray(ServiceCall call, SetTrayRequest request) {
     return appSettings.setSettings(tray: request.tray);
-  }
-
-  @override
-  Future<Payload> setVirtualLocation(
-    ServiceCall call,
-    SetGenericRequest request,
-  ) {
-    return appSettings.setSettings(virtualLocation: request.enabled);
   }
 
   @override

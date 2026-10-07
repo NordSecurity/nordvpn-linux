@@ -210,136 +210,135 @@ class SetUint32Request extends $pb.GeneratedMessage {
   void clearValue() => $_clearField(1);
 }
 
-class SetThreatProtectionLiteRequest extends $pb.GeneratedMessage {
-  factory SetThreatProtectionLiteRequest({
-    $core.bool? threatProtectionLite,
+class SetRealTimeProtectionRequest extends $pb.GeneratedMessage {
+  factory SetRealTimeProtectionRequest({
+    $core.bool? realTimeProtection,
   }) {
     final result = create();
-    if (threatProtectionLite != null)
-      result.threatProtectionLite = threatProtectionLite;
+    if (realTimeProtection != null)
+      result.realTimeProtection = realTimeProtection;
     return result;
   }
 
-  SetThreatProtectionLiteRequest._();
+  SetRealTimeProtectionRequest._();
 
-  factory SetThreatProtectionLiteRequest.fromBuffer($core.List<$core.int> data,
+  factory SetRealTimeProtectionRequest.fromBuffer($core.List<$core.int> data,
           [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
       create()..mergeFromBuffer(data, registry);
-  factory SetThreatProtectionLiteRequest.fromJson($core.String json,
+  factory SetRealTimeProtectionRequest.fromJson($core.String json,
           [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
       create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-      _omitMessageNames ? '' : 'SetThreatProtectionLiteRequest',
+      _omitMessageNames ? '' : 'SetRealTimeProtectionRequest',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
-    ..aOB(1, _omitFieldNames ? '' : 'threatProtectionLite')
+    ..aOB(1, _omitFieldNames ? '' : 'realTimeProtection')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SetThreatProtectionLiteRequest clone() => deepCopy();
+  SetRealTimeProtectionRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SetThreatProtectionLiteRequest copyWith(
-          void Function(SetThreatProtectionLiteRequest) updates) =>
+  SetRealTimeProtectionRequest copyWith(
+          void Function(SetRealTimeProtectionRequest) updates) =>
       super.copyWith(
-              (message) => updates(message as SetThreatProtectionLiteRequest))
-          as SetThreatProtectionLiteRequest;
+              (message) => updates(message as SetRealTimeProtectionRequest))
+          as SetRealTimeProtectionRequest;
 
   @$core.override
   $pb.BuilderInfo get info_ => _i;
 
   @$core.pragma('dart2js:noInline')
-  static SetThreatProtectionLiteRequest create() =>
-      SetThreatProtectionLiteRequest._();
+  static SetRealTimeProtectionRequest create() =>
+      SetRealTimeProtectionRequest._();
   @$core.override
-  SetThreatProtectionLiteRequest createEmptyInstance() => create();
+  SetRealTimeProtectionRequest createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static SetThreatProtectionLiteRequest getDefault() => _defaultInstance ??=
-      $pb.GeneratedMessage.$_defaultFor<SetThreatProtectionLiteRequest>(create);
-  static SetThreatProtectionLiteRequest? _defaultInstance;
+  static SetRealTimeProtectionRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<SetRealTimeProtectionRequest>(create);
+  static SetRealTimeProtectionRequest? _defaultInstance;
 
   @$pb.TagNumber(1)
-  $core.bool get threatProtectionLite => $_getBF(0);
+  $core.bool get realTimeProtection => $_getBF(0);
   @$pb.TagNumber(1)
-  set threatProtectionLite($core.bool value) => $_setBool(0, value);
+  set realTimeProtection($core.bool value) => $_setBool(0, value);
   @$pb.TagNumber(1)
-  $core.bool hasThreatProtectionLite() => $_has(0);
+  $core.bool hasRealTimeProtection() => $_has(0);
   @$pb.TagNumber(1)
-  void clearThreatProtectionLite() => $_clearField(1);
+  void clearRealTimeProtection() => $_clearField(1);
 }
 
-enum SetThreatProtectionLiteResponse_Response {
+enum SetRealTimeProtectionResponse_Response {
   errorCode,
-  setThreatProtectionLiteStatus,
+  setRealTimeProtectionStatus,
   notSet
 }
 
-class SetThreatProtectionLiteResponse extends $pb.GeneratedMessage {
-  factory SetThreatProtectionLiteResponse({
+class SetRealTimeProtectionResponse extends $pb.GeneratedMessage {
+  factory SetRealTimeProtectionResponse({
     SetErrorCode? errorCode,
-    SetThreatProtectionLiteStatus? setThreatProtectionLiteStatus,
+    SetRealTimeProtectionStatus? setRealTimeProtectionStatus,
   }) {
     final result = create();
     if (errorCode != null) result.errorCode = errorCode;
-    if (setThreatProtectionLiteStatus != null)
-      result.setThreatProtectionLiteStatus = setThreatProtectionLiteStatus;
+    if (setRealTimeProtectionStatus != null)
+      result.setRealTimeProtectionStatus = setRealTimeProtectionStatus;
     return result;
   }
 
-  SetThreatProtectionLiteResponse._();
+  SetRealTimeProtectionResponse._();
 
-  factory SetThreatProtectionLiteResponse.fromBuffer($core.List<$core.int> data,
+  factory SetRealTimeProtectionResponse.fromBuffer($core.List<$core.int> data,
           [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
       create()..mergeFromBuffer(data, registry);
-  factory SetThreatProtectionLiteResponse.fromJson($core.String json,
+  factory SetRealTimeProtectionResponse.fromJson($core.String json,
           [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
       create()..mergeFromJson(json, registry);
 
-  static const $core.Map<$core.int, SetThreatProtectionLiteResponse_Response>
-      _SetThreatProtectionLiteResponse_ResponseByTag = {
-    1: SetThreatProtectionLiteResponse_Response.errorCode,
-    2: SetThreatProtectionLiteResponse_Response.setThreatProtectionLiteStatus,
-    0: SetThreatProtectionLiteResponse_Response.notSet
+  static const $core.Map<$core.int, SetRealTimeProtectionResponse_Response>
+      _SetRealTimeProtectionResponse_ResponseByTag = {
+    1: SetRealTimeProtectionResponse_Response.errorCode,
+    2: SetRealTimeProtectionResponse_Response.setRealTimeProtectionStatus,
+    0: SetRealTimeProtectionResponse_Response.notSet
   };
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-      _omitMessageNames ? '' : 'SetThreatProtectionLiteResponse',
+      _omitMessageNames ? '' : 'SetRealTimeProtectionResponse',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
     ..oo(0, [1, 2])
     ..aE<SetErrorCode>(1, _omitFieldNames ? '' : 'errorCode',
         enumValues: SetErrorCode.values)
-    ..aE<SetThreatProtectionLiteStatus>(
-        2, _omitFieldNames ? '' : 'setThreatProtectionLiteStatus',
-        enumValues: SetThreatProtectionLiteStatus.values)
+    ..aE<SetRealTimeProtectionStatus>(
+        2, _omitFieldNames ? '' : 'setRealTimeProtectionStatus',
+        enumValues: SetRealTimeProtectionStatus.values)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SetThreatProtectionLiteResponse clone() => deepCopy();
+  SetRealTimeProtectionResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SetThreatProtectionLiteResponse copyWith(
-          void Function(SetThreatProtectionLiteResponse) updates) =>
+  SetRealTimeProtectionResponse copyWith(
+          void Function(SetRealTimeProtectionResponse) updates) =>
       super.copyWith(
-              (message) => updates(message as SetThreatProtectionLiteResponse))
-          as SetThreatProtectionLiteResponse;
+              (message) => updates(message as SetRealTimeProtectionResponse))
+          as SetRealTimeProtectionResponse;
 
   @$core.override
   $pb.BuilderInfo get info_ => _i;
 
   @$core.pragma('dart2js:noInline')
-  static SetThreatProtectionLiteResponse create() =>
-      SetThreatProtectionLiteResponse._();
+  static SetRealTimeProtectionResponse create() =>
+      SetRealTimeProtectionResponse._();
   @$core.override
-  SetThreatProtectionLiteResponse createEmptyInstance() => create();
+  SetRealTimeProtectionResponse createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static SetThreatProtectionLiteResponse getDefault() => _defaultInstance ??=
-      $pb.GeneratedMessage.$_defaultFor<SetThreatProtectionLiteResponse>(
-          create);
-  static SetThreatProtectionLiteResponse? _defaultInstance;
+  static SetRealTimeProtectionResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<SetRealTimeProtectionResponse>(create);
+  static SetRealTimeProtectionResponse? _defaultInstance;
 
   @$pb.TagNumber(1)
   @$pb.TagNumber(2)
-  SetThreatProtectionLiteResponse_Response whichResponse() =>
-      _SetThreatProtectionLiteResponse_ResponseByTag[$_whichOneof(0)]!;
+  SetRealTimeProtectionResponse_Response whichResponse() =>
+      _SetRealTimeProtectionResponse_ResponseByTag[$_whichOneof(0)]!;
   @$pb.TagNumber(1)
   @$pb.TagNumber(2)
   void clearResponse() => $_clearField($_whichOneof(0));
@@ -354,25 +353,22 @@ class SetThreatProtectionLiteResponse extends $pb.GeneratedMessage {
   void clearErrorCode() => $_clearField(1);
 
   @$pb.TagNumber(2)
-  SetThreatProtectionLiteStatus get setThreatProtectionLiteStatus => $_getN(1);
+  SetRealTimeProtectionStatus get setRealTimeProtectionStatus => $_getN(1);
   @$pb.TagNumber(2)
-  set setThreatProtectionLiteStatus(SetThreatProtectionLiteStatus value) =>
+  set setRealTimeProtectionStatus(SetRealTimeProtectionStatus value) =>
       $_setField(2, value);
   @$pb.TagNumber(2)
-  $core.bool hasSetThreatProtectionLiteStatus() => $_has(1);
+  $core.bool hasSetRealTimeProtectionStatus() => $_has(1);
   @$pb.TagNumber(2)
-  void clearSetThreatProtectionLiteStatus() => $_clearField(2);
+  void clearSetRealTimeProtectionStatus() => $_clearField(2);
 }
 
 class SetDNSRequest extends $pb.GeneratedMessage {
   factory SetDNSRequest({
     $core.Iterable<$core.String>? dns,
-    $core.bool? threatProtectionLite,
   }) {
     final result = create();
     if (dns != null) result.dns.addAll(dns);
-    if (threatProtectionLite != null)
-      result.threatProtectionLite = threatProtectionLite;
     return result;
   }
 
@@ -390,7 +386,6 @@ class SetDNSRequest extends $pb.GeneratedMessage {
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
     ..pPS(2, _omitFieldNames ? '' : 'dns')
-    ..aOB(3, _omitFieldNames ? '' : 'threatProtectionLite')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -414,15 +409,6 @@ class SetDNSRequest extends $pb.GeneratedMessage {
 
   @$pb.TagNumber(2)
   $pb.PbList<$core.String> get dns => $_getList(0);
-
-  @$pb.TagNumber(3)
-  $core.bool get threatProtectionLite => $_getBF(1);
-  @$pb.TagNumber(3)
-  set threatProtectionLite($core.bool value) => $_setBool(1, value);
-  @$pb.TagNumber(3)
-  $core.bool hasThreatProtectionLite() => $_has(1);
-  @$pb.TagNumber(3)
-  void clearThreatProtectionLite() => $_clearField(3);
 }
 
 enum SetDNSResponse_Response { errorCode, setDnsStatus, notSet }

@@ -206,11 +206,10 @@ class Settings extends $pb.GeneratedMessage {
     $core.int? fwmark,
     $3.ConsentMode? analyticsConsent,
     $core.Iterable<$core.String>? dns,
-    $core.bool? threatProtectionLite,
+    $core.bool? realTimeProtection,
     $4.Protocol? protocol,
     $core.bool? lanDiscovery,
     $0.Allowlist? allowlist,
-    $core.bool? virtualLocation,
     $core.bool? postquantumVpn,
     UserSpecificSettings? userSettings,
     $core.bool? arpIgnore,
@@ -226,12 +225,11 @@ class Settings extends $pb.GeneratedMessage {
     if (fwmark != null) result.fwmark = fwmark;
     if (analyticsConsent != null) result.analyticsConsent = analyticsConsent;
     if (dns != null) result.dns.addAll(dns);
-    if (threatProtectionLite != null)
-      result.threatProtectionLite = threatProtectionLite;
+    if (realTimeProtection != null)
+      result.realTimeProtection = realTimeProtection;
     if (protocol != null) result.protocol = protocol;
     if (lanDiscovery != null) result.lanDiscovery = lanDiscovery;
     if (allowlist != null) result.allowlist = allowlist;
-    if (virtualLocation != null) result.virtualLocation = virtualLocation;
     if (postquantumVpn != null) result.postquantumVpn = postquantumVpn;
     if (userSettings != null) result.userSettings = userSettings;
     if (arpIgnore != null) result.arpIgnore = arpIgnore;
@@ -264,14 +262,12 @@ class Settings extends $pb.GeneratedMessage {
     ..aE<$3.ConsentMode>(9, _omitFieldNames ? '' : 'analyticsConsent',
         enumValues: $3.ConsentMode.values)
     ..pPS(10, _omitFieldNames ? '' : 'dns')
-    ..aOB(11, _omitFieldNames ? '' : 'threatProtectionLite')
+    ..aOB(11, _omitFieldNames ? '' : 'realTimeProtection')
     ..aE<$4.Protocol>(12, _omitFieldNames ? '' : 'protocol',
         enumValues: $4.Protocol.values)
     ..aOB(13, _omitFieldNames ? '' : 'lanDiscovery')
     ..aOM<$0.Allowlist>(14, _omitFieldNames ? '' : 'allowlist',
         subBuilder: $0.Allowlist.create)
-    ..aOB(16, _omitFieldNames ? '' : 'virtualLocation',
-        protoName: 'virtualLocation')
     ..aOB(17, _omitFieldNames ? '' : 'postquantumVpn')
     ..aOM<UserSpecificSettings>(18, _omitFieldNames ? '' : 'userSettings',
         subBuilder: UserSpecificSettings.create)
@@ -375,13 +371,13 @@ class Settings extends $pb.GeneratedMessage {
   $pb.PbList<$core.String> get dns => $_getList(8);
 
   @$pb.TagNumber(11)
-  $core.bool get threatProtectionLite => $_getBF(9);
+  $core.bool get realTimeProtection => $_getBF(9);
   @$pb.TagNumber(11)
-  set threatProtectionLite($core.bool value) => $_setBool(9, value);
+  set realTimeProtection($core.bool value) => $_setBool(9, value);
   @$pb.TagNumber(11)
-  $core.bool hasThreatProtectionLite() => $_has(9);
+  $core.bool hasRealTimeProtection() => $_has(9);
   @$pb.TagNumber(11)
-  void clearThreatProtectionLite() => $_clearField(11);
+  void clearRealTimeProtection() => $_clearField(11);
 
   @$pb.TagNumber(12)
   $4.Protocol get protocol => $_getN(10);
@@ -412,50 +408,41 @@ class Settings extends $pb.GeneratedMessage {
   @$pb.TagNumber(14)
   $0.Allowlist ensureAllowlist() => $_ensure(12);
 
-  @$pb.TagNumber(16)
-  $core.bool get virtualLocation => $_getBF(13);
-  @$pb.TagNumber(16)
-  set virtualLocation($core.bool value) => $_setBool(13, value);
-  @$pb.TagNumber(16)
-  $core.bool hasVirtualLocation() => $_has(13);
-  @$pb.TagNumber(16)
-  void clearVirtualLocation() => $_clearField(16);
-
   @$pb.TagNumber(17)
-  $core.bool get postquantumVpn => $_getBF(14);
+  $core.bool get postquantumVpn => $_getBF(13);
   @$pb.TagNumber(17)
-  set postquantumVpn($core.bool value) => $_setBool(14, value);
+  set postquantumVpn($core.bool value) => $_setBool(13, value);
   @$pb.TagNumber(17)
-  $core.bool hasPostquantumVpn() => $_has(14);
+  $core.bool hasPostquantumVpn() => $_has(13);
   @$pb.TagNumber(17)
   void clearPostquantumVpn() => $_clearField(17);
 
   @$pb.TagNumber(18)
-  UserSpecificSettings get userSettings => $_getN(15);
+  UserSpecificSettings get userSettings => $_getN(14);
   @$pb.TagNumber(18)
   set userSettings(UserSpecificSettings value) => $_setField(18, value);
   @$pb.TagNumber(18)
-  $core.bool hasUserSettings() => $_has(15);
+  $core.bool hasUserSettings() => $_has(14);
   @$pb.TagNumber(18)
   void clearUserSettings() => $_clearField(18);
   @$pb.TagNumber(18)
-  UserSpecificSettings ensureUserSettings() => $_ensure(15);
+  UserSpecificSettings ensureUserSettings() => $_ensure(14);
 
   @$pb.TagNumber(19)
-  $core.bool get arpIgnore => $_getBF(16);
+  $core.bool get arpIgnore => $_getBF(15);
   @$pb.TagNumber(19)
-  set arpIgnore($core.bool value) => $_setBool(16, value);
+  set arpIgnore($core.bool value) => $_setBool(15, value);
   @$pb.TagNumber(19)
-  $core.bool hasArpIgnore() => $_has(16);
+  $core.bool hasArpIgnore() => $_has(15);
   @$pb.TagNumber(19)
   void clearArpIgnore() => $_clearField(19);
 
   @$pb.TagNumber(20)
-  $core.bool get ech => $_getBF(17);
+  $core.bool get ech => $_getBF(16);
   @$pb.TagNumber(20)
-  set ech($core.bool value) => $_setBool(17, value);
+  set ech($core.bool value) => $_setBool(16, value);
   @$pb.TagNumber(20)
-  $core.bool hasEch() => $_has(17);
+  $core.bool hasEch() => $_has(16);
   @$pb.TagNumber(20)
   void clearEch() => $_clearField(20);
 }

@@ -102,10 +102,6 @@ func ServersList() core.Servers {
 
 	standardGroups := core.Groups{
 		core.Group{
-			ID:    config.ServerGroup_P2P,
-			Title: "P2P",
-		},
-		core.Group{
 			ID:    config.ServerGroup_DOUBLE_VPN,
 			Title: "Double VPN",
 		},
@@ -134,17 +130,6 @@ func ServersList() core.Servers {
 		core.Group{
 			ID:    config.ServerGroup_STANDARD_VPN_SERVERS,
 			Title: "Standard VPN Servers",
-		},
-	}
-
-	virtualServer := []core.Specification{
-		{
-			Identifier: core.VirtualLocation,
-			Values: []struct {
-				Value string "json:\"value\""
-			}{
-				{Value: "true"},
-			},
 		},
 	}
 
@@ -249,8 +234,7 @@ func ServersList() core.Servers {
 					},
 				},
 			},
-			Specifications: virtualServer,
-			Groups:         standardGroups,
+			Groups: standardGroups,
 		},
 		core.Server{
 			ID:           5,
@@ -346,8 +330,7 @@ func ServersList() core.Servers {
 					},
 				},
 			},
-			Specifications: virtualServer,
-			Groups:         standardGroups,
+			Groups: standardGroups,
 		},
 		core.Server{
 			ID:           11,

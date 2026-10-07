@@ -64,9 +64,6 @@ func (f *filter) matches(m Model) bool {
 	if m.ConnectionType != f.target.ConnectionType {
 		return false
 	}
-	if m.IsVirtual != f.target.IsVirtual {
-		return false
-	}
 
 	if !f.excludeSpecificName && m.SpecificServerName != f.target.SpecificServerName {
 		return false

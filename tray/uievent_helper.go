@@ -12,7 +12,7 @@ func ItemValueFromServerGroup(group config.ServerGroup) pb.UIEvent_ItemValue {
 }
 
 // ItemValueFromRecentConnection determines the UI event item value from a RecentConnection.
-// Specialty groups (Double VPN, P2P, etc.) take priority over connection type as they
+// Specialty groups (Double VPN, Onion VPN, etc.) take priority over connection type as they
 // represent the user's primary intent. Falls back to CITY/COUNTRY for standard VPN.
 func ItemValueFromRecentConnection(conn *RecentConnection) pb.UIEvent_ItemValue {
 	if conn == nil {

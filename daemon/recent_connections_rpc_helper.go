@@ -74,7 +74,6 @@ func isSingleCityCountry(countryCode string, dm *DataManager, cfg config.Config)
 		countryCode,
 		cfg.Technology,
 		cfg.AutoConnectData.Protocol,
-		cfg.VirtualLocation.Get(),
 	)
 	if err != nil {
 		return false
@@ -103,10 +102,7 @@ func buildRecentConnectionModel(
 		}
 	}
 
-	recentModel := recents.Model{
-		ConnectionType: connectionType,
-		IsVirtual:      event.IsVirtualLocation,
-	}
+	recentModel := recents.Model{ConnectionType: connectionType}
 
 	// Populate model fields based on connection type
 	switch recentModel.ConnectionType {

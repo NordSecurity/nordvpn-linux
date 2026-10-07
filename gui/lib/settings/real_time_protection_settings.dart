@@ -33,7 +33,7 @@ class RealTimeProtectionSettings extends ConsumerWidget {
   ) {
     Future<bool> shouldChange(bool toValue) async {
       // when user tries to enable it, but Custom DNS is set, we need to disable
-      // Custom DNS first - ask the user and don't allow to switch TP here (it
+      // Custom DNS first - ask the user and don't allow to switch RTP here (it
       // will be done in popup)
       if (toValue && settings.customDnsServers.isNotEmpty) {
         ref

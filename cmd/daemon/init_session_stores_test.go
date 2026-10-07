@@ -131,9 +131,6 @@ func (m *mockRawClientAPI) Base() string {
 	return "https://api.test.com"
 }
 
-func (m *mockRawClientAPI) Plans() (*core.Plans, error) {
-	return &core.Plans{}, nil
-}
 func (m *mockRawClientAPI) CreateUser(email, password string) (*core.UserCreateResponse, error) {
 	return &core.UserCreateResponse{}, nil
 }

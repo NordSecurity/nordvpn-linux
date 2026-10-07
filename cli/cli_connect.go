@@ -164,8 +164,6 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 			rpcErr = errors.New(internal.GroupNonexistentErrorMessage)
 		case internal.CodeServerUnavailable:
 			rpcErr = errors.New(internal.ServerUnavailableErrorMessage)
-		case internal.CodeVirtualLocationDisabled:
-			rpcErr = errors.New(internal.SpecifiedServerIsVirtualLocation)
 		case internal.CodeDoubleGroupError:
 			rpcErr = errors.New(internal.DoubleGroupErrorMessage)
 		case internal.CodeTechnologyDisabled:
@@ -188,6 +186,8 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 			rpcErr = errors.New(c.injectLinkIntoMessage(client.DedicatedServersSetupURL, client.DedicatedServersSetupURLLogin, DedicatedServersNoServersAvailable))
 		case internal.CodeConnectionLimitReached:
 			rpcErr = errors.New(client.ENSConnectionLimitReached(core.CLIAppID))
+		case internal.CodeP2PDeprecated:
+			rpcErr = errors.New(internal.P2PDeprecatedMessage)
 		case internal.CodeVPNRunning:
 			color.Yellow(client.ConnectConnected)
 		case internal.CodeNothingToDo:

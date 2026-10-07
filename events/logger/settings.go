@@ -45,8 +45,8 @@ func (l *DaemonSettingsSubscriber) NotifyKillswitch(data bool) error {
 	return nil
 }
 
-func (l *DaemonSettingsSubscriber) NotifyThreatProtectionLite(data bool) error {
-	printSettingsChange("ThreatProtectionLite", boolToString(data))
+func (l *DaemonSettingsSubscriber) NotifyRealTimeProtection(data bool) error {
+	printSettingsChange("RealTimeProtection", boolToString(data))
 	return nil
 }
 
@@ -77,11 +77,6 @@ func (l *DaemonSettingsSubscriber) NotifyDefaults(any) error {
 
 func (l *DaemonSettingsSubscriber) NotifyLANDiscovery(data bool) error {
 	printSettingsChange("LAN Discovery", boolToString(data))
-	return nil
-}
-
-func (l *DaemonSettingsSubscriber) NotifyVirtualLocation(data bool) error {
-	printSettingsChange("Virtual location", boolToString(data))
 	return nil
 }
 

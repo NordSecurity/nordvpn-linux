@@ -18,7 +18,6 @@ func cityModel(country, city, countryCode string) Model {
 		SpecificServer:     "",
 		SpecificServerName: "",
 		ConnectionType:     config.ServerSelectionRule_CITY,
-		IsVirtual:          false,
 	}
 }
 
@@ -32,7 +31,6 @@ func specificServerModel(country, city, countryCode, server, serverName string) 
 		ConnectionType:     config.ServerSelectionRule_SPECIFIC_SERVER,
 		SpecificServer:     server,
 		SpecificServerName: serverName,
-		IsVirtual:          false,
 	}
 }
 
@@ -70,7 +68,6 @@ func TestFilter_Apply_City_IgnoresSpecificServer(t *testing.T) {
 			ConnectionType:     config.ServerSelectionRule_CITY,
 			SpecificServer:     "uk123",
 			SpecificServerName: "United Kingdom #123",
-			IsVirtual:          false,
 		},
 		{
 			Country:            "UK",
@@ -80,7 +77,6 @@ func TestFilter_Apply_City_IgnoresSpecificServer(t *testing.T) {
 			ConnectionType:     config.ServerSelectionRule_CITY,
 			SpecificServer:     "uk456",
 			SpecificServerName: "United Kingdom #456",
-			IsVirtual:          false,
 		},
 	}
 

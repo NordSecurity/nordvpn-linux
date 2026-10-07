@@ -34,7 +34,7 @@ final class MockApplicationSettings extends CancelableDelayed {
   int? errorCode;
   SetErrorCode? errorLanDiscovery;
   SetErrorCode? errorSetProtocol;
-  SetErrorCode? errorTpLite;
+  SetErrorCode? errorRealTimeProtection;
   SetErrorCode? errorDns;
 
   SettingsResponse get settings => _settings;
@@ -46,7 +46,7 @@ final class MockApplicationSettings extends CancelableDelayed {
       protocol: value.hasProtocol() ? value.protocol : null,
       technology: value.hasTechnology() ? value.technology : null,
     );
-  }
+}
 
   Future<Payload> setSettings({
     ConsentMode? analyticsConsent,
@@ -54,7 +54,6 @@ final class MockApplicationSettings extends CancelableDelayed {
     int? fwmark,
     Technology? technology,
     Protocol? protocol,
-    bool? virtualLocation,
     bool? killSwitch,
     bool? lanDiscovery,
     bool? postquantumVpn,
@@ -82,12 +81,11 @@ final class MockApplicationSettings extends CancelableDelayed {
       fwmark: fwmark ?? val.fwmark,
       technology: technology ?? val.technology,
       protocol: protocol ?? val.protocol,
-      virtualLocation: virtualLocation ?? val.virtualLocation,
       killSwitch: killSwitch ?? val.killSwitch,
       lanDiscovery: lanDiscovery ?? val.lanDiscovery,
       postquantumVpn: postquantumVpn ?? val.postquantumVpn,
       routing: routing ?? val.routing,
-      threatProtectionLite: realTimeProtection ?? val.threatProtectionLite,
+      realTimeProtection: realTimeProtection ?? val.realTimeProtection,
       allowlist: allowList ?? val.allowlist,
       dns: dns ?? val.dns,
       autoConnectData: autoConnectData ?? val.autoConnectData,
@@ -126,7 +124,6 @@ final class MockApplicationSettings extends CancelableDelayed {
       fwmark: 0xAB12,
       technology: Technology.NORDLYNX,
       protocol: Protocol.UDP,
-      virtualLocation: true,
       killSwitch: false,
       lanDiscovery: false,
       notify: false,
@@ -299,39 +296,39 @@ final class MockApplicationSettings extends CancelableDelayed {
     );
   }
 
-  Future<SetThreatProtectionLiteResponse> setThreatProtectionLite(
-    SetThreatProtectionLiteRequest request,
+  Future<SetRealTimeProtectionResponse> setRealTimeProtection(
+    SetRealTimeProtectionRequest request,
   ) async {
     await delayed(delayDuration);
     if (error != null) {
       throw error!;
     }
 
-    if (errorTpLite != null) {
-      return SetThreatProtectionLiteResponse(errorCode: errorTpLite!);
+    if (errorRealTimeProtection != null) {
+      return SetRealTimeProtectionResponse(errorCode: errorRealTimeProtection!);
     }
 
     bool replaceDns =
-        _settings.data.dns.isNotEmpty && request.threatProtectionLite;
+        _settings.data.dns.isNotEmpty && request.realTimeProtection;
     final res = await setSettings(
-      realTimeProtection: request.threatProtectionLite,
+      realTimeProtection: request.realTimeProtection,
       dns: [],
     );
 
     if (res.type.toInt() != DaemonStatusCode.success) {
-      return SetThreatProtectionLiteResponse(errorCode: SetErrorCode.FAILURE);
+      return SetRealTimeProtectionResponse(errorCode: SetErrorCode.FAILURE);
     }
 
     if (replaceDns) {
-      return SetThreatProtectionLiteResponse(
-        setThreatProtectionLiteStatus:
-            SetThreatProtectionLiteStatus.TPL_CONFIGURED_DNS_RESET,
+      return SetRealTimeProtectionResponse(
+        setRealTimeProtectionStatus:
+            SetRealTimeProtectionStatus.RTP_CONFIGURED_DNS_RESET,
       );
     }
 
-    return SetThreatProtectionLiteResponse(
-      setThreatProtectionLiteStatus:
-          SetThreatProtectionLiteStatus.TPL_CONFIGURED,
+    return SetRealTimeProtectionResponse(
+      setRealTimeProtectionStatus:
+          SetRealTimeProtectionStatus.RTP_CONFIGURED,
     );
   }
 
@@ -349,16 +346,16 @@ final class MockApplicationSettings extends CancelableDelayed {
       return SetDNSResponse(setDnsStatus: SetDNSStatus.TOO_MANY_VALUES);
     }
 
-    final hasTpLite = _settings.data.threatProtectionLite;
+    final hasRealTimeProtection = _settings.data.realTimeProtection;
 
     final res = await setSettings(realTimeProtection: false, dns: request.dns);
     if (res.type.toInt() != DaemonStatusCode.success) {
       return SetDNSResponse(errorCode: SetErrorCode.FAILURE);
     }
 
-    if (hasTpLite) {
+    if (hasRealTimeProtection) {
       return SetDNSResponse(
-        setDnsStatus: SetDNSStatus.DNS_CONFIGURED_TPL_RESET,
+        setDnsStatus: SetDNSStatus.DNS_CONFIGURED_RTP_RESET,
       );
     }
     return SetDNSResponse(setDnsStatus: SetDNSStatus.DNS_CONFIGURED);

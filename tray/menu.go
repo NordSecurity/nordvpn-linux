@@ -48,6 +48,9 @@ const (
 	labelPause30Min            = "Pause for 30 minutes"
 	labelPause1H               = "Pause for 1 hour"
 	labelPause24H              = "Pause for 24 hours"
+	labelSecured               = "Secured"
+	labelNotSecured            = "Not secured"
+	labelConnecting            = "Connecting…"
 
 	// Menu item tooltips
 	tooltipConnectionSelection = "Choose connection type"
@@ -227,12 +230,15 @@ func buildConnectionSection(ti *Instance) {
 	systray.AddSeparator()
 }
 
-func vpnStateToStatusLabel(state pb.ConnectionState) string {
+func vpnStateToStatusLabel(state pb.ConnectionState, groupLabel string) string {
 	switch state {
 	case pb.ConnectionState_CONNECTED:
-		return "Secured"
+		if groupLabel != "" {
+			return fmt.Sprintf("%s: %s", labelSecured, groupLabel)
+		}
+		return labelSecured
 	case pb.ConnectionState_CONNECTING:
-		return "Connecting…"
+		return labelConnecting
 	case pb.ConnectionState_UNKNOWN_STATE:
 		fallthrough
 	case pb.ConnectionState_PAUSED:
@@ -240,7 +246,7 @@ func vpnStateToStatusLabel(state pb.ConnectionState) string {
 	case pb.ConnectionState_DISCONNECTED:
 		fallthrough
 	default:
-		return "Not secured"
+		return labelNotSecured
 	}
 }
 
@@ -248,7 +254,7 @@ func buildVPNStatusLabel(ti *Instance) {
 	if ti == nil {
 		return
 	}
-	label := vpnStateToStatusLabel(ti.state.vpnStatus)
+	label := vpnStateToStatusLabel(ti.state.vpnStatus, ti.state.vpnGroupLabel)
 	mStatus := systray.AddMenuItem(label, label)
 	mStatus.Disable()
 }
@@ -338,58 +344,48 @@ func buildPauseMenu(ti *Instance) {
 }
 
 func buildPauseTimer(ti *Instance) {
-	initialValue := ti.state.pauseRemainingSec
-	if initialValue <= 0 {
+	// Read current time from goroutine's tracker, not from stale initial state
+	ti.pauseTimerMu.RLock()
+
+	if ti.pauseTimer == nil {
+		ti.pauseTimerMu.RUnlock()
 		return
 	}
 
-	timer := systray.AddMenuItem(
-		buildTimerString(initialValue), "",
+	// Use goroutine's current tracked value for accurate countdown
+	currentMin := ti.pauseTimer.lastDisplayedMin
+	ti.pauseTimerMu.RUnlock()
+
+	if currentMin <= 0 {
+		return
+	}
+
+	// Create menu item for this render cycle (systray.ResetMenu destroys all items each render)
+	menuItem := systray.AddMenuItem(
+		buildTimerString(currentMin), "",
 	)
-	timer.Disable()
+	menuItem.Disable()
 
-	go func() {
-		ticker := time.NewTicker(time.Second)
-		defer ticker.Stop()
-
-		currentValue := initialValue
-		for currentValue > 0 {
-			select {
-			case _, open := <-timer.ClickedCh:
-				if !open {
-					return
-				}
-			case <-ticker.C:
-				ti.state.mu.Lock()
-
-				currentValue = ti.state.pauseRemainingSec
-				if currentValue > 0 {
-					currentValue--
-					ti.state.pauseRemainingSec = currentValue
-				}
-
-				ti.state.mu.Unlock()
-
-				if ti.isVisible.Load() {
-					timer.SetTitleQuiet(
-						buildTimerString(currentValue),
-					)
-				}
-			}
-		}
-	}()
+	// Update pauseTimer.menuItem reference so goroutine can use it to update the display
+	// The goroutine is already running (started by startPauseTimer) and will use this reference
+	ti.pauseTimerMu.Lock()
+	if ti.pauseTimer != nil {
+		ti.pauseTimer.menuItem = menuItem
+	}
+	ti.pauseTimerMu.Unlock()
 }
 
-func buildTimerString(remaining int) string {
-	hours := remaining / 3600
-	minutes := (remaining % 3600) / 60
-	seconds := remaining % 60
+func buildTimerString(remainingMin int) string {
+	hours := remainingMin / 60
+	minutes := remainingMin % 60
 
 	if hours > 0 {
-		return fmt.Sprintf("VPN connection resumes in %02d:%02d:%02d", hours, minutes, seconds)
-	} else {
-		return fmt.Sprintf("VPN connection resumes in %02d:%02d", minutes, seconds)
+		if minutes > 0 {
+			return fmt.Sprintf("VPN connection resumes in %dh %dmin", hours, minutes)
+		}
+		return fmt.Sprintf("VPN connection resumes in %dh", hours)
 	}
+	return fmt.Sprintf("VPN connection resumes in %dmin", minutes)
 }
 
 func handlePauseClick(ti *Instance, item *systray.MenuItem, pauseLength pauseLength) {
@@ -417,7 +413,7 @@ func handleLogoutClick(ti *Instance, item *systray.MenuItem) {
 	if ti == nil {
 		return
 	}
-	handleMenuItemClickWithRetry(item, func() bool { return ti.logout(false) })
+	handleMenuItemClickWithRetry(item, func() bool { return ti.logout() })
 }
 
 func handleLoginClick(ti *Instance, item *systray.MenuItem) {
@@ -460,7 +456,6 @@ func buildRecentConnectionsSection(
 			continue
 		}
 
-		displayLabel = tryApplyVirtualLocationSuffix(displayLabel, conn.VirtualLocation)
 		tooltip := fmt.Sprintf("%s %s", labelReconnectTo, displayLabel)
 		item := parent.AddSubMenuItem(displayLabel, tooltip)
 

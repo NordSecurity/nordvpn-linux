@@ -52,7 +52,6 @@ const (
 	Daemon_SetRouting_FullMethodName               = "/pb.Daemon/SetRouting"
 	Daemon_SetKillSwitch_FullMethodName            = "/pb.Daemon/SetKillSwitch"
 	Daemon_SetLANDiscovery_FullMethodName          = "/pb.Daemon/SetLANDiscovery"
-	Daemon_SetVirtualLocation_FullMethodName       = "/pb.Daemon/SetVirtualLocation"
 	Daemon_SetNotify_FullMethodName                = "/pb.Daemon/SetNotify"
 	Daemon_SetTray_FullMethodName                  = "/pb.Daemon/SetTray"
 	Daemon_SettingsProtocols_FullMethodName        = "/pb.Daemon/SettingsProtocols"
@@ -63,7 +62,7 @@ const (
 	Daemon_UnsetAllowlist_FullMethodName           = "/pb.Daemon/UnsetAllowlist"
 	Daemon_UnsetAllAllowlist_FullMethodName        = "/pb.Daemon/UnsetAllAllowlist"
 	Daemon_SetAnalytics_FullMethodName             = "/pb.Daemon/SetAnalytics"
-	Daemon_SetThreatProtectionLite_FullMethodName  = "/pb.Daemon/SetThreatProtectionLite"
+	Daemon_SetRealTimeProtection_FullMethodName    = "/pb.Daemon/SetRealTimeProtection"
 	Daemon_Ping_FullMethodName                     = "/pb.Daemon/Ping"
 	Daemon_ReportUIEvent_FullMethodName            = "/pb.Daemon/ReportUIEvent"
 	Daemon_SubscribeToStateChanges_FullMethodName  = "/pb.Daemon/SubscribeToStateChanges"
@@ -115,7 +114,6 @@ type DaemonClient interface {
 	SetRouting(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetKillSwitch(ctx context.Context, in *SetKillSwitchRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetLANDiscovery(ctx context.Context, in *SetLANDiscoveryRequest, opts ...grpc.CallOption) (*SetLANDiscoveryResponse, error)
-	SetVirtualLocation(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
 	// ==================== UI Settings ====================
 	SetNotify(ctx context.Context, in *SetNotifyRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetTray(ctx context.Context, in *SetTrayRequest, opts ...grpc.CallOption) (*Payload, error)
@@ -130,7 +128,7 @@ type DaemonClient interface {
 	UnsetAllAllowlist(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
 	// ==================== Privacy & Security ====================
 	SetAnalytics(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
-	SetThreatProtectionLite(ctx context.Context, in *SetThreatProtectionLiteRequest, opts ...grpc.CallOption) (*SetThreatProtectionLiteResponse, error)
+	SetRealTimeProtection(ctx context.Context, in *SetRealTimeProtectionRequest, opts ...grpc.CallOption) (*SetRealTimeProtectionResponse, error)
 	// ==================== System & Monitoring ====================
 	Ping(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PingResponse, error)
 	ReportUIEvent(ctx context.Context, in *UIEvent, opts ...grpc.CallOption) (*Payload, error)
@@ -497,16 +495,6 @@ func (c *daemonClient) SetLANDiscovery(ctx context.Context, in *SetLANDiscoveryR
 	return out, nil
 }
 
-func (c *daemonClient) SetVirtualLocation(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Payload)
-	err := c.cc.Invoke(ctx, Daemon_SetVirtualLocation_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *daemonClient) SetNotify(ctx context.Context, in *SetNotifyRequest, opts ...grpc.CallOption) (*Payload, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Payload)
@@ -607,10 +595,10 @@ func (c *daemonClient) SetAnalytics(ctx context.Context, in *SetGenericRequest, 
 	return out, nil
 }
 
-func (c *daemonClient) SetThreatProtectionLite(ctx context.Context, in *SetThreatProtectionLiteRequest, opts ...grpc.CallOption) (*SetThreatProtectionLiteResponse, error) {
+func (c *daemonClient) SetRealTimeProtection(ctx context.Context, in *SetRealTimeProtectionRequest, opts ...grpc.CallOption) (*SetRealTimeProtectionResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SetThreatProtectionLiteResponse)
-	err := c.cc.Invoke(ctx, Daemon_SetThreatProtectionLite_FullMethodName, in, out, cOpts...)
+	out := new(SetRealTimeProtectionResponse)
+	err := c.cc.Invoke(ctx, Daemon_SetRealTimeProtection_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -729,7 +717,6 @@ type DaemonServer interface {
 	SetRouting(context.Context, *SetGenericRequest) (*Payload, error)
 	SetKillSwitch(context.Context, *SetKillSwitchRequest) (*Payload, error)
 	SetLANDiscovery(context.Context, *SetLANDiscoveryRequest) (*SetLANDiscoveryResponse, error)
-	SetVirtualLocation(context.Context, *SetGenericRequest) (*Payload, error)
 	// ==================== UI Settings ====================
 	SetNotify(context.Context, *SetNotifyRequest) (*Payload, error)
 	SetTray(context.Context, *SetTrayRequest) (*Payload, error)
@@ -744,7 +731,7 @@ type DaemonServer interface {
 	UnsetAllAllowlist(context.Context, *Empty) (*Payload, error)
 	// ==================== Privacy & Security ====================
 	SetAnalytics(context.Context, *SetGenericRequest) (*Payload, error)
-	SetThreatProtectionLite(context.Context, *SetThreatProtectionLiteRequest) (*SetThreatProtectionLiteResponse, error)
+	SetRealTimeProtection(context.Context, *SetRealTimeProtectionRequest) (*SetRealTimeProtectionResponse, error)
 	// ==================== System & Monitoring ====================
 	Ping(context.Context, *Empty) (*PingResponse, error)
 	ReportUIEvent(context.Context, *UIEvent) (*Payload, error)
@@ -862,9 +849,6 @@ func (UnimplementedDaemonServer) SetKillSwitch(context.Context, *SetKillSwitchRe
 func (UnimplementedDaemonServer) SetLANDiscovery(context.Context, *SetLANDiscoveryRequest) (*SetLANDiscoveryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetLANDiscovery not implemented")
 }
-func (UnimplementedDaemonServer) SetVirtualLocation(context.Context, *SetGenericRequest) (*Payload, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SetVirtualLocation not implemented")
-}
 func (UnimplementedDaemonServer) SetNotify(context.Context, *SetNotifyRequest) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetNotify not implemented")
 }
@@ -895,8 +879,8 @@ func (UnimplementedDaemonServer) UnsetAllAllowlist(context.Context, *Empty) (*Pa
 func (UnimplementedDaemonServer) SetAnalytics(context.Context, *SetGenericRequest) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetAnalytics not implemented")
 }
-func (UnimplementedDaemonServer) SetThreatProtectionLite(context.Context, *SetThreatProtectionLiteRequest) (*SetThreatProtectionLiteResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SetThreatProtectionLite not implemented")
+func (UnimplementedDaemonServer) SetRealTimeProtection(context.Context, *SetRealTimeProtectionRequest) (*SetRealTimeProtectionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetRealTimeProtection not implemented")
 }
 func (UnimplementedDaemonServer) Ping(context.Context, *Empty) (*PingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
@@ -1514,24 +1498,6 @@ func _Daemon_SetLANDiscovery_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Daemon_SetVirtualLocation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SetGenericRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DaemonServer).SetVirtualLocation(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Daemon_SetVirtualLocation_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).SetVirtualLocation(ctx, req.(*SetGenericRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _Daemon_SetNotify_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SetNotifyRequest)
 	if err := dec(in); err != nil {
@@ -1712,20 +1678,20 @@ func _Daemon_SetAnalytics_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Daemon_SetThreatProtectionLite_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SetThreatProtectionLiteRequest)
+func _Daemon_SetRealTimeProtection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetRealTimeProtectionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DaemonServer).SetThreatProtectionLite(ctx, in)
+		return srv.(DaemonServer).SetRealTimeProtection(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Daemon_SetThreatProtectionLite_FullMethodName,
+		FullMethod: Daemon_SetRealTimeProtection_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).SetThreatProtectionLite(ctx, req.(*SetThreatProtectionLiteRequest))
+		return srv.(DaemonServer).SetRealTimeProtection(ctx, req.(*SetRealTimeProtectionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1938,10 +1904,6 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Daemon_SetLANDiscovery_Handler,
 		},
 		{
-			MethodName: "SetVirtualLocation",
-			Handler:    _Daemon_SetVirtualLocation_Handler,
-		},
-		{
 			MethodName: "SetNotify",
 			Handler:    _Daemon_SetNotify_Handler,
 		},
@@ -1982,8 +1944,8 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Daemon_SetAnalytics_Handler,
 		},
 		{
-			MethodName: "SetThreatProtectionLite",
-			Handler:    _Daemon_SetThreatProtectionLite_Handler,
+			MethodName: "SetRealTimeProtection",
+			Handler:    _Daemon_SetRealTimeProtection_Handler,
 		},
 		{
 			MethodName: "Ping",

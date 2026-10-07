@@ -77,7 +77,6 @@ class UIEvent(_message.Message):
         OBFUSCATED: _ClassVar[UIEvent.ItemValue]
         ONION_OVER_VPN: _ClassVar[UIEvent.ItemValue]
         DOUBLE_VPN: _ClassVar[UIEvent.ItemValue]
-        P2P: _ClassVar[UIEvent.ItemValue]
         PAUSE_5_MIN: _ClassVar[UIEvent.ItemValue]
         PAUSE_15_MIN: _ClassVar[UIEvent.ItemValue]
         PAUSE_30_MIN: _ClassVar[UIEvent.ItemValue]
@@ -94,7 +93,6 @@ class UIEvent(_message.Message):
     OBFUSCATED: UIEvent.ItemValue
     ONION_OVER_VPN: UIEvent.ItemValue
     DOUBLE_VPN: UIEvent.ItemValue
-    P2P: UIEvent.ItemValue
     PAUSE_5_MIN: UIEvent.ItemValue
     PAUSE_15_MIN: UIEvent.ItemValue
     PAUSE_30_MIN: UIEvent.ItemValue

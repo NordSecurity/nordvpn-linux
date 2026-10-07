@@ -80,13 +80,13 @@ def teardown_module(module):  # noqa: ARG001
 
     ssh_client.exec_command("nordvpn set mesh off")
     ssh_client.exec_command("nordvpn set notify on")
-    ssh_client.exec_command("nordvpn logout --persist-token")
+    ssh_client.exec_command("nordvpn logout")
     daemon.stop_peer(ssh_client)
     daemon.uninstall_peer(ssh_client)
 
     sh.nordvpn.set.meshnet.off()
     sh.nordvpn.set.notify.on()
-    sh.nordvpn.logout("--persist-token")
+    sh.nordvpn.logout()
     daemon.stop()
 
 

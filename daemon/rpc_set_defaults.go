@@ -2,11 +2,14 @@ package daemon
 
 import (
 	"context"
+	"errors"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/daemon/access"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
+	"github.com/NordSecurity/nordvpn-linux/networker"
 )
 
 func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.Payload, error) {
@@ -41,6 +44,41 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.P
 		if !r.ncClient.Revoke() {
 			log.Warn("error revoking notification center token")
 		}
+
+		result := access.Logout(access.LogoutInput{
+			AuthChecker:                  r.ac,
+			CredentialsAPI:               r.credentialsAPI,
+			Netw:                         r.netw,
+			NcClient:                     r.ncClient,
+			ConfigManager:                r.cm,
+			UserLogoutEventPublisherFunc: r.events.User.Logout.Publish,
+			DebugPublisherFunc:           r.publisher.Publish,
+			DisconnectFunc:               r.DoDisconnect,
+			DeviceKeyInvalidator:         r.dedicatedServerKeyManager,
+		})
+
+		switch result.Err {
+		case nil:
+			// do nothing
+		case internal.ErrNotLoggedIn:
+			log.Info("trying to log out with set defaults, user already logged out")
+			result.Status = internal.CodeSuccess
+		default:
+			log.Error("error while trying to logout:", result.Err)
+			return &pb.Payload{
+				Type: internal.CodeFailure,
+			}, nil
+		}
+
+		switch result.Status {
+		case internal.CodeSuccess, internal.CodeTokenStillValid:
+			log.Info("set defaults logout successful")
+		default:
+			log.Error("logout returned non success return code", result.Status)
+			return &pb.Payload{
+				Type: result.Status,
+			}, nil
+		}
 	}
 
 	if err := r.cm.Reset(in.NoLogout, in.OffKillswitch); err != nil {
@@ -69,18 +107,28 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.P
 	}
 	r.netw.SetVPN(v)
 
-	if err = r.netw.SetARPIgnore(cfg.ARPIgnore.Get()); err != nil {
-		log.Warn("resetting arp ignore failed:", err)
-	}
-	r.netw.SetLanDiscovery(cfg.LanDiscovery)
-	if err = r.netw.SetAllowlist(cfg.AutoConnectData.Allowlist); err != nil {
-		log.Warn("resetting allowlist failed:", err)
-	}
+	applyErr := r.netw.ApplySettings(networker.Settings{
+		Firewall:     cfg.Firewall,
+		Routing:      cfg.Routing.Get(),
+		LanDiscovery: cfg.LanDiscovery,
+		ARPIgnore:    cfg.ARPIgnore.Get(),
+		Allowlist:    cfg.AutoConnectData.Allowlist,
+	})
 
 	r.events.Settings.Defaults.Publish(nil)
 	r.events.Settings.Publish(cfg)
 
-	return &pb.Payload{
-		Type: internal.CodeSuccess,
-	}, nil
+	if applyErr != nil {
+		log.Error("applying default settings to networker:", applyErr)
+		var failedSettings []string
+		if settingsErr, ok := errors.AsType[*networker.ApplySettingsError](applyErr); ok {
+			failedSettings = settingsErr.FailedSettings()
+		}
+		return &pb.Payload{
+			Type: internal.CodeSetDefaultsNotApplied,
+			Data: failedSettings,
+		}, nil
+	}
+
+	return &pb.Payload{Type: internal.CodeSuccess}, nil
 }

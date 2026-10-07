@@ -1,6 +1,5 @@
 import re
 import time
-import random
 import os
 from collections.abc import Callable
 from enum import Enum
@@ -59,8 +58,8 @@ NORDWHISPER_TECHNOLOGY = [
     ("nordwhisper", ""),
 ]
 
-# Used for test parametrization, when the same test has to be run for different threat protection lite settings.
-THREAT_PROTECTION_LITE = [
+# Used for test parametrization, when the same test has to be run for different real time protection settings.
+REAL_TIME_PROTECTION = [
     "on",
     "off",
 ]
@@ -70,13 +69,11 @@ ADDITIONAL_GROUPS = [
     "Double_VPN",
     "Onion_Over_VPN",
     "Standard_VPN_Servers",
-    "P2P",
 ]
 
 # Used for test parametrization with NordWhisper, since other additional groups are not supported with this technology.
 ADDITIONAL_GROUPS_NORDWHISPER = [
     "Standard_VPN_Servers",
-    "P2P",
 ]
 
 # Used for test parametrization of the Dedicated IP group.
@@ -94,7 +91,6 @@ COUNTRIES = [
     "Germany",
     "Netherlands",
     "United_States",
-    "France",
 ]
 
 # Used for test parametrization, when the same test has to be run for different countries.
@@ -102,7 +98,6 @@ COUNTRY_CODES = [
     "de",
     "nl",
     "us",
-    "fr",
 ]
 
 # Used for test parametrization, when the same test has to be run for different cities.
@@ -110,7 +105,6 @@ CITIES = [
     "Frankfurt",
     "Amsterdam",
     "New_York",
-    "Paris",
 ]
 
 EXPECTED_CONSENT_MESSAGE = """
@@ -230,12 +224,12 @@ def set_technology_and_protocol(tech, proto):
             print("WARNING:", ex)
 
 
-# Allows setting threat protection lite regardless of whether it is already set or not.
+# Allows setting real time protection regardless of whether it is already set or not.
 #
 # Tests do not break on reordering when using this.
-def set_threat_protection_lite(dns):
+def set_real_time_protection(dns):
     try:
-        print(sh.nordvpn.set.cybersec(dns))
+        print(sh.nordvpn.set.protection(dns))
     except sh.ErrorReturnCode_1 as ex:
         print("WARNING:", ex)
 
@@ -331,22 +325,6 @@ def poll(func, attempts: int = 3, sleep: float = 1.0):
         time.sleep(sleep)
 
 
-def get_virtual_countries() -> list[str]:
-    """Returns all virtual in the output of `nordvpn countries` command."""
-    countries_output = sh.nordvpn.countries().stdout.decode("utf-8")
-
-    # This pattern captures all substring starting with \x1b\[94m[ that are single words. It should capture all of the
-    # virtual server names, as in the terminal output they are colored blue.
-    pattern = r"\x1b\[94m\w+\x1b\[0m"
-    matches = re.findall(pattern, countries_output)
-
-    countries = []
-    for match in matches:
-        country = match.replace("\x1b[94m","").replace("\x1b[0m","")
-        countries.append(country)
-
-    return countries
-
 class CommandExecutor:
     def __init__(self, ssh_client = None):
         self.ssh_client = ssh_client
@@ -376,14 +354,6 @@ def technology_to_upper_camel_case(tech: str) -> str:
 def squash_whitespace(text: str) -> str:
     """Normalize whitespace by collapsing all sequences of whitespace into single spaces."""
     return ' '.join(text.split())
-
-
-def get_random_virtual_country() -> str:
-    """Return one random virtual country from `nordvpn countries` output."""
-    virtual_countries = get_virtual_countries()
-    assert len(virtual_countries) > 0, "Virtual countries list should not be empty"
-    virtual_country = random.choice(virtual_countries)
-    return virtual_country
 
 
 def retry_on_exc(attempts=3, delay=2, raise_exc=True):

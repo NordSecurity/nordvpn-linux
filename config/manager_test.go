@@ -24,7 +24,7 @@ func TestFilesystem(t *testing.T) {
 		{
 			name: "autoconnect data is saved",
 			f: func(c Config) Config {
-				c.AutoConnectData.ThreatProtectionLite = true
+				c.AutoConnectData.RealTimeProtection = true
 				return c
 			},
 		},
@@ -162,7 +162,6 @@ func TestConfigDefaultValues(t *testing.T) {
 			assert.False(t, cfg.Mesh)
 			assert.False(t, cfg.KillSwitch)
 			assert.Equal(t, test.autoconnect, cfg.AutoConnect)
-			assert.True(t, cfg.VirtualLocation.Get())
 		})
 	}
 }

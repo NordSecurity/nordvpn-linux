@@ -305,10 +305,7 @@ final class _ConnectionCardButtonsState
     final city = widget.vpnStatus.city != null
         ? "${widget.vpnStatus.city!}, "
         : "";
-    final virtual = widget.vpnStatus.isVirtualLocation
-        ? " ${t.ui.virtual}"
-        : "";
-    return "$city${widget.vpnStatus.country!.localizedName}$virtual";
+    return "$city${widget.vpnStatus.country!.localizedName}";
   }
 
   String _buildRecommendedCityAndCountryText(

@@ -223,8 +223,8 @@ func NewApp(version, environment, hash, salt string,
 			Action:             cmd.Logout,
 			CustomHelpTemplate: CommandWithoutArgsHelpTemplate,
 			Flags: []cli.Flag{&cli.BoolFlag{
-				Name:  flagPersistToken,
-				Usage: PersistTokenUsageText,
+				Name:  flagRevokeToken,
+				Usage: RevokeTokenUsageText,
 			}},
 		},
 		{
@@ -752,22 +752,11 @@ func getSetSubcommands(cmd *cmd, isMeshnetEnabled bool) []*cli.Command {
 				},
 			},
 		},
-		// TODO: remove in v6
-		{
-			Name:         "threatprotectionlite",
-			Aliases:      []string{"tplite", "tpl", "cybersec"},
-			Usage:        SetRealTimeProtectionUsageText,
-			Action:       cmd.SetThreatProtectionLite,
-			BashComplete: cmd.SetBoolAutocomplete,
-			ArgsUsage:    SetRealTimeProtectionArgsUsageText,
-			Description:  SetRealTimeProtectionDescription,
-			Hidden:       true,
-		},
 		{
 			Name:         "protection",
 			Aliases:      []string{"protect"},
 			Usage:        SetRealTimeProtectionUsageText,
-			Action:       cmd.SetThreatProtectionLite,
+			Action:       cmd.SetRealTimeProtection,
 			BashComplete: cmd.SetBoolAutocomplete,
 			ArgsUsage:    SetRealTimeProtectionArgsUsageText,
 			Description:  SetRealTimeProtectionDescription,
@@ -905,19 +894,6 @@ func getSetSubcommands(cmd *cmd, isMeshnetEnabled bool) []*cli.Command {
 				"lan-discovery",
 			),
 			Action:       cmd.SetLANDiscovery,
-			BashComplete: cmd.SetBoolAutocomplete,
-		},
-		{
-			Name:      "virtual-location",
-			Usage:     MsgSetVirtualLocationUsageText,
-			ArgsUsage: MsgSetBoolArgsUsage,
-			Description: fmt.Sprintf(
-				MsgSetBoolDescription,
-				MsgSetVirtualLocationDescription,
-				"virtual-location",
-				"virtual-location",
-			),
-			Action:       cmd.SetVirtualLocation,
 			BashComplete: cmd.SetBoolAutocomplete,
 		},
 		{
@@ -1387,7 +1363,7 @@ func removeFlagFromArgs(args []string, flag string) []string {
 
 // parseConnectArgs extracts server tag and server group from the arguments provided to the connect and set autoconnect
 // commands. It also accommodates for the issue in github.com/urfave/cli/v2 where a flag is only interpreted as a flag if
-// it's the first agument to the command.
+// it's the first argument to the command.
 func parseConnectArgs(ctx *cli.Context) (string, string, error) {
 	groupName, hasGroupFlag := getFlagValue(flagGroup, ctx)
 	args := ctx.Args()

@@ -481,6 +481,7 @@ def test_status_connected(tech, proto):
     disconnect_base_test()
 
 
+<<<<<<< HEAD
 @pytest.mark.parametrize(("tech", "proto"), lib.STANDARD_TECHNOLOGIES)
 def test_connect_to_virtual_server(tech, proto):
     """Manual TC: LVPN-5316"""
@@ -498,6 +499,10 @@ def test_connect_to_virtual_server(tech, proto):
 
 @pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES_BASIC1)
 def test_connect_to_post_quantum_server(tech, proto):
+=======
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_BASIC1)
+def test_connect_to_post_quantum_server(tech, proto, obfuscated):
+>>>>>>> origin/release/6.0.0
     """Manual TC: LVPN-5794"""
 
     lib.set_technology_and_protocol(tech, proto)
@@ -567,6 +572,7 @@ def test_connect_to_dedicated_ip(tech, proto):
     assert "nordlynx" not in sh.ip.a() and "nordtun" not in sh.ip.a(), "VPN interfaces should be removed"
 
 
+<<<<<<< HEAD
 @pytest.mark.parametrize(("tech", "proto"), lib.STANDARD_TECHNOLOGIES)
 def test_connect_fails_virtual_location_disabled(tech, proto):
     """Manual TC: LVPN-8533"""
@@ -583,6 +589,8 @@ def test_connect_fails_virtual_location_disabled(tech, proto):
     assert "Please enable virtual location access to connect to this server." in ex.value.stdout.decode(), "Should show virtual location disabled error"
 
 
+=======
+>>>>>>> origin/release/6.0.0
 @pytest.mark.parametrize(("reconnect", "pause"), [(True, True), (True, False), (False, False)])
 def test_ens_connection_limit(reconnect: bool, pause: bool):
     """Test ENS connection limit"""
@@ -624,3 +632,13 @@ def test_ens_connection_limit(reconnect: bool, pause: bool):
 
         assert "Disconnected" in sh.nordvpn.status(), "Wrong status"
         assert network.is_available(), "Network should be available"
+
+
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES)
+def test_connect_to_virtual_server(tech, proto, obfuscated):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+    server_info = server.get_random_virtual_server(tech, proto, obfuscated)
+    connect_base_test((tech, proto, obfuscated), server_info.hostname.split(".")[0], server_info.name, server_info.hostname)
+
+    disconnect_base_test()

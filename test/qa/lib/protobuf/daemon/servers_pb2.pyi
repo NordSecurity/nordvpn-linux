@@ -32,18 +32,16 @@ OBFUSCATED_OPENVPN_TCP: Technology
 OBFUSCATED_OPENVPN_UDP: Technology
 
 class Server(_message.Message):
-    __slots__ = ("id", "host_name", "virtual", "server_groups", "technologies")
+    __slots__ = ("id", "host_name", "server_groups", "technologies")
     ID_FIELD_NUMBER: _ClassVar[int]
     HOST_NAME_FIELD_NUMBER: _ClassVar[int]
-    VIRTUAL_FIELD_NUMBER: _ClassVar[int]
     SERVER_GROUPS_FIELD_NUMBER: _ClassVar[int]
     TECHNOLOGIES_FIELD_NUMBER: _ClassVar[int]
     id: int
     host_name: str
-    virtual: bool
     server_groups: _containers.RepeatedScalarFieldContainer[_group_pb2.ServerGroup]
     technologies: _containers.RepeatedScalarFieldContainer[Technology]
-    def __init__(self, id: _Optional[int] = ..., host_name: _Optional[str] = ..., virtual: bool = ..., server_groups: _Optional[_Iterable[_Union[_group_pb2.ServerGroup, str]]] = ..., technologies: _Optional[_Iterable[_Union[Technology, str]]] = ...) -> None: ...
+    def __init__(self, id: _Optional[int] = ..., host_name: _Optional[str] = ..., server_groups: _Optional[_Iterable[_Union[_group_pb2.ServerGroup, str]]] = ..., technologies: _Optional[_Iterable[_Union[Technology, str]]] = ...) -> None: ...
 
 class ServerCity(_message.Message):
     __slots__ = ("city_name", "servers")

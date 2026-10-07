@@ -103,7 +103,7 @@ func applyLevelFile(path string) {
 	case "off":
 		SetLevel(levelOff)
 	default:
-		Warn("unknown log level:", text)
+		Warnf("unknown log level: %.20q", text)
 		return
 	}
 }

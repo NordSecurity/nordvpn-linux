@@ -1,14 +1,30 @@
 package config
 
+import "strings"
+
 // GroupMap maps group titles to IDs
 var GroupMap = map[string]ServerGroup{
 	"double_vpn":           ServerGroup_DOUBLE_VPN,
 	"onion_over_vpn":       ServerGroup_ONION_OVER_VPN,
 	"dedicated_ip":         ServerGroup_DEDICATED_IP,
 	"standard_vpn_servers": ServerGroup_STANDARD_VPN_SERVERS,
-	"p2p":                  ServerGroup_P2P,
 	"obfuscated":           ServerGroup_NW_OBFUSCATED,
 	"dedicated_server":     ServerGroup_DEDICATED_SERVER,
+}
+
+// GroupLabels maps groups to the labels users type and are presented with.
+var GroupLabels = map[ServerGroup]string{
+	ServerGroup_DOUBLE_VPN:           "Double_VPN",
+	ServerGroup_ONION_OVER_VPN:       "Onion_Over_VPN",
+	ServerGroup_DEDICATED_IP:         "Dedicated_IP",
+	ServerGroup_STANDARD_VPN_SERVERS: "Standard_VPN_Servers",
+	ServerGroup_NW_OBFUSCATED:        "Obfuscated",
+	ServerGroup_DEDICATED_SERVER:     "Dedicated_Server",
+}
+
+// GroupDisplayName returns the group label with " " instead of "_" if known.
+func GroupDisplayName(group ServerGroup) string {
+	return strings.ReplaceAll(GroupLabels[group], "_", " ")
 }
 
 // IsRegionalGroup reports whether g is a deprecated regional group; uses raw ints since the named constants are removed.
@@ -19,6 +35,11 @@ func IsRegionalGroup(g ServerGroup) bool {
 		return true
 	}
 	return false
+}
+
+// IsDeprecatedP2PGroup reports whether g is a deprecated P2P group
+func IsDeprecatedP2PGroup(g ServerGroup) bool {
+	return g == 15
 }
 
 // GroupTitleForId converts group ID to group lowercase title

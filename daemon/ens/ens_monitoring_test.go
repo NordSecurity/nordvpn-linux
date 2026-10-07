@@ -55,7 +55,7 @@ func TestENSMonitoring(t *testing.T) {
 		VpnActive:        true,
 		ActiveServerData: &vpn.ServerData{Endpoint: serverEndpoint},
 		CancelConnectingFn: func(err error) bool {
-			assert.ErrorIs(t, err, ErrConnectionLimitReached)
+			assert.ErrorIs(t, err, events.ErrConnectionLimitReached)
 			cancelConnCounter.add(1)
 			return true
 		},
@@ -272,5 +272,5 @@ func TestCombined_ENSConnectionsLimitReached(t *testing.T) {
 		},
 	)
 
-	assert.ErrorIs(t, err, ErrConnectionLimitReached)
+	assert.ErrorIs(t, err, events.ErrConnectionLimitReached)
 }

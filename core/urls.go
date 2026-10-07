@@ -12,9 +12,6 @@ const (
 	// Used by JobInsights every 30mins to set the user country
 	InsightsURL = "/v1/helpers/ips/insights"
 
-	// PlanURL defines endpoint to fetch plans
-	PlanURL = "/v1/plans?filters[plans.active]=1&filters[plans.type]=linux"
-
 	// ServersURL defines url to get servers list
 	// Used as a fallback if /v1/servers/recommendations returns
 	// an empty list or a http error
@@ -158,8 +155,11 @@ const (
 	// ovpnTemplateURL defines url to ovpn server template
 	ovpnTemplateURL = "/configs/templates/v2/ovpn/1.0/template.xslt"
 
-	// ThreatProtectionLiteURL defines url of the cybersec file
-	ThreatProtectionLiteURL = "/configs/dns/cybersec.json"
+	// ovpnObfsTemplateURL defines url to ovpn obfuscated server template
+	ovpnObfsTemplateURL = "/configs/templates/ovpn_xor/1.1/template.xslt"
+
+	// RealTimeProtectionURL defines url of the cybersec file
+	RealTimeProtectionURL = "/configs/dns/cybersec.json"
 
 	// DebFileinfoURLFormat is the path to debian repository's package information
 	DebFileinfoURLFormat = "/deb/%s/debian/dists/stable/main/binary-%s/Packages.gz"

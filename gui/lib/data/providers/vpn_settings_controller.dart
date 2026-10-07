@@ -20,13 +20,13 @@ part 'vpn_settings_controller.g.dart';
 // - dnsListModified - error that happens when enabling Real time Protection
 //   and Custom DNS is set, if user allows resetting Custom DNS, this "error"
 //   will happen
-// - tpLiteDisabled - error that happens when enabling Custom DNS and Real time
-//   Protection is enabled, if user allows disabling TP, this "error" will
-//   happen
+// - realTimeProtectionDisabled - error that happens when enabling Custom DNS
+//   Real Time Protection is enabled, if user allows disabling RTP, 
+//   this "error" will happen
 const _popupIgnoreCodes = [
   DaemonStatusCode.success,
   DaemonStatusCode.dnsListModified,
-  DaemonStatusCode.tpLiteDisabled,
+  DaemonStatusCode.realTimeProtectionDisabled,
   DaemonStatusCode.allowListModified,
 ];
 
@@ -80,9 +80,6 @@ class VpnSettingsController extends _$VpnSettingsController
     final status = await _setValue(
       (repository) => repository.setVpnProtocol(pendingVPNProtocol),
       popupCodeOverrides: {
-        // virtualLocationsDisabled needs to show a specific popup.
-        DaemonStatusCode.virtualLocationsDisabled:
-            PopupCodes.reconnectToChangeVirtualLocation,
         // Ignore vpnIsRunning here - we already showed the reconnect popup
         DaemonStatusCode.vpnIsRunning: DaemonStatusCode.success,
       },
@@ -99,7 +96,13 @@ class VpnSettingsController extends _$VpnSettingsController
   }
 
   Future<int> resetToDefaults() async {
-    return await ref.read(vpnSettingsProvider).resetToDefaults();
+    final result = await ref.read(vpnSettingsProvider).resetToDefaults();
+    if (result.status == DaemonStatusCode.setDefaultsNotApplied) {
+      ref
+          .read(popupsProvider.notifier)
+          .show(result.status, userData: result.failedSettings);
+    }
+    return result.status;
   }
 
   Future<int> setAnalytics(bool value) async {
@@ -266,16 +269,6 @@ class VpnSettingsController extends _$VpnSettingsController
       }
     }
     return status;
-  }
-
-  Future<int> useVirtualServers(bool value) async {
-    return await _setValue(
-      (repository) => repository.useVirtualServers(value),
-      popupCodeOverrides: {
-        DaemonStatusCode.vpnIsRunning:
-            PopupCodes.reconnectToChangeVirtualLocation,
-      },
-    );
   }
 
   @override

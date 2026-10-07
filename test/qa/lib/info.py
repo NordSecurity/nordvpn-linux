@@ -1,18 +1,23 @@
 import os
 
 import sh
-
+from lib import logging
 
 def collect():
     """Collect system information and return as multiline string."""
     link_layer_info = os.popen("sudo ip link").read() #sh.sudo.ip.link()
     network_interface_info = os.popen("sudo ip addr").read() #sh.sudo.ip.addr()
     routing_info = os.popen("sudo ip route").read() #sh.sudo.ip.route()
-    firewall_info = os.popen("sudo iptables -S").read() #sh.sudo.iptables("-S")
+    firewall_info = os.popen("sudo nft list ruleset").read()
     nameserver_info = os.popen("sudo cat /etc/resolv.conf").read() #sh.sudo.cat("/etc/resolv.conf")
 
     # without `ww` we cannot see full process lines, as it is cut off early
     processes = sh.ps("-efww")
+
+    # If there are too many connections reduce to max 100000, otherwise logger will fail
+    # TODO: LVPN-11148
+    conntrack = os.popen("sudo conntrack -L").read()
+    logging.log(data=f"conntrack: \n{conntrack[:100000]}")
 
     return "\n".join(
         [

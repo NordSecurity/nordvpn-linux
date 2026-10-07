@@ -10,7 +10,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/core"
-	"github.com/NordSecurity/nordvpn-linux/daemon/ens"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/serverpicker"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
@@ -262,10 +261,15 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 		return false, internal.ErrNotLoggedIn
 	}
 
+	if serverpicker.IsP2PGroup(in.ServerTag, in.ServerGroup) {
+		return false, srv.Send(&pb.Payload{Type: internal.CodeP2PDeprecated})
+	}
+
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
 		log.Error(err)
 	}
+
 	prelimParams := serverpicker.GetServerParameters(in.GetServerTag(), in.GetServerGroup(), r.dm.GetCountryData().Countries)
 	r.RequestedConnParams.Set(source, serverpicker.ServerParameters{Group: prelimParams.Group})
 	r.connectionInfo.SetInitialConnecting()
@@ -326,10 +330,6 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 
 		if errors.Is(err, internal.ErrServerIsUnavailable) {
 			return true, srv.Send(&pb.Payload{Type: internal.CodeServerUnavailable})
-		}
-
-		if errors.Is(err, internal.ErrVirtualServerSelected) {
-			return true, srv.Send(&pb.Payload{Type: internal.CodeVirtualLocationDisabled})
 		}
 
 		return false, err
@@ -417,6 +417,7 @@ func (r *RPC) connect(
 		PostQuantum:         cfg.AutoConnectData.PostquantumVpn,
 		OpenVPNVersion:      serverSelection.Server.Version(),
 		NordWhisperPort:     serverSelection.Server.NordWhisperPort,
+		DedicatedServer:     isServerDedicated,
 		DedicatedServerPort: serverSelection.Server.DedicatedServersPort,
 	}
 
@@ -434,14 +435,13 @@ func (r *RPC) connect(
 	event := events.DataConnect{
 		Protocol:                cfg.AutoConnectData.Protocol,
 		Technology:              cfg.Technology,
-		ThreatProtectionLite:    cfg.AutoConnectData.ThreatProtectionLite,
+		RealTimeProtection:      cfg.AutoConnectData.RealTimeProtection,
 		IsPostQuantum:           cfg.AutoConnectData.PostquantumVpn,
 		IsECHEnabled:            r.getECHEnabledField(cfg).Get(),
 		DurationMs:              getElapsedTime(connectingStartTime),
 		EventStatus:             events.StatusAttempt,
 		TargetServerSelection:   determineServerSelectionRule(parameters),
 		ServerFromAPI:           serverSelection.Remote,
-		IsVirtualLocation:       serverSelection.Server.IsVirtualLocation(),
 		TargetServerCity:        city,
 		TargetServerCountry:     country.Name,
 		TargetServerCountryCode: country.Code,
@@ -473,13 +473,9 @@ func (r *RPC) connect(
 		}
 	}()
 
-	virtualServer := ""
-	if serverSelection.Server.IsVirtualLocation() {
-		virtualServer = " - Virtual"
-	}
 	lastServer := r.lastServerSelection.Server
 
-	data := []string{lastServer.Name, lastServer.Hostname, virtualServer}
+	data := []string{lastServer.Name, lastServer.Hostname}
 	// In case of dedicated servers we only return server name, as hostname is not available.
 	if isServerDedicated {
 		data = []string{lastServer.Name}
@@ -490,11 +486,11 @@ func (r *RPC) connect(
 	}
 
 	disconnectSender := events.NewDisconnectSender(events.DataDisconnect{
-		Protocol:             cfg.AutoConnectData.Protocol,
-		Technology:           cfg.Technology,
-		ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
-		RecommendationUUID:   string(serverSelection.RecommendationUUID),
-		VPNConnReason:        vpnConnReason,
+		Protocol:           cfg.AutoConnectData.Protocol,
+		Technology:         cfg.Technology,
+		RealTimeProtection: cfg.AutoConnectData.RealTimeProtection,
+		RecommendationUUID: string(serverSelection.RecommendationUUID),
+		VPNConnReason:      vpnConnReason,
 	}, r.events.Service.Disconnect.Publish)
 
 	err = r.netw.Start(
@@ -503,7 +499,7 @@ func (r *RPC) connect(
 		serverData,
 		allowlist,
 		cfg.AutoConnectData.DNS.Or(r.nameservers.Get(
-			cfg.AutoConnectData.ThreatProtectionLite,
+			cfg.AutoConnectData.RealTimeProtection,
 		)),
 		true, // here vpn connect - enable routing to local LAN
 		disconnectSender.PublishDisconnect,
@@ -533,10 +529,8 @@ func (r *RPC) connect(
 			event.EventStatus = events.StatusCanceled
 			event.Error = nil
 
-		case errors.Is(err, ens.ErrConnectionLimitReached):
+		case errors.Is(err, events.ErrConnectionLimitReached):
 			t = internal.CodeConnectionLimitReached
-			event.VPNConnReason = events.VPNConnectionReasonConnectionLimitReached
-			event.Error = nil
 		}
 		r.events.Service.Connect.Publish(event)
 		if err := srv.Send(&pb.Payload{
