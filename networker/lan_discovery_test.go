@@ -19,24 +19,29 @@ func TestAddLANDiscoverySubnets(t *testing.T) {
 		expectedSubnets []string
 	}{
 		{
-			name:            "empty allowlist gets LAN and mDNS subnets",
+			name:            "empty allowlist gets LAN, multicast and SSDP subnets",
 			inputSubnets:    nil,
-			expectedSubnets: append(internal.LocalNetworks, internal.MDNSSubnet),
+			expectedSubnets: append(internal.LocalNetworks, internal.MulticastSubnet, internal.SSDPSubnet),
 		},
 		{
 			name:            "existing non-private subnets are preserved",
 			inputSubnets:    []string{"1.1.1.1/32"},
-			expectedSubnets: append([]string{"1.1.1.1/32"}, append(internal.LocalNetworks, internal.MDNSSubnet)...),
+			expectedSubnets: append([]string{"1.1.1.1/32"}, append(internal.LocalNetworks, internal.MulticastSubnet, internal.SSDPSubnet)...),
 		},
 		{
 			name:            "duplicate LAN subnets are not added twice",
 			inputSubnets:    []string{"10.0.0.0/8"},
-			expectedSubnets: append(internal.LocalNetworks, internal.MDNSSubnet),
+			expectedSubnets: append(internal.LocalNetworks, internal.MulticastSubnet, internal.SSDPSubnet),
 		},
 		{
-			name:            "duplicate mDNS subnet is not added twice",
-			inputSubnets:    []string{internal.MDNSSubnet},
-			expectedSubnets: append(internal.LocalNetworks, internal.MDNSSubnet),
+			name:            "duplicate multicast subnet is not added twice",
+			inputSubnets:    []string{internal.MulticastSubnet},
+			expectedSubnets: append(internal.LocalNetworks, internal.MulticastSubnet, internal.SSDPSubnet),
+		},
+		{
+			name:            "duplicate SSDP subnet is not added twice",
+			inputSubnets:    []string{internal.SSDPSubnet},
+			expectedSubnets: append(internal.LocalNetworks, internal.MulticastSubnet, internal.SSDPSubnet),
 		},
 	}
 
