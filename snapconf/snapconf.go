@@ -45,6 +45,7 @@ const (
 	InterfaceLoginSessionObserve Interface = "login-session-observe"
 	InterfaceSystemObserve       Interface = "system-observe"
 	InterfaceHardwareObserve     Interface = "hardware-observe"
+	InterfaceSnapdControl        Interface = "snapd-control"
 	InterfaceNetworkManager      Interface = "network-manager"
 )
 
@@ -77,6 +78,7 @@ func NewSnapChecker(publisherErr events.Publisher[error]) *ConnChecker {
 			InterfaceFirewallControl,
 			InterfaceHome,
 			InterfaceLoginSessionObserve,
+			InterfaceSnapdControl,
 			InterfaceNetworkManager,
 		},
 		[]Interface{
@@ -89,6 +91,7 @@ func NewSnapChecker(publisherErr events.Publisher[error]) *ConnChecker {
 			InterfaceFirewallControl,
 			InterfaceHome,
 			InterfaceLoginSessionObserve,
+			InterfaceSnapdControl,
 			InterfaceNetworkManager,
 		},
 		publisherErr,
