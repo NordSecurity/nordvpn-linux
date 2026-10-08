@@ -104,8 +104,9 @@ func (d *deterministicServersAPI) RecommendedServers(filter core.ServersFilter, 
 			config.ServerGroup_NW_OBFUSCATED:
 
 			return getServersByID(allServers, 1), nil, nil
-		case config.ServerGroup_DEDICATED_SERVER:
-			panic("dedicated servers will never be recommended")
+		case config.ServerGroup_DEDICATED_SERVER,
+			config.ServerGroup_OVPN_OBFUSCATED:
+			panic("OVPN obfuscated and dedicated servers will never be recommended")
 		}
 	}
 

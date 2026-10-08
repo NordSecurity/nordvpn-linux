@@ -80,19 +80,9 @@ def test_set_defaults_when_logged_out_1st_set(tech, proto):
     assert settings.is_user_consent_declared(), "User consent should be declared"
     assert settings.is_rtp_enabled(), "RTP should be enabled"
 
-<<<<<<< HEAD
-    sh_no_tty.nordvpn.logout("--persist-token")
-=======
-    if obfuscated == "on":
-        assert settings.is_obfuscated_enabled(), "Obfuscation should be enabled when set to on"
-    else:
-        assert not settings.is_obfuscated_enabled(), "Obfuscation should be disabled when set to off"
-
     sh_no_tty.nordvpn.logout()
->>>>>>> origin/release/6.0.0
 
     assert "Settings were successfully restored to defaults." in  sh_no_tty.nordvpn.set.defaults("--logout"), "Settings restore should show success message"
-
     assert settings.app_has_defaults_settings(True), "App should have default settings after restore"
 
 

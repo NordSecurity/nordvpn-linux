@@ -32,7 +32,7 @@ final class MockServersList {
   late final StreamSubscription<AppState> _appStateSub;
 
   MockServersList(this.stream) {
-    _serversList = _generateServersList();
+    _serversList = _generateServersList(settings.Technology.NORDLYNX);
     _appStateSub = stream.stream.listen((value) {
       if (value.hasSettingsChange()) {
         final newSettings = value.settingsChange;

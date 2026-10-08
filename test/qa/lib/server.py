@@ -78,54 +78,7 @@ def _exclude_dedicated_ip_servers(servers: list[dict]) -> list[dict]:
     return non_dip_servers
 
 
-<<<<<<< HEAD
 def get_hostname_by(technology="", protocol="", group_name="", exclude_dip=False):
-=======
-def _server_is_virtual(server: dict) -> bool:
-    """
-    Returns True if the server is a virtual-location server.
-
-    The Core API exposes this as a "virtual_location" entry inside the
-    server's "specifications" list. The value is a *string* ("True"/"False")
-    nested under "values". Physical servers omit the spec entirely, so an
-    absent spec is treated as non-virtual.
-    """
-    for spec in server.get("specifications", []):
-        if spec.get("identifier") != "virtual_location":
-            continue
-
-        values = spec.get("values", [])
-        if not values:
-            return False
-
-        value = values[0].get("value")
-        # value is normally the string "True"/"False", but guard against a bool too
-        if isinstance(value, str):
-            return value.strip().lower() == "true"
-        return bool(value)
-
-    return False
-
-
-def _exclude_non_virtual_servers(servers: list[dict]) -> list[dict]:
-    """
-    Returns the input list with any non virtual servers removed.
-
-    The API returns both physical and virtual servers. This helps
-    us remove all the physical ones from the list.
-
-    Example:
-        _exclude_non_virtual_servers([ph_server, v_server])  # -> [v_server]
-    """
-    virtual_servers: list[dict] = []
-    for server in servers:
-        if _server_is_virtual(server):
-            virtual_servers.append(server)
-    return virtual_servers
-
-
-def get_hostname_by(technology="", protocol="", obfuscated="", group_name="", exclude_dip=False):
->>>>>>> origin/release/6.0.0
     """
     Returns server name and hostname from core API.
 
@@ -203,10 +156,6 @@ def get_random_virtual_server(technology="", protocol="", obfuscated="", group_n
     logging.debug("Core API response (truncated): %s", str(response)[:300])
 
     response = _exclude_dedicated_ip_servers(response)
-    if not response:
-        return None
-
-    response = _exclude_non_virtual_servers(response)
     if not response:
         return None
 

@@ -1,9 +1,5 @@
-<<<<<<< HEAD
 import random
-=======
 import warnings
->>>>>>> origin/release/6.0.0
-
 import pytest
 import sh
 
@@ -152,48 +148,8 @@ def test_autoconnect_to_obfuscated_group(tech, proto, group):
     autoconnect_base_test(group)
 
 
-<<<<<<< HEAD
-@pytest.mark.parametrize(("tech", "proto"), lib.STANDARD_TECHNOLOGIES)
-def test_autoconnect_virtual_country(tech, proto):
-    """Manual TC: LVPN-8549"""
-
-    lib.set_technology_and_protocol(tech, proto)
-    sh.nordvpn.set("virtual-location", "on")
-
-    virtual_countries = lib.get_virtual_countries()
-    assert len(virtual_countries) > 0, "Virtual countries should be available"
-    country = random.choice(virtual_countries)
-
-    autoconnect_base_test(country)
-
-
-@pytest.mark.parametrize(("tech", "proto"), lib.STANDARD_TECHNOLOGIES)
-def test_autoconnect_virtual_country_disabled(tech, proto):
-    """Manual TC: LVPN-8548"""
-
-    lib.set_technology_and_protocol(tech, proto)
-
-    # fix in LVPN-8449
-    # sh.nordvpn.set("virtual-location", "on")
-    # virtual_countries = lib.get_virtual_countries()
-    # assert len(virtual_countries) > 0
-    # country = random.choice(virtual_countries)
-    # until then chose a country that has only virtual server locations
-    country = "AF"
-
-    sh.nordvpn.set("virtual-location", "off")
-
-    with pytest.raises(sh.ErrorReturnCode_1) as _:
-        output = sh_no_tty.nordvpn.set.autoconnect.on(country)
-        assert "Please enable virtual location access to connect to this server." in output, "Should show virtual location access error"
-
-
 @pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
 def test_autoconnect_to_unavailable_groups(tech, proto):
-=======
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_autoconnect_to_unavailable_groups(tech, proto, obfuscated):
->>>>>>> origin/release/6.0.0
     """Manual TC: LVPN-8431"""
 
     lib.set_technology_and_protocol(tech, proto)
@@ -201,10 +157,6 @@ def test_autoconnect_to_unavailable_groups(tech, proto, obfuscated):
     unavailable_groups = daemon.get_unavailable_groups()
 
     for group in unavailable_groups:
-        # TODO(LVPN-10935)
-        if group == "Obfuscated" and tech == "nordwhisper":
-            continue
-
         with pytest.raises(sh.ErrorReturnCode_1) as ex:
             sh_no_tty.nordvpn.set.autoconnect.on(group)
 

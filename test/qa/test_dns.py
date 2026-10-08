@@ -9,13 +9,8 @@ from lib.dynamic_parametrize import dynamic_parametrize
 pytestmark = pytest.mark.usefixtures("nordvpnd_scope_module", "collect_logs", "disable_dns_and_real_time_protection")
 
 
-<<<<<<< HEAD
 @pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_set_tpl_on_off_connected(tech, proto):
-=======
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_set_rtp_on_off_connected(tech, proto, obfuscated):
->>>>>>> origin/release/6.0.0
+def test_set_rtp_on_off_connected(tech, proto):
     """Manual TC: LVPN-8718"""
 
     lib.set_technology_and_protocol(tech, proto)
@@ -44,13 +39,8 @@ def test_set_rtp_on_off_connected(tech, proto, obfuscated):
     assert dns.is_unset(), "DNS should be unset after disconnecting from VPN server"
 
 
-<<<<<<< HEAD
 @pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_set_tpl_on_and_connect(tech, proto):
-=======
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_set_rtp_on_and_connect(tech, proto, obfuscated):
->>>>>>> origin/release/6.0.0
+def test_set_rtp_on_and_connect(tech, proto):
     """Manual TC: LVPN-1603"""
 
     lib.set_technology_and_protocol(tech, proto)
@@ -70,13 +60,8 @@ def test_set_rtp_on_and_connect(tech, proto, obfuscated):
     assert dns.is_unset(), "DNS should be unset after disconnecting from VPN server"
 
 
-<<<<<<< HEAD
 @pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_set_tpl_off_and_connect(tech, proto):
-=======
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_set_rtp_off_and_connect(tech, proto, obfuscated):
->>>>>>> origin/release/6.0.0
+def test_set_rtp_off_and_connect(tech, proto):
     """Manual TC: LVPN-1606"""
 
     lib.set_technology_and_protocol(tech, proto)
@@ -107,13 +92,8 @@ def test_set_rtp_off_and_connect(tech, proto, obfuscated):
     generate_all=IS_NIGHTLY,
     id_pattern="{tech}-{proto}-{nameserver}",
 )
-<<<<<<< HEAD
-def test_tpl_on_set_custom_dns_disconnected(tech, proto, nameserver):
-    """Manual TC: LVPN-6802"""
-=======
-def test_rtp_on_set_custom_dns_disconnected(tech, proto, obfuscated, nameserver):
+def test_rtp_on_set_custom_dns_disconnected(tech, proto, nameserver):
     """Manual TC: LVPN-6803"""
->>>>>>> origin/release/6.0.0
 
     nameserver = nameserver.split(" ")
 
@@ -140,11 +120,7 @@ def test_rtp_on_set_custom_dns_disconnected(tech, proto, obfuscated, nameserver)
     generate_all=IS_NIGHTLY,
     id_pattern="{tech}-{proto}-{nameserver}",
 )
-<<<<<<< HEAD
-def test_tpl_on_set_custom_dns_connected(tech, proto, nameserver):
-=======
-def test_rtp_on_set_custom_dns_connected(tech, proto, obfuscated, nameserver):
->>>>>>> origin/release/6.0.0
+def test_rtp_on_set_custom_dns_connected(tech, proto, nameserver):
     """Manual TC: LVPN-6802"""
 
     nameserver = nameserver.split(" ")
@@ -449,11 +425,7 @@ def test_custom_dns_order_is_kept(tech, proto):
     generate_all=IS_NIGHTLY,
     id_pattern="{tech}-{proto}-{nameserver}",
 )
-<<<<<<< HEAD
-def test_custom_dns_removed_when_tpl_enabled_disconnected(tech, proto, nameserver):
-=======
-def test_custom_dns_removed_when_rtp_enabled_disconnected(tech, proto, obfuscated, nameserver):
->>>>>>> origin/release/6.0.0
+def test_custom_dns_removed_when_rtp_enabled_disconnected(tech, proto, nameserver):
     """Manual TC: LVPN-8439"""
 
     lib.set_technology_and_protocol(tech, proto)
@@ -482,11 +454,7 @@ def test_custom_dns_removed_when_rtp_enabled_disconnected(tech, proto, obfuscate
     generate_all=IS_NIGHTLY,
     id_pattern="{tech}-{proto}-{nameserver}",
 )
-<<<<<<< HEAD
-def test_custom_dns_removed_when_tpl_enabled_connected(tech, proto, nameserver):
-=======
-def test_custom_dns_removed_when_rtp_enabled_connected(tech, proto, obfuscated, nameserver):
->>>>>>> origin/release/6.0.0
+def test_custom_dns_removed_when_rtp_enabled_connected(tech, proto, nameserver):
     """Manual TC: LVPN-8444"""
 
     lib.set_technology_and_protocol(tech, proto)

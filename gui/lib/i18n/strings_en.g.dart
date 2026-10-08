@@ -1885,6 +1885,9 @@ class Translations$ui$en {
 	/// en: 'Use the Onion network with VPN protection'
 	String get onionOverVpnDesc => 'Use the Onion network with VPN protection';
 
+	/// en: 'Hide signs of VPN usage on restricted networks'
+	String get obfuscatedServersDesc => 'Hide signs of VPN usage on restricted networks';
+
 	/// en: 'Save'
 	String get save => 'Save';
 
@@ -1965,6 +1968,15 @@ class Translations$ui$en {
 
 	/// en: 'We couldn't save your settings to the configuration file.'
 	String get couldNotSave => 'We couldn\'t save your settings to the configuration file.';
+
+	/// en: 'Some settings weren't applied'
+	String get settingsNotApplied => 'Some settings weren\'t applied';
+
+	/// en: 'Some default network settings could not be applied. Reset settings again to retry. If the problem continues, contact support.'
+	String get networkSettingsNotAppliedDescription => 'Some default network settings could not be applied. Reset settings again to retry. If the problem continues, contact support.';
+
+	/// en: 'Some default settings could not be applied. The reset finished, but these settings may not be active: $settings. Reset settings again to retry. If the problem continues, contact support.'
+	String settingsNotAppliedDescription({required Object settings}) => 'Some default settings could not be applied. The reset finished, but these settings may not be active: ${settings}. Reset settings again to retry. If the problem continues, contact support.';
 
 	/// en: 'NordWhisper'
 	String get nordWhisper => 'NordWhisper';
@@ -2802,6 +2814,7 @@ extension on Translations {
 			'ui.settingAutoconnectTo' => ({required Object target}) => 'Setting auto-connect to [${target}]...',
 			'ui.doubleVpnDesc' => 'Encrypt your traffic twice for extra security',
 			'ui.onionOverVpnDesc' => 'Use the Onion network with VPN protection',
+			'ui.obfuscatedServersDesc' => 'Hide signs of VPN usage on restricted networks',
 			'ui.save' => 'Save',
 			'ui.close' => 'Close',
 			'ui.to' => 'to',
@@ -2829,6 +2842,9 @@ extension on Translations {
 			'ui.delete' => 'Delete',
 			'ui.settingsWereNotSaved' => 'Settings weren\'t saved',
 			'ui.couldNotSave' => 'We couldn\'t save your settings to the configuration file.',
+			'ui.settingsNotApplied' => 'Some settings weren\'t applied',
+			'ui.networkSettingsNotAppliedDescription' => 'Some default network settings could not be applied. Reset settings again to retry. If the problem continues, contact support.',
+			'ui.settingsNotAppliedDescription' => ({required Object settings}) => 'Some default settings could not be applied. The reset finished, but these settings may not be active: ${settings}. Reset settings again to retry. If the problem continues, contact support.',
 			'ui.nordWhisper' => 'NordWhisper',
 			'ui.system' => 'System',
 			'ui.removePrivateSubnets' => 'We\'ll remove private subnets from allowlist',

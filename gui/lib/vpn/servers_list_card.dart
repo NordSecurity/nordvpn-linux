@@ -258,6 +258,11 @@ final class _ServersListCardState extends State<ServersListCard> {
         description: t.ui.onionOverVpnDesc,
         key: ServerListWidgetKeys.onionOverVpn,
       ),
+      (
+        type: ServerType.obfuscated,
+        description: t.ui.obfuscatedServersDesc,
+        key: ServerListWidgetKeys.obfuscatedVpn,
+      ),
     ];
 
     return Column(

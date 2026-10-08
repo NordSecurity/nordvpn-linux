@@ -42,22 +42,6 @@ func NewRecentConnection(conn *pb.RecentConnectionModel) RecentConnection {
 	}
 }
 
-var groupTitles = map[config.ServerGroup]string{
-	config.ServerGroup_DOUBLE_VPN:           "Double VPN",
-	config.ServerGroup_ONION_OVER_VPN:       "Onion Over VPN",
-	config.ServerGroup_STANDARD_VPN_SERVERS: "Standard VPN Servers",
-	config.ServerGroup_NW_OBFUSCATED:        "Obfuscated",
-	config.ServerGroup_DEDICATED_IP:         "Dedicated IP",
-}
-
-func formatGroupTitle(group config.ServerGroup) string {
-	value, ok := groupTitles[group]
-	if !ok {
-		return ""
-	}
-	return value
-}
-
 func makeDisplayLabel(conn *RecentConnection) string {
 	switch conn.ConnectionType {
 	case config.ServerSelectionRule_CITY:

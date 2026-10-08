@@ -34,7 +34,6 @@ VpnStatus fakeVpnStatus({
     country: null,
     status: status,
     protocol: protocol,
-    isVirtualLocation: false,
     connectionParameters: ConnectionParameters(
       source: ConnectionSource.MANUAL,
       group: group,
