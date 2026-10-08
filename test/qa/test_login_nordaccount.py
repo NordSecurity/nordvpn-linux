@@ -63,6 +63,8 @@ def test_selenium_login():
             browser.save_screenshot(selenium.BROWSER_LOGS_PATH + "Screenshot.png")
             pytest.fail()
 
+        assert credentials.email in sh.nordvpn.account()
+
         output = sh.nordvpn.logout(_tty_out=False)
         print(f"Logout action output: {output}\n")
         assert selenium.LOGOUT_MSG_SUCCESS in output, "Logout should show success message"
@@ -105,3 +107,4 @@ def test_selenium_login_callback():
         output = sh.nordvpn.login("--callback", callback_link, _tty_out=False)
         print(f"Callback login action output: {output}\n")
         assert selenium.LOGIN_MSG_SUCCESS in output, "Login via callback should show success message"
+        assert credentials.email in sh.nordvpn.account()
