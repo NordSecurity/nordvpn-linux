@@ -46,16 +46,13 @@ def test_technology_set_options(tech, proto):
     """
     Manual TC: LVPN-601.
 
-    Only OpenVPN offers `nordvpn set protocol`.
+    Every technology offers `nordvpn set protocol`.
     """
     lib.set_technology_and_protocol(tech, proto)
 
     offered = settings.get_set_subcommands()
 
-    if tech == "openvpn":
-        assert "protocol" in offered, f"OpenVPN should offer 'nordvpn set protocol', got {offered}"
-    else:
-        assert "protocol" not in offered, f"'{tech}' should not offer 'nordvpn set protocol', got {offered}"
+    assert "protocol" in offered, f"'{tech}' should offer 'nordvpn set protocol', got {offered}"
 
 
 @pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
