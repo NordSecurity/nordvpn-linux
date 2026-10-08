@@ -405,8 +405,7 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 		return fmt.Errorf("setting moose is on vpn: %w", err)
 	}
 
-	isLoggedIn := cfg.AutoConnectData.ID != 0 && len(cfg.TokensData) > 0
-	if err := s.response(s.mooseFuncs.setIsLoggedInCurrentState(isLoggedIn)); err != nil {
+	if err := s.response(s.mooseFuncs.setIsLoggedInCurrentState(auth.IsAuthenticated(&cfg))); err != nil {
 		return fmt.Errorf("setting moose is logged in: %w", err)
 	}
 

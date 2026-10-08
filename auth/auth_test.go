@@ -129,8 +129,7 @@ func (p *mockBoolPublisher) Publish(b bool) {
 	p.enabled = b
 }
 
-type mockAuthPublisher struct {
-}
+type mockAuthPublisher struct{}
 
 func (p *mockAuthPublisher) Publish(events.DataAuthorization) {
 }
@@ -263,8 +262,10 @@ func TestIsVPNExpired(t *testing.T) {
 		{
 			name: "config save error",
 			cm:   &authConfigManager{saveErr: testErr},
-			api: &authAPI{resp: core.ServicesResponse{core.ServiceData{Service: core.Service{ID: VPNServiceID},
-				ExpiresAt: "1990-01-01 09:18:53"}}},
+			api: &authAPI{resp: core.ServicesResponse{core.ServiceData{
+				Service:   core.Service{ID: VPNServiceID},
+				ExpiresAt: "1990-01-01 09:18:53",
+			}}},
 			accPub:  &daemonevents.MockPublisherSubscriber[*pb.AccountModification]{},
 			isError: true,
 		},
@@ -609,6 +610,90 @@ func TestIsLoggedIn_CheckerRenewFailed(t *testing.T) {
 	assert.Error(t, err, "there should be an error")
 	assert.ErrorIs(t, err, expectedErr)
 	assert.Equal(t, 1, mockSS.RenewCallCount)
+}
+
+func TestIsLoggedIn_NotAuthenticated(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	mockSS := &mocksession.MockSessionStore{}
+	mockCM := &memoryConfigManager{c: config.Config{
+		AutoConnectData: config.AutoConnectData{ID: 1},
+		TokensData:      map[int64]config.TokenData{},
+	}}
+
+	checker := NewRenewingChecker(
+		mockCM,
+		&authAPI{},
+		&mockBoolPublisher{},
+		&mockAuthPublisher{},
+		&mockErrPublisher{},
+		&daemonevents.AccountUpdateEvents{},
+		&ServicesState{},
+		mockSS)
+
+	isLoggedIn, err := checker.IsLoggedIn()
+	assert.False(t, isLoggedIn)
+	assert.NoError(t, err)
+}
+
+func TestIsAuthenticated(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name     string
+		cfg      config.Config
+		expected bool
+	}{
+		{
+			name:     "empty config",
+			cfg:      config.Config{},
+			expected: false,
+		},
+		{
+			name: "user ID and token data set",
+			cfg: config.Config{
+				AutoConnectData: config.AutoConnectData{ID: 1},
+				TokensData:      map[int64]config.TokenData{1: {Token: "token"}},
+			},
+			expected: true,
+		},
+		{
+			name: "user ID set but tokens data nil",
+			cfg: config.Config{
+				AutoConnectData: config.AutoConnectData{ID: 1},
+			},
+			expected: false,
+		},
+		{
+			name: "user ID set but tokens data empty",
+			cfg: config.Config{
+				AutoConnectData: config.AutoConnectData{ID: 1},
+				TokensData:      map[int64]config.TokenData{},
+			},
+			expected: false,
+		},
+		{
+			name: "tokens data set but user ID is zero",
+			cfg: config.Config{
+				TokensData: map[int64]config.TokenData{1: {Token: "token"}},
+			},
+			expected: false,
+		},
+		{
+			name: "negative user ID",
+			cfg: config.Config{
+				AutoConnectData: config.AutoConnectData{ID: -1},
+				TokensData:      map[int64]config.TokenData{-1: {}},
+			},
+			expected: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, IsAuthenticated(&tt.cfg))
+		})
+	}
 }
 
 func TestHasDedicatedServerService(t *testing.T) {
