@@ -121,6 +121,10 @@ func (r *RenewingChecker) IsLoggedIn() (bool, error) {
 }
 
 func IsAuthenticated(cfg *config.Config) bool {
+	if cfg == nil {
+		log.Warn("passed config is nil")
+		return false
+	}
 	return cfg.AutoConnectData.ID != 0 && len(cfg.TokensData) > 0
 }
 

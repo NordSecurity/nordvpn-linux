@@ -593,17 +593,22 @@ func TestIsAuthenticated(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		cfg      config.Config
+		cfg      *config.Config
 		expected bool
 	}{
 		{
+			name:     "nil config",
+			cfg:      nil,
+			expected: false,
+		},
+		{
 			name:     "empty config",
-			cfg:      config.Config{},
+			cfg:      &config.Config{},
 			expected: false,
 		},
 		{
 			name: "user ID and token data set",
-			cfg: config.Config{
+			cfg: &config.Config{
 				AutoConnectData: config.AutoConnectData{ID: 1},
 				TokensData:      map[int64]config.TokenData{1: {Token: "token"}},
 			},
@@ -611,14 +616,14 @@ func TestIsAuthenticated(t *testing.T) {
 		},
 		{
 			name: "user ID set but tokens data nil",
-			cfg: config.Config{
+			cfg: &config.Config{
 				AutoConnectData: config.AutoConnectData{ID: 1},
 			},
 			expected: false,
 		},
 		{
 			name: "user ID set but tokens data empty",
-			cfg: config.Config{
+			cfg: &config.Config{
 				AutoConnectData: config.AutoConnectData{ID: 1},
 				TokensData:      map[int64]config.TokenData{},
 			},
@@ -626,14 +631,14 @@ func TestIsAuthenticated(t *testing.T) {
 		},
 		{
 			name: "tokens data set but user ID is zero",
-			cfg: config.Config{
+			cfg: &config.Config{
 				TokensData: map[int64]config.TokenData{1: {Token: "token"}},
 			},
 			expected: false,
 		},
 		{
 			name: "negative user ID",
-			cfg: config.Config{
+			cfg: &config.Config{
 				AutoConnectData: config.AutoConnectData{ID: -1},
 				TokensData:      map[int64]config.TokenData{-1: {}},
 			},
@@ -643,7 +648,7 @@ func TestIsAuthenticated(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.expected, IsAuthenticated(&tt.cfg))
+			assert.Equal(t, tt.expected, IsAuthenticated(tt.cfg))
 		})
 	}
 }
