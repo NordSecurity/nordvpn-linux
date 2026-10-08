@@ -35,15 +35,15 @@ func TestVPNProtocol_MapsToTechnologyTransportAndDisplayName(t *testing.T) {
 	tests := []struct {
 		protocol    VPNProtocol
 		technology  Technology
-		transport   Protocol
+		transport   Transport
 		displayName string
 	}{
-		{VPNProtocol_VPN_PROTOCOL_NORDLYNX, TechnologyNordLynx, Protocol_UNKNOWN_PROTOCOL, "NordLynx"},
-		{VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP, TechnologyOpenVPN, Protocol_UDP, "OpenVPN (UDP)"},
-		{VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP, TechnologyOpenVPN, Protocol_TCP, "OpenVPN (TCP)"},
-		{VPNProtocol_VPN_PROTOCOL_NORDWHISPER, TechnologyNordWhisper, Protocol_Webtunnel, "NordWhisper (WebTunnel)"},
-		{VPNProtocol_VPN_PROTOCOL_UNSPECIFIED, TechnologyUnknown, Protocol_UNKNOWN_PROTOCOL, "VPN_PROTOCOL_UNSPECIFIED"},
-		{VPNProtocol(99), TechnologyUnknown, Protocol_UNKNOWN_PROTOCOL, "VPN_PROTOCOL_UNSPECIFIED"},
+		{VPNProtocol_VPN_PROTOCOL_NORDLYNX, TechnologyNordLynx, TransportUnknown, "NordLynx"},
+		{VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP, TechnologyOpenVPN, TransportUDP, "OpenVPN (UDP)"},
+		{VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP, TechnologyOpenVPN, TransportTCP, "OpenVPN (TCP)"},
+		{VPNProtocol_VPN_PROTOCOL_NORDWHISPER, TechnologyNordWhisper, TransportWebTunnel, "NordWhisper (WebTunnel)"},
+		{VPNProtocol_VPN_PROTOCOL_UNSPECIFIED, TechnologyUnknown, TransportUnknown, "VPN_PROTOCOL_UNSPECIFIED"},
+		{VPNProtocol(99), TechnologyUnknown, TransportUnknown, "VPN_PROTOCOL_UNSPECIFIED"},
 	}
 
 	for _, test := range tests {
@@ -81,16 +81,16 @@ func TestVPNProtocolFromLegacy(t *testing.T) {
 
 	tests := []struct {
 		tech     Technology
-		proto    Protocol
+		proto    Transport
 		expected VPNProtocol
 	}{
-		{TechnologyNordLynx, Protocol_UDP, VPNProtocol_VPN_PROTOCOL_NORDLYNX},
-		{TechnologyNordLynx, Protocol_TCP, VPNProtocol_VPN_PROTOCOL_NORDLYNX},
-		{TechnologyOpenVPN, Protocol_TCP, VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP},
-		{TechnologyOpenVPN, Protocol_UDP, VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP},
-		{TechnologyOpenVPN, Protocol_UNKNOWN_PROTOCOL, VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP},
-		{TechnologyNordWhisper, Protocol_Webtunnel, VPNProtocol_VPN_PROTOCOL_NORDWHISPER},
-		{TechnologyUnknown, Protocol_UDP, VPNProtocol_VPN_PROTOCOL_NORDLYNX},
+		{TechnologyNordLynx, TransportUDP, VPNProtocol_VPN_PROTOCOL_NORDLYNX},
+		{TechnologyNordLynx, TransportTCP, VPNProtocol_VPN_PROTOCOL_NORDLYNX},
+		{TechnologyOpenVPN, TransportTCP, VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP},
+		{TechnologyOpenVPN, TransportUDP, VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP},
+		{TechnologyOpenVPN, TransportUnknown, VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP},
+		{TechnologyNordWhisper, TransportWebTunnel, VPNProtocol_VPN_PROTOCOL_NORDWHISPER},
+		{TechnologyUnknown, TransportUDP, VPNProtocol_VPN_PROTOCOL_NORDLYNX},
 	}
 
 	for _, test := range tests {

@@ -14,7 +14,7 @@ var errUnknownTechnology = errors.New("unknown technology")
 // techProto is the technology/protocol a VPN connection is (or would be) made with.
 type techProto struct {
 	technology config.Technology
-	protocol   config.Protocol
+	protocol   config.Transport
 }
 
 // isVPNConnected reports whether a VPN tunnel is up. connectedTechProto is set only on a
@@ -85,7 +85,7 @@ func (s *Subscriber) reportEffectiveConnection(c techProto) error {
 		}
 	}
 
-	if c.protocol != config.Protocol_UNKNOWN_PROTOCOL {
+	if c.protocol != config.TransportUnknown {
 		if err := s.response(s.mooseFuncs.setProtocolCurrentState(connectionProtocolToInternalType(c.protocol))); err != nil {
 			errs = append(errs, fmt.Errorf("setting protocol current state (%v): %w", c.protocol, err))
 		}

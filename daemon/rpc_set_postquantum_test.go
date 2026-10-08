@@ -176,7 +176,7 @@ func TestSetPostquantumVpn(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.testName, func(t *testing.T) {
 			mockConfigManager.c.Mesh = test.meshnet
-			mockConfigManager.c.VPNProtocol = vpnProtocolFor(test.tech, config.Protocol_UDP)
+			mockConfigManager.c.VPNProtocol = vpnProtocolFor(test.tech, config.TransportUDP)
 			mockConfigManager.c.AutoConnect = test.autoconnect
 			mockConfigManager.c.AutoConnectData.Group = test.autoconnectTargetGroup
 			mockConfigManager.c.AutoConnectData.PostquantumVpn = !test.pq

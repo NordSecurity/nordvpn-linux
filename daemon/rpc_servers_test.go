@@ -394,7 +394,7 @@ func TestServers(t *testing.T) {
 		serversErr       error
 		obfuscate        bool
 		technology       config.Technology
-		protocol         config.Protocol
+		protocol         config.Transport
 		configErr        error
 		expectedResponse *pb.ServersResponse
 	}{
@@ -403,7 +403,7 @@ func TestServers(t *testing.T) {
 			serversList: servers,
 			obfuscate:   false,
 			technology:  config.TechnologyOpenVPN,
-			protocol:    config.Protocol_TCP,
+			protocol:    config.TransportTCP,
 			expectedResponse: &pb.ServersResponse{
 				Response: &pb.ServersResponse_Servers{Servers: &pb.ServersMap{
 					ServersByCountry: expectedServersOpenVPNTCP,
@@ -414,7 +414,7 @@ func TestServers(t *testing.T) {
 			name:        "success openvpn UDP ignores legacy XOR technologies and tag",
 			serversList: servers,
 			technology:  config.TechnologyOpenVPN,
-			protocol:    config.Protocol_UDP,
+			protocol:    config.TransportUDP,
 			expectedResponse: &pb.ServersResponse{
 				Response: &pb.ServersResponse_Servers{Servers: &pb.ServersMap{
 					ServersByCountry: expectedServersOpenVPNUDP,

@@ -53,11 +53,11 @@ func newMockConfigManager() *mockConfigManager {
 }
 
 // vpnProtocolFor maps a test's technology and protocol to a VPN protocol.
-func vpnProtocolFor(tech config.Technology, proto config.Protocol) config.VPNProtocol {
+func vpnProtocolFor(tech config.Technology, proto config.Transport) config.VPNProtocol {
 	//exhaustive:ignore
 	switch tech {
 	case config.TechnologyOpenVPN:
-		if proto == config.Protocol_TCP {
+		if proto == config.TransportTCP {
 			return config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP
 		}
 		return config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP

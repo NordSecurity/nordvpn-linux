@@ -21,19 +21,19 @@ func (p VPNProtocol) Technology() Technology {
 }
 
 // Transport returns transport used for the selected vpn protocol
-func (p VPNProtocol) Transport() Protocol {
+func (p VPNProtocol) Transport() Transport {
 	//exhaustive:ignore
 	switch p {
 	case VPNProtocol_VPN_PROTOCOL_NORDLYNX:
-		return Protocol_UNKNOWN_PROTOCOL
+		return TransportUnknown
 	case VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP:
-		return Protocol_TCP
+		return TransportTCP
 	case VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP:
-		return Protocol_UDP
+		return TransportUDP
 	case VPNProtocol_VPN_PROTOCOL_NORDWHISPER:
-		return Protocol_Webtunnel
+		return TransportWebTunnel
 	}
-	return Protocol_UNKNOWN_PROTOCOL
+	return TransportUnknown
 }
 
 // DisplayName converts vpn protocol to string representation
@@ -68,11 +68,11 @@ func (p VPNProtocol) IsNordWhisper() bool {
 }
 
 // vpnProtocolFromLegacy maps the technology and protocol stored by versions before vpn_protocol.
-func vpnProtocolFromLegacy(tech Technology, proto Protocol) VPNProtocol {
+func vpnProtocolFromLegacy(tech Technology, proto Transport) VPNProtocol {
 	//exhaustive:ignore
 	switch tech {
 	case TechnologyOpenVPN:
-		if proto == Protocol_TCP {
+		if proto == TransportTCP {
 			return VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP
 		}
 		return VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP
@@ -90,7 +90,7 @@ func migrateVPNProtocol(c *Config, data []byte) {
 	var legacy struct {
 		Technology      Technology `json:"technology"`
 		AutoConnectData struct {
-			Protocol Protocol `json:"protocol"`
+			Protocol Transport `json:"protocol"`
 		} `json:"auto_connect_data"`
 	}
 	_ = json.Unmarshal(data, &legacy)

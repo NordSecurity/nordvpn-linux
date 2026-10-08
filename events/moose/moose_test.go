@@ -2398,13 +2398,13 @@ func TestAnalyticsProtocol(t *testing.T) {
 
 	tests := []struct {
 		vpnProtocol config.VPNProtocol
-		expected    config.Protocol
+		expected    config.Transport
 	}{
-		{config.VPNProtocol_VPN_PROTOCOL_NORDLYNX, config.Protocol_UDP},
-		{config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP, config.Protocol_UDP},
-		{config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP, config.Protocol_TCP},
-		{config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER, config.Protocol_Webtunnel},
-		{config.VPNProtocol_VPN_PROTOCOL_UNSPECIFIED, config.Protocol_UNKNOWN_PROTOCOL},
+		{config.VPNProtocol_VPN_PROTOCOL_NORDLYNX, config.TransportUDP},
+		{config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP, config.TransportUDP},
+		{config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP, config.TransportTCP},
+		{config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER, config.TransportWebTunnel},
+		{config.VPNProtocol_VPN_PROTOCOL_UNSPECIFIED, config.TransportUnknown},
 	}
 
 	for _, test := range tests {

@@ -1323,7 +1323,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 			}
 
 			configManagerMock := rpc.cm.(*mockConfigManager)
-			configManagerMock.c.VPNProtocol = vpnProtocolFor(test.technology, config.Protocol_UDP)
+			configManagerMock.c.VPNProtocol = vpnProtocolFor(test.technology, config.TransportUDP)
 			configManagerMock.c.AutoConnectData.PostquantumVpn = test.postQuantum
 
 			mockRPCServer := &mockRPCServer{}
@@ -1741,11 +1741,11 @@ func TestSetVPNProtocolThenConnect_ConnectsWithSelectedProtocol(t *testing.T) {
 	tests := []struct {
 		target             config.VPNProtocol
 		expectedTech       config.Technology
-		expectedProtocol   config.Protocol
+		expectedProtocol   config.Transport
 		expectedServerTech core.ServerTechnology
 	}{
-		{config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP, config.TechnologyOpenVPN, config.Protocol_UDP, core.OpenVPNUDP},
-		{config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP, config.TechnologyOpenVPN, config.Protocol_TCP, core.OpenVPNTCP},
+		{config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP, config.TechnologyOpenVPN, config.TransportUDP, core.OpenVPNUDP},
+		{config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP, config.TechnologyOpenVPN, config.TransportTCP, core.OpenVPNTCP},
 	}
 
 	for _, test := range tests {

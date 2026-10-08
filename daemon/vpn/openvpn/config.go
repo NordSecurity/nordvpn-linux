@@ -51,14 +51,14 @@ type ovpnConfigData struct {
 
 // setOpenVPNConfig is used to pass generated config to the OpenVPN process.
 // Config has to be passed everytime when new OpenVPN process is started.
-func setOpenVPNConfig(protocol config.Protocol, serverIP netip.Addr, serverVersion string) error {
+func setOpenVPNConfig(protocol config.Transport, serverIP netip.Addr, serverVersion string) error {
 	if serverVersion == "" {
 		return ErrServerVersion
 	}
 	return generateConfigFile(protocol, serverIP)
 }
 
-func generateConfigFile(protocol config.Protocol, serverIP netip.Addr) error {
+func generateConfigFile(protocol config.Transport, serverIP netip.Addr) error {
 	identifier, err := getConfigIdentifier(protocol)
 	if err != nil {
 		return fmt.Errorf("getting config identifier: %w", err)
@@ -154,22 +154,22 @@ func generateConfigXML(serverIP netip.Addr, identifier openvpnID) ([]byte, error
 	return out.Bytes(), err
 }
 
-func getConfigIdentifier(protocol config.Protocol) (openvpnID, error) {
+func getConfigIdentifier(protocol config.Transport) (openvpnID, error) {
 	switch protocol {
-	case config.Protocol_UDP:
+	case config.TransportUDP:
 		return techUDP, nil
-	case config.Protocol_TCP:
+	case config.TransportTCP:
 		return techTCP, nil
-	case config.Protocol_Webtunnel:
+	case config.TransportWebTunnel:
 		fallthrough
-	case config.Protocol_UNKNOWN_PROTOCOL:
+	case config.TransportUnknown:
 		fallthrough
 	default:
 		return "", errors.New("unknown protocol")
 	}
 }
 
-func addExtraParameters(data []byte, serverIP netip.Addr, protocol config.Protocol) error {
+func addExtraParameters(data []byte, serverIP netip.Addr, protocol config.Transport) error {
 	args := strings.Split(string(data), "\n")
 	if !serverIP.Is6() {
 		args = addOrReplaceArgument(args, "pull-filter ignore \"ifconfig-ipv6\"", "pull-filter ignore \"ifconfig-ipv6\".*$")
@@ -181,13 +181,13 @@ func addExtraParameters(data []byte, serverIP netip.Addr, protocol config.Protoc
 	// override openvpn proto
 	if serverIP.Is6() {
 		switch protocol {
-		case config.Protocol_UDP:
+		case config.TransportUDP:
 			args = addOrReplaceArgument(args, "proto udp6", "proto udp6$")
-		case config.Protocol_TCP:
+		case config.TransportTCP:
 			args = addOrReplaceArgument(args, "proto tcp6", "proto tcp6$")
-		case config.Protocol_Webtunnel:
+		case config.TransportWebTunnel:
 			fallthrough
-		case config.Protocol_UNKNOWN_PROTOCOL:
+		case config.TransportUnknown:
 			fallthrough
 		default:
 			return errors.New("unknown protocol")

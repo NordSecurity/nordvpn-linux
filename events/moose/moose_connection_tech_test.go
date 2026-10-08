@@ -170,8 +170,8 @@ func TestNotifyVPNProtocol_MeshnetPeerOnly_IsNotDeferred(t *testing.T) {
 func TestVPNProtocolChangeWhileConnected_ReportedOnNextConnect(t *testing.T) {
 	category.Set(t, category.Unit)
 	sub, rec := newTechTestSubscriber()
-	udp := connectionProtocolToInternalType(config.Protocol_UDP)
-	webtunnel := connectionProtocolToInternalType(config.Protocol_Webtunnel)
+	udp := connectionProtocolToInternalType(config.TransportUDP)
+	webtunnel := connectionProtocolToInternalType(config.TransportWebTunnel)
 
 	assert.NilError(t, sub.NotifyVPNProtocol(config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP))
 

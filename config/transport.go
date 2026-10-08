@@ -2,27 +2,27 @@ package config
 
 import "strconv"
 
-// Protocol is the transport protocol of a connection or port
-type Protocol int32
+// Transport is the transport protocol of a connection or port
+type Transport int32
 
 const (
-	Protocol_UNKNOWN_PROTOCOL Protocol = 0
-	Protocol_UDP              Protocol = 1
-	Protocol_TCP              Protocol = 2
-	Protocol_Webtunnel        Protocol = 3
+	TransportUnknown   Transport = 0
+	TransportUDP       Transport = 1
+	TransportTCP       Transport = 2
+	TransportWebTunnel Transport = 3
 )
 
-func (p Protocol) String() string {
-	switch p {
-	case Protocol_UNKNOWN_PROTOCOL:
+func (t Transport) String() string {
+	switch t {
+	case TransportUnknown:
 		return "UNKNOWN_PROTOCOL"
-	case Protocol_UDP:
+	case TransportUDP:
 		return "UDP"
-	case Protocol_TCP:
+	case TransportTCP:
 		return "TCP"
-	case Protocol_Webtunnel:
+	case TransportWebTunnel:
 		return "Webtunnel"
 	default:
-		return strconv.Itoa(int(p))
+		return strconv.Itoa(int(t))
 	}
 }

@@ -1702,15 +1702,15 @@ func eventStatusToInternalType(status events.TypeEventStatus) moose.NordvpnappEv
 }
 
 // connectionProtocolToInternalType converts the connection protocol to the internal representation
-func connectionProtocolToInternalType(proto config.Protocol) moose.NordvpnappVpnConnectionProtocol {
+func connectionProtocolToInternalType(proto config.Transport) moose.NordvpnappVpnConnectionProtocol {
 	switch proto {
-	case config.Protocol_TCP:
+	case config.TransportTCP:
 		return moose.NordvpnappVpnConnectionProtocolTcp
-	case config.Protocol_UDP:
+	case config.TransportUDP:
 		return moose.NordvpnappVpnConnectionProtocolUdp
-	case config.Protocol_Webtunnel:
+	case config.TransportWebTunnel:
 		return moose.NordvpnappVpnConnectionProtocolWebtunnel
-	case config.Protocol_UNKNOWN_PROTOCOL:
+	case config.TransportUnknown:
 		return moose.NordvpnappVpnConnectionProtocolNone
 	default:
 		return moose.NordvpnappVpnConnectionProtocolRecommended
@@ -1718,9 +1718,9 @@ func connectionProtocolToInternalType(proto config.Protocol) moose.NordvpnappVpn
 }
 
 // analyticsProtocol returns the transport reported to analytics, with NordLynx as UDP.
-func analyticsProtocol(p config.VPNProtocol) config.Protocol {
+func analyticsProtocol(p config.VPNProtocol) config.Transport {
 	if p.IsNordLynx() {
-		return config.Protocol_UDP
+		return config.TransportUDP
 	}
 	return p.Transport()
 }
