@@ -117,7 +117,15 @@ func (r *RenewingChecker) IsLoggedIn() (bool, error) {
 		return false, err
 	}
 
-	return cfg.AutoConnectData.ID != 0 && len(cfg.TokensData) > 0, nil
+	return IsAuthenticated(&cfg), nil
+}
+
+func IsAuthenticated(cfg *config.Config) bool {
+	if cfg == nil {
+		log.Warn("passed config is nil")
+		return false
+	}
+	return cfg.AutoConnectData.ID != 0 && len(cfg.TokensData) > 0
 }
 
 // IsMFAEnabled checks if user account has MFA turned on.
