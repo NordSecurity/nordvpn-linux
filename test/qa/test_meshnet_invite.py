@@ -183,6 +183,13 @@ def test_invite_accept():
     assert f"Meshnet invitation from '{email}' was accepted." in meshnet.accept_meshnet_invite(ssh_client), "Accept invite should show success message"
     assert email not in ssh_client.exec_command("nordvpn meshnet invite list"), "Invite should not appear anymore in peer's invite list"
 
+    peer_list_tester = sh_no_tty.nordvpn.mesh.peer.list()
+    mesh_hostname_tester = meshnet.PeerList.from_str(peer_list_tester).get_this_device().hostname
+    peer_list_qapeer = ssh_client.exec_command("nordvpn meshnet peer list")
+    mesh_hostname_qapeer = meshnet.PeerList.from_str(peer_list_qapeer).get_this_device().hostname
+    assert mesh_hostname_tester in peer_list_qapeer
+    assert mesh_hostname_qapeer in peer_list_tester
+
 
 @pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
 def test_invite_accept_non_existent():
