@@ -62,3 +62,5 @@ vgcore.*
 
 # Don't ignore core directory
 !core/
+
+test/e2e/vmtests/artifacts
