@@ -138,6 +138,7 @@ def test_invite_deny():
     email = login.get_credentials("default").email
     assert email in ssh_client.exec_command("nordvpn meshnet invite list"), "Sent invite should appear in peer's invite list"
     assert f"Meshnet invitation from '{email}' was denied." in meshnet.deny_meshnet_invite(ssh_client), "Deny invite should show success message"
+    assert email not in ssh_client.exec_command("nordvpn meshnet invite list"), "Invite should not appear anymore in peer's invite list"
 
 
 @pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
@@ -180,6 +181,7 @@ def test_invite_accept():
     email = login.get_credentials("default").email
     assert email in ssh_client.exec_command("nordvpn meshnet invite list"), "Sent invite should appear in peer's invite list"
     assert f"Meshnet invitation from '{email}' was accepted." in meshnet.accept_meshnet_invite(ssh_client), "Accept invite should show success message"
+    assert email not in ssh_client.exec_command("nordvpn meshnet invite list"), "Invite should not appear anymore in peer's invite list"
 
 
 @pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
