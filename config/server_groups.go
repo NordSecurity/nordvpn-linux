@@ -8,7 +8,7 @@ var GroupMap = map[string]ServerGroup{
 	"onion_over_vpn":       ServerGroup_ONION_OVER_VPN,
 	"dedicated_ip":         ServerGroup_DEDICATED_IP,
 	"standard_vpn_servers": ServerGroup_STANDARD_VPN_SERVERS,
-	"obfuscated_servers":   ServerGroup_OBFUSCATED,
+	"obfuscated":           ServerGroup_NW_OBFUSCATED,
 	"dedicated_server":     ServerGroup_DEDICATED_SERVER,
 }
 
@@ -18,7 +18,7 @@ var GroupLabels = map[ServerGroup]string{
 	ServerGroup_ONION_OVER_VPN:       "Onion_Over_VPN",
 	ServerGroup_DEDICATED_IP:         "Dedicated_IP",
 	ServerGroup_STANDARD_VPN_SERVERS: "Standard_VPN_Servers",
-	ServerGroup_OBFUSCATED:           "Obfuscated_Servers",
+	ServerGroup_NW_OBFUSCATED:        "Obfuscated",
 	ServerGroup_DEDICATED_SERVER:     "Dedicated_Server",
 }
 

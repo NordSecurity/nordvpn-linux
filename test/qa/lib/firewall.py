@@ -22,17 +22,12 @@ except Exception as e: # noqa: BLE001
     print(e)
     print("Unable to get qa-peer addr, does it exist?")
 
-# specific addresses only, `ip route get` supports /32 (or no mask) only
-LAN_DISCOVERY_IPS = [
-    "10.0.0.1", "10.255.255.254",               # 10.0.0.0/8
-    "172.16.0.1", "172.31.255.254",             # 172.16.0.0/12
-    "192.168.0.1", "192.168.255.254",           # 192.168.0.0/16
-    "169.254.0.1", "169.254.255.254",           # 169.254.0.0/16
-    "224.0.0.1", "224.0.0.251", "224.0.0.255",  # 224.0.0.0/24 (incl. mDNS)
-    "239.255.255.250",                          # SSDP
+LAN_DISCOVERY_SUBNETS = [
+    "169.254.0.0/16",
+    "192.168.0.0/16",
+    "172.16.0.0/12",
+    "10.0.0.0/8"
 ]
-
-NON_LAN_DISCOVERY_MULTICAST_IPS = ["224.0.1.1", "239.255.255.251"]
 
 def setup_port_sock_server(ssh_client : ssh.Ssh | None):
     if ssh_client is None:

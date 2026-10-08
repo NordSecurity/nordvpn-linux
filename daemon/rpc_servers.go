@@ -21,10 +21,6 @@ func technologiesToProtobuf(technologies core.Technologies) []pb.Technology {
 			technologiesProto = append(technologiesProto, pb.Technology_OPENVPN_UDP)
 		case core.OpenVPNTCP:
 			technologiesProto = append(technologiesProto, pb.Technology_OPENVPN_TCP)
-		case core.OpenVPNUDPObfuscated:
-			technologiesProto = append(technologiesProto, pb.Technology_OBFUSCATED_OPENVPN_UDP)
-		case core.OpenVPNTCPObfuscated:
-			technologiesProto = append(technologiesProto, pb.Technology_OBFUSCATED_OPENVPN_TCP)
 		case core.WireguardTech:
 			technologiesProto = append(technologiesProto, pb.Technology_NORDLYNX)
 		}
@@ -33,22 +29,21 @@ func technologiesToProtobuf(technologies core.Technologies) []pb.Technology {
 	return technologiesProto
 }
 
-// groupFilter converts core.Groups to a slice of config.ServerGroup. It also filters out the groups so that only ones
-// returned are of interest to the GUI.
-func groupFilter(groups core.Groups) []config.ServerGroup {
+// groupsToProtobuf returns the groups the server offers under the technology as a slice of
+// config.ServerGroup, keeping only the ones of interest to the GUI
+func groupsToProtobuf(server core.Server, technology config.Technology) []config.ServerGroup {
 	filter := []config.ServerGroup{
 		config.ServerGroup_DOUBLE_VPN,
 		config.ServerGroup_ONION_OVER_VPN,
 		config.ServerGroup_DEDICATED_IP,
-		config.ServerGroup_OBFUSCATED,
 		config.ServerGroup_STANDARD_VPN_SERVERS,
+		config.ServerGroup_NW_OBFUSCATED,
 	}
 
+	groups := serverpicker.EffectiveGroups(server, technology)
 	desiredGroups := []config.ServerGroup{}
 	for _, filterGroup := range filter {
-		if slices.ContainsFunc(groups, func(g core.Group) bool {
-			return g.ID == filterGroup
-		}) {
+		if slices.ContainsFunc(groups, core.ByGroup(filterGroup)) {
 			desiredGroups = append(desiredGroups, filterGroup)
 		}
 	}
@@ -56,7 +51,10 @@ func groupFilter(groups core.Groups) []config.ServerGroup {
 	return desiredGroups
 }
 
-func serversListToServersMap(internalServers core.Servers) []*pb.ServerCountry {
+func serversListToServersMap(
+	internalServers core.Servers,
+	technology config.Technology,
+) []*pb.ServerCountry {
 	type serversMap map[string]map[string][]*pb.Server
 
 	sMap := make(serversMap)
@@ -64,10 +62,10 @@ func serversListToServersMap(internalServers core.Servers) []*pb.ServerCountry {
 	countryNames := make(map[string]string)
 
 	for _, server := range internalServers {
-		s := pb.Server{
+		s := &pb.Server{
 			Id:           server.ID,
 			HostName:     server.Hostname,
-			ServerGroups: groupFilter(server.Groups),
+			ServerGroups: groupsToProtobuf(server, technology),
 			Technologies: technologiesToProtobuf(server.Technologies),
 		}
 
@@ -75,15 +73,11 @@ func serversListToServersMap(internalServers core.Servers) []*pb.ServerCountry {
 		cityName := server.Country().City.Name
 
 		if _, ok := sMap[countryCode]; !ok {
-			sMap[countryCode] = make(map[string][]*pb.Server, 0)
+			sMap[countryCode] = make(map[string][]*pb.Server)
 			countryNames[countryCode] = server.Country().Name
 		}
 
-		if _, ok := sMap[countryCode][cityName]; !ok {
-			sMap[countryCode][cityName] = []*pb.Server{}
-		}
-
-		sMap[countryCode][cityName] = append(sMap[countryCode][cityName], &s)
+		sMap[countryCode][cityName] = append(sMap[countryCode][cityName], s)
 	}
 
 	countries := []*pb.ServerCountry{}
@@ -128,7 +122,7 @@ func (r *RPC) GetServers(ctx context.Context, in *pb.Empty) (*pb.ServersResponse
 
 	return &pb.ServersResponse{Response: &pb.ServersResponse_Servers{
 		Servers: &pb.ServersMap{
-			ServersByCountry: serversListToServersMap(servers),
+			ServersByCountry: serversListToServersMap(servers, cfg.Technology),
 		},
 	}}, nil
 }

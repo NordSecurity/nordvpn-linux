@@ -12,9 +12,10 @@ func SpecialtyGroupLabel(status *pb.StatusResponse) string {
 	}
 
 	group := status.GetParameters().GetGroup()
+
 	// TODO: Move to switch below after LVPN-10704
 	if status.GetObfuscated() {
-		group = config.ServerGroup_OBFUSCATED
+		group = config.ServerGroup_NW_OBFUSCATED
 	}
 
 	//exhaustive:ignore [only specialty groups have a label]
@@ -22,7 +23,7 @@ func SpecialtyGroupLabel(status *pb.StatusResponse) string {
 	case config.ServerGroup_DOUBLE_VPN,
 		config.ServerGroup_ONION_OVER_VPN,
 		config.ServerGroup_DEDICATED_IP,
-		config.ServerGroup_OBFUSCATED:
+		config.ServerGroup_NW_OBFUSCATED:
 		return config.GroupDisplayName(group)
 	}
 	return ""

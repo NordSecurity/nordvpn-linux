@@ -151,9 +151,6 @@ var (
 	// OvpnTemplatePath defines filename of ovpn template file
 	OvpnTemplatePath = filepath.Join(DatFilesPathCommon, "ovpn_template.xslt")
 
-	// OvpnObfsTemplatePath defines filename of ovpn obfuscated template file
-	OvpnObfsTemplatePath = filepath.Join(DatFilesPathCommon, "ovpn_xor_template.xslt")
-
 	// DaemonSocket defines system daemon socket file location
 	DaemonSocket = filepath.Join(RunDir, "/nordvpnd.sock")
 
@@ -174,15 +171,18 @@ var (
 	ReservedMeshnetSubnet = netip.MustParsePrefix("100.64.0.0/29")
 
 	// MeshSubnet is the subnet used for meshnet
-	MeshSubnet    = netip.MustParsePrefix("100.64.0.0/10")
+	MeshSubnet = netip.MustParsePrefix("100.64.0.0/10")
+
+	// NordLynxSubnet is the subnet used for NordLynx VPN and Dedicated Server
+	NordLynxSubnet = netip.MustParsePrefix("10.5.0.0/16")
+
 	LocalNetworks = []string{
 		"10.0.0.0/8",
 		"172.16.0.0/12",
 		"192.168.0.0/16",
 		"169.254.0.0/16",
 	}
-	MulticastSubnet = "224.0.0.0/24"
-	SSDPSubnet      = "239.255.255.250/32"
+	MDNSSubnet = "224.0.0.251/32"
 )
 
 var (

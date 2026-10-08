@@ -12,15 +12,10 @@ void runDisconnectTest(
   String name,
   Technology technology,
   Protocol protocol, {
-  bool? obfuscate,
   String? country,
 }) {
   testWidgets("- $name", (tester) async {
     final settings = Settings(technology: technology, protocol: protocol);
-
-    if (obfuscate != null) {
-      settings.obfuscate = obfuscate;
-    }
 
     final app = await tester.setupIntegrationTests(appSettings: settings);
 
@@ -52,18 +47,10 @@ void runDisconnectTest(
       timeout: Duration(seconds: 10),
     );
 
-    if (obfuscate != null) {
-      final isConnectedToObfuscated = find.descendant(
-        of: vpnStatusCard(),
-        matching: find.textContaining(t.ui.obfuscated),
-      );
-      expect(isConnectedToObfuscated, findsOneWidget);
-    } else {
-      await tester.pumpUntilFound(
-        find.text(t.ui.secured),
-        timeout: Duration(seconds: 10),
-      );
-    }
+    await tester.pumpUntilFound(
+      find.text(t.ui.secured),
+      timeout: Duration(seconds: 10),
+    );
 
     if (country != null) {
       final isCountryConnected = find.descendant(
@@ -112,24 +99,8 @@ void runDisconnectSmokeTests() {
     // Manual TCID: LVPN-6378
     runDisconnectTest('openvpn tcp', Technology.OPENVPN, Protocol.TCP);
 
-    // Manual TCID: LVPN-6380
-    runDisconnectTest(
-      'openvpn obfuscation tcp',
-      Technology.OPENVPN,
-      Protocol.TCP,
-      obfuscate: true,
-    );
-
     // Manual TCID: LVPN-6379
     runDisconnectTest('openvpn udp', Technology.OPENVPN, Protocol.UDP);
-
-    // Manual TCID: LVPN-6377
-    runDisconnectTest(
-      'openvpn obfuscation udp',
-      Technology.OPENVPN,
-      Protocol.UDP,
-      obfuscate: true,
-    );
   });
   group("Disconnect Smoke Tests", () {
     // Manual TCID: LVPN-6279
@@ -156,30 +127,12 @@ void runDisconnectSmokeTests() {
       country: "France",
     );
 
-    // Manual TCID: LVPN-6358
-    runDisconnectTest(
-      'openvpn obfuscation tcp specific country',
-      Technology.OPENVPN,
-      Protocol.TCP,
-      obfuscate: true,
-      country: "Canada",
-    );
-
     // Manual TCID: LVPN-6361
     runDisconnectTest(
       'openvpn udp specific country',
       Technology.OPENVPN,
       Protocol.UDP,
       country: "France",
-    );
-
-    // Manual TCID: LVPN-6359
-    runDisconnectTest(
-      'openvpn obfuscation udp specific country',
-      Technology.OPENVPN,
-      Protocol.UDP,
-      obfuscate: true,
-      country: "Canada",
     );
   });
 }

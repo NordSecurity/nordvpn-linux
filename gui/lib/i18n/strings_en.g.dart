@@ -1429,9 +1429,6 @@ class Translations$ui$en {
 	/// en: 'Double VPN'
 	String get double_vpn => 'Double VPN';
 
-	/// en: 'Onion Over VPN'
-	String get onion_over_vpn => 'Onion Over VPN';
-
 	/// en: 'Fatal error'
 	String get fatalErrorMessage => 'Fatal error';
 
@@ -1479,9 +1476,6 @@ class Translations$ui$en {
 
 	/// en: 'VPN Protocol'
 	String get vpnProtocol => 'VPN Protocol';
-
-	/// en: 'Obfuscate'
-	String get obfuscate => 'Obfuscate';
 
 	/// en: 'VPN Connection Status Notifications'
 	String get notificationsStatus => 'VPN Connection Status Notifications';
@@ -1639,14 +1633,14 @@ class Translations$ui$en {
 	/// en: 'Double VPN'
 	String get doubleVpn => 'Double VPN';
 
-	/// en: 'Onion over VPN'
-	String get onionOverVpn => 'Onion over VPN';
+	/// en: 'Onion Over VPN'
+	String get onionOverVpn => 'Onion Over VPN';
 
 	/// en: 'Obfuscated'
 	String get obfuscated => 'Obfuscated';
 
-	/// en: 'Obfuscated Servers'
-	String get obfuscatedServers => 'Obfuscated Servers';
+	/// en: 'Obfuscated'
+	String get obfuscatedServers => 'Obfuscated';
 
 	/// en: 'Pick a location for your IP'
 	String get selectServerForDip => 'Pick a location for your IP';
@@ -1690,8 +1684,8 @@ class Translations$ui$en {
 	/// en: 'Security and privacy'
 	String get securityAndPrivacy => 'Security and privacy';
 
-	/// en: 'Allowlist, DNS, LAN discovery, obfuscation, firewall'
-	String get securityAndPrivacySubtitle => 'Allowlist, DNS, LAN discovery, obfuscation, firewall';
+	/// en: 'Allowlist, DNS, LAN discovery, firewall'
+	String get securityAndPrivacySubtitle => 'Allowlist, DNS, LAN discovery, firewall';
 
 	/// en: 'Appearance'
 	String get appearance => 'Appearance';
@@ -1782,12 +1776,6 @@ class Translations$ui$en {
 
 	/// en: 'Activate next-generation encryption that protects your data from threats posed by quantum computing.'
 	String get postQuantumDescription => 'Activate next-generation encryption that protects your data from threats posed by quantum computing.';
-
-	/// en: 'Avoid detection by traffic sensors in restricted networks while using a VPN. When enabled, only obfuscated servers are available.'
-	String get obfuscationDescription => 'Avoid detection by traffic sensors in restricted networks while using a VPN. When enabled, only obfuscated servers are available.';
-
-	/// en: 'Obfuscation'
-	String get obfuscation => 'Obfuscation';
 
 	/// en: 'Add'
 	String get add => 'Add';
@@ -1897,6 +1885,9 @@ class Translations$ui$en {
 	/// en: 'Use the Onion network with VPN protection'
 	String get onionOverVpnDesc => 'Use the Onion network with VPN protection';
 
+	/// en: 'Hide signs of VPN usage on restricted networks'
+	String get obfuscatedServersDesc => 'Hide signs of VPN usage on restricted networks';
+
 	/// en: 'Save'
 	String get save => 'Save';
 
@@ -1917,15 +1908,6 @@ class Translations$ui$en {
 
 	/// en: 'This server is already on the list.'
 	String get duplicatedDnsServer => 'This server is already on the list.';
-
-	/// en: 'Obfuscation is turned on, so only obfuscated server locations will show up.'
-	String get obfuscationSearchWarning => 'Obfuscation is turned on, so only obfuscated server locations will show up.';
-
-	/// en: 'No results found. To access all available servers, turn off obfuscation.'
-	String get obfuscationErrorNoServerFound => 'No results found. To access all available servers, turn off obfuscation.';
-
-	/// en: 'Go to Settings'
-	String get goToSettings => 'Go to Settings';
 
 	/// en: 'Use allowlist'
 	String get useAllowList => 'Use allowlist';
@@ -1995,12 +1977,6 @@ class Translations$ui$en {
 
 	/// en: 'Some default settings could not be applied. The reset finished, but these settings may not be active: $settings. Reset settings again to retry. If the problem continues, contact support.'
 	String settingsNotAppliedDescription({required Object settings}) => 'Some default settings could not be applied. The reset finished, but these settings may not be active: ${settings}. Reset settings again to retry. If the problem continues, contact support.';
-
-	/// en: 'Turn off obfuscation for more server types'
-	String get turnOffObfuscationServerTypes => 'Turn off obfuscation for more server types';
-
-	/// en: 'Turn off obfuscation for more locations'
-	String get turnOffObfuscationLocations => 'Turn off obfuscation for more locations';
 
 	/// en: 'NordWhisper'
 	String get nordWhisper => 'NordWhisper';
@@ -2152,8 +2128,8 @@ class Translations$ui$en {
 	/// en: 'Inactive'
 	String get subscriptionInactive => 'Inactive';
 
-	/// en: 'Recent connections'
-	String get recentConnections => 'Recent connections';
+	/// en: 'Recent Connections'
+	String get recentConnections => 'Recent Connections';
 
 	/// en: 'Standard VPN Servers'
 	String get standardVpnServer => 'Standard VPN Servers';
@@ -2685,7 +2661,6 @@ extension on Translations {
 			'ui.signIn' => 'Sign in',
 			'ui.disconnect' => 'Disconnect',
 			'ui.double_vpn' => 'Double VPN',
-			'ui.onion_over_vpn' => 'Onion Over VPN',
 			'ui.fatalErrorMessage' => 'Fatal error',
 			'ui.connected' => 'Connected',
 			'ui.connectOrPickCountry' => 'Connect now or pick a country',
@@ -2702,7 +2677,6 @@ extension on Translations {
 			'ui.settings' => 'Settings',
 			'ui.launchAppAtStartup' => 'Launch at Startup',
 			'ui.vpnProtocol' => 'VPN Protocol',
-			'ui.obfuscate' => 'Obfuscate',
 			'ui.notificationsStatus' => 'VPN Connection Status Notifications',
 			'ui.firewall' => 'Firewall',
 			'ui.firewallDescription' => 'Allow the use of the system firewall. When enabled, you can attach a firewall mark to VPN packets for custom firewall rules.',
@@ -2751,14 +2725,14 @@ extension on Translations {
 			'ui.noResultsFound' => 'No results found. Try another keyword.',
 			'ui.searchServersHint' => 'Search countries, cities, or servers',
 			'ui.citiesAvailable' => ({required Object n}) => '${n} cities available',
-			_ => null,
-		} ?? switch (path) {
 			'ui.dedicatedIp' => 'Dedicated IP',
 			'ui.dedicatedServer' => 'Dedicated Server',
+			_ => null,
+		} ?? switch (path) {
 			'ui.doubleVpn' => 'Double VPN',
-			'ui.onionOverVpn' => 'Onion over VPN',
+			'ui.onionOverVpn' => 'Onion Over VPN',
 			'ui.obfuscated' => 'Obfuscated',
-			'ui.obfuscatedServers' => 'Obfuscated Servers',
+			'ui.obfuscatedServers' => 'Obfuscated',
 			'ui.selectServerForDip' => 'Pick a location for your IP',
 			'ui.selectLocation' => 'Select location',
 			'ui.dipSelectLocationDescription' => 'You have successfully purchased a dedicated IP – great! To start using it, select a location for your dedicated IP from the many options that we offer.',
@@ -2773,7 +2747,7 @@ extension on Translations {
 			'ui.invalidFormat' => 'Invalid format',
 			'ui.servers' => 'Servers',
 			'ui.securityAndPrivacy' => 'Security and privacy',
-			'ui.securityAndPrivacySubtitle' => 'Allowlist, DNS, LAN discovery, obfuscation, firewall',
+			'ui.securityAndPrivacySubtitle' => 'Allowlist, DNS, LAN discovery, firewall',
 			'ui.appearance' => 'Appearance',
 			'ui.light' => 'Light',
 			'ui.dark' => 'Dark',
@@ -2804,8 +2778,6 @@ extension on Translations {
 			'ui.routingDescription' => 'Use custom routing rules instead of the default VPN configuration.',
 			'ui.postQuantumVpn' => 'Post-quantum encryption',
 			'ui.postQuantumDescription' => 'Activate next-generation encryption that protects your data from threats posed by quantum computing.',
-			'ui.obfuscationDescription' => 'Avoid detection by traffic sensors in restricted networks while using a VPN. When enabled, only obfuscated servers are available.',
-			'ui.obfuscation' => 'Obfuscation',
 			'ui.add' => 'Add',
 			'ui.customDnsEntries' => ({required Object n}) => 'Custom DNS: ${n}/3',
 			'ui.addUpTo3DnsServers' => 'Add up to 3 DNS servers',
@@ -2842,6 +2814,7 @@ extension on Translations {
 			'ui.settingAutoconnectTo' => ({required Object target}) => 'Setting auto-connect to [${target}]...',
 			'ui.doubleVpnDesc' => 'Encrypt your traffic twice for extra security',
 			'ui.onionOverVpnDesc' => 'Use the Onion network with VPN protection',
+			'ui.obfuscatedServersDesc' => 'Hide signs of VPN usage on restricted networks',
 			'ui.save' => 'Save',
 			'ui.close' => 'Close',
 			'ui.to' => 'to',
@@ -2849,9 +2822,6 @@ extension on Translations {
 			'ui.useCustomDnsDescription' => 'Add up to three DNS servers.',
 			'ui.enterDnsAddress' => 'Enter DNS server address',
 			'ui.duplicatedDnsServer' => 'This server is already on the list.',
-			'ui.obfuscationSearchWarning' => 'Obfuscation is turned on, so only obfuscated server locations will show up.',
-			'ui.obfuscationErrorNoServerFound' => 'No results found. To access all available servers, turn off obfuscation.',
-			'ui.goToSettings' => 'Go to Settings',
 			'ui.useAllowList' => 'Use allowlist',
 			'ui.useAllowListSettingDescription' => 'Exclude ports, port ranges, or subnets from VPN protection.',
 			'ui.useAllowListScreenDescription' => 'Specify ports, port ranges, or subnets to exclude from VPN protection. Allowlisted ports may accept incoming connections from any external source outside your network.',
@@ -2875,8 +2845,6 @@ extension on Translations {
 			'ui.settingsNotApplied' => 'Some settings weren\'t applied',
 			'ui.networkSettingsNotAppliedDescription' => 'Some default network settings could not be applied. Reset settings again to retry. If the problem continues, contact support.',
 			'ui.settingsNotAppliedDescription' => ({required Object settings}) => 'Some default settings could not be applied. The reset finished, but these settings may not be active: ${settings}. Reset settings again to retry. If the problem continues, contact support.',
-			'ui.turnOffObfuscationServerTypes' => 'Turn off obfuscation for more server types',
-			'ui.turnOffObfuscationLocations' => 'Turn off obfuscation for more locations',
 			'ui.nordWhisper' => 'NordWhisper',
 			'ui.system' => 'System',
 			'ui.removePrivateSubnets' => 'We\'ll remove private subnets from allowlist',
@@ -2927,7 +2895,7 @@ extension on Translations {
 			'ui.changePassword' => 'Change password',
 			'ui.productHub' => 'Product Hub',
 			'ui.subscriptionInactive' => 'Inactive',
-			'ui.recentConnections' => 'Recent connections',
+			'ui.recentConnections' => 'Recent Connections',
 			'ui.standardVpnServer' => 'Standard VPN Servers',
 			'ui.reconnectNow' => 'Reconnect now',
 			'ui.reconnectToChangeProtocol' => 'Reconnect to change protocol',

@@ -28,7 +28,7 @@ func TestSpecialtyGroupLabel(t *testing.T) {
 		{name: "double vpn", status: connectedTo(config.ServerGroup_DOUBLE_VPN), expected: "Double VPN"},
 		{name: "onion over vpn", status: connectedTo(config.ServerGroup_ONION_OVER_VPN), expected: "Onion Over VPN"},
 		{name: "dedicated ip", status: connectedTo(config.ServerGroup_DEDICATED_IP), expected: "Dedicated IP"},
-		{name: "obfuscated group", status: connectedTo(config.ServerGroup_OBFUSCATED), expected: "Obfuscated Servers"},
+		{name: "obfuscated group", status: connectedTo(config.ServerGroup_NW_OBFUSCATED), expected: "Obfuscated"},
 		{name: "standard vpn servers", status: connectedTo(config.ServerGroup_STANDARD_VPN_SERVERS), expected: ""},
 		{name: "no group", status: connectedTo(config.ServerGroup_UNDEFINED), expected: ""},
 		{
@@ -39,7 +39,7 @@ func TestSpecialtyGroupLabel(t *testing.T) {
 		{
 			name:     "obfuscated flag without group",
 			status:   &pb.StatusResponse{State: pb.ConnectionState_CONNECTED, Obfuscated: true},
-			expected: "Obfuscated Servers",
+			expected: "Obfuscated",
 		},
 		{
 			name: "obfuscated flag wins over group",
@@ -48,7 +48,7 @@ func TestSpecialtyGroupLabel(t *testing.T) {
 				Obfuscated: true,
 				Parameters: &pb.ConnectionParameters{Group: config.ServerGroup_DOUBLE_VPN},
 			},
-			expected: "Obfuscated Servers",
+			expected: "Obfuscated",
 		},
 		{
 			name: "meshnet peer ignores stale group",

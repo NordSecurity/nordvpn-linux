@@ -20,20 +20,8 @@ def teardown_function(function):  # noqa: ARG001
     daemon.stop()
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_BASIC1 + lib.NORDWHISPER_TECHNOLOGY)
-def test_obfuscate_nonobfucated(tech, proto, obfuscated):
-    """Manual TC: LVPN-788"""
-
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
-    assert network.is_available(), "Network should be available before attempting to set obfuscation"
-
-    with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.set.obfuscate("on")
-        assert "Obfuscation is not available with the current technology. Change the technology to OpenVPN to use obfuscation." in ex.value.stdout.decode("utf-8")
-
-
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_BASIC2 + lib.TECHNOLOGIES_BASIC1 + lib.NORDWHISPER_TECHNOLOGY)
-def test_set_technology(tech, proto, obfuscated):  # noqa: ARG001
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES_BASIC2 + lib.TECHNOLOGIES_BASIC1 + lib.NORDWHISPER_TECHNOLOGY)
+def test_set_technology(tech, proto):  # noqa: ARG001
     """Manual TC: LVPN-601"""
 
     if tech == "nordlynx":
@@ -44,33 +32,36 @@ def test_set_technology(tech, proto, obfuscated):  # noqa: ARG001
     assert tech.upper() in sh.nordvpn.settings(), "Technology should appear in settings"
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OVPN_STANDARD_TECHNOLOGIES)
-def test_protocol_in_settings(tech, proto, obfuscated):
-    """Manual TC: LVPN-8793"""
+@pytest.mark.parametrize(("tech", "proto"), lib.OVPN_STANDARD_TECHNOLOGIES)
+def test_protocol_in_settings(tech, proto):
+    """Manual TC: LVPN-601"""
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
     assert proto.upper() in sh.nordvpn.settings(), "Protocol should appear in settings"
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_technology_set_options(tech, proto, obfuscated):
-    """Manual TC: LVPN-6816"""
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_technology_set_options(tech, proto):
+    """
+    Manual TC: LVPN-601.
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    Only OpenVPN offers `nordvpn set protocol`.
+    """
+    lib.set_technology_and_protocol(tech, proto)
 
-    ovpn_list = "obfuscate" in sh.nordvpn.set() and "protocol" in sh.nordvpn.set()
+    offered = settings.get_set_subcommands()
 
     if tech == "openvpn":
-        assert ovpn_list, "OpenVPN should have obfuscate and protocol options available"
+        assert "protocol" in offered, f"OpenVPN should offer 'nordvpn set protocol', got {offered}"
     else:
-        assert not ovpn_list, "Non-OpenVPN technology should not have obfuscate and protocol options"
+        assert "protocol" not in offered, f"'{tech}' should not offer 'nordvpn set protocol', got {offered}"
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_set_defaults_when_logged_in_1st_set(tech, proto, obfuscated):
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_set_defaults_when_logged_in_1st_set(tech, proto):
     """Manual TC: LVPN-8737"""
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
 
     daemon.restart() # Temporary solution to avoid Firewall staying enabled in settings - LVPN-4121
 
@@ -92,21 +83,16 @@ def test_set_defaults_when_logged_in_1st_set(tech, proto, obfuscated):
     if tech == "nordlynx":
         assert not settings.is_post_quantum_disabled(), "Post-quantum should be enabled for NordLynx"
 
-    if obfuscated == "on":
-        assert settings.is_obfuscated_enabled(), "Obfuscation should be enabled"
-    else:
-        assert not settings.is_obfuscated_enabled(), "Obfuscation should be disabled"
-
     assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults("--logout"), "Defaults reset message should be shown"
 
     assert settings.app_has_defaults_settings(), "App should have default settings"
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_set_defaults_when_logged_out_2nd_set(tech, proto, obfuscated):
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_set_defaults_when_logged_out_2nd_set(tech, proto):
     """Manual TC: LVPN-8829"""
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
 
     daemon.restart() # Temporary solution to avoid Firewall staying enabled in settings - LVPN-4121
 
@@ -128,11 +114,6 @@ def test_set_defaults_when_logged_out_2nd_set(tech, proto, obfuscated):
     if tech == "nordlynx":
         assert not settings.is_post_quantum_disabled(), "Post-quantum should be enabled for NordLynx"
 
-    if obfuscated == "on":
-        assert settings.is_obfuscated_enabled(), "Obfuscation should be enabled"
-    else:
-        assert not settings.is_obfuscated_enabled(), "Obfuscation should be disabled"
-
     sh.nordvpn.logout()
 
     assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults("--logout"), "Defaults reset message should be shown"
@@ -140,11 +121,11 @@ def test_set_defaults_when_logged_out_2nd_set(tech, proto, obfuscated):
     assert settings.app_has_defaults_settings(), "App should have default settings"
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_set_defaults_when_connected_1st_set(tech, proto, obfuscated):
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_set_defaults_when_connected_1st_set(tech, proto):
     """Manual TC: LVPN-8741"""
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
 
     sh.nordvpn.set.routing("off")
     sh.nordvpn.set.dns("1.1.1.1")
@@ -165,11 +146,6 @@ def test_set_defaults_when_connected_1st_set(tech, proto, obfuscated):
     if tech == "nordlynx":
         assert not settings.is_post_quantum_disabled(), "Post-quantum should be enabled for NordLynx"
 
-    if obfuscated == "on":
-        assert settings.is_obfuscated_enabled(), "Obfuscation should be enabled"
-    else:
-        assert not settings.is_obfuscated_enabled(), "Obfuscation should be disabled"
-
     assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults("--logout"), "Defaults reset message should be shown"
 
     assert "Status: Disconnected" in sh.nordvpn.status(), "Status should show Disconnected after defaults reset"
@@ -177,11 +153,11 @@ def test_set_defaults_when_connected_1st_set(tech, proto, obfuscated):
     assert settings.app_has_defaults_settings(), "App should have default settings"
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_is_killswitch_disabled_after_setting_defaults(tech, proto, obfuscated):
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_is_killswitch_disabled_after_setting_defaults(tech, proto):
     """Manual TC: LVPN-8749"""
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
 
     sh.nordvpn.set.killswitch("on")
     assert network.is_not_available(2), "Network should not be available with killswitch enabled"
@@ -191,11 +167,6 @@ def test_is_killswitch_disabled_after_setting_defaults(tech, proto, obfuscated):
     assert network.is_available(), "Network should be available when connected with killswitch enabled"
 
     assert daemon.is_killswitch_on(), "Killswitch should be enabled"
-
-    if obfuscated == "on":
-        assert settings.is_obfuscated_enabled(), "Obfuscation should be enabled"
-    else:
-        assert not settings.is_obfuscated_enabled(), "Obfuscation should be disabled"
 
     assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults("--logout", "--off-killswitch"), "Defaults reset message should be shown"
 
@@ -207,19 +178,19 @@ def test_is_killswitch_disabled_after_setting_defaults(tech, proto, obfuscated):
 
 @dynamic_parametrize(
     [
-        "tech", "proto", "obfuscated", "nameserver",
+        "tech", "proto", "nameserver",
     ],
     ordered_source=[lib.TECHNOLOGIES],
     randomized_source=[dns.DNS_CASES_CUSTOM],
     generate_all=IS_NIGHTLY,
-    id_pattern="{tech}-{proto}-{obfuscated}-{nameserver}",
+    id_pattern="{tech}-{proto}-{nameserver}",
 )
-def test_is_custom_dns_removed_after_setting_defaults(tech, proto, obfuscated, nameserver):
+def test_is_custom_dns_removed_after_setting_defaults(tech, proto, nameserver):
     """Manual TC: LVPN-8747"""
 
     nameserver = nameserver.split(" ")
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
 
     sh.nordvpn.set.dns(nameserver)
     assert settings.dns_visible_in_settings(nameserver), "Custom DNS should be visible in settings"
@@ -269,11 +240,11 @@ def test_set_analytics_starts_prompt_even_if_completed_before():
     cli2.expect(pexpect.EOF)
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_set_defaults_no_logout(tech, proto, obfuscated):
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_set_defaults_no_logout(tech, proto):
     """Manual TC: LVPN-9029"""
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
 
     sh.nordvpn.set("lan-discovery", "on")
 
@@ -286,7 +257,7 @@ def test_set_defaults_no_logout(tech, proto, obfuscated):
 
 
 def test_set_analytics_off_on():
-    """Manual TC: LVPN-510"""
+    """Manual TC: LVPN-509"""
 
     assert "Analytics has been successfully set to 'disabled'." in sh.nordvpn.set.analytics("off"), "Analytics should be successfully disabled"
     assert not settings.is_user_consent_granted(), "User consent should not be granted when analytics is disabled"
@@ -327,22 +298,22 @@ def test_set_post_quantum_off_on_repeated():
     assert "Post-quantum VPN is already set to 'enabled'." in sh.nordvpn.set(pq_alias, "on"), "Post-quantum should be already enabled"
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OVPN_STANDARD_TECHNOLOGIES + lib.OBFUSCATED_TECHNOLOGIES)
-def test_set_post_quantum_on_open_vpn(tech, proto, obfuscated):
+@pytest.mark.parametrize(("tech", "proto"), lib.OVPN_STANDARD_TECHNOLOGIES)
+def test_set_post_quantum_on_open_vpn(tech, proto):
     """Manual TC: LVPN-5787"""
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.set(settings.get_pq_alias(), "on")
 
     assert "Post-quantum encryption is not compatible with OpenVPN. Switch to NordLynx to use this encryption." in ex.value.stdout.decode("utf-8")
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.NORDWHISPER_TECHNOLOGY)
-def test_set_post_quantum_on_nordwhisper(tech, proto, obfuscated):
-    """Manual TC: LVPN-8445"""
+@pytest.mark.parametrize(("tech", "proto"), lib.NORDWHISPER_TECHNOLOGY)
+def test_set_post_quantum_on_nordwhisper(tech, proto):
+    """Manual TC: LVPN-5787"""
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.set(settings.get_pq_alias(), "on")
@@ -350,7 +321,7 @@ def test_set_post_quantum_on_nordwhisper(tech, proto, obfuscated):
     assert "Post-quantum encryption is not compatible with NordWhisper. Switch to NordLynx to use this encryption." in ex.value.stdout.decode("utf-8")
 
 def test_set_technology_openvpn_post_quantum_enabled():
-    """Manual TC: LVPN-8536"""
+    """Manual TC: LVPN-6835"""
 
     sh.nordvpn.set(settings.get_pq_alias(), "on")
 
@@ -369,11 +340,11 @@ def test_set_technology_nordwhisper_post_quantum_enabled():
 
     assert "This setting is not compatible with post-quantum encryption. To use NordWhisper, turn off post-quantum encryption first." in ex.value.stdout.decode("utf-8")
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_autoconnect_enable_twice(tech, proto, obfuscated):
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_autoconnect_enable_twice(tech, proto):
     """Manual TC: LVPN-8597"""
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
 
     for _ in range(2):
         output = sh.nordvpn.set.autoconnect.on()
@@ -381,11 +352,11 @@ def test_autoconnect_enable_twice(tech, proto, obfuscated):
         assert settings.MSG_AUTOCONNECT_ENABLE_SUCCESS in output, "Autoconnect enable success message should be shown"
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_autoconnect_disable_twice(tech, proto, obfuscated):
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_autoconnect_disable_twice(tech, proto):
     """Manual TC: LVPN-8583"""
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
 
     output = sh.nordvpn.set.autoconnect.off()
     print(str(output))
@@ -413,22 +384,22 @@ def test_set_defaults_killswitch_interaction(killswitch_initial, killswitch_flag
     assert network.is_not_available(2) is expected_killswitch_state, f"Network availability should be {not expected_killswitch_state}"
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_BASIC1 + lib.NORDWHISPER_TECHNOLOGY)
-def test_set_protocol_openvpn_only(tech, proto, obfuscated):
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES_BASIC1 + lib.NORDWHISPER_TECHNOLOGY)
+def test_set_protocol_openvpn_only(tech, proto):
     """Manual TC: LVPN-8537"""
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.set.protocol("TCP")
         assert "This setting is only available when the selected protocol is OpenVPN." in ex.value.stdout.decode("utf-8")
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_set_defaults_no_logout_connected(tech, proto, obfuscated):
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_set_defaults_no_logout_connected(tech, proto):
     """Manual TC: LVPN-9014"""
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
 
     sh.nordvpn.set("notify", "off")
     sh.nordvpn.set("protection", "on")
@@ -447,11 +418,11 @@ def test_set_defaults_no_logout_connected(tech, proto, obfuscated):
 
 
 @pytest.mark.parametrize("nameserver", (dns.DNS_CASE_CUSTOM_SINGLE,))
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_is_custom_dns_removed_after_setting_defaults_no_logout(tech, proto, obfuscated, nameserver):
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_is_custom_dns_removed_after_setting_defaults_no_logout(tech, proto, nameserver):
     """Manual TC: LVPN-8748"""
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
 
     sh.nordvpn.set.dns([nameserver])
     assert settings.dns_visible_in_settings([nameserver]), "Custom DNS should be visible in settings"

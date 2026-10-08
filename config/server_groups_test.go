@@ -19,7 +19,7 @@ func TestGroupDisplayName(t *testing.T) {
 		{group: ServerGroup_ONION_OVER_VPN, expected: "Onion Over VPN"},
 		{group: ServerGroup_DEDICATED_IP, expected: "Dedicated IP"},
 		{group: ServerGroup_STANDARD_VPN_SERVERS, expected: "Standard VPN Servers"},
-		{group: ServerGroup_OBFUSCATED, expected: "Obfuscated Servers"},
+		{group: ServerGroup_NW_OBFUSCATED, expected: "Obfuscated"},
 		{group: ServerGroup_DEDICATED_SERVER, expected: "Dedicated Server"},
 		{group: ServerGroup_UNDEFINED, expected: ""},
 	}
@@ -71,7 +71,7 @@ func TestIsRegionalGroup(t *testing.T) {
 		{name: "undefined", group: ServerGroup_UNDEFINED, expected: false},
 		{name: "deprecated p2p", group: 15, expected: false},
 		{name: "double vpn", group: ServerGroup_DOUBLE_VPN, expected: false},
-		{name: "obfuscated", group: ServerGroup_OBFUSCATED, expected: false},
+		{name: "obfuscated", group: ServerGroup_NW_OBFUSCATED, expected: false},
 	}
 
 	for _, tt := range tests {

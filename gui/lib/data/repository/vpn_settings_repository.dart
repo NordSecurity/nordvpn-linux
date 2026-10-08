@@ -88,13 +88,6 @@ class VpnSettingsRepository {
     return DaemonStatusCode.success;
   }
 
-  Future<int> setObfuscated(bool value) async {
-    final result = await _client.setObfuscate(
-      SetGenericRequest(enabled: value),
-    );
-    return _checkSettingsUpdate(result);
-  }
-
   Future<int> setAnalytics(bool value) async {
     final result = await _client.setAnalytics(
       SetGenericRequest(enabled: value),
