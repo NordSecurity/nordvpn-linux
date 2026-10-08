@@ -190,8 +190,8 @@ func main() {
 		}
 	}
 
-	if err := daemon.MigrateDeprecatedRegionalAutoconnect(fsystem); err != nil {
-		log.Warn("failed to migrate regional autoconnect group:", err)
+	if err := daemon.MigrateDeprecatedGroupsAutoconnect(fsystem); err != nil {
+		log.Warn("failed to migrate deprecated autoconnect groups:", err)
 	}
 
 	// Events
@@ -284,7 +284,7 @@ func main() {
 	}
 	log.Info("CDN URL:", cdnUrl)
 
-	threatProtectionLiteServers, resolver := buildTpServersAndResolver(
+	realTimeProtectionServers, resolver := buildRTPServersAndResolver(
 		userAgent,
 		cdnUrl,
 		httpClientSimple,
@@ -615,6 +615,17 @@ func main() {
 	consentChecker.PrepareDaemonIfConsentNotCompleted()
 
 	sharedContext := sharedctx.New()
+	recentConnections := recents.NewRecentConnectionsStore(
+		internal.RecentVPNConnectionsFilename,
+		&internal.StdFilesystemHandle{},
+		func() {
+			dataUpdateEvents.RecentsUpdate.Publish(events.DataRecentsChanged{})
+		},
+	)
+	if err = recentConnections.MigrateDeprecatedP2PGroup(); err != nil {
+		log.Error("failed to migrate deprecated P2P group from recent connections:", err)
+	}
+
 	rpc := daemon.NewRPC(
 		internal.Environment(Environment),
 		authChecker,
@@ -632,7 +643,7 @@ func main() {
 		vpnFactory,
 		netw,
 		debugSubject,
-		threatProtectionLiteServers,
+		realTimeProtectionServers,
 		notificationClient,
 		analytics,
 		norduserService,
@@ -641,13 +652,7 @@ func main() {
 		rcConfig,
 		connectionInfo,
 		consentChecker,
-		recents.NewRecentConnectionsStore(
-			internal.RecentVPNConnectionsFilename,
-			&internal.StdFilesystemHandle{},
-			func() {
-				dataUpdateEvents.RecentsUpdate.Publish(events.DataRecentsChanged{})
-			},
-		),
+		recentConnections,
 		dataUpdateEvents,
 		pauseEvents,
 		deviceKeyManager,
@@ -670,7 +675,7 @@ func main() {
 		netw,
 		meshRegistry,
 		meshMapper,
-		threatProtectionLiteServers,
+		realTimeProtectionServers,
 		errSubject,
 		daemonEvents,
 		norduserClient,
@@ -883,7 +888,7 @@ func buildClientAPIAndSessionStores(
 	return smartAPI, builder
 }
 
-func buildTpServersAndResolver(
+func buildRTPServersAndResolver(
 	userAgent string,
 	cdnUrl string,
 	httpClientSimple *http.Client,
@@ -893,10 +898,10 @@ func buildTpServersAndResolver(
 	serviceEvents *daemonevents.ServiceEvents,
 ) (*dns.NameServers, network.DNSResolver) {
 	cdn := core.NewCDNAPI(userAgent, cdnUrl, httpClientSimple, validator)
-	tpServers := dns.NewNameServers()
-	// fetch async the TP servers, because FetchTPServers will retry until is successful
-	go tpServers.FetchTPServers(cdn.FetchThreatProtectionLite, timeoutFn)
+	protectionServers := dns.NewNameServers()
+	// fetch async the real time protection servers, because FetchProtectionServers will retry until is successful
+	go protectionServers.FetchRTPServers(cdn.FetchRealTimeProtection, timeoutFn)
 
-	resolver := network.NewResolver(tpServers, fwmark, serviceEvents)
-	return tpServers, resolver
+	resolver := network.NewResolver(protectionServers, fwmark, serviceEvents)
+	return protectionServers, resolver
 }

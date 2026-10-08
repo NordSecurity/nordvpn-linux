@@ -247,7 +247,6 @@ func toServerTechnology(
 func (dm *DataManager) Countries(
 	technology config.Technology,
 	protocol config.Protocol,
-	includeVirtualLocation bool,
 ) ([]*pb.ServerGroup, error) {
 	serverTechnology, err := toServerTechnology(technology, protocol)
 	if err != nil {
@@ -272,17 +271,13 @@ func (dm *DataManager) Countries(
 		if !ok {
 			existing = true
 		}
-		countries[country.Name] = server.IsVirtualLocation() && existing
+		countries[country.Name] = existing
 	}
 
 	result := make([]*pb.ServerGroup, 0, len(countries))
-	for name, isVirtual := range countries {
-		if !includeVirtualLocation && isVirtual {
-			continue
-		}
+	for name := range countries {
 		result = append(result, &pb.ServerGroup{
-			Name:            internal.Title(name),
-			VirtualLocation: isVirtual,
+			Name: internal.Title(name),
 		})
 	}
 
@@ -296,7 +291,6 @@ func (dm *DataManager) Cities(
 	countryName string,
 	technology config.Technology,
 	protocol config.Protocol,
-	virtualLocation bool,
 ) ([]*pb.ServerGroup, error) {
 	serverTechnology, err := toServerTechnology(technology, protocol)
 	if err != nil {
@@ -314,10 +308,6 @@ func (dm *DataManager) Cities(
 			continue
 		}
 
-		if !virtualLocation && server.IsVirtualLocation() {
-			continue
-		}
-
 		country := server.Country()
 		if country == nil {
 			continue
@@ -329,7 +319,7 @@ func (dm *DataManager) Cities(
 
 		if countryCode == country.Code || countryName == strings.ToLower(internal.Title(country.Name)) {
 			citiesSet.Add(country.City.Name)
-			group := &pb.ServerGroup{Name: internal.Title(country.City.Name), VirtualLocation: server.IsVirtualLocation()}
+			group := &pb.ServerGroup{Name: internal.Title(country.City.Name)}
 			result = append(result, group)
 		}
 	}
@@ -343,7 +333,6 @@ func (dm *DataManager) Cities(
 func (dm *DataManager) Groups(
 	technology config.Technology,
 	protocol config.Protocol,
-	virtualLocation bool,
 ) ([]*pb.ServerGroup, error) {
 	serverTechnology, err := toServerTechnology(technology, protocol)
 	if err != nil {
@@ -358,10 +347,6 @@ func (dm *DataManager) Groups(
 			continue
 		}
 
-		if !virtualLocation && server.IsVirtualLocation() {
-			continue
-		}
-
 		for _, group := range serverpicker.EffectiveGroups(server, technology) {
 			if groupsSet.Contains(group.Title) {
 				continue
@@ -371,10 +356,12 @@ func (dm *DataManager) Groups(
 				continue
 			}
 
+			if config.IsDeprecatedP2PGroup(group.ID) {
+				continue
+			}
+
 			groupsSet.Add(group.Title)
-			// special server groups contain both virtual and physical
-			// display them always as physical servers
-			item := &pb.ServerGroup{Name: internal.Title(group.Title), VirtualLocation: false}
+			item := &pb.ServerGroup{Name: internal.Title(group.Title)}
 			result = append(result, item)
 		}
 	}

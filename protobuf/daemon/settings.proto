@@ -33,13 +33,13 @@ message Settings {
   uint32              fwmark                 = 8;
   consent.ConsentMode analytics_consent      = 9;
   repeated string     dns                    = 10;
-  bool                threat_protection_lite = 11;
+  bool                real_time_protection   = 11;
   config.Protocol     protocol               = 12;
   bool                lan_discovery          = 13;
   Allowlist           allowlist              = 14;
   reserved 15;
   reserved "obfuscate";
-  bool                 virtualLocation = 16;
+  reserved 16;
   bool                 postquantum_vpn = 17;
   UserSpecificSettings user_settings   = 18;
   bool                 arp_ignore      = 19;

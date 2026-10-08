@@ -14,7 +14,7 @@ class RecentConnectionsResponse(_message.Message):
     def __init__(self, connections: _Optional[_Iterable[_Union[RecentConnectionModel, _Mapping]]] = ...) -> None: ...
 
 class RecentConnectionModel(_message.Message):
-    __slots__ = ("country", "city", "group", "country_code", "specific_server_name", "specific_server", "connection_type", "is_virtual")
+    __slots__ = ("country", "city", "group", "country_code", "specific_server_name", "specific_server", "connection_type")
     COUNTRY_FIELD_NUMBER: _ClassVar[int]
     CITY_FIELD_NUMBER: _ClassVar[int]
     GROUP_FIELD_NUMBER: _ClassVar[int]
@@ -22,7 +22,6 @@ class RecentConnectionModel(_message.Message):
     SPECIFIC_SERVER_NAME_FIELD_NUMBER: _ClassVar[int]
     SPECIFIC_SERVER_FIELD_NUMBER: _ClassVar[int]
     CONNECTION_TYPE_FIELD_NUMBER: _ClassVar[int]
-    IS_VIRTUAL_FIELD_NUMBER: _ClassVar[int]
     country: str
     city: str
     group: _group_pb2.ServerGroup
@@ -30,8 +29,7 @@ class RecentConnectionModel(_message.Message):
     specific_server_name: str
     specific_server: str
     connection_type: _server_selection_rule_pb2.ServerSelectionRule
-    is_virtual: bool
-    def __init__(self, country: _Optional[str] = ..., city: _Optional[str] = ..., group: _Optional[_Union[_group_pb2.ServerGroup, str]] = ..., country_code: _Optional[str] = ..., specific_server_name: _Optional[str] = ..., specific_server: _Optional[str] = ..., connection_type: _Optional[_Union[_server_selection_rule_pb2.ServerSelectionRule, str]] = ..., is_virtual: bool = ...) -> None: ...
+    def __init__(self, country: _Optional[str] = ..., city: _Optional[str] = ..., group: _Optional[_Union[_group_pb2.ServerGroup, str]] = ..., country_code: _Optional[str] = ..., specific_server_name: _Optional[str] = ..., specific_server: _Optional[str] = ..., connection_type: _Optional[_Union[_server_selection_rule_pb2.ServerSelectionRule, str]] = ...) -> None: ...
 
 class RecentConnectionsRequest(_message.Message):
     __slots__ = ("limit",)

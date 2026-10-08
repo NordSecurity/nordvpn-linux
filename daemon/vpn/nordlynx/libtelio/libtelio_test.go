@@ -1,7 +1,6 @@
 package libtelio
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -358,60 +357,92 @@ func (m *mockVersionGetter) GetConfig() (string, error) {
 }
 
 func Test_maskPublicKey(t *testing.T) {
-	eventText := `{
-	"Type": "node",
-	"Body": {
-		"Identifier": "1dd9e096-f420-4afa-bb19-62286a370dc9",
-		"PublicKey": "m1ZvUX5fF5KJA8wQTFukhyxzHDfVQkzKXdi7L7PeVCe=",
-		"State": "connected",
-		"IsExit": false,
-		"IsVpn": false,
-		"IpAddresses": [
-			"248.146.217.126"
-		],
-		"AllowedIps": [
-			"248.146.217.126/32"
-		],
-		"Endpoint": "65.97.11.97:53434",
-		"Hostname": "host-andes.nord",
-		"AllowIncomingConnections": true,
-		"AllowPeerSendFiles": true,
-		"Path": "direct"
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "masks key in json event",
+			input:    `{"Type":"node","Body":{"PublicKey":"m1ZvUX5fF5KJA8wQTFukhyxzHDfVQkzKXdi7L7PeVCe=","State":"connected"}}`,
+			expected: `{"Type":"node","Body":{"PublicKey":"***","State":"connected"}}`,
+		},
+		{
+			name:     "masks key with whitespace after colon",
+			input:    `{"PublicKey": "m1ZvUX5fF5KJA8wQTFukhyxzHDfVQkzKXdi7L7PeVCe="}`,
+			expected: `{"PublicKey":"***"}`,
+		},
+		{
+			name:     "masks every occurrence",
+			input:    `{"PublicKey":"aaa","Peer":{"PublicKey":"bbb"}}`,
+			expected: `{"PublicKey":"***","Peer":{"PublicKey":"***"}}`,
+		},
+		{
+			name:     "leaves other fields untouched",
+			input:    `{"Endpoint":"65.97.11.97:53434","Hostname":"host-andes.nord"}`,
+			expected: `{"Endpoint":"65.97.11.97:53434","Hostname":"host-andes.nord"}`,
+		},
+		{
+			name:     "does not mask key without surrounding context",
+			input:    `peer m1ZvUX5fF5KJA8wQTFukhyxzHDfVQkzKXdi7L7PeVCe= connected`,
+			expected: `peer m1ZvUX5fF5KJA8wQTFukhyxzHDfVQkzKXdi7L7PeVCe= connected`,
+		},
 	}
-}`
 
-	expectedMaskedEventText := `{
-	"Type": "node",
-	"Body": {
-		"Identifier": "1dd9e096-f420-4afa-bb19-62286a370dc9",
-		"PublicKey": "***",
-		"State": "connected",
-		"IsExit": false,
-		"IsVpn": false,
-		"IpAddresses": [
-			"248.146.217.126"
-		],
-		"AllowedIps": [
-			"248.146.217.126/32"
-		],
-		"Endpoint": "65.97.11.97:53434",
-		"Hostname": "host-andes.nord",
-		"AllowIncomingConnections": true,
-		"AllowPeerSendFiles": true,
-		"Path": "direct"
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			assert.Equal(t, test.expected, maskPublicKey(test.input))
+		})
 	}
-}`
+}
 
-	buf := &bytes.Buffer{}
-	var err error
-	err = json.Compact(buf, []byte(eventText))
-	assert.NoError(t, err)
-	maskedEventText := maskPublicKey(buf.String())
+func Test_maskPublicKeyNoContext(t *testing.T) {
+	category.Set(t, category.Unit)
 
-	buf = &bytes.Buffer{}
-	err = json.Compact(buf, []byte(expectedMaskedEventText))
-	assert.NoError(t, err)
-	assert.Equal(t, buf.String(), maskedEventText)
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "masks bare key",
+			input:    `peer m1ZvUX5fF5KJA8wQTFukhyxzHDfVQkzKXdi7L7PeVCe= connected`,
+			expected: `peer *** connected`,
+		},
+		{
+			name:     "masks key in json",
+			input:    `{"PublicKey":"m1ZvUX5fF5KJA8wQTFukhyxzHDfVQkzKXdi7L7PeVCe="}`,
+			expected: `{"PublicKey":"***"}`,
+		},
+		{
+			name:     "masks key surrounded by other characters",
+			input:    `node_m1ZvUX5fF5KJA8wQTFukhyxzHDfVQkzKXdi7L7PeVCe=_down`,
+			expected: `node_***_down`,
+		},
+		{
+			name:     "masks every occurrence",
+			input:    `m1ZvUX5fF5KJA8wQTFukhyxzHDfVQkzKXdi7L7PeVCe= -> AbCdEfGhIjKlMnOpQrStUvWxYz0123456789+/aBcDe=`,
+			expected: `*** -> ***`,
+		},
+		{
+			name:     "leaves shorter base64 untouched",
+			input:    `sha256:2jmj7l5rSw0yVb/vlWAYkK/YBwk=`,
+			expected: `sha256:2jmj7l5rSw0yVb/vlWAYkK/YBwk=`,
+		},
+		{
+			name:     "leaves message without keys untouched",
+			input:    `connecting to 65.97.11.97:53434`,
+			expected: `connecting to 65.97.11.97:53434`,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			assert.Equal(t, test.expected, maskPublicKeyNoContext(test.input))
+		})
+	}
 }
 
 type subscriber struct {

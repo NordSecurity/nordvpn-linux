@@ -76,27 +76,6 @@ final class VpnScreenHandle extends ScreenHandle {
     return title.evaluate().isNotEmpty && body.evaluate().isNotEmpty;
   }
 
-  Future<bool> serversListHasVirtualServers() async {
-    try {
-      await app.tester.scrollUntilVisible(
-        virtualServersListItem(),
-        100.0,
-        scrollable: find.descendant(
-          of: find.byKey(ServerListWidgetKeys.countriesServersList),
-          matching: find.byType(Scrollable),
-        ),
-      );
-    } catch (error) {
-      if (error is StateError) {
-        if (error.message.contains("No element")) {
-          return false;
-        }
-        return error.message.contains("Too many elements");
-      }
-    }
-    return virtualServersListItem().evaluate().isNotEmpty;
-  }
-
   Future<void> clickSpecialtyServersTab() async {
     await app.tester.tap(specialtyServersTab());
     await app.tester.pumpAndSettle();
@@ -125,11 +104,6 @@ final class VpnScreenHandle extends ScreenHandle {
 
   Future<void> clickOnionOverVpn() async {
     await app.tester.tap(onionOverVpnGroupTile());
-    await app.tester.pumpAndSettle();
-  }
-
-  Future<void> clickP2p() async {
-    await app.tester.tap(p2pGroupTile());
     await app.tester.pumpAndSettle();
   }
 

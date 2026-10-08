@@ -2,6 +2,7 @@
 package events
 
 import (
+	"errors"
 	"net/http"
 	"net/netip"
 	"time"
@@ -57,6 +58,9 @@ const (
 	TriggerUser
 )
 
+// ErrConnectionLimitReached is returned when a connect is canceled because the session limit was hit.
+var ErrConnectionLimitReached = errors.New("connection limit reached")
+
 // VPNConnectionError is a generic VPN connection error code.
 // Errors from VPN protocol libraries are mapped to these values so the daemon
 // does not depend on any one VPN protocol's error types.
@@ -109,8 +113,6 @@ const (
 	VPNConnectionReasonServerMaintenance
 	// VPNConnectionReasonAutoConnect is set when the app auto-connects based on the user's auto-connect setting
 	VPNConnectionReasonAutoConnect
-	// VPNConnectionReasonConnectionLimitReached is set when connection is canceled after and connection limit reached event is received
-	VPNConnectionReasonConnectionLimitReached
 )
 
 type TypeLoginType int
@@ -122,7 +124,7 @@ const (
 
 type DataConnect struct {
 	IsMeshnetPeer           bool
-	ThreatProtectionLite    bool
+	RealTimeProtection      bool
 	Protocol                config.Protocol
 	DurationMs              int
 	ServerFromAPI           bool
@@ -138,7 +140,6 @@ type DataConnect struct {
 	TargetServerIP          netip.Addr
 	TargetServerName        string
 	Error                   error
-	IsVirtualLocation       bool
 	IsObfuscated            bool
 	IsPostQuantum           bool
 	IsECHEnabled            bool
@@ -207,7 +208,7 @@ type DataDisconnect struct {
 	EventStatus           TypeEventStatus
 	Technology            config.Technology
 	TargetServerSelection config.ServerSelectionRule
-	ThreatProtectionLite  bool
+	RealTimeProtection    bool
 	ByUser                bool
 	Duration              time.Duration
 	Error                 error

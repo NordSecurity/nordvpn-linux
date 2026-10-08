@@ -14,7 +14,6 @@ import (
 const (
 	TestdataPath       = "testdata/"
 	TestUserCreateJSON = TestdataPath + "usercreate.json"
-	TestPlansJSON      = TestdataPath + "plans.json"
 )
 
 const (
@@ -39,14 +38,12 @@ func TestMain(m *testing.M) {
 	workingServer = mock.NewHTTPTestServer(nil,
 		[]mock.Handler{
 			mock.NewHandleWithFileContent("/v1/users", TestUserCreateJSON),
-			mock.NewHandleWithFileContent("/v1/plans", TestPlansJSON),
 		},
 	)
 
 	brokenServer = mock.NewHTTPTestServer(nil,
 		[]mock.Handler{
 			mock.NewHandleWithResponse("/v1/users", partialReadFromFile(TestUserCreateJSON)),
-			mock.NewHandleWithResponse("/v1/plans", partialReadFromFile(TestPlansJSON)),
 		},
 	)
 

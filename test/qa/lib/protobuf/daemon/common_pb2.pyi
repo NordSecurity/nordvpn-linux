@@ -90,12 +90,10 @@ class Ports(_message.Message):
     def __init__(self, udp: _Optional[_Iterable[int]] = ..., tcp: _Optional[_Iterable[int]] = ...) -> None: ...
 
 class ServerGroup(_message.Message):
-    __slots__ = ("name", "virtualLocation")
+    __slots__ = ("name",)
     NAME_FIELD_NUMBER: _ClassVar[int]
-    VIRTUALLOCATION_FIELD_NUMBER: _ClassVar[int]
     name: str
-    virtualLocation: bool
-    def __init__(self, name: _Optional[str] = ..., virtualLocation: bool = ...) -> None: ...
+    def __init__(self, name: _Optional[str] = ...) -> None: ...
 
 class ServerGroupsList(_message.Message):
     __slots__ = ("type", "servers")

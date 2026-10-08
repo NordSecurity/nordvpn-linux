@@ -140,7 +140,6 @@ class VpnStatusController extends _$VpnStatusController
           : null,
       city: status.city.isNotEmpty ? City(status.city) : null,
       status: status.state,
-      isVirtualLocation: status.virtualLocation,
       connectionParameters: status.parameters,
       isMeshnetRouting: status.isMeshPeer,
     );

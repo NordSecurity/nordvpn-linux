@@ -76,8 +76,8 @@ final class CustomDnsSettingsHandle extends ScreenHandle {
     await app.tester.tap(button);
   }
 
-  // check if the dialog that TP is enabled is displayed
-  bool isDisableTpPopupDisplayed() {
+  // check if the dialog that RTP is enabled is displayed
+  bool isDisableRtpPopupDisplayed() {
     final strings = [
       t.ui.realTimeProtectionWillTurnOff,
       t.ui.realTimeProtectionWillTurnOffDescription,

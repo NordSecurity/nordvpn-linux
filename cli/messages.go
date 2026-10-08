@@ -11,11 +11,13 @@ You can use NordVPN on 10 devices at the same time.`
 	ClaimOnlinePurchaseFailure = `Payment failed.
 We couldn’t process your payment. Please try again.`
 
-	LoginSuccess          = "Welcome to NordVPN! You can now connect to the VPN by using '%s connect'."
-	LogoutSuccess         = "You're logged out."
-	LogoutTokenSuccess    = "You have been logged out. To keep your account secure, we've revoked your current access token. If you want to reuse your next access token despite the potential risks, use the --" + flagPersistToken + " option when logging out."
-	LogoutUsageText       = "Logs you out"
-	PersistTokenUsageText = "Keep your current access token valid after logging out."
+	LoginSuccess              = "Welcome to NordVPN! You can now connect to the VPN by using '%s connect'."
+	LogoutSuccess             = "You're logged out."
+	LogoutTokenSuccess        = "You are logged out. Your access token is still valid and can be used to log in again.\nTo revoke it: log in with the same token, then run `nordvpn logout --revoke-token`\nManage tokens: https://my.nordaccount.com/dashboard/nordvpn/access-tokens"
+	LogoutUsageText           = "Logs you out"
+	LogoutTokenAlreadyInvalid = "Token already revoked or expired: You are logged out. Your access token was already invalid, so there was nothing to revoke."
+	LogoutRevokeTokenSuccess  = "You are logged out. Access token revoked."
+	RevokeTokenUsageText      = "Revoke your long living token after logging out"
 
 	MsgNordVPNGroup = "By default, all users who are members of the 'nordvpn' group have permission to control the NordVPN application.\nTo limit access exclusively to the root user, remove all users from the 'nordvpn' group."
 
@@ -46,10 +48,12 @@ Example: nordvpn set %s on`
 	AutoConnectOnObfuscatedServerObfuscateOff   = "Turn on obfuscation to connect to obfuscated servers."
 	SetAutoConnectForceOff                      = "Auto-connect was turned off because the setting change is incompatible with your current auto-connect preferences. Please turn on auto-connect again if you wish to continue using it."
 
-	SetThreatProtectionLiteDisableDNS = "Disabling DNS."
-	SetRealTimeProtectionAlreadySet   = "Real-time protection is already set to `%s`."
+	SetRealTimeProtectionDisableDNS = "Disabling DNS."
+	SetRealTimeProtectionAlreadySet = "Real-time protection is already set to `%s`."
 
-	SetDefaultsSuccess = "Settings were successfully restored to defaults."
+	SetDefaultsSuccess                   = "Settings were successfully restored to defaults."
+	SetDefaultsPartialSuccess            = "Some default settings could not be applied. The reset finished, but these settings may not be active: %s. Run 'nordvpn set defaults' again to retry. If the problem continues, contact support."
+	SetDefaultsNetworkSettingsNotApplied = "Some default network settings could not be applied. Run 'nordvpn set defaults' again to retry. If the problem continues, contact support."
 
 	FirewallRequired = "Firewall must be enabled to use '%s'."
 
@@ -356,11 +360,7 @@ Provide a [transfer_id] argument to list files in the specified transfer.`
 
 	MsgSnapPermissionsErrorForTray = "Please grant necessary permissions for the snap using this command:\n\n%s"
 
-	MsgSetVirtualLocationUsageText   = "Enables or disables access to virtual locations. Virtual location servers let you access more locations worldwide."
-	MsgSetVirtualLocationDescription = "Enables or disables access to virtual locations."
-	MsgFooterVirtualLocationNote     = "* Virtual location servers"
-
-	MsgShowListOfServers = "Shows a list of %s where servers are available.\n\nLocations marked with a different color in the list are virtual. Virtual location servers let you connect to more places worldwide. They run on dedicated physical servers, which are placed outside the intended location but configured to use its IP address."
+	MsgShowListOfServers = "Shows a list of %s where servers are available."
 
 	SetPqUnavailable       = "Post-quantum encryption is not compatible with %s. Switch to NordLynx to use this encryption."
 	SetTechnologyDisablePQ = "This setting is not compatible with post-quantum encryption. To use %s, turn off post-quantum encryption first."

@@ -2,7 +2,6 @@ package ens
 
 import (
 	"context"
-	"errors"
 	"sync"
 	"time"
 
@@ -13,8 +12,6 @@ import (
 )
 
 const evChSize = 2
-
-var ErrConnectionLimitReached = errors.New("connection limit reached")
 
 type ConnectCallback func(serverEndpoint string) error
 
@@ -134,7 +131,7 @@ func (m *Monitor) serverMaintenanceEventProcessing(e events.VPNConnectionErrorEv
 }
 
 func (m *Monitor) connectionLimitReachedEventProcessing(events.VPNConnectionErrorEvent) {
-	if !m.netw.CancelConnecting(ErrConnectionLimitReached) {
+	if !m.netw.CancelConnecting(events.ErrConnectionLimitReached) {
 		log.ENS.Info("connection limit reach ignored")
 	}
 }

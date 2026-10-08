@@ -274,7 +274,7 @@ class _CustomDnsState extends ConsumerState<CustomDns> {
     }
 
     // when user tries to enable it, but real time protection is on, we need to
-    // disable TP first - ask the user and don't allow to switch custom DNS
+    // disable RTP first - ask the user and don't allow to switch custom DNS
     // here (it will be done in popup)
     if (toValue && settings.realTimeProtection) {
       ref
@@ -283,7 +283,7 @@ class _CustomDnsState extends ConsumerState<CustomDns> {
       return false;
     }
 
-    // allow to switch only when custom DNS is empty and no conflict with TP
+    // allow to switch only when custom DNS is empty and no conflict with RTP
     return true;
   }
 

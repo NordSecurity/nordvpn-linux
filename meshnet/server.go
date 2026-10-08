@@ -1860,7 +1860,7 @@ func (s *Server) connect(
 		nameservers = cfg.AutoConnectData.DNS
 	} else {
 		nameservers = s.nameservers.Get(
-			cfg.AutoConnectData.ThreatProtectionLite,
+			cfg.AutoConnectData.RealTimeProtection,
 		)
 	}
 
@@ -1885,9 +1885,9 @@ func (s *Server) connect(
 	connectingStartTime = time.Now()
 
 	disconnectSender := events.NewDisconnectSender(events.DataDisconnect{
-		Protocol:             cfg.AutoConnectData.Protocol,
-		Technology:           cfg.Technology,
-		ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
+		Protocol:           cfg.AutoConnectData.Protocol,
+		Technology:         cfg.Technology,
+		RealTimeProtection: cfg.AutoConnectData.RealTimeProtection,
 	}, s.daemonEvents.Service.Disconnect.Publish)
 
 	if err := s.netw.Start(

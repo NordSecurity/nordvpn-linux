@@ -42,7 +42,7 @@ func (c *cmd) Settings(ctx *cli.Context) error {
 	fmt.Printf("Routing: %+v\n", nstrings.GetBoolLabel(settings.GetRouting()))
 	fmt.Printf("User Consent: %s\n", nstrings.UserConsent(settings.AnalyticsConsent))
 	fmt.Printf("Kill Switch: %+v\n", nstrings.GetBoolLabel(settings.GetKillSwitch()))
-	fmt.Printf("Real-time protection: %+v\n", nstrings.GetBoolLabel(settings.ThreatProtectionLite))
+	fmt.Printf("Real-time protection: %+v\n", nstrings.GetBoolLabel(settings.RealTimeProtection))
 	fmt.Printf("Notify: %+v\n", nstrings.GetBoolLabel(settings.UserSettings.Notify))
 	fmt.Printf("Tray: %+v\n", nstrings.GetBoolLabel(settings.UserSettings.Tray))
 	fmt.Printf("Auto-connect: %+v\n", nstrings.GetBoolLabel(settings.AutoConnectData.Enabled))
@@ -62,7 +62,6 @@ func (c *cmd) Settings(ctx *cli.Context) error {
 		fmt.Printf("DNS: %+v\n", strings.Join(settings.Dns, ", "))
 	}
 	fmt.Printf("LAN Discovery: %+v\n", nstrings.GetBoolLabel(settings.LanDiscovery))
-	fmt.Printf("Virtual Location: %+v\n", nstrings.GetBoolLabel(settings.VirtualLocation))
 	if settings.Technology == config.Technology_NORDLYNX {
 		fmt.Printf("Post-quantum VPN: %+v\n", nstrings.GetBoolLabel(settings.PostquantumVpn))
 	}

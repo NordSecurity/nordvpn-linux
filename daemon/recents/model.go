@@ -12,7 +12,6 @@ type Model struct {
 	SpecificServerName string                     `json:"specific-server-name,omitempty"`
 	SpecificServer     string                     `json:"specific-server,omitempty"`
 	ConnectionType     config.ServerSelectionRule `json:"connection-type"`
-	IsVirtual          bool                       `json:"is-virtual,omitempty"`
 }
 
 // IsEmpty checks whether the recent connection model is empty
@@ -23,8 +22,7 @@ func (m Model) IsEmpty() bool {
 		m.CountryCode == "" &&
 		m.SpecificServerName == "" &&
 		m.SpecificServer == "" &&
-		m.ConnectionType == config.ServerSelectionRule_NONE &&
-		!m.IsVirtual
+		m.ConnectionType == config.ServerSelectionRule_NONE
 }
 
 // Clone creates a deep copy of the recent connection model
@@ -37,7 +35,6 @@ func (m Model) Clone() Model {
 		SpecificServerName: m.SpecificServerName,
 		SpecificServer:     m.SpecificServer,
 		ConnectionType:     m.ConnectionType,
-		IsVirtual:          m.IsVirtual,
 	}
 }
 
@@ -49,6 +46,5 @@ func (m Model) Equals(other Model) bool {
 		m.CountryCode == other.CountryCode &&
 		m.SpecificServerName == other.SpecificServerName &&
 		m.SpecificServer == other.SpecificServer &&
-		m.ConnectionType == other.ConnectionType &&
-		m.IsVirtual == other.IsVirtual
+		m.ConnectionType == other.ConnectionType
 }

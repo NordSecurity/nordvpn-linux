@@ -166,7 +166,7 @@ func TestDoAutoConnect(t *testing.T) {
 				rpc.serversAPI = core_test.NewMockServersAPI()
 				mockConfigManager := newMockConfigManager()
 
-				updateAutoconnectData(mockConfigManager, config.AutoConnectData{Country: "DE", City: "Berlin", Group: config.ServerGroup_P2P, ServerTag: "p2p"})
+				updateAutoconnectData(mockConfigManager, config.AutoConnectData{Country: "DE", City: "Berlin", Group: config.ServerGroup_DOUBLE_VPN, ServerTag: "double_vpn"})
 
 				rpc.cm = mockConfigManager
 			},
@@ -453,8 +453,8 @@ func TestDoAutoConnect_SetsRequestedConnectionParams(t *testing.T) {
 			autoConnectData: config.AutoConnectData{
 				Country:   "US",
 				City:      "New York",
-				Group:     config.ServerGroup_P2P,
-				ServerTag: "p2p",
+				Group:     config.ServerGroup_DOUBLE_VPN,
+				ServerTag: "double_vpn",
 			},
 			expectedParams: ConnectionParameters{
 				ConnectionSource: pb.ConnectionSource_AUTO,
@@ -462,7 +462,7 @@ func TestDoAutoConnect_SetsRequestedConnectionParams(t *testing.T) {
 					Country:     "US",
 					CountryCode: "US",
 					City:        "New York",
-					Group:       config.ServerGroup_P2P,
+					Group:       config.ServerGroup_DOUBLE_VPN,
 				},
 			},
 		},

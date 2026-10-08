@@ -32,7 +32,7 @@ final class MockServersList {
   late final StreamSubscription<AppState> _appStateSub;
 
   MockServersList(this.stream) {
-    _serversList = _generateServersList();
+    _serversList = _generateServersList(settings.Technology.NORDLYNX);
     _appStateSub = stream.stream.listen((value) {
       if (value.hasSettingsChange()) {
         final newSettings = value.settingsChange;
@@ -40,10 +40,7 @@ final class MockServersList {
           return;
         }
         _settings = newSettings;
-        _serversList = _generateServersList(
-          technology: _settings!.technology,
-          hasVirtualServers: _settings!.virtualLocation,
-        );
+        _serversList = _generateServersList(_settings!.technology);
       }
     });
   }
@@ -64,20 +61,14 @@ final class MockServersList {
     stream.add(AppState(updateEvent: UpdateEvent.SERVERS_LIST_UPDATE));
   }
 
-  ServersResponse _generateServersList({
-    bool hasVirtualServers = true,
-    settings.Technology technology = settings.Technology.NORDLYNX,
-  }) {
-    debugPrint(
-      "Servers list changed hasVirtualServers=$hasVirtualServers - technology=$technology",
-    );
+  ServersResponse _generateServersList(settings.Technology technology) {
+    debugPrint("Servers list changed technology=$technology");
 
     _dipServers = [];
 
     // every server reachable over NordWhisper is obfuscated, so the daemon reports the standard
     // servers as obfuscated ones as well
     final standardGroups = [
-      config.ServerGroup.P2P,
       config.ServerGroup.STANDARD_VPN_SERVERS,
       if (technology == settings.Technology.NORDWHISPER)
         config.ServerGroup.NW_OBFUSCATED,
@@ -148,10 +139,6 @@ final class MockServersList {
     for (final countryCode in locations.keys) {
       int serverCounter = 1;
       final cities = <ServerCity>[];
-      final isVirtual = (countryCode == "IN");
-      if (!hasVirtualServers && isVirtual) {
-        continue;
-      }
 
       for (final cityInfo in locations[countryCode]!) {
         final cityName = cityInfo.keys.first;
@@ -165,7 +152,6 @@ final class MockServersList {
           final server = Server(
             id: Int64(serverId),
             hostName: "$countryCode${serverCounter++}.nordvpn.com",
-            virtual: isVirtual,
             technologies: technologies,
             serverGroups: groups,
           );

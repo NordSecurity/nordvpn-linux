@@ -64,7 +64,7 @@ func TestRPCGroups(t *testing.T) {
 	}
 }
 
-func TestRPCGroups_RegionalGroupsFiltered(t *testing.T) {
+func TestRPCGroups_DeprecatedGroupsFiltered(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	dm := testNewDataManager()
@@ -81,7 +81,14 @@ func TestRPCGroups_RegionalGroupsFiltered(t *testing.T) {
 			Technologies: core.Technologies{
 				{ID: core.WireguardTech, Pivot: core.Pivot{Status: core.Online}},
 			},
-			Groups: core.Groups{{ID: config.ServerGroup_P2P, Title: "P2P"}},
+			Groups: core.Groups{{ID: 15, Title: "P2P"}},
+		},
+		{
+			Status: core.Online,
+			Technologies: core.Technologies{
+				{ID: core.WireguardTech, Pivot: core.Pivot{Status: core.Online}},
+			},
+			Groups: core.Groups{{ID: config.ServerGroup_DOUBLE_VPN, Title: "Double_VPN"}},
 		},
 	}
 
@@ -101,7 +108,7 @@ func TestRPCGroups_RegionalGroupsFiltered(t *testing.T) {
 
 	assert.Equal(t, internal.CodeSuccess, payload.Type)
 	assert.Equal(t, 1, len(payload.Servers))
-	assert.Equal(t, "P2P", payload.Servers[0].Name)
+	assert.Equal(t, "Double_VPN", payload.Servers[0].Name)
 }
 
 func TestRPCGroups_Successful(t *testing.T) {
@@ -112,7 +119,6 @@ func TestRPCGroups_Successful(t *testing.T) {
 		name                    string
 		cm                      config.Manager
 		servers                 core.Servers
-		disableVirtualServers   bool
 		disableDedicatedServers bool
 		statusCode              int64
 		expected                []*pb.ServerGroup
@@ -127,47 +133,31 @@ func TestRPCGroups_Successful(t *testing.T) {
 			cm:         newMockConfigManager(),
 			statusCode: internal.CodeSuccess,
 			expected: []*pb.ServerGroup{
-				{Name: "Dedicated_Server", VirtualLocation: false},
+				{Name: "Dedicated_Server"},
 			},
 		},
 		{
-			name:       "virtual and physical servers",
+			name:       "all servers",
 			cm:         newMockConfigManager(),
 			servers:    coremock.ServersList(),
 			statusCode: internal.CodeSuccess,
 			expected: []*pb.ServerGroup{
-				{Name: "Dedicated_IP", VirtualLocation: false},
-				{Name: "Double_VPN", VirtualLocation: false},
-				{Name: "P2P", VirtualLocation: false},
-				{Name: "Standard_VPN_Servers", VirtualLocation: false},
-				{Name: "Dedicated_Server", VirtualLocation: false},
+				{Name: "Dedicated_IP"},
+				{Name: "Double_VPN"},
+				{Name: "Standard_VPN_Servers"},
+				{Name: "Dedicated_Server"},
 			},
 		},
 		{
-			name:                    "virtual and physical servers, exclude dedicated servers via feature toggle",
+			name:                    "all servers, exclude dedicated servers via feature toggle",
 			cm:                      newMockConfigManager(),
 			servers:                 coremock.ServersList(),
 			disableDedicatedServers: true,
 			statusCode:              internal.CodeSuccess,
 			expected: []*pb.ServerGroup{
-				{Name: "Dedicated_IP", VirtualLocation: false},
-				{Name: "Double_VPN", VirtualLocation: false},
-				{Name: "P2P", VirtualLocation: false},
-				{Name: "Standard_VPN_Servers", VirtualLocation: false},
-			},
-		},
-		{
-			name:                  "return physical servers only",
-			cm:                    newMockConfigManager(),
-			servers:               coremock.ServersList(),
-			disableVirtualServers: true,
-			statusCode:            internal.CodeSuccess,
-			expected: []*pb.ServerGroup{
-				{Name: "Dedicated_IP", VirtualLocation: false},
-				{Name: "Double_VPN", VirtualLocation: false},
-				{Name: "P2P", VirtualLocation: false},
-				{Name: "Standard_VPN_Servers", VirtualLocation: false},
-				{Name: "Dedicated_Server", VirtualLocation: false},
+				{Name: "Dedicated_IP"},
+				{Name: "Double_VPN"},
+				{Name: "Standard_VPN_Servers"},
 			},
 		},
 	}
@@ -183,7 +173,6 @@ func TestRPCGroups_Successful(t *testing.T) {
 			if cm, ok := test.cm.(*mockConfigManager); ok {
 				cm.c.AutoConnectData.Protocol = config.Protocol_UDP
 				cm.c.Technology = config.Technology_NORDLYNX
-				cm.c.VirtualLocation.Set(!test.disableVirtualServers)
 			}
 
 			rpc := RPC{
@@ -212,10 +201,10 @@ func TestGroups_ObfuscatedIsListedOnlyUnderNordWhisper(t *testing.T) {
 	allTechs := []core.ServerTechnology{
 		core.OpenVPNTCP, core.OpenVPNUDP, core.WireguardTech, core.NordWhisperTech,
 	}
-	standard := getServer(1, "standard1", "Germany", "de", "Berlin", false,
+	standard := getServer(1, "standard1", "Germany", "de", "Berlin",
 		core.Groups{{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"}},
 		allTechs)
-	legacyXOR := getServer(3, "xor1", "Canada", "ca", "Toronto", false,
+	legacyXOR := getServer(3, "xor1", "Canada", "ca", "Toronto",
 		core.Groups{{ID: config.ServerGroup_OVPN_OBFUSCATED, Title: "Obfuscated Servers"}},
 		[]core.ServerTechnology{core.OpenVPNUDPObfuscated, core.OpenVPNTCPObfuscated})
 
@@ -257,7 +246,7 @@ func TestGroups_ObfuscatedIsListedOnlyUnderNordWhisper(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			dm := DataManager{serversData: ServersData{Servers: test.servers}}
 
-			groups, err := dm.Groups(test.tech, test.proto, true)
+			groups, err := dm.Groups(test.tech, test.proto)
 			assert.NoError(t, err)
 
 			names := make([]string, 0, len(groups))

@@ -29,7 +29,7 @@ Example: nordvpn set protection off
 Note: Real-time protection works with our default DNS servers only. If custom DNS is active, we’ll turn it off once you turn on real-time protection.`
 )
 
-func setTPLErrorCodeToError(code pb.SetErrorCode, args ...any) error {
+func setRTPErrorCodeToError(code pb.SetErrorCode, args ...any) error {
 	switch code {
 	case pb.SetErrorCode_FAILURE:
 		return formatError(internal.ErrUnhandled)
@@ -42,7 +42,7 @@ func setTPLErrorCodeToError(code pb.SetErrorCode, args ...any) error {
 	return nil
 }
 
-func (c *cmd) SetThreatProtectionLite(ctx *cli.Context) error {
+func (c *cmd) SetRealTimeProtection(ctx *cli.Context) error {
 	if ctx.NArg() != 1 {
 		return formatError(argsCountError(ctx))
 	}
@@ -52,21 +52,21 @@ func (c *cmd) SetThreatProtectionLite(ctx *cli.Context) error {
 		return formatError(argsParseError(ctx))
 	}
 
-	resp, err := c.client.SetThreatProtectionLite(
+	resp, err := c.client.SetRealTimeProtection(
 		context.Background(),
-		&pb.SetThreatProtectionLiteRequest{
-			ThreatProtectionLite: flag,
+		&pb.SetRealTimeProtectionRequest{
+			RealTimeProtection: flag,
 		})
 	if err != nil {
 		return formatError(err)
 	}
 
 	switch resp.Response.(type) {
-	case *pb.SetThreatProtectionLiteResponse_ErrorCode:
-		return setTPLErrorCodeToError(resp.GetErrorCode(), nstrings.GetBoolLabel(flag))
-	case *pb.SetThreatProtectionLiteResponse_SetThreatProtectionLiteStatus:
-		if resp.GetSetThreatProtectionLiteStatus() == pb.SetThreatProtectionLiteStatus_TPL_CONFIGURED_DNS_RESET {
-			color.Yellow(SetThreatProtectionLiteDisableDNS)
+	case *pb.SetRealTimeProtectionResponse_ErrorCode:
+		return setRTPErrorCodeToError(resp.GetErrorCode(), nstrings.GetBoolLabel(flag))
+	case *pb.SetRealTimeProtectionResponse_SetRealTimeProtectionStatus:
+		if resp.GetSetRealTimeProtectionStatus() == pb.SetRealTimeProtectionStatus_RTP_CONFIGURED_DNS_RESET {
+			color.Yellow(SetRealTimeProtectionDisableDNS)
 		}
 		if err != nil {
 			return formatError(ErrConfig)

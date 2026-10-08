@@ -24,7 +24,7 @@ type techContextRecorder struct {
 func newTechTestSubscriber() (*Subscriber, *techContextRecorder) {
 	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 	noopDisconnectAmbientMooseFuncs(sub)
-	sub.mooseFuncs.setTPLiteCurrentState = func(_ bool) uint32 { return 0 }
+	sub.mooseFuncs.setRTPCurrentState = func(_ bool) uint32 { return 0 }
 	sub.mooseFuncs.sendConnect = func(
 		_ moose.EventParams,
 		_ moose.TargetConnectionParams,

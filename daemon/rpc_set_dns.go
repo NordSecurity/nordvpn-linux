@@ -44,14 +44,14 @@ func (r *RPC) SetDNS(ctx context.Context, in *pb.SetDNSRequest) (*pb.SetDNSRespo
 		}
 	}
 
-	newThreatProtectionLiteStatus := cfg.AutoConnectData.ThreatProtectionLite
+	newRealTimeProtectionStatus := cfg.AutoConnectData.RealTimeProtection
 
-	if newThreatProtectionLiteStatus && nameservers != nil {
-		newThreatProtectionLiteStatus = false
+	if newRealTimeProtectionStatus && nameservers != nil {
+		newRealTimeProtectionStatus = false
 	}
 
 	if nameservers == nil {
-		nameservers = r.nameservers.Get(newThreatProtectionLiteStatus)
+		nameservers = r.nameservers.Get(newRealTimeProtectionStatus)
 	}
 
 	if err := r.netw.SetDNS(nameservers); err != nil {
@@ -62,7 +62,7 @@ func (r *RPC) SetDNS(ctx context.Context, in *pb.SetDNSRequest) (*pb.SetDNSRespo
 	}
 
 	if err := r.cm.SaveWith(func(c config.Config) config.Config {
-		c.AutoConnectData.ThreatProtectionLite = newThreatProtectionLiteStatus
+		c.AutoConnectData.RealTimeProtection = newRealTimeProtectionStatus
 		c.AutoConnectData.DNS = in.GetDns()
 		return c
 	}); err != nil {
@@ -73,10 +73,10 @@ func (r *RPC) SetDNS(ctx context.Context, in *pb.SetDNSRequest) (*pb.SetDNSRespo
 	}
 	r.events.Settings.DNS.Publish(events.DataDNS{Ips: in.GetDns()})
 
-	if newThreatProtectionLiteStatus != cfg.AutoConnectData.ThreatProtectionLite {
+	if newRealTimeProtectionStatus != cfg.AutoConnectData.RealTimeProtection {
 		return &pb.SetDNSResponse{
 			Response: &pb.SetDNSResponse_SetDnsStatus{
-				SetDnsStatus: pb.SetDNSStatus_DNS_CONFIGURED_TPL_RESET}}, nil
+				SetDnsStatus: pb.SetDNSStatus_DNS_CONFIGURED_RTP_RESET}}, nil
 	}
 
 	return &pb.SetDNSResponse{

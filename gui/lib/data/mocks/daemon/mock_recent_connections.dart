@@ -86,7 +86,7 @@ class MockRecentConnections {
     recentConnections.add(
       RecentConnectionModel(
         connectionType: ServerSelectionRule.GROUP,
-        group: cfg.ServerGroup.P2P,
+        group: cfg.ServerGroup.ONION_OVER_VPN,
       ),
     );
 

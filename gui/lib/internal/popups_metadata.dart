@@ -177,13 +177,18 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code, {Object? userData}) {
       },
     ),
 
-    // Reconnect to apply post-quantum, virtual location changes
-    // These are applied immediately and user is just informed to reconnect
-    PopupCodes.reconnectToChangePostQuantum ||
-    PopupCodes.reconnectToChangeVirtualLocation => InfoPopupMetadata(
+    PopupCodes.reconnectToChangePostQuantum => InfoPopupMetadata(
       id: PopupCodes.reconnectToChangeProtocol,
       title: t.ui.reconnectToApplyChanges,
       message: (_) => t.ui.reconnectToApplyChangesDescription,
+      buttonText: t.ui.gotIt,
+    ),
+
+    // Settings were reset, but some of them could not be applied
+    DaemonStatusCode.setDefaultsNotApplied => InfoPopupMetadata(
+      id: DaemonStatusCode.setDefaultsNotApplied,
+      title: t.ui.settingsNotApplied,
+      message: (_) => _setDefaultsNotAppliedMessage(userData),
       buttonText: t.ui.gotIt,
     ),
 
@@ -276,6 +281,15 @@ PopupMetadata infoForDaemonCode(int code) {
     title: title,
     message: (_) => message,
     buttonText: t.ui.gotIt,
+  );
+}
+
+String _setDefaultsNotAppliedMessage(Object? failedSettings) {
+  if (failedSettings is! List<String> || failedSettings.isEmpty) {
+    return t.ui.networkSettingsNotAppliedDescription;
+  }
+  return t.ui.settingsNotAppliedDescription(
+    settings: failedSettings.join(", "),
   );
 }
 

@@ -160,6 +160,9 @@ var (
 	// LogLevelFile defines the path to the runtime log level control file
 	LogLevelFile = filepath.Join(RunDir, "loglevel")
 
+	// TelioLogLevelFile defines the path to telio log level control file
+	TelioLogLevelFile = filepath.Join(RunDir, "teliologlevel")
+
 	FileshareBinaryPath = filepath.Join(AppDataPathStatic, Fileshare)
 
 	NorduserdBinaryPath = filepath.Join(AppDataPathStatic, Norduserd)
@@ -168,7 +171,11 @@ var (
 	ReservedMeshnetSubnet = netip.MustParsePrefix("100.64.0.0/29")
 
 	// MeshSubnet is the subnet used for meshnet
-	MeshSubnet    = netip.MustParsePrefix("100.64.0.0/10")
+	MeshSubnet = netip.MustParsePrefix("100.64.0.0/10")
+
+	// NordLynxSubnet is the subnet used for NordLynx VPN and Dedicated Server
+	NordLynxSubnet = netip.MustParsePrefix("10.5.0.0/16")
+
 	LocalNetworks = []string{
 		"10.0.0.0/8",
 		"172.16.0.0/12",

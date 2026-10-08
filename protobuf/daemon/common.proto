@@ -36,7 +36,7 @@ message Ports {
 
 message ServerGroup {
   string name = 1;
-  bool virtualLocation = 2;
+  reserved 2;
 }
 
 message ServerGroupsList {

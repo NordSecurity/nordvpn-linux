@@ -88,14 +88,6 @@ Finder productsList() {
   return productsListFinder;
 }
 
-Finder virtualServersListItem() {
-  final virtualListItemFinder = find.descendant(
-    of: find.byKey(ServerListWidgetKeys.countriesServersList),
-    matching: find.textContaining(t.ui.virtual),
-  );
-  return virtualListItemFinder;
-}
-
 Finder vpnConnectionBreadcrumb() {
   final currentBreadcrumb = currentNavigationBreadcrumb();
   final vpnConnectonBreadcrumbText = find.descendant(
@@ -191,12 +183,6 @@ Finder onionOverVpnGroupTile() {
   final onionOverVpnGroupTile = find.byKey(ServerListWidgetKeys.onionOverVpn);
   expect(onionOverVpnGroupTile, findsOne);
   return onionOverVpnGroupTile;
-}
-
-Finder p2pGroupTile() {
-  final p2pGroupTile = find.byKey(ServerListWidgetKeys.p2p);
-  expect(p2pGroupTile, findsOne);
-  return p2pGroupTile;
 }
 
 Finder obfuscatedGroupTile() {

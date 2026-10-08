@@ -3,6 +3,8 @@
 package moose
 
 import (
+	"errors"
+	"fmt"
 	"math"
 	moose "moose/events"
 	"reflect"
@@ -454,7 +456,7 @@ func TestHandleTokenRenewDateChange(t *testing.T) {
 	}
 }
 
-func TestNotifyThreatProtectionLite_CallsUserPreferenceSetter(t *testing.T) {
+func TestNotifyRealTimeProtection_CallsUserPreferenceSetter(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
@@ -483,7 +485,7 @@ func TestNotifyThreatProtectionLite_CallsUserPreferenceSetter(t *testing.T) {
 			mooseUserPrefErrCode:  0,
 			expectNotifyErr:       false,
 			expectPrefCalled:      true,
-			expectCustomDNSCalled: false, // TP Lite disabled, so custom DNS is not touched
+			expectCustomDNSCalled: false, // real time protection disabled, so custom DNS is not touched
 		},
 	}
 
@@ -496,7 +498,7 @@ func TestNotifyThreatProtectionLite_CallsUserPreferenceSetter(t *testing.T) {
 
 			s := &Subscriber{
 				mooseFuncs: mooseFunctions{
-					setTPLiteUserPreference: func(v bool) uint32 {
+					setRTPUserPreference: func(v bool) uint32 {
 						prefCalled = true
 						gotPref = v
 						return tt.mooseUserPrefErrCode
@@ -513,10 +515,10 @@ func TestNotifyThreatProtectionLite_CallsUserPreferenceSetter(t *testing.T) {
 			}
 
 			// make sure we don't hit the "Current State" call path:
-			// `NotifyThreatProtectionLite` only sets Current State when connectionStartTime.IsZero().
+			// `NotifyRealTimeProtection` only sets Current State when connectionStartTime.IsZero().
 			s.connectionStartTime = time.Now()
 
-			err := s.NotifyThreatProtectionLite(tt.enabled)
+			err := s.NotifyRealTimeProtection(tt.enabled)
 
 			assert.Equal(t, tt.expectPrefCalled, prefCalled)
 			if tt.expectPrefCalled {
@@ -651,97 +653,97 @@ func TestNotifyDNS(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		name                   string
-		dnsIPs                 []string
-		mooseMetaErrCode       uint32
-		mooseValueErrCode      uint32
-		mooseTPLiteUserPrefErr uint32
-		mooseTPLiteCurrentErr  uint32
-		expectErr              bool
-		expectMetaCalled       bool
-		expectValueCalled      bool
-		expectTPLiteCalled     bool
-		expectedTPLiteValue    bool
+		name                string
+		dnsIPs              []string
+		mooseMetaErrCode    uint32
+		mooseValueErrCode   uint32
+		mooseRTPUserPrefErr uint32
+		mooseRTPCurrentErr  uint32
+		expectErr           bool
+		expectMetaCalled    bool
+		expectValueCalled   bool
+		expectRTPCalled     bool
+		expectedRTPValue    bool
 	}{
 		{
-			name:               "no DNS IPs - custom DNS disabled, TP Lite not touched",
-			dnsIPs:             []string{},
-			mooseMetaErrCode:   0,
-			mooseValueErrCode:  0,
-			expectErr:          false,
-			expectMetaCalled:   true,
-			expectValueCalled:  true,
-			expectTPLiteCalled: false, // TP Lite only touched when custom DNS is enabled
+			name:              "no DNS IPs - custom DNS disabled, real time protection not touched",
+			dnsIPs:            []string{},
+			mooseMetaErrCode:  0,
+			mooseValueErrCode: 0,
+			expectErr:         false,
+			expectMetaCalled:  true,
+			expectValueCalled: true,
+			expectRTPCalled:   false, // real time protection only touched when custom DNS is enabled
 		},
 		{
-			name:                   "single DNS IP - custom DNS enabled, TP Lite disabled (not connected)",
-			dnsIPs:                 []string{"1.1.1.1"},
-			mooseMetaErrCode:       0,
-			mooseValueErrCode:      0,
-			mooseTPLiteUserPrefErr: 0,
-			mooseTPLiteCurrentErr:  0,
-			expectErr:              false,
-			expectMetaCalled:       true,
-			expectValueCalled:      true,
-			expectTPLiteCalled:     true,
-			expectedTPLiteValue:    false,
+			name:                "single DNS IP - custom DNS enabled, real time protection disabled (not connected)",
+			dnsIPs:              []string{"1.1.1.1"},
+			mooseMetaErrCode:    0,
+			mooseValueErrCode:   0,
+			mooseRTPUserPrefErr: 0,
+			mooseRTPCurrentErr:  0,
+			expectErr:           false,
+			expectMetaCalled:    true,
+			expectValueCalled:   true,
+			expectRTPCalled:     true,
+			expectedRTPValue:    false,
 		},
 		{
-			name:                   "multiple DNS IPs - custom DNS enabled, TP Lite disabled (not connected)",
-			dnsIPs:                 []string{"1.1.1.1", "8.8.8.8"},
-			mooseMetaErrCode:       0,
-			mooseValueErrCode:      0,
-			mooseTPLiteUserPrefErr: 0,
-			mooseTPLiteCurrentErr:  0,
-			expectErr:              false,
-			expectMetaCalled:       true,
-			expectValueCalled:      true,
-			expectTPLiteCalled:     true,
-			expectedTPLiteValue:    false,
+			name:                "multiple DNS IPs - custom DNS enabled, real time protection disabled (not connected)",
+			dnsIPs:              []string{"1.1.1.1", "8.8.8.8"},
+			mooseMetaErrCode:    0,
+			mooseValueErrCode:   0,
+			mooseRTPUserPrefErr: 0,
+			mooseRTPCurrentErr:  0,
+			expectErr:           false,
+			expectMetaCalled:    true,
+			expectValueCalled:   true,
+			expectRTPCalled:     true,
+			expectedRTPValue:    false,
 		},
 		{
-			name:               "custom DNS meta setter fails - propagates error, TP Lite not touched",
-			dnsIPs:             []string{"1.1.1.1"},
-			mooseMetaErrCode:   1,
-			mooseValueErrCode:  0,
-			expectErr:          true,
-			expectMetaCalled:   true,
-			expectValueCalled:  false,
-			expectTPLiteCalled: false, // setCustomDNS fails early
+			name:              "custom DNS meta setter fails - propagates error, real time protection not touched",
+			dnsIPs:            []string{"1.1.1.1"},
+			mooseMetaErrCode:  1,
+			mooseValueErrCode: 0,
+			expectErr:         true,
+			expectMetaCalled:  true,
+			expectValueCalled: false,
+			expectRTPCalled:   false, // setCustomDNS fails early
 		},
 		{
-			name:               "custom DNS value setter fails - propagates error, TP Lite not touched",
-			dnsIPs:             []string{"1.1.1.1"},
-			mooseMetaErrCode:   0,
-			mooseValueErrCode:  1,
-			expectErr:          true,
-			expectMetaCalled:   true,
-			expectValueCalled:  true,
-			expectTPLiteCalled: false, // setCustomDNS fails, so setTPLite not called
+			name:              "custom DNS value setter fails - propagates error, real time protection not touched",
+			dnsIPs:            []string{"1.1.1.1"},
+			mooseMetaErrCode:  0,
+			mooseValueErrCode: 1,
+			expectErr:         true,
+			expectMetaCalled:  true,
+			expectValueCalled: true,
+			expectRTPCalled:   false, // setCustomDNS fails, so setRealTimeProtection not called
 		},
 		{
-			name:                   "TP Lite user pref setter fails - propagates error (not connected)",
-			dnsIPs:                 []string{"1.1.1.1"},
-			mooseMetaErrCode:       0,
-			mooseValueErrCode:      0,
-			mooseTPLiteUserPrefErr: 12,
-			mooseTPLiteCurrentErr:  0,
-			expectErr:              true,
-			expectMetaCalled:       true,
-			expectValueCalled:      true,
-			expectTPLiteCalled:     true,
+			name:                "real time protection user pref setter fails - propagates error (not connected)",
+			dnsIPs:              []string{"1.1.1.1"},
+			mooseMetaErrCode:    0,
+			mooseValueErrCode:   0,
+			mooseRTPUserPrefErr: 12,
+			mooseRTPCurrentErr:  0,
+			expectErr:           true,
+			expectMetaCalled:    true,
+			expectValueCalled:   true,
+			expectRTPCalled:     true,
 		},
 		{
-			name:                   "TP Lite current setter fails - propagates error (not connected)",
-			dnsIPs:                 []string{"1.1.1.1"},
-			mooseMetaErrCode:       0,
-			mooseValueErrCode:      0,
-			mooseTPLiteUserPrefErr: 0,
-			mooseTPLiteCurrentErr:  1,
-			expectErr:              true,
-			expectMetaCalled:       true,
-			expectValueCalled:      true,
-			expectTPLiteCalled:     true,
+			name:                "real time protection current setter fails - propagates error (not connected)",
+			dnsIPs:              []string{"1.1.1.1"},
+			mooseMetaErrCode:    0,
+			mooseValueErrCode:   0,
+			mooseRTPUserPrefErr: 0,
+			mooseRTPCurrentErr:  1,
+			expectErr:           true,
+			expectMetaCalled:    true,
+			expectValueCalled:   true,
+			expectRTPCalled:     true,
 		},
 	}
 
@@ -749,9 +751,9 @@ func TestNotifyDNS(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			metaCalled := false
 			valueCalled := false
-			tpLiteUserPrefCalled := false
-			tpLiteCurrentCalled := false
-			var gotTPLiteValue bool
+			RTPUserPrefCalled := false
+			RTPCurrentCalled := false
+			var gotRTPValue bool
 
 			s := &Subscriber{
 				mooseFuncs: mooseFunctions{
@@ -763,19 +765,19 @@ func TestNotifyDNS(t *testing.T) {
 						valueCalled = true
 						return tt.mooseValueErrCode
 					},
-					setTPLiteUserPreference: func(v bool) uint32 {
-						tpLiteUserPrefCalled = true
-						return tt.mooseTPLiteUserPrefErr
+					setRTPUserPreference: func(v bool) uint32 {
+						RTPUserPrefCalled = true
+						return tt.mooseRTPUserPrefErr
 					},
-					setTPLiteCurrentState: func(v bool) uint32 {
-						tpLiteCurrentCalled = true
-						gotTPLiteValue = v
-						return tt.mooseTPLiteCurrentErr
+					setRTPCurrentState: func(v bool) uint32 {
+						RTPCurrentCalled = true
+						gotRTPValue = v
+						return tt.mooseRTPCurrentErr
 					},
 				},
 			}
 
-			// Ensure we're in "not connected" state so TP Lite current state is set
+			// Ensure we're in "not connected" state so real time protection current state is set
 			s.connectionStartTime = time.Time{}
 
 			data := events.DataDNS{Ips: tt.dnsIPs}
@@ -783,11 +785,11 @@ func TestNotifyDNS(t *testing.T) {
 
 			assert.Equal(t, tt.expectMetaCalled, metaCalled)
 			assert.Equal(t, tt.expectValueCalled, valueCalled)
-			assert.Equal(t, tt.expectTPLiteCalled, tpLiteUserPrefCalled)
-			assert.Equal(t, tt.expectTPLiteCalled, tpLiteCurrentCalled)
+			assert.Equal(t, tt.expectRTPCalled, RTPUserPrefCalled)
+			assert.Equal(t, tt.expectRTPCalled, RTPCurrentCalled)
 
-			if tt.expectTPLiteCalled && tt.mooseTPLiteCurrentErr == 0 {
-				assert.Equal(t, tt.expectedTPLiteValue, gotTPLiteValue)
+			if tt.expectRTPCalled && tt.mooseRTPCurrentErr == 0 {
+				assert.Equal(t, tt.expectedRTPValue, gotRTPValue)
 			}
 
 			if tt.expectErr {
@@ -824,7 +826,6 @@ func TestHasSensitiveServerGroup(t *testing.T) {
 			name: "no_sensitive_groups",
 			groups: []config.ServerGroup{
 				config.ServerGroup_STANDARD_VPN_SERVERS,
-				config.ServerGroup_P2P,
 			},
 			want: false,
 		},
@@ -1081,7 +1082,7 @@ func TestNotifyConnect_Success_DedicatedIPByHostname_ContextValueIsUserTarget(t 
 	) uint32 {
 		return 0
 	}
-	sub.mooseFuncs.setTPLiteCurrentState = func(_ bool) uint32 { return 0 }
+	sub.mooseFuncs.setRTPCurrentState = func(_ bool) uint32 { return 0 }
 	sub.mooseFuncs.unsetServerDomainCurrentState = func() uint32 { return 0 }
 	sub.mooseFuncs.unsetRecommendationUuid = func() uint32 { return 0 }
 	sub.mooseFuncs.setServerGroupCurrentState = func(group moose.NordvpnappServerGroup) uint32 {
@@ -1124,7 +1125,7 @@ func TestNotifyConnect_Success_EmptyTargetServerGroup_UnsetsServerGroupContext(t
 	) uint32 {
 		return 0
 	}
-	sub.mooseFuncs.setTPLiteCurrentState = func(_ bool) uint32 { return 0 }
+	sub.mooseFuncs.setRTPCurrentState = func(_ bool) uint32 { return 0 }
 	sub.mooseFuncs.setServerGroupCurrentState = func(_ moose.NordvpnappServerGroup) uint32 {
 		setCalls++
 		return 0
@@ -1255,13 +1256,13 @@ func TestNotifyConnect_Success_InvokesPostConnectContextSetters(t *testing.T) {
 		return 0
 	}
 
-	var tpLiteCalls, isOnVpnCalls, countryCalls, groupCalls int
-	var capturedTPLite, capturedIsOnVpn bool
+	var RTPCalls, isOnVpnCalls, countryCalls, groupCalls int
+	var capturedRTP, capturedIsOnVpn bool
 	var capturedCountry string
 	var capturedGroup moose.NordvpnappServerGroup
-	sub.mooseFuncs.setTPLiteCurrentState = func(enabled bool) uint32 {
-		capturedTPLite = enabled
-		tpLiteCalls++
+	sub.mooseFuncs.setRTPCurrentState = func(enabled bool) uint32 {
+		capturedRTP = enabled
+		RTPCalls++
 		return 0
 	}
 	sub.mooseFuncs.setIsOnVpnCurrentState = func(onVpn bool) uint32 {
@@ -1283,16 +1284,16 @@ func TestNotifyConnect_Success_InvokesPostConnectContextSetters(t *testing.T) {
 	err := sub.NotifyConnect(events.DataConnect{
 		TargetServerGroupID:     config.ServerGroup_STANDARD_VPN_SERVERS,
 		TargetServerCountryCode: "us",
-		ThreatProtectionLite:    false,
+		RealTimeProtection:      false,
 		EventStatus:             events.StatusSuccess,
 	})
 
 	assert.NilError(t, err)
-	assert.Equal(t, 1, tpLiteCalls)
+	assert.Equal(t, 1, RTPCalls)
 	assert.Equal(t, 1, isOnVpnCalls)
 	assert.Equal(t, 1, countryCalls)
 	assert.Equal(t, 1, groupCalls)
-	assert.Equal(t, false, capturedTPLite)
+	assert.Equal(t, false, capturedRTP)
 	assert.Equal(t, true, capturedIsOnVpn)
 	assert.Equal(t, "us", capturedCountry)
 	assert.Equal(t, moose.NordvpnappServerGroupStandard, capturedGroup)
@@ -1389,11 +1390,11 @@ func TestReportAutoConnectTarget(t *testing.T) {
 		},
 		{
 			name:        "specialty group target - no tag",
-			ac:          config.AutoConnectData{Group: config.ServerGroup_P2P},
+			ac:          config.AutoConnectData{Group: config.ServerGroup_DOUBLE_VPN},
 			wantPref:    moose.NordvpnappConnectionPreferenceSpecific,
 			wantCountry: "",
 			wantCity:    "",
-			wantGroup:   moose.NordvpnappServerGroupP2p,
+			wantGroup:   moose.NordvpnappServerGroupDoubleVpn,
 		},
 		{
 			name:      "group - onion over vpn",
@@ -1564,7 +1565,7 @@ func TestReportAutoConnectTarget_AccumulatesErrors(t *testing.T) {
 }
 
 func noopDisconnectAmbientMooseFuncs(sub *Subscriber) {
-	sub.mooseFuncs.unsetTPLiteCurrentState = func() uint32 { return 0 }
+	sub.mooseFuncs.unsetRTPCurrentState = func() uint32 { return 0 }
 	sub.mooseFuncs.setServerCountryCurrentState = func(_ string) uint32 { return 0 }
 	sub.mooseFuncs.setServerGroupCurrentState = func(_ moose.NordvpnappServerGroup) uint32 { return 0 }
 	sub.mooseFuncs.unsetServerGroupCurrentState = func() uint32 { return 0 }
@@ -1720,7 +1721,7 @@ func TestNotifyConnect_Success_DedicatedIP_SetsGroupAndKeepsDependentsEmpty(t *t
 		sendConnectCallOrder = nextCall
 		return 0
 	}
-	sub.mooseFuncs.setTPLiteCurrentState = func(_ bool) uint32 { return 0 }
+	sub.mooseFuncs.setRTPCurrentState = func(_ bool) uint32 { return 0 }
 	sub.mooseFuncs.setServerGroupCurrentState = func(group moose.NordvpnappServerGroup) uint32 {
 		nextCall++
 		groupCallOrder = nextCall
@@ -1838,7 +1839,7 @@ func TestNotifyConnect_Success_StandardVPN_SetsServerDomainAndCity(t *testing.T)
 	category.Set(t, category.Unit)
 	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 	noopDisconnectAmbientMooseFuncs(sub)
-	sub.mooseFuncs.setTPLiteCurrentState = func(_ bool) uint32 { return 0 }
+	sub.mooseFuncs.setRTPCurrentState = func(_ bool) uint32 { return 0 }
 	sub.mooseFuncs.sendConnect = func(
 		_ moose.EventParams,
 		_ moose.TargetConnectionParams,
@@ -1884,7 +1885,7 @@ func TestNotifyConnect_Success_SensitiveGroup_SuppressesServerDomainButSetsCity(
 	category.Set(t, category.Unit)
 	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 	noopDisconnectAmbientMooseFuncs(sub)
-	sub.mooseFuncs.setTPLiteCurrentState = func(_ bool) uint32 { return 0 }
+	sub.mooseFuncs.setRTPCurrentState = func(_ bool) uint32 { return 0 }
 	sub.mooseFuncs.unsetServerDomainCurrentState = func() uint32 { return 0 }
 	sub.mooseFuncs.unsetRecommendationUuid = func() uint32 { return 0 }
 	sub.mooseFuncs.sendConnect = func(
@@ -1934,7 +1935,7 @@ func TestNotifyConnect_Success_NonSensitiveEmptyDomain_RefreshesServerDomain(t *
 	category.Set(t, category.Unit)
 	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 	noopDisconnectAmbientMooseFuncs(sub)
-	sub.mooseFuncs.setTPLiteCurrentState = func(_ bool) uint32 { return 0 }
+	sub.mooseFuncs.setRTPCurrentState = func(_ bool) uint32 { return 0 }
 	sub.mooseFuncs.sendConnect = func(
 		_ moose.EventParams,
 		_ moose.TargetConnectionParams,
@@ -2070,63 +2071,32 @@ func TestNotifyDedicatedServerStatus(t *testing.T) {
 	}
 }
 
-func TestVPNConnReasonToMoose(t *testing.T) {
+func TestVPNConnReasonToInternalType(t *testing.T) {
 	category.Set(t, category.Unit)
 	tests := []struct {
-		name              string
-		trigger           events.VPNConnectionReason
-		wantMooseTrigger  moose.NordvpnappVpnConnectionTrigger
-		wantExceptionCode int32
-		wantEventTrigger  moose.NordvpnappEventTrigger
-		isWhileConnecting bool
+		name             string
+		trigger          events.VPNConnectionReason
+		wantMooseTrigger moose.NordvpnappVpnConnectionTrigger
 	}{
 		{
-			name:              "server maintenance is app-triggered with ServerMaintenance trigger + 1000076",
-			trigger:           events.VPNConnectionReasonServerMaintenance,
-			wantMooseTrigger:  moose.NordvpnappVpnConnectionTriggerServerMaintenance,
-			wantExceptionCode: 1000076,
-			wantEventTrigger:  moose.NordvpnappEventTriggerApp,
-			isWhileConnecting: false,
+			name:             "server maintenance",
+			trigger:          events.VPNConnectionReasonServerMaintenance,
+			wantMooseTrigger: moose.NordvpnappVpnConnectionTriggerServerMaintenance,
 		},
 		{
-			name:              "server maintenance while connecting",
-			trigger:           events.VPNConnectionReasonServerMaintenance,
-			wantMooseTrigger:  moose.NordvpnappVpnConnectionTriggerServerMaintenance,
-			wantExceptionCode: -1,
-			wantEventTrigger:  moose.NordvpnappEventTriggerApp,
-			isWhileConnecting: true,
+			name:             "auto-connect",
+			trigger:          events.VPNConnectionReasonAutoConnect,
+			wantMooseTrigger: moose.NordvpnappVpnConnectionTriggerAutoConnectUserSetting,
 		},
 		{
-			name:              "auto-connect is app-triggered with AutoConnectUserSetting trigger + -1",
-			trigger:           events.VPNConnectionReasonAutoConnect,
-			wantMooseTrigger:  moose.NordvpnappVpnConnectionTriggerAutoConnectUserSetting,
-			wantExceptionCode: -1,
-			wantEventTrigger:  moose.NordvpnappEventTriggerApp,
-			isWhileConnecting: false,
-		},
-		{
-			name:              "none is user-triggered with None trigger + -1",
-			trigger:           events.VPNConnectionReasonNone,
-			wantMooseTrigger:  moose.NordvpnappVpnConnectionTriggerNone,
-			wantExceptionCode: -1,
-			wantEventTrigger:  moose.NordvpnappEventTriggerUser,
-			isWhileConnecting: false,
-		},
-		{
-			name:              "ENS connection limit reached",
-			trigger:           events.VPNConnectionReasonConnectionLimitReached,
-			wantMooseTrigger:  moose.NordvpnappVpnConnectionTriggerNone,
-			wantExceptionCode: 1000075,
-			wantEventTrigger:  moose.NordvpnappEventTriggerApp,
-			isWhileConnecting: false,
+			name:             "none",
+			trigger:          events.VPNConnectionReasonNone,
+			wantMooseTrigger: moose.NordvpnappVpnConnectionTriggerNone,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := vpnConnReasonToMoose(tt.trigger, tt.isWhileConnecting)
-			assert.Equal(t, tt.wantMooseTrigger, got.trigger)
-			assert.Equal(t, tt.wantExceptionCode, got.exceptionCode)
-			assert.Equal(t, tt.wantEventTrigger, got.eventTrigger)
+			assert.Equal(t, tt.wantMooseTrigger, vpnConnReasonToInternalType(tt.trigger))
 		})
 	}
 }
@@ -2161,25 +2131,104 @@ func TestUiItemType(t *testing.T) {
 	}
 }
 
-func TestNotifyConnect_VPNConnReason(t *testing.T) {
+func TestNotifyConnect_TriggerAndExceptionFields(t *testing.T) {
 	category.Set(t, category.Unit)
+	networkerErr := errors.New("networker: failed to start")
 	tests := []struct {
 		name                  string
-		trigger               events.VPNConnectionReason
+		reason                events.VPNConnectionReason
+		err                   error
+		pauseInterval         time.Duration
+		unpausedByUser        bool
 		wantEventTrigger      moose.NordvpnappEventTrigger
 		wantConnectionTrigger moose.NordvpnappVpnConnectionTrigger
+		wantConnectionFunnel  string
+		wantExceptionCode     int32
 	}{
 		{
-			name:                  "server maintenance reconnect is app-triggered",
-			trigger:               events.VPNConnectionReasonServerMaintenance,
-			wantEventTrigger:      moose.NordvpnappEventTriggerApp,
-			wantConnectionTrigger: moose.NordvpnappVpnConnectionTriggerServerMaintenance,
-		},
-		{
-			name:                  "user connect is user-triggered",
-			trigger:               events.VPNConnectionReasonNone,
+			name:                  "user connect",
 			wantEventTrigger:      moose.NordvpnappEventTriggerUser,
 			wantConnectionTrigger: moose.NordvpnappVpnConnectionTriggerNone,
+			wantExceptionCode:     -1,
+		},
+		{
+			name:                  "auto-connect",
+			reason:                events.VPNConnectionReasonAutoConnect,
+			wantEventTrigger:      moose.NordvpnappEventTriggerApp,
+			wantConnectionTrigger: moose.NordvpnappVpnConnectionTriggerAutoConnectUserSetting,
+			wantExceptionCode:     -1,
+		},
+		{
+			name:                  "server maintenance reconnect",
+			reason:                events.VPNConnectionReasonServerMaintenance,
+			wantEventTrigger:      moose.NordvpnappEventTriggerApp,
+			wantConnectionTrigger: moose.NordvpnappVpnConnectionTriggerServerMaintenance,
+			wantExceptionCode:     -1,
+		},
+		{
+			name:                  "user connect failing with a generic error has no exception code",
+			err:                   networkerErr,
+			wantEventTrigger:      moose.NordvpnappEventTriggerUser,
+			wantConnectionTrigger: moose.NordvpnappVpnConnectionTriggerNone,
+			wantExceptionCode:     -1,
+		},
+		{
+			name:                  "user connect hitting connection limit",
+			err:                   events.ErrConnectionLimitReached,
+			wantEventTrigger:      moose.NordvpnappEventTriggerApp,
+			wantConnectionTrigger: moose.NordvpnappVpnConnectionTriggerNone,
+			wantExceptionCode:     1000075,
+		},
+		{
+			name:                  "auto-connect hitting connection limit",
+			reason:                events.VPNConnectionReasonAutoConnect,
+			err:                   events.ErrConnectionLimitReached,
+			wantEventTrigger:      moose.NordvpnappEventTriggerApp,
+			wantConnectionTrigger: moose.NordvpnappVpnConnectionTriggerAutoConnectUserSetting,
+			wantExceptionCode:     1000075,
+		},
+		{
+			name:                  "server maintenance reconnect hitting connection limit",
+			reason:                events.VPNConnectionReasonServerMaintenance,
+			err:                   events.ErrConnectionLimitReached,
+			wantEventTrigger:      moose.NordvpnappEventTriggerApp,
+			wantConnectionTrigger: moose.NordvpnappVpnConnectionTriggerServerMaintenance,
+			wantExceptionCode:     1000075,
+		},
+		{
+			name:                  "wrapped connection limit error",
+			reason:                events.VPNConnectionReasonAutoConnect,
+			err:                   fmt.Errorf("starting vpn: %w", events.ErrConnectionLimitReached),
+			wantEventTrigger:      moose.NordvpnappEventTriggerApp,
+			wantConnectionTrigger: moose.NordvpnappVpnConnectionTriggerAutoConnectUserSetting,
+			wantExceptionCode:     1000075,
+		},
+		{
+			name:                  "resume after pause expired",
+			pauseInterval:         5 * time.Minute,
+			wantEventTrigger:      moose.NordvpnappEventTriggerApp,
+			wantConnectionTrigger: moose.NordvpnappVpnConnectionTriggerAfterSnooze,
+			wantConnectionFunnel:  "pause:5",
+			wantExceptionCode:     -1,
+		},
+		{
+			name:                  "resume after pause interrupted by user",
+			pauseInterval:         5 * time.Minute,
+			unpausedByUser:        true,
+			wantEventTrigger:      moose.NordvpnappEventTriggerUser,
+			wantConnectionTrigger: moose.NordvpnappVpnConnectionTriggerAfterSnooze,
+			wantConnectionFunnel:  "pause:5",
+			wantExceptionCode:     -1,
+		},
+		{
+			name:                  "resume after pause hitting connection limit",
+			pauseInterval:         5 * time.Minute,
+			unpausedByUser:        true,
+			err:                   events.ErrConnectionLimitReached,
+			wantEventTrigger:      moose.NordvpnappEventTriggerApp,
+			wantConnectionTrigger: moose.NordvpnappVpnConnectionTriggerAfterSnooze,
+			wantConnectionFunnel:  "pause:5",
+			wantExceptionCode:     1000075,
 		},
 	}
 	for _, tt := range tests {
@@ -2187,85 +2236,158 @@ func TestNotifyConnect_VPNConnReason(t *testing.T) {
 			sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 			var gotEvent moose.EventParams
 			var gotConn moose.ConnectionParams
+			var gotExceptionCode int32
 			sub.mooseFuncs.sendConnect = func(
 				eventParams moose.EventParams,
 				_ moose.TargetConnectionParams,
 				_ moose.TargetConnectionAdditionalParams,
 				connectionParams moose.ConnectionParams,
 				_ moose.NordvpnappOptBool,
-				_ int32,
+				exceptionCode int32,
 				_ string,
 				_ *string,
 			) uint32 {
 				gotEvent = eventParams
 				gotConn = connectionParams
+				gotExceptionCode = exceptionCode
 				return 0
 			}
 
+			status := events.StatusAttempt
+			if tt.err != nil {
+				status = events.StatusFailure
+			}
 			err := sub.NotifyConnect(events.DataConnect{
-				EventStatus:   events.StatusAttempt,
-				VPNConnReason: tt.trigger,
+				EventStatus:    status,
+				VPNConnReason:  tt.reason,
+				Error:          tt.err,
+				PauseInterval:  tt.pauseInterval,
+				UnpausedByUser: tt.unpausedByUser,
 			})
 
 			assert.NilError(t, err)
 			assert.Equal(t, tt.wantEventTrigger, gotEvent.EventTrigger)
 			assert.Equal(t, tt.wantConnectionTrigger, gotConn.VpnConnectionTrigger)
+			assert.Equal(t, tt.wantConnectionFunnel, gotConn.ConnectionFunnel)
+			assert.Equal(t, tt.wantExceptionCode, gotExceptionCode)
 		})
 	}
 }
 
-func TestNotifyDisconnect_VPNConnReason(t *testing.T) {
+func TestNotifyDisconnect_TriggerAndExceptionFields(t *testing.T) {
 	category.Set(t, category.Unit)
+	networkerErr := errors.New("networker: failed to stop")
+	configErr := errors.New("config: failed to load")
 	tests := []struct {
-		name              string
-		trigger           events.VPNConnectionReason
-		wantEventTrigger  moose.NordvpnappEventTrigger
-		wantExceptionCode int32
+		name                  string
+		reason                events.VPNConnectionReason
+		err                   error
+		pauseInterval         time.Duration
+		wantEventTrigger      moose.NordvpnappEventTrigger
+		wantConnectionTrigger moose.NordvpnappVpnConnectionTrigger
+		wantConnectionFunnel  string
+		wantExceptionCode     int32
 	}{
 		{
-			name:              "server maintenance disconnect is app-triggered with code 1000076",
-			trigger:           events.VPNConnectionReasonServerMaintenance,
-			wantEventTrigger:  moose.NordvpnappEventTriggerApp,
-			wantExceptionCode: 1000076,
+			name:                  "user disconnect",
+			wantEventTrigger:      moose.NordvpnappEventTriggerUser,
+			wantConnectionTrigger: moose.NordvpnappVpnConnectionTriggerNone,
+			wantExceptionCode:     -1,
 		},
 		{
-			name:              "user disconnect is user-triggered with no exception code",
-			trigger:           events.VPNConnectionReasonNone,
-			wantEventTrigger:  moose.NordvpnappEventTriggerUser,
-			wantExceptionCode: -1,
+			name:                  "disconnect failing with networker error",
+			err:                   networkerErr,
+			wantEventTrigger:      moose.NordvpnappEventTriggerUser,
+			wantConnectionTrigger: moose.NordvpnappVpnConnectionTriggerNone,
+			wantExceptionCode:     2,
+		},
+		{
+			name:                  "disconnect failing with config error",
+			err:                   configErr,
+			wantEventTrigger:      moose.NordvpnappEventTriggerUser,
+			wantConnectionTrigger: moose.NordvpnappVpnConnectionTriggerNone,
+			wantExceptionCode:     1,
+		},
+		{
+			name:                  "pause",
+			pauseInterval:         5 * time.Minute,
+			wantEventTrigger:      moose.NordvpnappEventTriggerUser,
+			wantConnectionTrigger: moose.NordvpnappVpnConnectionTriggerPause,
+			wantConnectionFunnel:  "pause:5",
+			wantExceptionCode:     -1,
+		},
+		{
+			name:                  "server maintenance",
+			reason:                events.VPNConnectionReasonServerMaintenance,
+			wantEventTrigger:      moose.NordvpnappEventTriggerApp,
+			wantConnectionTrigger: moose.NordvpnappVpnConnectionTriggerNone,
+			wantExceptionCode:     1000076,
+		},
+		{
+			name:                  "server maintenance code wins over error code",
+			reason:                events.VPNConnectionReasonServerMaintenance,
+			err:                   networkerErr,
+			wantEventTrigger:      moose.NordvpnappEventTriggerApp,
+			wantConnectionTrigger: moose.NordvpnappVpnConnectionTriggerNone,
+			wantExceptionCode:     1000076,
+		},
+		{
+			name:                  "auto-connect replacing a connection",
+			reason:                events.VPNConnectionReasonAutoConnect,
+			wantEventTrigger:      moose.NordvpnappEventTriggerApp,
+			wantConnectionTrigger: moose.NordvpnappVpnConnectionTriggerNone,
+			wantExceptionCode:     -1,
+		},
+		{
+			name:                  "auto-connect replacing a connection keeps error code",
+			reason:                events.VPNConnectionReasonAutoConnect,
+			err:                   networkerErr,
+			wantEventTrigger:      moose.NordvpnappEventTriggerApp,
+			wantConnectionTrigger: moose.NordvpnappVpnConnectionTriggerNone,
+			wantExceptionCode:     2,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 			var gotEvent moose.EventParams
+			var gotConn moose.ConnectionParams
 			var gotCode int32
 			sub.mooseFuncs.sendDisconnect = func(
 				eventParams moose.EventParams,
 				_ moose.TargetConnectionParams,
-				_ moose.ConnectionParams,
+				connectionParams moose.ConnectionParams,
 				_ int32,
 				exceptionCode int32,
 				_ *string,
 			) uint32 {
 				gotEvent = eventParams
+				gotConn = connectionParams
 				gotCode = exceptionCode
 				return 0
 			}
 			// NotifyDisconnect also updates context state after sending; no-op those so the test
 			// does not depend on the native moose context.
-			sub.mooseFuncs.unsetTPLiteCurrentState = func() uint32 { return 0 }
+			sub.mooseFuncs.unsetRTPCurrentState = func() uint32 { return 0 }
 			sub.mooseFuncs.setServerCountryCurrentState = func(_ string) uint32 { return 0 }
 			sub.mooseFuncs.unsetServerGroupCurrentState = func() uint32 { return 0 }
 			sub.mooseFuncs.setIsOnVpnCurrentState = func(_ bool) uint32 { return 0 }
 
+			status := events.StatusSuccess
+			if tt.err != nil {
+				status = events.StatusFailure
+			}
 			err := sub.NotifyDisconnect(events.DataDisconnect{
-				EventStatus:   events.StatusSuccess,
-				VPNConnReason: tt.trigger,
+				EventStatus:   status,
+				VPNConnReason: tt.reason,
+				Error:         tt.err,
+				PauseInterval: tt.pauseInterval,
 			})
 
 			assert.NilError(t, err)
 			assert.Equal(t, tt.wantEventTrigger, gotEvent.EventTrigger)
+			assert.Equal(t, tt.wantConnectionTrigger, gotConn.VpnConnectionTrigger)
+			assert.Equal(t, tt.wantConnectionFunnel, gotConn.ConnectionFunnel)
 			assert.Equal(t, tt.wantExceptionCode, gotCode)
 		})
 	}

@@ -43,11 +43,12 @@ func (c *cmd) Login(ctx *cli.Context) error {
 }
 
 func (c *cmd) loginCmd(ctx *cli.Context) error {
-	if ctx.IsSet(flagLoginCallback) {
+	loginCallback := ctx.Bool(flagLoginCallback)
+	if loginCallback {
 		return c.oauth2(ctx, true)
 	}
-
-	if ctx.IsSet(flagToken) {
+	token := ctx.Bool(flagToken)
+	if token {
 		err := c.loginWithToken(ctx)
 		if err != nil {
 			return formatError(err)

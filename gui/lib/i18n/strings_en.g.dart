@@ -99,6 +99,9 @@ class Translations$a11y$en {
 
 	/// en: '$title. $message'
 	String popupWithContent({required Object title, required Object message}) => '${title}. ${message}';
+
+	/// en: 'Link $name'
+	String link({required Object name}) => 'Link ${name}';
 }
 
 // Path: cities
@@ -747,6 +750,12 @@ class Translations$cities$en {
 
 	/// en: 'Lome'
 	String get lome => 'Lome';
+
+	/// en: 'Calgary'
+	String get calgary => 'Calgary';
+
+	/// en: 'Saint John'
+	String get saint_john => 'Saint John';
 }
 
 // Path: countries
@@ -1324,12 +1333,6 @@ class Translations$daemon$en {
 	/// en: 'Unable to connect with the current technology. Please try a different one using the command: nordvpn set technology.'
 	String get code_3051_msg => 'Unable to connect with the current technology. Please try a different one using the command: nordvpn set technology.';
 
-	/// en: 'Server access not allowed'
-	String get code_3057_title => 'Server access not allowed';
-
-	/// en: 'To connect to the selected server, turn on virtual location access using the app’s command-line interface.'
-	String get code_3057_msg => 'To connect to the selected server, turn on virtual location access using the app’s command-line interface.';
-
 	/// en: 'Restart daemon to apply setting'
 	String get code_5007_title => 'Restart daemon to apply setting';
 
@@ -1395,6 +1398,9 @@ class Translations$ui$en {
 
 	/// en: 'No results found.'
 	String get noResults => 'No results found.';
+
+	/// en: 'No results found for ${searchStr: String}'
+	String noResultsFor({required String searchStr}) => 'No results found for ${searchStr}';
 
 	/// en: 'Connecting to the daemon...'
 	String get waitingToConnectToDaemon => 'Connecting to the daemon...';
@@ -1618,9 +1624,6 @@ class Translations$ui$en {
 	/// en: '$n cities available'
 	String citiesAvailable({required Object n}) => '${n} cities available';
 
-	/// en: 'Virtual'
-	String get virtual => 'Virtual';
-
 	/// en: 'Dedicated IP'
 	String get dedicatedIp => 'Dedicated IP';
 
@@ -1632,9 +1635,6 @@ class Translations$ui$en {
 
 	/// en: 'Onion Over VPN'
 	String get onionOverVpn => 'Onion Over VPN';
-
-	/// en: 'P2P'
-	String get p2p => 'P2P';
 
 	/// en: 'Obfuscated'
 	String get obfuscated => 'Obfuscated';
@@ -1801,11 +1801,11 @@ class Translations$ui$en {
 	/// en: 'Continue'
 	String get continueWord => 'Continue';
 
-	/// en: 'Scam and phishing protection will be turned off'
-	String get realTimeProtectionWillTurnOff => 'Scam and phishing protection will be turned off';
+	/// en: 'Real-time protection will be turned off'
+	String get realTimeProtectionWillTurnOff => 'Real-time protection will be turned off';
 
-	/// en: 'Scam and phishing protection works only with the default DNS. Set a custom DNS server anyway?'
-	String get realTimeProtectionWillTurnOffDescription => 'Scam and phishing protection works only with the default DNS. Set a custom DNS server anyway?';
+	/// en: 'Real-time protection works only with the default DNS. Set a custom DNS server anyway?'
+	String get realTimeProtectionWillTurnOffDescription => 'Real-time protection works only with the default DNS. Set a custom DNS server anyway?';
 
 	/// en: 'Set custom DNS'
 	String get setCustomDns => 'Set custom DNS';
@@ -1884,9 +1884,6 @@ class Translations$ui$en {
 
 	/// en: 'Use the Onion network with VPN protection'
 	String get onionOverVpnDesc => 'Use the Onion network with VPN protection';
-
-	/// en: 'Enjoy the best download speed'
-	String get p2pDesc => 'Enjoy the best download speed';
 
 	/// en: 'Hide signs of VPN usage on restricted networks'
 	String get obfuscatedServersDesc => 'Hide signs of VPN usage on restricted networks';
@@ -1971,6 +1968,15 @@ class Translations$ui$en {
 
 	/// en: 'We couldn't save your settings to the configuration file.'
 	String get couldNotSave => 'We couldn\'t save your settings to the configuration file.';
+
+	/// en: 'Some settings weren't applied'
+	String get settingsNotApplied => 'Some settings weren\'t applied';
+
+	/// en: 'Some default network settings could not be applied. Reset settings again to retry. If the problem continues, contact support.'
+	String get networkSettingsNotAppliedDescription => 'Some default network settings could not be applied. Reset settings again to retry. If the problem continues, contact support.';
+
+	/// en: 'Some default settings could not be applied. The reset finished, but these settings may not be active: $settings. Reset settings again to retry. If the problem continues, contact support.'
+	String settingsNotAppliedDescription({required Object settings}) => 'Some default settings could not be applied. The reset finished, but these settings may not be active: ${settings}. Reset settings again to retry. If the problem continues, contact support.';
 
 	/// en: 'NordWhisper'
 	String get nordWhisper => 'NordWhisper';
@@ -2224,6 +2230,7 @@ extension on Translations {
 			'a11y.expandibleEntryCollapsed' => 'Collapsed',
 			'a11y.clear' => 'Clear',
 			'a11y.popupWithContent' => ({required Object title, required Object message}) => '${title}. ${message}',
+			'a11y.link' => ({required Object name}) => 'Link ${name}',
 			'cities.tirana' => 'Tirana',
 			'cities.algiers' => 'Algiers',
 			'cities.addis_ababa' => 'Addis Ababa',
@@ -2437,6 +2444,8 @@ extension on Translations {
 			'cities.dodoma' => 'Dodoma',
 			'cities.sanaa' => 'Sanaa',
 			'cities.lome' => 'Lome',
+			'cities.calgary' => 'Calgary',
+			'cities.saint_john' => 'Saint John',
 			'countries.AL' => 'Albania',
 			'countries.DZ' => 'Algeria',
 			'countries.AD' => 'Andorra',
@@ -2623,8 +2632,6 @@ extension on Translations {
 			'daemon.code_3049_msg' => 'This setting is not compatible with post-quantum encryption. To use it, turn off post-quantum encryption first.',
 			'daemon.code_3051_title' => 'Disabled technology',
 			'daemon.code_3051_msg' => 'Unable to connect with the current technology. Please try a different one using the command: nordvpn set technology.',
-			'daemon.code_3057_title' => 'Server access not allowed',
-			'daemon.code_3057_msg' => 'To connect to the selected server, turn on virtual location access using the app’s command-line interface.',
 			'daemon.code_5007_title' => 'Restart daemon to apply setting',
 			'daemon.code_5007_msg' => 'Restart the daemon to apply this setting. For example, use the command `sudo systemctl restart nordvpnd` on systemd distributions.',
 			'daemon.code_5008_title' => 'gRPC timeout error',
@@ -2644,6 +2651,7 @@ extension on Translations {
 			'ui.specialServers' => 'Specialty servers',
 			'ui.cities' => 'Cities',
 			'ui.noResults' => 'No results found.',
+			'ui.noResultsFor' => ({required String searchStr}) => 'No results found for ${searchStr}',
 			'ui.waitingToConnectToDaemon' => 'Connecting to the daemon...',
 			'ui.fetchingData' => 'Fetching data',
 			'ui.failedToFetchData' => 'Failed to fetch data',
@@ -2717,14 +2725,12 @@ extension on Translations {
 			'ui.noResultsFound' => 'No results found. Try another keyword.',
 			'ui.searchServersHint' => 'Search countries, cities, or servers',
 			'ui.citiesAvailable' => ({required Object n}) => '${n} cities available',
-			'ui.virtual' => 'Virtual',
 			'ui.dedicatedIp' => 'Dedicated IP',
 			'ui.dedicatedServer' => 'Dedicated Server',
-			'ui.doubleVpn' => 'Double VPN',
 			_ => null,
 		} ?? switch (path) {
+			'ui.doubleVpn' => 'Double VPN',
 			'ui.onionOverVpn' => 'Onion Over VPN',
-			'ui.p2p' => 'P2P',
 			'ui.obfuscated' => 'Obfuscated',
 			'ui.obfuscatedServers' => 'Obfuscated',
 			'ui.selectServerForDip' => 'Pick a location for your IP',
@@ -2780,8 +2786,8 @@ extension on Translations {
 			'ui.realTimeDisableCustomDNS' => 'Turn off custom DNS?',
 			'ui.realTimeDisableCustomDNSDescription' => 'Real-time protection works with our default DNS servers only.',
 			'ui.continueWord' => 'Continue',
-			'ui.realTimeProtectionWillTurnOff' => 'Scam and phishing protection will be turned off',
-			'ui.realTimeProtectionWillTurnOffDescription' => 'Scam and phishing protection works only with the default DNS. Set a custom DNS server anyway?',
+			'ui.realTimeProtectionWillTurnOff' => 'Real-time protection will be turned off',
+			'ui.realTimeProtectionWillTurnOffDescription' => 'Real-time protection works only with the default DNS. Set a custom DNS server anyway?',
 			'ui.setCustomDns' => 'Set custom DNS',
 			'ui.turnOffCustomDns' => 'Turn off custom DNS?',
 			'ui.turnOffCustomDnsDescription' => 'This will remove all your previously added DNS servers.',
@@ -2808,7 +2814,6 @@ extension on Translations {
 			'ui.settingAutoconnectTo' => ({required Object target}) => 'Setting auto-connect to [${target}]...',
 			'ui.doubleVpnDesc' => 'Encrypt your traffic twice for extra security',
 			'ui.onionOverVpnDesc' => 'Use the Onion network with VPN protection',
-			'ui.p2pDesc' => 'Enjoy the best download speed',
 			'ui.obfuscatedServersDesc' => 'Hide signs of VPN usage on restricted networks',
 			'ui.save' => 'Save',
 			'ui.close' => 'Close',
@@ -2837,6 +2842,9 @@ extension on Translations {
 			'ui.delete' => 'Delete',
 			'ui.settingsWereNotSaved' => 'Settings weren\'t saved',
 			'ui.couldNotSave' => 'We couldn\'t save your settings to the configuration file.',
+			'ui.settingsNotApplied' => 'Some settings weren\'t applied',
+			'ui.networkSettingsNotAppliedDescription' => 'Some default network settings could not be applied. Reset settings again to retry. If the problem continues, contact support.',
+			'ui.settingsNotAppliedDescription' => ({required Object settings}) => 'Some default settings could not be applied. The reset finished, but these settings may not be active: ${settings}. Reset settings again to retry. If the problem continues, contact support.',
 			'ui.nordWhisper' => 'NordWhisper',
 			'ui.system' => 'System',
 			'ui.removePrivateSubnets' => 'We\'ll remove private subnets from allowlist',

@@ -215,9 +215,7 @@ class AppStateChange {
     if (currentSettings == null) {
       return false;
     }
-
-    return currentSettings.virtualServers != newSettings.virtualServers ||
-        currentSettings.protocol != newSettings.protocol;
+    return currentSettings.protocol != newSettings.protocol;
   }
 
   void _notifyVpnStatusChanged(StatusResponse state) async {

@@ -30,7 +30,6 @@ void main() {
       country: null,
       status: state,
       protocol: protocol,
-      isVirtualLocation: false,
       connectionParameters: ConnectionParameters(
         source: ConnectionSource.MANUAL,
         group: group,

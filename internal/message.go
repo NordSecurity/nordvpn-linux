@@ -1,7 +1,7 @@
 package internal
 
 const (
-	ConnectSuccess           = "You are connected to %s (%s)%s!"
+	ConnectSuccess           = "You are connected to %s (%s)!"
 	ConnectSuccessNoHostname = "You are connected to %s!"
 	ReconnectSuccess         = "You have been reconnected to %s (%s)"
 	DisconnectSuccess        = "You are disconnected from NordVPN."
@@ -14,12 +14,10 @@ const (
 	ServerUnavailableErrorMessage = "The specified server is not available at the moment or does not support your connection settings."
 	TagNonexistentErrorMessage    = "The specified server does not exist."
 	GroupNonexistentErrorMessage  = "The specified group does not exist."
+	P2PDeprecatedMessage          = "P2P group is no longer available. All servers now support P2P."
 	FilterNonExistentErrorMessage = "The specified filter does not exist."
 	DoubleGroupErrorMessage       = "You cannot connect to a group and set the group option at the same time."
 
 	// UnhandledMessage represents the default message for unhandled errors
 	UnhandledMessage = "Something went wrong. Please try again. If the problem persists, contact our customer support."
-
-	// Error message when the server is a virtual location, but user has virtual-location off
-	SpecifiedServerIsVirtualLocation = "Please enable virtual location access to connect to this server."
 )

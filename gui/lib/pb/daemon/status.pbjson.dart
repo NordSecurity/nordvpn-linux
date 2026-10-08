@@ -118,7 +118,6 @@ const StatusResponse$json = {
     {'1': 'upload', '3': 9, '4': 1, '5': 4, '10': 'upload'},
     {'1': 'uptime', '3': 10, '4': 1, '5': 3, '10': 'uptime'},
     {'1': 'name', '3': 11, '4': 1, '5': 9, '10': 'name'},
-    {'1': 'virtualLocation', '3': 12, '4': 1, '5': 8, '10': 'virtualLocation'},
     {
       '1': 'parameters',
       '3': 13,
@@ -149,6 +148,9 @@ const StatusResponse$json = {
     },
     {'1': 'ech', '3': 21, '4': 1, '5': 8, '10': 'ech'},
   ],
+  '9': [
+    {'1': 12, '2': 13},
+  ],
 };
 
 /// Descriptor for `StatusResponse`. Decode as a `google.protobuf.DescriptorProto`.
@@ -159,11 +161,10 @@ final $typed_data.Uint8List statusResponseDescriptor = $convert.base64Decode(
     'EoCVICaXASGgoIaG9zdG5hbWUYBSABKAlSCGhvc3RuYW1lEhgKB2NvdW50cnkYBiABKAlSB2Nv'
     'dW50cnkSEgoEY2l0eRgHIAEoCVIEY2l0eRIaCghkb3dubG9hZBgIIAEoBFIIZG93bmxvYWQSFg'
     'oGdXBsb2FkGAkgASgEUgZ1cGxvYWQSFgoGdXB0aW1lGAogASgDUgZ1cHRpbWUSEgoEbmFtZRgL'
-    'IAEoCVIEbmFtZRIoCg92aXJ0dWFsTG9jYXRpb24YDCABKAhSD3ZpcnR1YWxMb2NhdGlvbhI4Cg'
-    'pwYXJhbWV0ZXJzGA0gASgLMhgucGIuQ29ubmVjdGlvblBhcmFtZXRlcnNSCnBhcmFtZXRlcnMS'
-    'IAoLcG9zdFF1YW50dW0YDiABKAhSC3Bvc3RRdWFudHVtEiAKDGlzX21lc2hfcGVlchgPIAEoCF'
-    'IKaXNNZXNoUGVlchIXCgdieV91c2VyGBAgASgIUgZieVVzZXISIQoMY291bnRyeV9jb2RlGBEg'
-    'ASgJUgtjb3VudHJ5Q29kZRIeCgpvYmZ1c2NhdGVkGBIgASgIUgpvYmZ1c2NhdGVkEjcKCXBhdX'
-    'NlZF9hdBgTIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBSCHBhdXNlZEF0Ej8KHHBh'
-    'dXNlX3JlbWFpbmluZ19kdXJhdGlvbl9zZWMYFCABKA1SGXBhdXNlUmVtYWluaW5nRHVyYXRpb2'
-    '5TZWMSEAoDZWNoGBUgASgIUgNlY2g=');
+    'IAEoCVIEbmFtZRI4CgpwYXJhbWV0ZXJzGA0gASgLMhgucGIuQ29ubmVjdGlvblBhcmFtZXRlcn'
+    'NSCnBhcmFtZXRlcnMSIAoLcG9zdFF1YW50dW0YDiABKAhSC3Bvc3RRdWFudHVtEiAKDGlzX21l'
+    'c2hfcGVlchgPIAEoCFIKaXNNZXNoUGVlchIXCgdieV91c2VyGBAgASgIUgZieVVzZXISIQoMY2'
+    '91bnRyeV9jb2RlGBEgASgJUgtjb3VudHJ5Q29kZRIeCgpvYmZ1c2NhdGVkGBIgASgIUgpvYmZ1'
+    'c2NhdGVkEjcKCXBhdXNlZF9hdBgTIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBSCH'
+    'BhdXNlZEF0Ej8KHHBhdXNlX3JlbWFpbmluZ19kdXJhdGlvbl9zZWMYFCABKA1SGXBhdXNlUmVt'
+    'YWluaW5nRHVyYXRpb25TZWMSEAoDZWNoGBUgASgIUgNlY2hKBAgMEA0=');

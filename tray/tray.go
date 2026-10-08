@@ -6,10 +6,8 @@ import (
 	"fmt"
 	"os"
 	"slices"
-	"sort"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/alert"
@@ -96,48 +94,50 @@ func (cp *ConnectionSelector) fetchSpecialtyServers(client pb.DaemonClient) ([]S
 }
 
 func sortedConnections(sgs []*pb.ServerGroup) []Server {
-	set := make(map[string]bool, len(sgs))
+	list := make([]Server, 0, len(sgs))
 	for _, sg := range sgs {
-		if c := strings.TrimSpace(sg.Name); c != "" {
-			set[c] = sg.VirtualLocation
+		if name := strings.TrimSpace(sg.Name); name != "" {
+			label := strings.ReplaceAll(name, "_", " ")
+			list = append(list, Server{name: name, displayLabel: label})
 		}
 	}
 
-	list := make([]Server, 0, len(set))
-	for k, virtual := range set {
-		label := tryApplyVirtualLocationSuffix(k, virtual)
-		label = strings.ReplaceAll(label, "_", " ")
-		list = append(list, Server{name: k, displayLabel: label})
-	}
-
-	sort.Slice(list, func(i int, j int) bool {
-		return list[i].name < list[j].name
+	slices.SortFunc(list, func(a, b Server) int {
+		return strings.Compare(a.name, b.name)
 	})
-	return list
+	return slices.CompactFunc(list, func(a, b Server) bool {
+		return a.name == b.name
+	})
 }
 
 type Instance struct {
-	client                pb.DaemonClient
-	fileshare             FileshareManager
-	accountInfo           accountInfo
-	debugMode             bool
-	n                     alert.Notifier
-	renderChan            chan struct{}
-	initialDataLoadChan   chan struct{}
-	iconConnected         string
-	iconDisconnected      string
-	state                 trayState
-	quitChan              chan<- norduser.StopRequest
-	stateListener         *stateListener
-	connSensor            *connectionSettingsChangeSensor
-	recentConnections     *recentConnectionsManager
-	checkboxSync          *CheckboxSynchronizer
-	isVisible             atomic.Bool
-	stopVisibilityMonitor chan struct{}
-	openURI               URIOpener
+	client              pb.DaemonClient
+	fileshare           FileshareManager
+	accountInfo         accountInfo
+	debugMode           bool
+	n                   alert.Notifier
+	renderChan          chan struct{}
+	initialDataLoadChan chan struct{}
+	iconConnected       string
+	iconDisconnected    string
+	state               trayState
+	quitChan            chan<- norduser.StopRequest
+	stateListener       *stateListener
+	connSensor          *connectionSettingsChangeSensor
+	recentConnections   *recentConnectionsManager
+	checkboxSync        *CheckboxSynchronizer
+	openURI             URIOpener
+	pauseTimerMu        sync.RWMutex
+	pauseTimer          *pauseTimerState
 }
 
 type URIOpener func(string) error
+
+type pauseTimerState struct {
+	menuItem         *systray.MenuItem
+	stopChan         chan struct{}
+	lastDisplayedMin int
+}
 
 type trayState struct {
 	daemonAvailable      bool
@@ -152,11 +152,10 @@ type trayState struct {
 	vpnHostname          string
 	vpnCity              string
 	vpnCountry           string
-	vpnVirtualLocation   bool
+	vpnGroupLabel        string
 	vpnIsMeshPeer        bool
 	initialSyncCompleted bool
 	connSelector         ConnectionSelector
-	pauseRemainingSec    int
 	mu                   sync.RWMutex
 }
 
@@ -165,11 +164,6 @@ func (state *trayState) serverName() string {
 	vpnServerName := state.vpnName
 	if vpnServerName == "" {
 		vpnServerName = state.vpnHostname
-	}
-	if vpnServerName != "" {
-		if state.vpnVirtualLocation {
-			vpnServerName += " - Virtual"
-		}
 	}
 	return vpnServerName
 }
@@ -189,14 +183,13 @@ func NewTrayInstance(
 	}
 
 	obj := &Instance{
-		client:                client,
-		fileshare:             NewFileshareManager(),
-		quitChan:              quitChan,
-		connSensor:            newConnectionSettingsChangeSensor(),
-		recentConnections:     newRecentConnectionsManager(client),
-		checkboxSync:          NewCheckboxSynchronizer(),
-		stopVisibilityMonitor: make(chan struct{}),
-		openURI:               openURI,
+		client:            client,
+		fileshare:         NewFileshareManager(),
+		quitChan:          quitChan,
+		connSensor:        newConnectionSettingsChangeSensor(),
+		recentConnections: newRecentConnectionsManager(client),
+		checkboxSync:      NewCheckboxSynchronizer(),
+		openURI:           openURI,
 	}
 	obj.n = &gatedNotifier{
 		Notifier: n,
@@ -210,26 +203,8 @@ func NewTrayInstance(
 	// information if notifications are allowed or not
 	obj.n.Mute()
 
-	obj.isVisible.Store(false)
 	obj.stateListener = newStateListener(client, obj.onDaemonStateEvent)
 	return obj
-}
-
-func (ti *Instance) MonitorTrayVisibility() {
-	for {
-		select {
-		case <-systray.TrayOpenedCh:
-			ti.isVisible.Store(true)
-		case <-systray.TrayClosedCh:
-			ti.isVisible.Store(false)
-		case <-ti.stopVisibilityMonitor:
-			return
-		}
-	}
-}
-
-func (ti *Instance) StopVisibilityMonitor() {
-	ti.stopVisibilityMonitor <- struct{}{}
 }
 
 func (ti *Instance) WaitInitialTrayStatus() Status {
@@ -318,6 +293,95 @@ func (ti *Instance) Start() {
 	ti.initialDataLoadChan = make(chan struct{})
 
 	go ti.syncWithDaemon()
+}
+
+func (ti *Instance) startPauseTimer(initialDurationSec uint32) {
+	// Don't create timer for zero or near-zero duration (already expired)
+	if initialDurationSec == 0 {
+		return
+	}
+
+	ti.pauseTimerMu.Lock()
+
+	if ti.pauseTimer != nil {
+		ti.pauseTimerMu.Unlock()
+		return
+	}
+
+	stopChan := make(chan struct{})
+	ti.pauseTimer = &pauseTimerState{
+		menuItem:         nil, // Menu item will be set by buildPauseTimer on next render
+		stopChan:         stopChan,
+		lastDisplayedMin: (int(initialDurationSec) + 59) / 60,
+	}
+	ti.pauseTimerMu.Unlock()
+
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Systray.Errorf("Pause timer goroutine panicked: %v", r)
+			}
+			ti.pauseTimerMu.Lock()
+			ti.pauseTimer = nil
+			ti.pauseTimerMu.Unlock()
+		}()
+
+		ticker := time.NewTicker(time.Second)
+		defer ticker.Stop()
+
+		remainingSec := int(initialDurationSec)
+		for remainingSec > 0 {
+			select {
+			case <-stopChan:
+				return
+			case <-ticker.C:
+				remainingSec--
+				currentMin := (remainingSec + 59) / 60
+
+				ti.pauseTimerMu.RLock()
+				var lastMin int
+				if ti.pauseTimer != nil {
+					lastMin = ti.pauseTimer.lastDisplayedMin
+				}
+				ti.pauseTimerMu.RUnlock()
+
+				if currentMin != lastMin && currentMin >= 0 {
+					// Extract reference while holding lock
+					ti.pauseTimerMu.Lock()
+					var menuItem *systray.MenuItem
+					if ti.pauseTimer != nil && ti.pauseTimer.menuItem != nil {
+						menuItem = ti.pauseTimer.menuItem
+					}
+					ti.pauseTimerMu.Unlock()
+
+					// Update display outside lock (prevents deadlock on panic)
+					if menuItem != nil {
+						menuItem.SetTitleQuiet(buildTimerString(currentMin))
+					}
+
+					// Update tracking
+					ti.pauseTimerMu.Lock()
+					if ti.pauseTimer != nil {
+						ti.pauseTimer.lastDisplayedMin = currentMin
+					}
+					ti.pauseTimerMu.Unlock()
+				}
+			}
+		}
+
+		ti.pauseTimerMu.Lock()
+		ti.pauseTimer = nil
+		ti.pauseTimerMu.Unlock()
+	}()
+}
+
+func (ti *Instance) stopPauseTimer() {
+	ti.pauseTimerMu.Lock()
+	if ti.pauseTimer != nil {
+		close(ti.pauseTimer.stopChan)
+		ti.pauseTimer = nil
+	}
+	ti.pauseTimerMu.Unlock()
 }
 
 func (ti *Instance) OnExit() {

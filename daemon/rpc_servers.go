@@ -33,7 +33,6 @@ func technologiesToProtobuf(technologies core.Technologies) []pb.Technology {
 // config.ServerGroup, keeping only the ones of interest to the GUI
 func groupsToProtobuf(server core.Server, technology config.Technology) []config.ServerGroup {
 	filter := []config.ServerGroup{
-		config.ServerGroup_P2P,
 		config.ServerGroup_DOUBLE_VPN,
 		config.ServerGroup_ONION_OVER_VPN,
 		config.ServerGroup_DEDICATED_IP,
@@ -54,7 +53,6 @@ func groupsToProtobuf(server core.Server, technology config.Technology) []config
 
 func serversListToServersMap(
 	internalServers core.Servers,
-	allowVirtual bool,
 	technology config.Technology,
 ) []*pb.ServerCountry {
 	type serversMap map[string]map[string][]*pb.Server
@@ -64,14 +62,9 @@ func serversListToServersMap(
 	countryNames := make(map[string]string)
 
 	for _, server := range internalServers {
-		if !allowVirtual && server.IsVirtualLocation() {
-			continue
-		}
-
 		s := &pb.Server{
 			Id:           server.ID,
 			HostName:     server.Hostname,
-			Virtual:      server.IsVirtualLocation(),
 			ServerGroups: groupsToProtobuf(server, technology),
 			Technologies: technologiesToProtobuf(server.Technologies),
 		}
@@ -129,7 +122,7 @@ func (r *RPC) GetServers(ctx context.Context, in *pb.Empty) (*pb.ServersResponse
 
 	return &pb.ServersResponse{Response: &pb.ServersResponse_Servers{
 		Servers: &pb.ServersMap{
-			ServersByCountry: serversListToServersMap(servers, cfg.VirtualLocation.Get(), cfg.Technology),
+			ServersByCountry: serversListToServersMap(servers, cfg.Technology),
 		},
 	}}, nil
 }
