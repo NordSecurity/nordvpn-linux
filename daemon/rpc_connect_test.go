@@ -957,21 +957,21 @@ func Test_determineServerGroup(t *testing.T) {
 			name:   "NordWhisper with no requested group is attributed to Obfuscated",
 			server: standardOnly,
 			params: serverpicker.ServerParameters{},
-			tech:   config.Technology_NORDWHISPER,
+			tech:   config.TechnologyNordWhisper,
 			want:   config.ServerGroup_NW_OBFUSCATED,
 		},
 		{
 			name:   "NordWhisper with requested Obfuscated group the server does not carry",
 			server: standardOnly,
 			params: serverpicker.ServerParameters{Group: config.ServerGroup_NW_OBFUSCATED},
-			tech:   config.Technology_NORDWHISPER,
+			tech:   config.TechnologyNordWhisper,
 			want:   config.ServerGroup_NW_OBFUSCATED,
 		},
 		{
 			name:   "NordWhisper with requested group the server does not carry",
 			server: standardOnly,
 			params: serverpicker.ServerParameters{Group: config.ServerGroup_DOUBLE_VPN},
-			tech:   config.Technology_NORDWHISPER,
+			tech:   config.TechnologyNordWhisper,
 			want:   config.ServerGroup_NW_OBFUSCATED,
 		},
 		{
@@ -981,7 +981,7 @@ func Test_determineServerGroup(t *testing.T) {
 				core.Group{ID: config.ServerGroup_DOUBLE_VPN, Title: "Double VPN"},
 			),
 			params: serverpicker.ServerParameters{Group: config.ServerGroup_DOUBLE_VPN},
-			tech:   config.Technology_NORDWHISPER,
+			tech:   config.TechnologyNordWhisper,
 			want:   config.ServerGroup_DOUBLE_VPN,
 		},
 		{
@@ -990,7 +990,7 @@ func Test_determineServerGroup(t *testing.T) {
 				core.Group{ID: config.ServerGroup_DOUBLE_VPN, Title: "Double VPN"},
 			),
 			params: serverpicker.ServerParameters{},
-			tech:   config.Technology_NORDWHISPER,
+			tech:   config.TechnologyNordWhisper,
 			want:   config.ServerGroup_UNDEFINED,
 		},
 		{
@@ -999,14 +999,14 @@ func Test_determineServerGroup(t *testing.T) {
 				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 			}},
 			params: serverpicker.ServerParameters{},
-			tech:   config.Technology_NORDWHISPER,
+			tech:   config.TechnologyNordWhisper,
 			want:   config.ServerGroup_STANDARD_VPN_SERVERS,
 		},
 		{
 			name:   "NordLynx with no requested group falls back to standard group",
 			server: standardOnly,
 			params: serverpicker.ServerParameters{},
-			tech:   config.Technology_NORDLYNX,
+			tech:   config.TechnologyNordLynx,
 			want:   config.ServerGroup_STANDARD_VPN_SERVERS,
 		},
 		{
@@ -1016,7 +1016,7 @@ func Test_determineServerGroup(t *testing.T) {
 				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 			}},
 			params: serverpicker.ServerParameters{},
-			tech:   config.Technology_OPENVPN,
+			tech:   config.TechnologyOpenVPN,
 			want:   config.ServerGroup_STANDARD_VPN_SERVERS,
 		},
 		{
@@ -1044,7 +1044,7 @@ func Test_determineServerGroup(t *testing.T) {
 				{ID: config.ServerGroup_OVPN_OBFUSCATED, Title: "Obfuscated"},
 			}},
 			params: serverpicker.ServerParameters{Group: config.ServerGroup_NW_OBFUSCATED},
-			tech:   config.Technology_OPENVPN,
+			tech:   config.TechnologyOpenVPN,
 			want:   config.ServerGroup_STANDARD_VPN_SERVERS,
 		},
 		{
@@ -1068,7 +1068,7 @@ func Test_determineServerGroup(t *testing.T) {
 				{ID: config.ServerGroup_OVPN_OBFUSCATED, Title: "Double VPN"},
 			}},
 			params: serverpicker.ServerParameters{Group: config.ServerGroup_NW_OBFUSCATED},
-			tech:   config.Technology_OPENVPN,
+			tech:   config.TechnologyOpenVPN,
 			want:   config.ServerGroup_UNDEFINED,
 		},
 		{
@@ -1156,7 +1156,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 			isDedicatedServersExpired:  false,
 			dedicatedServersResponse:   dedicatedServers,
 			connectResponse:            connectResponse,
-			technology:                 config.Technology_NORDLYNX,
+			technology:                 config.TechnologyNordLynx,
 			expectedStatus:             internal.CodeConnected,
 			expectedConnectRequestUUID: serverUUID.String(),
 			expectedConnectRequest:     connectRequest,
@@ -1164,37 +1164,37 @@ func TestConnect_DedicatedServers(t *testing.T) {
 		{
 			name:                      "dedicated servers service has expired",
 			isDedicatedServersExpired: true,
-			technology:                config.Technology_NORDLYNX,
+			technology:                config.TechnologyNordLynx,
 			expectedStatus:            internal.CodeDedicatedServersRenewError,
 		},
 		{
 			name:                     "empty dedicated servers list",
 			dedicatedServersResponse: core.DedicatedServers{},
-			technology:               config.Technology_NORDLYNX,
+			technology:               config.TechnologyNordLynx,
 			expectedStatus:           internal.CodeDedicatedServersServiceButNoServers,
 		},
 		{
 			name:                     "dedicated server not ready",
 			dedicatedServersResponse: core.DedicatedServers{dedicatedServerNotReady},
-			technology:               config.Technology_NORDLYNX,
+			technology:               config.TechnologyNordLynx,
 			expectedStatus:           internal.CodeDedicatedServersNotReady,
 		},
 		{
 			name:                     "technology is not nordlynx",
 			dedicatedServersResponse: dedicatedServers,
 			connectResponse:          connectResponse,
-			technology:               config.Technology_OPENVPN,
+			technology:               config.TechnologyOpenVPN,
 			expectedStatus:           internal.CodeDedicatedServersNoNordlynx,
 		},
 		{
 			name:            "dedicated server service check fails",
-			technology:      config.Technology_NORDLYNX,
+			technology:      config.TechnologyNordLynx,
 			serviceCheckErr: errors.New("error"),
 			expectedErr:     internal.ErrUnhandled,
 		},
 		{
 			name:                     "dedicated servers fetch fails",
-			technology:               config.Technology_NORDLYNX,
+			technology:               config.TechnologyNordLynx,
 			dedicatedServersFetchErr: errors.New("error"),
 			expectedErr:              internal.ErrUnhandled,
 		},
@@ -1202,7 +1202,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 			name:                       "connect fails",
 			isDedicatedServersExpired:  false,
 			dedicatedServersResponse:   dedicatedServers,
-			technology:                 config.Technology_NORDLYNX,
+			technology:                 config.TechnologyNordLynx,
 			connectErr:                 errors.New("error"),
 			expectedErr:                internal.ErrUnhandled,
 			expectedConnectRequestUUID: serverUUID.String(),
@@ -1214,24 +1214,24 @@ func TestConnect_DedicatedServers(t *testing.T) {
 		{
 			name:                     "dedicated server is stopped",
 			dedicatedServersResponse: core.DedicatedServers{dedicatedServerStopped},
-			technology:               config.Technology_NORDLYNX,
+			technology:               config.TechnologyNordLynx,
 			expectedStatus:           internal.CodeDedicatedServersCanNotConnect,
 		},
 		{
 			name:                     "dedicated server is stopping",
 			dedicatedServersResponse: core.DedicatedServers{dedicatedServerStopping},
-			technology:               config.Technology_NORDLYNX,
+			technology:               config.TechnologyNordLynx,
 			expectedStatus:           internal.CodeDedicatedServersCanNotConnect,
 		},
 		{
 			name:                     "dedicated server status is case-insensitive",
 			dedicatedServersResponse: core.DedicatedServers{dedicatedServerUppercaseStopped},
-			technology:               config.Technology_NORDLYNX,
+			technology:               config.TechnologyNordLynx,
 			expectedStatus:           internal.CodeDedicatedServersCanNotConnect,
 		},
 		{
 			name:                       "API returns 400 - session limit reached",
-			technology:                 config.Technology_NORDLYNX,
+			technology:                 config.TechnologyNordLynx,
 			dedicatedServersResponse:   dedicatedServers,
 			expectedConnectRequestUUID: serverUUID.String(),
 			expectedConnectRequest:     connectRequest,
@@ -1240,7 +1240,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 		},
 		{
 			name:                       "API returns 400 - device not found",
-			technology:                 config.Technology_NORDLYNX,
+			technology:                 config.TechnologyNordLynx,
 			dedicatedServersResponse:   dedicatedServers,
 			expectedConnectRequestUUID: serverUUID.String(),
 			expectedConnectRequest:     connectRequest,
@@ -1249,7 +1249,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 		},
 		{
 			name:                       "API returns 400 - device not registered",
-			technology:                 config.Technology_NORDLYNX,
+			technology:                 config.TechnologyNordLynx,
 			dedicatedServersResponse:   dedicatedServers,
 			expectedConnectRequestUUID: serverUUID.String(),
 			expectedConnectRequest:     connectRequest,
@@ -1258,7 +1258,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 		},
 		{
 			name:                       "API returns 400 - public key mismatch",
-			technology:                 config.Technology_NORDLYNX,
+			technology:                 config.TechnologyNordLynx,
 			dedicatedServersResponse:   dedicatedServers,
 			expectedConnectRequestUUID: serverUUID.String(),
 			expectedConnectRequest:     connectRequest,
@@ -1267,7 +1267,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 		},
 		{
 			name:                       "API returns 400 - server offline",
-			technology:                 config.Technology_NORDLYNX,
+			technology:                 config.TechnologyNordLynx,
 			dedicatedServersResponse:   dedicatedServers,
 			expectedConnectRequestUUID: serverUUID.String(),
 			expectedConnectRequest:     connectRequest,
@@ -1276,7 +1276,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 		},
 		{
 			name:                       "API returns 400 - server not found",
-			technology:                 config.Technology_NORDLYNX,
+			technology:                 config.TechnologyNordLynx,
 			dedicatedServersResponse:   dedicatedServers,
 			expectedConnectRequestUUID: serverUUID.String(),
 			expectedConnectRequest:     connectRequest,
@@ -1285,7 +1285,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 		},
 		{
 			name:                       "API returns 400 - invalid form data",
-			technology:                 config.Technology_NORDLYNX,
+			technology:                 config.TechnologyNordLynx,
 			dedicatedServersResponse:   dedicatedServers,
 			expectedConnectRequestUUID: serverUUID.String(),
 			expectedConnectRequest:     connectRequest,
@@ -1296,7 +1296,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 			name:                      "post quantum is on",
 			isDedicatedServersExpired: false,
 			postQuantum:               true,
-			technology:                config.Technology_NORDLYNX,
+			technology:                config.TechnologyNordLynx,
 			expectedStatus:            internal.CodeDedicatedServersPq,
 		},
 	}
@@ -1479,7 +1479,7 @@ func Test_offeredGroups_NordWhisper_ContainTargetGroup(t *testing.T) {
 		core.Group{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 	)
 
-	offered := serverpicker.EffectiveGroups(server, config.Technology_NORDWHISPER)
+	offered := serverpicker.EffectiveGroups(server, config.TechnologyNordWhisper)
 
 	assert.Equal(t, []config.ServerGroup{config.ServerGroup_STANDARD_VPN_SERVERS, config.ServerGroup_NW_OBFUSCATED}, offered.IDs())
 	assert.Contains(t, offered.IDs(), determineTargetServerGroup(offered, serverpicker.ServerParameters{}))
@@ -1744,8 +1744,8 @@ func TestSetVPNProtocolThenConnect_ConnectsWithSelectedProtocol(t *testing.T) {
 		expectedProtocol   config.Protocol
 		expectedServerTech core.ServerTechnology
 	}{
-		{config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP, config.Technology_OPENVPN, config.Protocol_UDP, core.OpenVPNUDP},
-		{config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP, config.Technology_OPENVPN, config.Protocol_TCP, core.OpenVPNTCP},
+		{config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP, config.TechnologyOpenVPN, config.Protocol_UDP, core.OpenVPNUDP},
+		{config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP, config.TechnologyOpenVPN, config.Protocol_TCP, core.OpenVPNTCP},
 	}
 
 	for _, test := range tests {

@@ -88,14 +88,14 @@ func Status(resp *pb.StatusResponse) string {
 			fmt.Sprintf("Protocol: %s\n", resp.VpnProtocol.DisplayName()),
 		)
 
-		if resp.VpnProtocol.Technology() == config.Technology_NORDLYNX {
+		if resp.VpnProtocol.Technology() == config.TechnologyNordLynx {
 			b.WriteString(
 				fmt.Sprintf("Post-quantum VPN: %s\n",
 					internal.Title(nstrings.GetBoolLabel(resp.PostQuantum))),
 			)
 		}
 
-		if resp.VpnProtocol.Technology() == config.Technology_NORDWHISPER {
+		if resp.VpnProtocol.Technology() == config.TechnologyNordWhisper {
 			b.WriteString(
 				fmt.Sprintf("ECH: %s\n",
 					internal.Title(nstrings.GetBoolLabel(resp.Ech))),

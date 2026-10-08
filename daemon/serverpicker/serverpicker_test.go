@@ -230,10 +230,10 @@ func TestIsObfuscatedTech(t *testing.T) {
 		tech     config.Technology
 		expected bool
 	}{
-		{tech: config.Technology_NORDWHISPER, expected: true},
-		{tech: config.Technology_NORDLYNX, expected: false},
-		{tech: config.Technology_OPENVPN, expected: false},
-		{tech: config.Technology_UNKNOWN_TECHNOLOGY, expected: false},
+		{tech: config.TechnologyNordWhisper, expected: true},
+		{tech: config.TechnologyNordLynx, expected: false},
+		{tech: config.TechnologyOpenVPN, expected: false},
+		{tech: config.TechnologyUnknown, expected: false},
 	}
 
 	for _, test := range tests {
@@ -255,37 +255,37 @@ func TestSearchGroup(t *testing.T) {
 		{
 			name:      "obfuscated over nordwhisper is searched as standard",
 			requested: config.ServerGroup_NW_OBFUSCATED,
-			tech:      config.Technology_NORDWHISPER,
+			tech:      config.TechnologyNordWhisper,
 			expected:  config.ServerGroup_STANDARD_VPN_SERVERS,
 		},
 		{
 			name:      "obfuscated over nordlynx is left alone",
 			requested: config.ServerGroup_NW_OBFUSCATED,
-			tech:      config.Technology_NORDLYNX,
+			tech:      config.TechnologyNordLynx,
 			expected:  config.ServerGroup_NW_OBFUSCATED,
 		},
 		{
 			name:      "obfuscated over openvpn is left alone",
 			requested: config.ServerGroup_NW_OBFUSCATED,
-			tech:      config.Technology_OPENVPN,
+			tech:      config.TechnologyOpenVPN,
 			expected:  config.ServerGroup_NW_OBFUSCATED,
 		},
 		{
 			name:      "other groups are never touched",
 			requested: config.ServerGroup_DOUBLE_VPN,
-			tech:      config.Technology_NORDWHISPER,
+			tech:      config.TechnologyNordWhisper,
 			expected:  config.ServerGroup_DOUBLE_VPN,
 		},
 		{
 			name:      "standard stays standard",
 			requested: config.ServerGroup_STANDARD_VPN_SERVERS,
-			tech:      config.Technology_NORDWHISPER,
+			tech:      config.TechnologyNordWhisper,
 			expected:  config.ServerGroup_STANDARD_VPN_SERVERS,
 		},
 		{
 			name:      "undefined stays undefined",
 			requested: config.ServerGroup_UNDEFINED,
-			tech:      config.Technology_NORDWHISPER,
+			tech:      config.TechnologyNordWhisper,
 			expected:  config.ServerGroup_UNDEFINED,
 		},
 	}
@@ -322,7 +322,7 @@ func TestEffectiveGroups(t *testing.T) {
 			groups:       core.Groups{standard},
 			technologies: nordWhisper,
 			status:       core.Online,
-			tech:         config.Technology_NORDWHISPER,
+			tech:         config.TechnologyNordWhisper,
 			expected:     core.Groups{standard, obfuscated},
 		},
 		{
@@ -330,7 +330,7 @@ func TestEffectiveGroups(t *testing.T) {
 			groups:       core.Groups{standard},
 			technologies: nordWhisper,
 			status:       core.Online,
-			tech:         config.Technology_NORDLYNX,
+			tech:         config.TechnologyNordLynx,
 			expected:     core.Groups{standard},
 		},
 		{
@@ -338,7 +338,7 @@ func TestEffectiveGroups(t *testing.T) {
 			groups:       core.Groups{doubleVpn},
 			technologies: nordWhisper,
 			status:       core.Online,
-			tech:         config.Technology_NORDWHISPER,
+			tech:         config.TechnologyNordWhisper,
 			expected:     core.Groups{doubleVpn},
 		},
 		{
@@ -346,7 +346,7 @@ func TestEffectiveGroups(t *testing.T) {
 			groups:       core.Groups{standard},
 			technologies: wireguardOnly,
 			status:       core.Online,
-			tech:         config.Technology_NORDWHISPER,
+			tech:         config.TechnologyNordWhisper,
 			expected:     core.Groups{standard},
 		},
 		{
@@ -354,7 +354,7 @@ func TestEffectiveGroups(t *testing.T) {
 			groups:       core.Groups{standard},
 			technologies: nordWhisperOffline,
 			status:       core.Online,
-			tech:         config.Technology_NORDWHISPER,
+			tech:         config.TechnologyNordWhisper,
 			expected:     core.Groups{standard},
 		},
 		{
@@ -362,7 +362,7 @@ func TestEffectiveGroups(t *testing.T) {
 			groups:       core.Groups{standard},
 			technologies: nordWhisper,
 			status:       core.Offline,
-			tech:         config.Technology_NORDWHISPER,
+			tech:         config.TechnologyNordWhisper,
 			expected:     core.Groups{standard},
 		},
 		{
@@ -370,7 +370,7 @@ func TestEffectiveGroups(t *testing.T) {
 			groups:       core.Groups{xor, standard},
 			technologies: nordWhisper,
 			status:       core.Online,
-			tech:         config.Technology_OPENVPN,
+			tech:         config.TechnologyOpenVPN,
 			expected:     core.Groups{standard},
 		},
 		{
@@ -378,7 +378,7 @@ func TestEffectiveGroups(t *testing.T) {
 			groups:       core.Groups{xor, standard},
 			technologies: nordWhisper,
 			status:       core.Online,
-			tech:         config.Technology_NORDWHISPER,
+			tech:         config.TechnologyNordWhisper,
 			expected:     core.Groups{standard, obfuscated},
 		},
 		{
@@ -386,7 +386,7 @@ func TestEffectiveGroups(t *testing.T) {
 			groups:       core.Groups{},
 			technologies: nordWhisper,
 			status:       core.Online,
-			tech:         config.Technology_NORDWHISPER,
+			tech:         config.TechnologyNordWhisper,
 			expected:     core.Groups{},
 		},
 	}

@@ -1728,13 +1728,13 @@ func analyticsProtocol(p config.VPNProtocol) config.Protocol {
 // connectionTechnologyToInternalType converts connection technology to the internal representation
 func connectionTechnologyToInternalType(tech config.Technology) moose.NordvpnappVpnConnectionTechnology {
 	switch tech {
-	case config.Technology_OPENVPN:
+	case config.TechnologyOpenVPN:
 		return moose.NordvpnappVpnConnectionTechnologyOpenvpn
-	case config.Technology_NORDLYNX:
+	case config.TechnologyNordLynx:
 		return moose.NordvpnappVpnConnectionTechnologyNordlynx
-	case config.Technology_NORDWHISPER:
+	case config.TechnologyNordWhisper:
 		return moose.NordvpnappVpnConnectionTechnologyNordwhisper
-	case config.Technology_UNKNOWN_TECHNOLOGY:
+	case config.TechnologyUnknown:
 		return moose.NordvpnappVpnConnectionTechnologyNone
 	default:
 		return moose.NordvpnappVpnConnectionTechnologyRecommended

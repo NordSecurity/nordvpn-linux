@@ -161,7 +161,7 @@ func TestNotifyVPNProtocol_MeshnetPeerOnly_IsNotDeferred(t *testing.T) {
 	assert.NilError(t, sub.NotifyVPNProtocol(config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER))
 
 	assert.DeepEqual(t,
-		[]moose.NordvpnappVpnConnectionTechnology{connectionTechnologyToInternalType(config.Technology_NORDWHISPER)},
+		[]moose.NordvpnappVpnConnectionTechnology{connectionTechnologyToInternalType(config.TechnologyNordWhisper)},
 		rec.currentTech)
 
 	assert.NilError(t, sub.NotifyDisconnect(events.DataDisconnect{EventStatus: events.StatusSuccess}))

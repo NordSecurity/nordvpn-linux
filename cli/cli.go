@@ -900,7 +900,7 @@ func getSetSubcommands(cmd *cmd, isMeshnetEnabled bool) []*cli.Command {
 				"post-quantum",
 				"post-quantum",
 			),
-			Hidden: cmd.Except(config.Technology_NORDLYNX),
+			Hidden: cmd.Except(config.TechnologyNordLynx),
 		},
 		{
 			Name:         "arp-ignore",
@@ -930,7 +930,7 @@ func getSetSubcommands(cmd *cmd, isMeshnetEnabled bool) []*cli.Command {
 				"ech",
 				"ech",
 			),
-			Hidden: cmd.Except(config.Technology_NORDWHISPER),
+			Hidden: cmd.Except(config.TechnologyNordWhisper),
 		})
 	}
 

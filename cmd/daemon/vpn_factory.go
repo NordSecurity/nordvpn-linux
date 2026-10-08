@@ -33,7 +33,7 @@ func getVpnFactory(
 
 	if nordLynxErr != nil {
 		// don't exit with `err` here in case the factory will be called with
-		// technology different than `config.Technology_NORDLYNX`
+		// technology different than `config.TechnologyNordLynx`
 		log.Error("getting NordLynx vpn:", nordLynxErr)
 	}
 
@@ -44,13 +44,13 @@ func getVpnFactory(
 
 	return func(tech config.Technology) (vpn.VPN, error) {
 		switch tech {
-		case config.Technology_NORDLYNX:
+		case config.TechnologyNordLynx:
 			return nordlynxVPN, nordLynxErr
-		case config.Technology_OPENVPN:
+		case config.TechnologyOpenVPN:
 			return openvpn.New(fwmark, eventsPublisher), nil
-		case config.Technology_NORDWHISPER:
+		case config.TechnologyNordWhisper:
 			return nordWhisperVPN, nordWhisperErr
-		case config.Technology_UNKNOWN_TECHNOLOGY:
+		case config.TechnologyUnknown:
 			fallthrough
 		default:
 			return nil, errors.New("no such technology")

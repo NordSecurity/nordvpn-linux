@@ -56,14 +56,14 @@ func newMockConfigManager() *mockConfigManager {
 func vpnProtocolFor(tech config.Technology, proto config.Protocol) config.VPNProtocol {
 	//exhaustive:ignore
 	switch tech {
-	case config.Technology_OPENVPN:
+	case config.TechnologyOpenVPN:
 		if proto == config.Protocol_TCP {
 			return config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP
 		}
 		return config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP
-	case config.Technology_NORDLYNX:
+	case config.TechnologyNordLynx:
 		return config.VPNProtocol_VPN_PROTOCOL_NORDLYNX
-	case config.Technology_NORDWHISPER:
+	case config.TechnologyNordWhisper:
 		return config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER
 	}
 	return config.VPNProtocol_VPN_PROTOCOL_UNSPECIFIED

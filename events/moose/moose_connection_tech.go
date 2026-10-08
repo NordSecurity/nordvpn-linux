@@ -20,13 +20,13 @@ type techProto struct {
 // isVPNConnected reports whether a VPN tunnel is up. connectedTechProto is set only on a
 // successful VPN connect and cleared on disconnect.
 func (s *Subscriber) isVPNConnected() bool {
-	return s.connectedTechProto.technology != config.Technology_UNKNOWN_TECHNOLOGY
+	return s.connectedTechProto.technology != config.TechnologyUnknown
 }
 
 // initTechProto reports the configured technology/protocol on Init. Called with s.mux held.
 func (s *Subscriber) initTechProto(cfg config.Config) error {
 	technology := cfg.VPNProtocol.Technology()
-	if technology == config.Technology_UNKNOWN_TECHNOLOGY {
+	if technology == config.TechnologyUnknown {
 		return fmt.Errorf("setting moose technology: %w", errUnknownTechnology)
 	}
 	protocol := analyticsProtocol(cfg.VPNProtocol)
@@ -50,7 +50,7 @@ func (s *Subscriber) initTechProto(cfg config.Config) error {
 // NotifyVPNProtocol reports the VPN protocol as separate moose technology and protocol values.
 func (s *Subscriber) NotifyVPNProtocol(data config.VPNProtocol) error {
 	technology := data.Technology()
-	if technology == config.Technology_UNKNOWN_TECHNOLOGY {
+	if technology == config.TechnologyUnknown {
 		return errUnknownTechnology
 	}
 	protocol := analyticsProtocol(data)
@@ -79,7 +79,7 @@ func (s *Subscriber) NotifyVPNProtocol(data config.VPNProtocol) error {
 func (s *Subscriber) reportEffectiveConnection(c techProto) error {
 	var errs []error
 
-	if c.technology != config.Technology_UNKNOWN_TECHNOLOGY {
+	if c.technology != config.TechnologyUnknown {
 		if err := s.response(s.mooseFuncs.setTechnologyCurrentState(connectionTechnologyToInternalType(c.technology))); err != nil {
 			errs = append(errs, fmt.Errorf("setting technology current state (%v): %w", c.technology, err))
 		}

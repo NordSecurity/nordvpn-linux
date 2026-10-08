@@ -15,10 +15,10 @@ func TestTechnology_String(t *testing.T) {
 		tech     Technology
 		expected string
 	}{
-		{Technology_UNKNOWN_TECHNOLOGY, "UNKNOWN_TECHNOLOGY"},
-		{Technology_OPENVPN, "OPENVPN"},
-		{Technology_NORDLYNX, "NORDLYNX"},
-		{Technology_NORDWHISPER, "NORDWHISPER"},
+		{TechnologyUnknown, "UNKNOWN_TECHNOLOGY"},
+		{TechnologyOpenVPN, "OPENVPN"},
+		{TechnologyNordLynx, "NORDLYNX"},
+		{TechnologyNordWhisper, "NORDWHISPER"},
 		{Technology(42), "42"},
 	}
 	for _, test := range tests {
@@ -29,11 +29,11 @@ func TestTechnology_String(t *testing.T) {
 func TestTechnology_JSONIsNumeric(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	data, err := json.Marshal(Technology_NORDLYNX)
+	data, err := json.Marshal(TechnologyNordLynx)
 	assert.NoError(t, err)
 	assert.Equal(t, "2", string(data))
 
 	var decoded Technology
 	assert.NoError(t, json.Unmarshal([]byte("1"), &decoded))
-	assert.Equal(t, Technology_OPENVPN, decoded)
+	assert.Equal(t, TechnologyOpenVPN, decoded)
 }

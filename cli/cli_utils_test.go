@@ -36,9 +36,9 @@ func TestExceptMemoizesSettings(t *testing.T) {
 	client := &countingSettingsClient{vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX}
 	c := &cmd{client: client}
 
-	assert.False(t, c.Except(config.Technology_NORDLYNX), "matching technology is not excepted")
-	assert.True(t, c.Except(config.Technology_OPENVPN), "differing technology is excepted")
-	assert.True(t, c.Except(config.Technology_NORDWHISPER), "differing technology is excepted")
+	assert.False(t, c.Except(config.TechnologyNordLynx), "matching technology is not excepted")
+	assert.True(t, c.Except(config.TechnologyOpenVPN), "differing technology is excepted")
+	assert.True(t, c.Except(config.TechnologyNordWhisper), "differing technology is excepted")
 
 	assert.Equal(t, 1, client.calls, "Settings must be fetched once and memoized")
 }
@@ -49,7 +49,7 @@ func TestExceptReturnsFalseOnSettingsError(t *testing.T) {
 	client := &countingSettingsClient{err: errors.New("daemon unavailable")}
 	c := &cmd{client: client}
 
-	assert.False(t, c.Except(config.Technology_NORDLYNX))
-	assert.False(t, c.Except(config.Technology_NORDLYNX))
+	assert.False(t, c.Except(config.TechnologyNordLynx))
+	assert.False(t, c.Except(config.TechnologyNordLynx))
 	assert.Equal(t, 2, client.calls, "failed fetches must not be memoized")
 }

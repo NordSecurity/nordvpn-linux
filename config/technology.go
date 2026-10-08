@@ -6,21 +6,21 @@ import "strconv"
 type Technology int32
 
 const (
-	Technology_UNKNOWN_TECHNOLOGY Technology = 0
-	Technology_OPENVPN            Technology = 1
-	Technology_NORDLYNX           Technology = 2
-	Technology_NORDWHISPER        Technology = 3
+	TechnologyUnknown     Technology = 0
+	TechnologyOpenVPN     Technology = 1
+	TechnologyNordLynx    Technology = 2
+	TechnologyNordWhisper Technology = 3
 )
 
 func (t Technology) String() string {
 	switch t {
-	case Technology_UNKNOWN_TECHNOLOGY:
+	case TechnologyUnknown:
 		return "UNKNOWN_TECHNOLOGY"
-	case Technology_OPENVPN:
+	case TechnologyOpenVPN:
 		return "OPENVPN"
-	case Technology_NORDLYNX:
+	case TechnologyNordLynx:
 		return "NORDLYNX"
-	case Technology_NORDWHISPER:
+	case TechnologyNordWhisper:
 		return "NORDWHISPER"
 	default:
 		return strconv.Itoa(int(t))
@@ -30,13 +30,13 @@ func (t Technology) String() string {
 // TechNameToUpperCamelCase returns technology name as an UpperCamelCase string
 func TechNameToUpperCamelCase(tech Technology) string {
 	switch tech {
-	case Technology_NORDLYNX:
+	case TechnologyNordLynx:
 		return "NordLynx"
-	case Technology_OPENVPN:
+	case TechnologyOpenVPN:
 		return "OpenVPN"
-	case Technology_NORDWHISPER:
+	case TechnologyNordWhisper:
 		return "NordWhisper"
-	case Technology_UNKNOWN_TECHNOLOGY:
+	case TechnologyUnknown:
 		fallthrough
 	default:
 		return ""

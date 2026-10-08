@@ -23,7 +23,7 @@ func (r *RPC) InjectVpnConnectionError(
 		return nil, errors.New("ENS injection is available in the dev environment only")
 	}
 
-	v, err := r.factory(config.Technology_NORDLYNX)
+	v, err := r.factory(config.TechnologyNordLynx)
 	if err != nil {
 		return nil, fmt.Errorf("getting NordLynx VPN: %w", err)
 	}

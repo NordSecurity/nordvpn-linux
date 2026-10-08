@@ -402,7 +402,7 @@ func TestServers(t *testing.T) {
 			name:        "success openvpn TCP",
 			serversList: servers,
 			obfuscate:   false,
-			technology:  config.Technology_OPENVPN,
+			technology:  config.TechnologyOpenVPN,
 			protocol:    config.Protocol_TCP,
 			expectedResponse: &pb.ServersResponse{
 				Response: &pb.ServersResponse_Servers{Servers: &pb.ServersMap{
@@ -413,7 +413,7 @@ func TestServers(t *testing.T) {
 		{
 			name:        "success openvpn UDP ignores legacy XOR technologies and tag",
 			serversList: servers,
-			technology:  config.Technology_OPENVPN,
+			technology:  config.TechnologyOpenVPN,
 			protocol:    config.Protocol_UDP,
 			expectedResponse: &pb.ServersResponse{
 				Response: &pb.ServersResponse_Servers{Servers: &pb.ServersMap{
@@ -425,7 +425,7 @@ func TestServers(t *testing.T) {
 			name:        "success wireguard",
 			serversList: servers,
 			obfuscate:   false,
-			technology:  config.Technology_NORDLYNX,
+			technology:  config.TechnologyNordLynx,
 			expectedResponse: &pb.ServersResponse{
 				Response: &pb.ServersResponse_Servers{Servers: &pb.ServersMap{
 					ServersByCountry: expectedServersWireguard,

@@ -130,22 +130,22 @@ func TestConfigDefaultValues(t *testing.T) {
 			settingsFile: "testdata/settings_3.10.0.dat",
 			installFile:  "testdata/install_3.10.0.dat",
 			autoconnect:  true,
-			technology:   Technology_NORDLYNX,
+			technology:   TechnologyNordLynx,
 		},
 		{
 			settingsFile: "testdata/settings_3.12.0.dat",
 			installFile:  "testdata/install_3.12.0.dat",
-			technology:   Technology_OPENVPN,
+			technology:   TechnologyOpenVPN,
 		},
 		{
 			settingsFile: "testdata/settings_3.13.0.dat",
 			installFile:  "testdata/install_3.13.0.dat",
-			technology:   Technology_NORDLYNX,
+			technology:   TechnologyNordLynx,
 		},
 		{
 			settingsFile: "testdata/settings_3.14.0.dat",
 			installFile:  "testdata/install_3.14.0.dat",
-			technology:   Technology_NORDLYNX,
+			technology:   TechnologyNordLynx,
 		},
 	}
 
