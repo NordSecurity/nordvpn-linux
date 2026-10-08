@@ -25,10 +25,12 @@ class ServerGroup extends $pb.ProtobufEnum {
       ServerGroup._(9, _omitEnumNames ? '' : 'DEDICATED_IP');
   static const ServerGroup STANDARD_VPN_SERVERS =
       ServerGroup._(11, _omitEnumNames ? '' : 'STANDARD_VPN_SERVERS');
-  static const ServerGroup OBFUSCATED =
-      ServerGroup._(17, _omitEnumNames ? '' : 'OBFUSCATED');
+  static const ServerGroup OVPN_OBFUSCATED =
+      ServerGroup._(17, _omitEnumNames ? '' : 'OVPN_OBFUSCATED');
   static const ServerGroup DEDICATED_SERVER =
       ServerGroup._(99, _omitEnumNames ? '' : 'DEDICATED_SERVER');
+  static const ServerGroup NW_OBFUSCATED =
+      ServerGroup._(100, _omitEnumNames ? '' : 'NW_OBFUSCATED');
 
   static const $core.List<ServerGroup> values = <ServerGroup>[
     UNDEFINED,
@@ -36,8 +38,9 @@ class ServerGroup extends $pb.ProtobufEnum {
     ONION_OVER_VPN,
     DEDICATED_IP,
     STANDARD_VPN_SERVERS,
-    OBFUSCATED,
+    OVPN_OBFUSCATED,
     DEDICATED_SERVER,
+    NW_OBFUSCATED,
   ];
 
   static final $core.Map<$core.int, ServerGroup> _byValue =

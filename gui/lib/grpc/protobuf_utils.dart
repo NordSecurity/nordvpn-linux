@@ -40,7 +40,7 @@ extension _ProtobufServerGroupExt on pb.ServerGroup {
         return dedicatedIp;
       case pb.ServerGroup.ONION_OVER_VPN:
         return onionOverVpn;
-      case pb.ServerGroup.OBFUSCATED:
+      case pb.ServerGroup.NW_OBFUSCATED:
         return obfuscatedServers;
       case pb.ServerGroup.DEDICATED_SERVER:
         return dedicatedServer;

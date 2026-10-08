@@ -173,7 +173,7 @@ Uptime: 13 seconds
 			},
 			expected: `Status: Connected
 Hostname: Verona
-Group: Obfuscated Servers
+Group: Obfuscated
 Current technology: NORDWHISPER
 Current protocol: UDP
 Post-quantum VPN: Disabled

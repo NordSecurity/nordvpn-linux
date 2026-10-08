@@ -3,6 +3,7 @@ package serverpicker
 import (
 	"errors"
 	"net/http"
+	"slices"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -138,10 +139,9 @@ func TestFilterServers(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			localSelFn := selectFilterForLocalServers("", test.group, false)
+			localSelFn := selectFilterForLocalServers("", test.group)
 			filterFn := func(s core.Server) bool {
 				return core.IsConnectableWithProtocol(test.tech, test.proto)(s) &&
-					!core.IsObfuscated()(s) &&
 					localSelFn(s)
 			}
 			servers, err := findServersLocally(test.servers, core.ServerTag{Action: core.ServerByUnknown}, filterFn)
@@ -206,14 +206,208 @@ func TestResolveServerGroup(t *testing.T) {
 			expectedGroup: config.ServerGroup_UNDEFINED,
 			err:           internal.ErrGroupDoesNotExist,
 		},
+		{
+			input:         NewSearchParams("", "Obfuscated", ""),
+			expectedGroup: config.ServerGroup_NW_OBFUSCATED,
+			err:           nil,
+		},
 	}
 
 	for _, tt := range tests {
-		tag := tt.input.Tag
-		group, err := resolveServerGroup(&tt.input, false)
+		normalized, group, err := resolveServerGroup(tt.input)
 		assert.Equal(t, tt.expectedGroup, group)
 		assert.Equal(t, tt.err, err)
-		assert.Equal(t, tt.tagChanged, tt.input.Tag != tag)
+		assert.Equal(t, tt.tagChanged, normalized.Tag != tt.input.Tag)
+		if tt.tagChanged {
+			assert.Empty(t, normalized.Tag)
+		}
+		// only the tag may be rewritten
+		assert.Equal(t, tt.input.Group, normalized.Group)
+		assert.Equal(t, tt.input.ExcludedServer, normalized.ExcludedServer)
+	}
+}
+
+func TestIsObfuscatedTech(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		tech     config.Technology
+		expected bool
+	}{
+		{tech: config.Technology_NORDWHISPER, expected: true},
+		{tech: config.Technology_NORDLYNX, expected: false},
+		{tech: config.Technology_OPENVPN, expected: false},
+		{tech: config.Technology_UNKNOWN_TECHNOLOGY, expected: false},
+	}
+
+	for _, test := range tests {
+		t.Run(test.tech.String(), func(t *testing.T) {
+			assert.Equal(t, test.expected, IsObfuscatedTech(test.tech))
+		})
+	}
+}
+
+func TestSearchGroup(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name      string
+		requested config.ServerGroup
+		tech      config.Technology
+		expected  config.ServerGroup
+	}{
+		{
+			name:      "obfuscated over nordwhisper is searched as standard",
+			requested: config.ServerGroup_NW_OBFUSCATED,
+			tech:      config.Technology_NORDWHISPER,
+			expected:  config.ServerGroup_STANDARD_VPN_SERVERS,
+		},
+		{
+			name:      "obfuscated over nordlynx is left alone",
+			requested: config.ServerGroup_NW_OBFUSCATED,
+			tech:      config.Technology_NORDLYNX,
+			expected:  config.ServerGroup_NW_OBFUSCATED,
+		},
+		{
+			name:      "obfuscated over openvpn is left alone",
+			requested: config.ServerGroup_NW_OBFUSCATED,
+			tech:      config.Technology_OPENVPN,
+			expected:  config.ServerGroup_NW_OBFUSCATED,
+		},
+		{
+			name:      "other groups are never touched",
+			requested: config.ServerGroup_DOUBLE_VPN,
+			tech:      config.Technology_NORDWHISPER,
+			expected:  config.ServerGroup_DOUBLE_VPN,
+		},
+		{
+			name:      "standard stays standard",
+			requested: config.ServerGroup_STANDARD_VPN_SERVERS,
+			tech:      config.Technology_NORDWHISPER,
+			expected:  config.ServerGroup_STANDARD_VPN_SERVERS,
+		},
+		{
+			name:      "undefined stays undefined",
+			requested: config.ServerGroup_UNDEFINED,
+			tech:      config.Technology_NORDWHISPER,
+			expected:  config.ServerGroup_UNDEFINED,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			assert.Equal(t, test.expected, searchGroup(test.requested, test.tech))
+		})
+	}
+}
+
+func TestEffectiveGroups(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	standard := core.Group{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"}
+	doubleVpn := core.Group{ID: config.ServerGroup_DOUBLE_VPN, Title: "P2P"}
+	xor := core.Group{ID: config.ServerGroup_OVPN_OBFUSCATED, Title: "Obfuscated"}
+	obfuscated := core.Group{ID: config.ServerGroup_NW_OBFUSCATED, Title: ObfuscatedServersGroupTitle}
+
+	nordWhisper := core.Technologies{{ID: core.NordWhisperTech, Pivot: core.Pivot{Status: core.Online}}}
+	nordWhisperOffline := core.Technologies{{ID: core.NordWhisperTech, Pivot: core.Pivot{Status: core.Offline}}}
+	wireguardOnly := core.Technologies{{ID: core.WireguardTech, Pivot: core.Pivot{Status: core.Online}}}
+
+	tests := []struct {
+		name         string
+		groups       core.Groups
+		technologies core.Technologies
+		status       core.Status
+		tech         config.Technology
+		expected     core.Groups
+	}{
+		{
+			name:         "standard nordwhisper server over nordwhisper offers the obfuscated group too",
+			groups:       core.Groups{standard},
+			technologies: nordWhisper,
+			status:       core.Online,
+			tech:         config.Technology_NORDWHISPER,
+			expected:     core.Groups{standard, obfuscated},
+		},
+		{
+			name:         "standard server over nordlynx is left alone",
+			groups:       core.Groups{standard},
+			technologies: nordWhisper,
+			status:       core.Online,
+			tech:         config.Technology_NORDLYNX,
+			expected:     core.Groups{standard},
+		},
+		{
+			name:         "non-standard nordwhisper server over nordwhisper is not obfuscated",
+			groups:       core.Groups{doubleVpn},
+			technologies: nordWhisper,
+			status:       core.Online,
+			tech:         config.Technology_NORDWHISPER,
+			expected:     core.Groups{doubleVpn},
+		},
+		{
+			name:         "standard server not reachable over nordwhisper is not obfuscated",
+			groups:       core.Groups{standard},
+			technologies: wireguardOnly,
+			status:       core.Online,
+			tech:         config.Technology_NORDWHISPER,
+			expected:     core.Groups{standard},
+		},
+		{
+			name:         "standard server with nordwhisper offline is not obfuscated",
+			groups:       core.Groups{standard},
+			technologies: nordWhisperOffline,
+			status:       core.Online,
+			tech:         config.Technology_NORDWHISPER,
+			expected:     core.Groups{standard},
+		},
+		{
+			name:         "offline standard nordwhisper server is not obfuscated",
+			groups:       core.Groups{standard},
+			technologies: nordWhisper,
+			status:       core.Offline,
+			tech:         config.Technology_NORDWHISPER,
+			expected:     core.Groups{standard},
+		},
+		{
+			name:         "retired XOR tag is dropped under openvpn",
+			groups:       core.Groups{xor, standard},
+			technologies: nordWhisper,
+			status:       core.Online,
+			tech:         config.Technology_OPENVPN,
+			expected:     core.Groups{standard},
+		},
+		{
+			name:         "retired XOR tag is replaced under nordwhisper, not duplicated",
+			groups:       core.Groups{xor, standard},
+			technologies: nordWhisper,
+			status:       core.Online,
+			tech:         config.Technology_NORDWHISPER,
+			expected:     core.Groups{standard, obfuscated},
+		},
+		{
+			name:         "server without groups stays without groups",
+			groups:       core.Groups{},
+			technologies: nordWhisper,
+			status:       core.Online,
+			tech:         config.Technology_NORDWHISPER,
+			expected:     core.Groups{},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			server := core.Server{
+				Groups:       slices.Clone(test.groups),
+				Technologies: test.technologies,
+				Status:       test.status,
+			}
+
+			got := EffectiveGroups(server, test.tech)
+
+			assert.Equal(t, test.expected, got)
+			assert.Equal(t, test.groups, server.Groups)
+		})
 	}
 }
 
@@ -542,20 +736,6 @@ func TestTechToServerTech(t *testing.T) {
 			expected:   core.WireguardTech,
 		},
 		{
-			name:       "obfuscated tpc",
-			tech:       config.Technology_OPENVPN,
-			protocol:   config.Protocol_TCP,
-			obfuscated: true,
-			expected:   core.OpenVPNTCPObfuscated,
-		},
-		{
-			name:       "obfuscated udp",
-			tech:       config.Technology_OPENVPN,
-			protocol:   config.Protocol_UDP,
-			obfuscated: true,
-			expected:   core.OpenVPNUDPObfuscated,
-		},
-		{
 			name:       "openvpn tcp",
 			tech:       config.Technology_OPENVPN,
 			protocol:   config.Protocol_TCP,
@@ -573,7 +753,7 @@ func TestTechToServerTech(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got := TechToServerTech(test.tech, test.protocol, test.obfuscated)
+			got := TechToServerTech(test.tech, test.protocol)
 			assert.Equal(t, test.expected, got)
 		})
 	}
@@ -586,8 +766,8 @@ func TestPickServer(t *testing.T) {
 		api                  core.ServersAPI
 		servers              core.Servers
 		tech                 config.Technology
-		obfuscated           bool
 		tag                  string
+		group                string
 		excludedServer       string
 		expectedServerName   string
 		expectedRemoteServer bool
@@ -658,15 +838,63 @@ func TestPickServer(t *testing.T) {
 			excludedServer: "de3.nordvpn.com",
 			expectedError:  internal.ErrServerIsUnavailable,
 		},
+		// NordWhisper as Obfuscated: Germany #4 is the only NordWhisper capable server in the mock
+		{
+			name:               "obfuscated group over nordwhisper is served by the standard servers",
+			api:                core_test.NewMockFailingServersAPI(errors.New("500")),
+			servers:            core_test.ServersList(),
+			tech:               config.Technology_NORDWHISPER,
+			group:              "obfuscated",
+			expectedServerName: "Germany #4",
+		},
+		{
+			name:                 "obfuscated group over nordwhisper is translated before the API is asked",
+			api:                  core_test.NewMockServersAPI(),
+			servers:              core_test.ServersList(),
+			tech:                 config.Technology_NORDWHISPER,
+			group:                "obfuscated",
+			expectedServerName:   "Germany #4",
+			expectedRemoteServer: true,
+		},
+		{
+			name:               "obfuscated group given as the tag over nordwhisper",
+			api:                core_test.NewMockFailingServersAPI(errors.New("500")),
+			servers:            core_test.ServersList(),
+			tech:               config.Technology_NORDWHISPER,
+			tag:                "obfuscated",
+			expectedServerName: "Germany #4",
+		},
+		{
+			name:               "standard group over nordwhisper keeps working",
+			api:                core_test.NewMockFailingServersAPI(errors.New("500")),
+			servers:            core_test.ServersList(),
+			tech:               config.Technology_NORDWHISPER,
+			group:              "standard_vpn_servers",
+			expectedServerName: "Germany #4",
+		},
+		{
+			name:          "obfuscated group is not connectable over nordlynx",
+			api:           core_test.NewMockFailingServersAPI(errors.New("500")),
+			servers:       core_test.ServersList(),
+			tech:          config.Technology_NORDLYNX,
+			group:         "obfuscated",
+			expectedError: internal.ErrServerIsUnavailable,
+		},
+		{
+			name:          "legacy XOR only server is not connectable by name",
+			api:           core_test.NewMockFailingServersAPI(errors.New("500")),
+			servers:       core_test.ServersList(),
+			tech:          config.Technology_OPENVPN,
+			tag:           "lt17",
+			expectedError: internal.ErrServerIsUnavailable,
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			cfg := config.Config{
-				Technology: test.tech,
-				AutoConnectData: config.AutoConnectData{
-					Obfuscate: test.obfuscated,
-				},
+			cfg := config.Config{Technology: test.tech}
+			if test.tech == config.Technology_OPENVPN {
+				cfg.AutoConnectData.Protocol = config.Protocol_TCP
 			}
 
 			serverSelection, err := PickServer(
@@ -675,7 +903,7 @@ func TestPickServer(t *testing.T) {
 				core_test.CountriesList(),
 				core.Insights{},
 				cfg,
-				NewSearchParams(test.tag, "", test.excludedServer),
+				NewSearchParams(test.tag, test.group, test.excludedServer),
 			)
 
 			assert.Equal(t, test.expectedError, err)
@@ -850,7 +1078,7 @@ func TestRecommendationUUID_GetServersRemote(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			filter := core.ServersFilter{
 				Group: test.group,
-				Tech:  TechToServerTech(test.tech, test.protocol, test.obfuscated),
+				Tech:  TechToServerTech(test.tech, test.protocol),
 				Tag:   test.tag,
 				Limit: apiServersLimit,
 			}

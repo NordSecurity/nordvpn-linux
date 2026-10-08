@@ -177,8 +177,8 @@ func main() {
 		log.Error("failed to migrate legacy config:", err)
 	}
 
-	// Remove any remains of IPv6 settings and remove overlapping allowlist subnets
-	if err := fsystem.SaveWith(daemon.ConfigCleanup); err != nil {
+	// Migrate the application settings
+	if err := fsystem.SaveWith(daemon.MigrateConfig); err != nil {
 		log.Error("failed to cleanup config:", err)
 	}
 

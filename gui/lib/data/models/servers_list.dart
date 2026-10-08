@@ -29,9 +29,6 @@ final class ServersList {
   List<CountryServersGroup> get standardServersList =>
       groups[ServerType.standardVpn] ?? [];
 
-  List<CountryServersGroup> get obfuscatedServersList =>
-      groups[ServerType.obfuscated] ?? [];
-
   List<CountryServersGroup> specialtyServersList(ServerType type) {
     return groups[type] ?? [];
   }

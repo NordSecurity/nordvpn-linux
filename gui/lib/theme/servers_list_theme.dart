@@ -25,13 +25,7 @@ final class ServersListTheme extends ThemeExtension<ServersListTheme>
   final TextStyle searchHintStyle;
 
   @override
-  final TextStyle obfuscationSearchWarningStyle;
-
-  @override
   final TextStyle searchErrorStyle;
-
-  @override
-  final Color obfuscatedItemBackgroundColor;
 
   @override
   final List<BoxShadow> cardShadow;
@@ -44,8 +38,6 @@ final class ServersListTheme extends ThemeExtension<ServersListTheme>
     required this.paddingSearchGroupsLabel,
     required this.searchHintStyle,
     required this.searchErrorStyle,
-    required this.obfuscationSearchWarningStyle,
-    required this.obfuscatedItemBackgroundColor,
     required this.cardShadow,
   });
 }

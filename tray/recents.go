@@ -30,6 +30,18 @@ type RecentConnection struct {
 	ConnectionType     config.ServerSelectionRule
 }
 
+func NewRecentConnection(conn *pb.RecentConnectionModel) RecentConnection {
+	return RecentConnection{
+		Country:            conn.Country,
+		City:               conn.City,
+		Group:              conn.Group,
+		CountryCode:        conn.CountryCode,
+		SpecificServerName: conn.SpecificServerName,
+		SpecificServer:     conn.SpecificServer,
+		ConnectionType:     conn.ConnectionType,
+	}
+}
+
 func makeDisplayLabel(conn *RecentConnection) string {
 	switch conn.ConnectionType {
 	case config.ServerSelectionRule_CITY:
@@ -107,19 +119,19 @@ func connectByConnectionModel(ti *Instance, model *RecentConnection) bool {
 
 	case config.ServerSelectionRule_GROUP:
 		if model.Group != config.ServerGroup_UNDEFINED {
-			group := normalizeForAPI(model.Group.String())
+			group := config.GroupTitleForId(model.Group)
 			return ti.connectWithUIEvent("", group, pb.UIEvent_CONNECT_RECENTS, itemValue)
 		}
 
 	case config.ServerSelectionRule_COUNTRY_WITH_GROUP:
 		if model.CountryCode != "" && model.Group != config.ServerGroup_UNDEFINED {
-			group := normalizeForAPI(model.Group.String())
+			group := config.GroupTitleForId(model.Group)
 			return ti.connectWithUIEvent(model.CountryCode, group, pb.UIEvent_CONNECT_RECENTS, itemValue)
 		}
 
 	case config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP:
 		if model.SpecificServer != "" && model.Group != config.ServerGroup_UNDEFINED {
-			group := normalizeForAPI(model.Group.String())
+			group := config.GroupTitleForId(model.Group)
 			return ti.connectWithUIEvent(model.SpecificServer, group, pb.UIEvent_CONNECT_RECENTS, itemValue)
 		}
 
@@ -161,15 +173,7 @@ func (m *recentConnectionsManager) UpdateRecentConnections() error {
 	// Convert gRPC models to tray models
 	connections := make([]RecentConnection, 0, len(resp.Connections))
 	for _, conn := range resp.Connections {
-		connections = append(connections, RecentConnection{
-			Country:            conn.Country,
-			City:               conn.City,
-			Group:              conn.Group,
-			CountryCode:        conn.CountryCode,
-			SpecificServerName: conn.SpecificServerName,
-			SpecificServer:     conn.SpecificServer,
-			ConnectionType:     conn.ConnectionType,
-		})
+		connections = append(connections, NewRecentConnection(conn))
 	}
 
 	m.mu.Lock()

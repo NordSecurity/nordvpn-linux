@@ -5,6 +5,7 @@ import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/vpn/connection_card_buttons.dart';
 import 'package:nordvpn/vpn/servers_list_card.dart';
 import 'package:nordvpn/vpn/vpn.dart';
+import 'package:nordvpn/widgets/custom_list_tile.dart';
 
 import 'finders.dart';
 import 'screen_handle.dart';
@@ -80,6 +81,22 @@ final class VpnScreenHandle extends ScreenHandle {
     await app.tester.pumpAndSettle();
   }
 
+  Future<void> scrollToObfuscatedGroup() async {
+    await app.tester.scrollUntilVisible(
+      find.byKey(ServerListWidgetKeys.obfuscatedVpn),
+      100.0,
+      scrollable: find.descendant(
+        of: find.byKey(ServerListWidgetKeys.specialtyServersList),
+        matching: find.byType(Scrollable),
+      ),
+    );
+  }
+
+  bool isObfuscatedGroupOffered() {
+    final widget = app.tester.widget<CustomListTile>(obfuscatedGroupTile());
+    return widget.enabled;
+  }
+
   Future<void> clickDoubleVpnGroup() async {
     await app.tester.tap(doubleVpnGroupTile());
     await app.tester.pumpAndSettle();
@@ -95,27 +112,10 @@ final class VpnScreenHandle extends ScreenHandle {
     await app.tester.pumpAndSettle();
   }
 
-  bool isObfuscationWarningDisplayed() {
-    final finder = find.text(t.ui.obfuscationSearchWarning);
-    return finder.evaluate().length == 1;
-  }
-
   Future<void> searchServer(String text) async {
     expect(_serversSearchTextField(), findsOne);
     await app.tester.enterText(_serversSearchTextField(), text);
     await app.tester.pumpAndSettle();
-  }
-
-  Future<bool> isObfuscationNoResultsFound() async {
-    final msgFinder = find.text(t.ui.obfuscationErrorNoServerFound);
-    final goToSettingsLabel = find.descendant(
-      of: _goToSettings(),
-      matching: find.text(t.ui.goToSettings),
-    );
-
-    return msgFinder.evaluate().isNotEmpty &&
-        _goToSettings().evaluate().isNotEmpty &&
-        goToSettingsLabel.evaluate().isNotEmpty;
   }
 
   // -------------- Finders -------
@@ -132,14 +132,6 @@ final class VpnScreenHandle extends ScreenHandle {
     );
     expect(finder, findsOne);
     return finder;
-  }
-
-  Finder _goToSettings() {
-    final goToSettingsFinder = find.descendant(
-      of: find.byKey(VpnWidget.serversListKey),
-      matching: find.byType(TextButton),
-    );
-    return goToSettingsFinder;
   }
 
   Finder pauseConnectionButton() {

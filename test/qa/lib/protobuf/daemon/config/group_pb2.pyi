@@ -11,12 +11,14 @@ class ServerGroup(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     ONION_OVER_VPN: _ClassVar[ServerGroup]
     DEDICATED_IP: _ClassVar[ServerGroup]
     STANDARD_VPN_SERVERS: _ClassVar[ServerGroup]
-    OBFUSCATED: _ClassVar[ServerGroup]
+    OVPN_OBFUSCATED: _ClassVar[ServerGroup]
     DEDICATED_SERVER: _ClassVar[ServerGroup]
+    NW_OBFUSCATED: _ClassVar[ServerGroup]
 UNDEFINED: ServerGroup
 DOUBLE_VPN: ServerGroup
 ONION_OVER_VPN: ServerGroup
 DEDICATED_IP: ServerGroup
 STANDARD_VPN_SERVERS: ServerGroup
-OBFUSCATED: ServerGroup
+OVPN_OBFUSCATED: ServerGroup
 DEDICATED_SERVER: ServerGroup
+NW_OBFUSCATED: ServerGroup

@@ -10,8 +10,9 @@ enum ServerGroup {
   ONION_OVER_VPN       = 3;
   DEDICATED_IP         = 9;
   STANDARD_VPN_SERVERS = 11;
-  OBFUSCATED           = 17;
+  OVPN_OBFUSCATED      = 17;
   DEDICATED_SERVER     = 99;
+  NW_OBFUSCATED        = 100;
   reserved 5, 7, 13, 15, 19, 21, 23, 25;
   reserved "ULTRA_FAST_TV", "ANTI_DDOS", "NETFLIX_USA", "P2P", "EUROPE", "THE_AMERICAS", "ASIA_PACIFIC", "AFRICA_THE_MIDDLE_EAST_AND_INDIA";
 }

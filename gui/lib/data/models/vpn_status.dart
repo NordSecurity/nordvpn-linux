@@ -17,7 +17,6 @@ abstract class VpnStatus with _$VpnStatus {
     required Country? country,
     required ConnectionState status,
     required VpnProtocol protocol,
-    required bool isObfuscated,
     required ConnectionParameters connectionParameters,
     required bool isMeshnetRouting,
   }) = _VpnStatus;
@@ -32,7 +31,6 @@ abstract class VpnStatus with _$VpnStatus {
           : null,
       status: status.state,
       protocol: convertToVpnProtocol(status.technology, status.protocol),
-      isObfuscated: status.obfuscated,
       connectionParameters: status.parameters,
       isMeshnetRouting: status.isMeshPeer,
     );
