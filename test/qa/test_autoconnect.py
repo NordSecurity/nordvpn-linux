@@ -1,5 +1,3 @@
-import random
-import warnings
 import pytest
 import sh
 
