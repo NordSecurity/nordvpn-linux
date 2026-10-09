@@ -275,9 +275,9 @@ def test_route_to_peer_that_is_disconnected():
 
 
 @pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES_NO_MESHNET)
-def test_route_traffic_to_peer_wrong_tech(tech, proto):
-    lib.set_technology_and_protocol(tech, proto)
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS_NO_MESHNET)
+def test_route_traffic_to_peer_wrong_tech(vpn_protocol):
+    lib.set_vpn_protocol(vpn_protocol)
 
     peer_hostname = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer().name()
 

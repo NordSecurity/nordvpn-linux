@@ -12,50 +12,46 @@ FILE_HASH_UTILITY = "sha256sum"
 
 API_EXTERNAL_IP = "https://api.nordvpn.com/v1/helpers/ips/insights"
 
-# Used for test parametrization, when the same test has to be run for every technology.
-STANDARD_TECHNOLOGIES = [
-    # technology, protocol
-    ("openvpn", "udp"),
-    ("openvpn", "tcp"),
-    ("nordlynx", ""),
-    ("nordwhisper", ""),
+# Used for test parametrization, when the same test has to be run for every VPN protocol.
+STANDARD_VPN_PROTOCOLS = [
+    "openvpn_udp",
+    "openvpn_tcp",
+    "nordlynx",
+    "nordwhisper",
 ]
 
 # Used for test parametrization, when the tested functionality does not work with NordWhisper.
-STANDARD_TECHNOLOGIES_NO_NORDWHISPER = [
-    # technology, protocol
-    ("openvpn", "udp"),
-    ("openvpn", "tcp"),
-    ("nordlynx", ""),
+STANDARD_VPN_PROTOCOLS_NO_NORDWHISPER = [
+    "openvpn_udp",
+    "openvpn_tcp",
+    "nordlynx",
 ]
 
-STANDARD_TECHNOLOGIES_NO_MESHNET = [
-    # technology, protocol
-    ("openvpn", "udp"),
-    ("openvpn", "tcp"),
-    ("nordwhisper", ""),
+STANDARD_VPN_PROTOCOLS_NO_MESHNET = [
+    "openvpn_udp",
+    "openvpn_tcp",
+    "nordwhisper",
 ]
 
-TECHNOLOGIES_NO_MESHNET = list(STANDARD_TECHNOLOGIES_NO_MESHNET)
+VPN_PROTOCOLS_NO_MESHNET = list(STANDARD_VPN_PROTOCOLS_NO_MESHNET)
 
 # Used for test parametrization, when the tested functionality only works with OpenVPN.
-OVPN_STANDARD_TECHNOLOGIES = [
-    # technology, protocol
-    ("openvpn", "udp"),
-    ("openvpn", "tcp"),
+OVPN_VPN_PROTOCOLS = [
+    "openvpn_udp",
+    "openvpn_tcp",
 ]
 
-# Used for test parametrization, when the same test has to be run for all technologies.
-TECHNOLOGIES = list(STANDARD_TECHNOLOGIES)
+# Used for test parametrization, when the same test has to be run for all VPN protocols.
+VPN_PROTOCOLS = list(STANDARD_VPN_PROTOCOLS)
 
-TECHNOLOGIES_BASIC1 = [
-    ("nordlynx", ""),
+VPN_PROTOCOLS_BASIC1 = [
+    "nordlynx",
 ]
-TECHNOLOGIES_BASIC2 = [
-    ("openvpn", "udp"),
+VPN_PROTOCOLS_BASIC2 = [
+    "openvpn_udp",
 ]
-NORDWHISPER_TECHNOLOGY = [
-    ("nordwhisper", ""),
+NORDWHISPER_VPN_PROTOCOL = [
+    "nordwhisper",
 ]
 
 # Used for test parametrization, when the same test has to be run for different real time protection settings.
@@ -205,33 +201,25 @@ class Defer:
         print(self.command())
 
 
-def vpn_protocol_arg(tech: str, proto: str) -> str:
-    """Returns the `nordvpn set protocol` value for a technology and transport pair, e.g. `openvpn_udp`."""
-    if tech.lower() == "openvpn":
-        return f"openvpn_{(proto or 'udp').lower()}"
-    return tech.lower()
-
-
-def vpn_protocol_display_name(tech: str, proto: str) -> str:
+def vpn_protocol_display_name(vpn_protocol: str) -> str:
     """Returns the protocol name shown by `nordvpn status` and `nordvpn settings`, e.g. `OpenVPN (UDP)`."""
     return {
         "nordlynx": "NordLynx",
         "openvpn_udp": "OpenVPN (UDP)",
         "openvpn_tcp": "OpenVPN (TCP)",
         "nordwhisper": "NordWhisper (WebTunnel)",
-    }[vpn_protocol_arg(tech, proto)]
+    }[vpn_protocol]
 
 
-def set_technology_and_protocol(tech, proto):
+def set_vpn_protocol(vpn_protocol):
     """
     Allows setting VPN protocol regardless of whether it is already set or not.
 
-    `tech` and `proto` are mapped to a single `nordvpn set protocol` value.
     Tests do not break on reordering when using this.
     """
-    if tech:
+    if vpn_protocol:
         try:
-            print(sh.nordvpn.set.protocol(vpn_protocol_arg(tech, proto)))
+            print(sh.nordvpn.set.protocol(vpn_protocol))
         except sh.ErrorReturnCode_1 as ex:
             print("WARNING:", ex)
 

@@ -103,10 +103,10 @@ def test_connect_set_mesh_off():
 
 
 @pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
 # This doesn't directly test meshnet, but it uses it
-def test_set_defaults_when_connected_2nd_set(tech, proto):
-    lib.set_technology_and_protocol(tech, proto)
+def test_set_defaults_when_connected_2nd_set(vpn_protocol):
+    lib.set_vpn_protocol(vpn_protocol)
 
     daemon.restart() # Temporary solution to avoid Firewall staying enabled in settings - LVPN-4121
 

@@ -20,46 +20,46 @@ def teardown_function(function):  # noqa: ARG001
     daemon.stop()
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.STANDARD_TECHNOLOGIES)
-def test_set_vpn_protocol(tech, proto):  # noqa: ARG001
+@pytest.mark.parametrize("vpn_protocol", lib.STANDARD_VPN_PROTOCOLS)
+def test_set_vpn_protocol(vpn_protocol):  # noqa: ARG001
     """Manual TC: LVPN-601"""
 
-    if tech == "nordlynx":
-        lib.set_technology_and_protocol("openvpn", "udp")
+    if vpn_protocol == "nordlynx":
+        lib.set_vpn_protocol("openvpn_udp")
 
-    name = lib.vpn_protocol_display_name(tech, proto)
-    output = sh.nordvpn.set.protocol(lib.vpn_protocol_arg(tech, proto))
+    name = lib.vpn_protocol_display_name(vpn_protocol)
+    output = sh.nordvpn.set.protocol(vpn_protocol)
     assert f"VPN Protocol has been successfully set to '{name}'." in output, "VPN protocol should be successfully set"
     assert settings.Settings().get("Protocol") == name.lower(), "VPN protocol should appear in settings"
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.OVPN_STANDARD_TECHNOLOGIES)
-def test_protocol_in_settings(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.OVPN_VPN_PROTOCOLS)
+def test_protocol_in_settings(vpn_protocol):
     """Manual TC: LVPN-601"""
 
-    lib.set_technology_and_protocol(tech, proto)
-    assert proto.upper() in sh.nordvpn.settings(), "Protocol should appear in settings"
+    lib.set_vpn_protocol(vpn_protocol)
+    assert lib.vpn_protocol_display_name(vpn_protocol) in sh.nordvpn.settings(), "Protocol should appear in settings"
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_technology_set_options(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
+def test_technology_set_options(vpn_protocol):
     """
     Manual TC: LVPN-601.
 
     Every technology offers `nordvpn set protocol`.
     """
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     offered = settings.get_set_subcommands()
 
-    assert "protocol" in offered, f"'{tech}' should offer 'nordvpn set protocol', got {offered}"
+    assert "protocol" in offered, f"'{vpn_protocol}' should offer 'nordvpn set protocol', got {offered}"
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_set_defaults_when_logged_in_1st_set(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
+def test_set_defaults_when_logged_in_1st_set(vpn_protocol):
     """Manual TC: LVPN-8737"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     daemon.restart() # Temporary solution to avoid Firewall staying enabled in settings - LVPN-4121
 
@@ -69,7 +69,7 @@ def test_set_defaults_when_logged_in_1st_set(tech, proto):
     sh.nordvpn.set.analytics("off")
     sh.nordvpn.set.notify("on")
 
-    if tech == "nordlynx":
+    if vpn_protocol == "nordlynx":
         sh.nordvpn.set.pq("on")
 
     assert not settings.is_firewall_enabled(), "Firewall should be disabled"
@@ -78,7 +78,7 @@ def test_set_defaults_when_logged_in_1st_set(tech, proto):
     assert settings.is_user_consent_declared(), "User consent should be declared"
     assert settings.is_notify_enabled(), "Notifications should be enabled"
 
-    if tech == "nordlynx":
+    if vpn_protocol == "nordlynx":
         assert not settings.is_post_quantum_disabled(), "Post-quantum should be enabled for NordLynx"
 
     assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults("--logout"), "Defaults reset message should be shown"
@@ -86,11 +86,11 @@ def test_set_defaults_when_logged_in_1st_set(tech, proto):
     assert settings.app_has_defaults_settings(), "App should have default settings"
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_set_defaults_when_logged_out_2nd_set(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
+def test_set_defaults_when_logged_out_2nd_set(vpn_protocol):
     """Manual TC: LVPN-8829"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     daemon.restart() # Temporary solution to avoid Firewall staying enabled in settings - LVPN-4121
 
@@ -100,7 +100,7 @@ def test_set_defaults_when_logged_out_2nd_set(tech, proto):
     sh.nordvpn.set.notify("on")
     sh.nordvpn.set.dns("1.1.1.1")
 
-    if tech == "nordlynx":
+    if vpn_protocol == "nordlynx":
         sh.nordvpn.set.pq("on")
 
     assert not settings.is_firewall_enabled(), "Firewall should be disabled"
@@ -109,7 +109,7 @@ def test_set_defaults_when_logged_out_2nd_set(tech, proto):
     assert settings.is_notify_enabled(), "Notifications should be enabled"
     assert not settings.is_dns_disabled(), "DNS should be enabled"
 
-    if tech == "nordlynx":
+    if vpn_protocol == "nordlynx":
         assert not settings.is_post_quantum_disabled(), "Post-quantum should be enabled for NordLynx"
 
     sh.nordvpn.logout()
@@ -119,18 +119,18 @@ def test_set_defaults_when_logged_out_2nd_set(tech, proto):
     assert settings.app_has_defaults_settings(), "App should have default settings"
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_set_defaults_when_connected_1st_set(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
+def test_set_defaults_when_connected_1st_set(vpn_protocol):
     """Manual TC: LVPN-8741"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     sh.nordvpn.set.routing("off")
     sh.nordvpn.set.dns("1.1.1.1")
     sh.nordvpn.set.analytics("off")
     sh.nordvpn.set("lan-discovery", "on")
 
-    if tech == "nordlynx":
+    if vpn_protocol == "nordlynx":
         sh.nordvpn.set.pq("on")
 
     sh.nordvpn.connect()
@@ -141,7 +141,7 @@ def test_set_defaults_when_connected_1st_set(tech, proto):
     assert settings.is_user_consent_declared(), "User consent should be declared"
     assert settings.is_lan_discovery_enabled(), "LAN discovery should be enabled"
 
-    if tech == "nordlynx":
+    if vpn_protocol == "nordlynx":
         assert not settings.is_post_quantum_disabled(), "Post-quantum should be enabled for NordLynx"
 
     assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults("--logout"), "Defaults reset message should be shown"
@@ -151,11 +151,11 @@ def test_set_defaults_when_connected_1st_set(tech, proto):
     assert settings.app_has_defaults_settings(), "App should have default settings"
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_is_killswitch_disabled_after_setting_defaults(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
+def test_is_killswitch_disabled_after_setting_defaults(vpn_protocol):
     """Manual TC: LVPN-8749"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     sh.nordvpn.set.killswitch("on")
     assert network.is_not_available(2), "Network should not be available with killswitch enabled"
@@ -176,19 +176,19 @@ def test_is_killswitch_disabled_after_setting_defaults(tech, proto):
 
 @dynamic_parametrize(
     [
-        "tech", "proto", "nameserver",
+        "vpn_protocol", "nameserver",
     ],
-    ordered_source=[lib.TECHNOLOGIES],
+    ordered_source=[lib.VPN_PROTOCOLS],
     randomized_source=[dns.DNS_CASES_CUSTOM],
     generate_all=IS_NIGHTLY,
-    id_pattern="{tech}-{proto}-{nameserver}",
+    id_pattern="{vpn_protocol}-{nameserver}",
 )
-def test_is_custom_dns_removed_after_setting_defaults(tech, proto, nameserver):
+def test_is_custom_dns_removed_after_setting_defaults(vpn_protocol, nameserver):
     """Manual TC: LVPN-8747"""
 
     nameserver = nameserver.split(" ")
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     sh.nordvpn.set.dns(nameserver)
     assert settings.dns_visible_in_settings(nameserver), "Custom DNS should be visible in settings"
@@ -238,11 +238,11 @@ def test_set_analytics_starts_prompt_even_if_completed_before():
     cli2.expect(pexpect.EOF)
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_set_defaults_no_logout(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
+def test_set_defaults_no_logout(vpn_protocol):
     """Manual TC: LVPN-9029"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     sh.nordvpn.set("lan-discovery", "on")
 
@@ -296,38 +296,38 @@ def test_set_post_quantum_off_on_repeated():
     assert "Post-quantum VPN is already set to 'enabled'." in sh.nordvpn.set(pq_alias, "on"), "Post-quantum should be already enabled"
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.OVPN_STANDARD_TECHNOLOGIES)
-def test_set_post_quantum_on_open_vpn(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.OVPN_VPN_PROTOCOLS)
+def test_set_post_quantum_on_open_vpn(vpn_protocol):
     """Manual TC: LVPN-5787"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.set(settings.get_pq_alias(), "on")
 
     assert "Post-quantum encryption is not compatible with OpenVPN. Switch to NordLynx to use this encryption." in ex.value.stdout.decode("utf-8")
 
-@pytest.mark.parametrize(("tech", "proto"), lib.NORDWHISPER_TECHNOLOGY)
-def test_set_post_quantum_on_nordwhisper(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.NORDWHISPER_VPN_PROTOCOL)
+def test_set_post_quantum_on_nordwhisper(vpn_protocol):
     """Manual TC: LVPN-5787"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.set(settings.get_pq_alias(), "on")
 
     assert "Post-quantum encryption is not compatible with NordWhisper. Switch to NordLynx to use this encryption." in ex.value.stdout.decode("utf-8")
 
-@pytest.mark.parametrize(("tech", "proto"), lib.OVPN_STANDARD_TECHNOLOGIES)
-def test_set_protocol_openvpn_post_quantum_enabled(tech, proto):  # noqa: ARG001
+@pytest.mark.parametrize("vpn_protocol", lib.OVPN_VPN_PROTOCOLS)
+def test_set_protocol_openvpn_post_quantum_enabled(vpn_protocol):  # noqa: ARG001
     """Manual TC: LVPN-6835"""
 
     sh.nordvpn.set(settings.get_pq_alias(), "on")
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.set.protocol(lib.vpn_protocol_arg(tech, proto))
+        sh.nordvpn.set.protocol(vpn_protocol)
 
-    name = lib.vpn_protocol_display_name(tech, proto)
+    name = lib.vpn_protocol_display_name(vpn_protocol)
     assert f"This setting is not compatible with post-quantum encryption. To use {name}, turn off post-quantum encryption first." in ex.value.stdout.decode("utf-8")
     assert settings.Settings().get("Protocol") == "nordlynx", "VPN protocol should stay NordLynx"
 
@@ -342,11 +342,11 @@ def test_set_protocol_nordwhisper_post_quantum_enabled():
     assert "This setting is not compatible with post-quantum encryption. To use NordWhisper (WebTunnel), turn off post-quantum encryption first." in ex.value.stdout.decode("utf-8")
     assert settings.Settings().get("Protocol") == "nordlynx", "VPN protocol should stay NordLynx"
 
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_autoconnect_enable_twice(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
+def test_autoconnect_enable_twice(vpn_protocol):
     """Manual TC: LVPN-8597"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     for _ in range(2):
         output = sh.nordvpn.set.autoconnect.on()
@@ -354,11 +354,11 @@ def test_autoconnect_enable_twice(tech, proto):
         assert settings.MSG_AUTOCONNECT_ENABLE_SUCCESS in output, "Autoconnect enable success message should be shown"
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_autoconnect_disable_twice(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
+def test_autoconnect_disable_twice(vpn_protocol):
     """Manual TC: LVPN-8583"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     output = sh.nordvpn.set.autoconnect.off()
     print(str(output))
@@ -399,11 +399,11 @@ def test_set_protocol_rejects_invalid_value(value):
     assert settings.Settings().get("Protocol") == protocol_before, "VPN protocol should not change"
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_set_defaults_no_logout_connected(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
+def test_set_defaults_no_logout_connected(vpn_protocol):
     """Manual TC: LVPN-9014"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     sh.nordvpn.set("notify", "off")
     sh.nordvpn.set("protection", "on")
@@ -422,11 +422,11 @@ def test_set_defaults_no_logout_connected(tech, proto):
 
 
 @pytest.mark.parametrize("nameserver", (dns.DNS_CASE_CUSTOM_SINGLE,))
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_is_custom_dns_removed_after_setting_defaults_no_logout(tech, proto, nameserver):
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
+def test_is_custom_dns_removed_after_setting_defaults_no_logout(vpn_protocol, nameserver):
     """Manual TC: LVPN-8748"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     sh.nordvpn.set.dns([nameserver])
     assert settings.dns_visible_in_settings([nameserver]), "Custom DNS should be visible in settings"

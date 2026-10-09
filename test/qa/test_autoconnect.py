@@ -31,19 +31,19 @@ def autoconnect_base_test(group):
     assert network.is_disconnected(), "Network should be disconnected"
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_autoconnect_default(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
+def test_autoconnect_default(vpn_protocol):
     """Manual TC: LVPN-6779"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
     autoconnect_base_test("")
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_not_autoconnect(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
+def test_not_autoconnect(vpn_protocol):
     """Manual TC: LVPN-6780"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     output = sh.nordvpn.set.autoconnect.off()
     print(output)
@@ -54,91 +54,91 @@ def test_not_autoconnect(tech, proto):
 
 @dynamic_parametrize(
     [
-        "tech", "proto", "group",
+        "vpn_protocol", "group",
     ],
-    ordered_source=[lib.TECHNOLOGIES],
+    ordered_source=[lib.VPN_PROTOCOLS],
     randomized_source=[lib.COUNTRIES + lib.COUNTRY_CODES],
     generate_all=IS_NIGHTLY,
-    id_pattern="{tech}-{proto}-{group}",
+    id_pattern="{vpn_protocol}-{group}",
 )
-def test_autoconnect_to_country(tech, proto, group):
+def test_autoconnect_to_country(vpn_protocol, group):
     """Manual TC: LVPN-6781"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
     autoconnect_base_test(group)
 
 
 @dynamic_parametrize(
     [
-        "tech", "proto", "group",
+        "vpn_protocol", "group",
     ],
-    ordered_source=[lib.TECHNOLOGIES],
+    ordered_source=[lib.VPN_PROTOCOLS],
     randomized_source=[lib.CITIES],
     generate_all=IS_NIGHTLY,
-    id_pattern="{tech}-{proto}-{group}",
+    id_pattern="{vpn_protocol}-{group}",
 )
-def test_autoconnect_to_city(tech, proto, group):
+def test_autoconnect_to_city(vpn_protocol, group):
     """Manual TC: LVPN-6784"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
     autoconnect_base_test(group)
 
 
 @dynamic_parametrize(
     [
-        "tech", "proto", "group",
+        "vpn_protocol", "group",
     ],
-    ordered_source=[lib.STANDARD_TECHNOLOGIES_NO_NORDWHISPER],
+    ordered_source=[lib.STANDARD_VPN_PROTOCOLS_NO_NORDWHISPER],
     randomized_source=[lib.ADDITIONAL_GROUPS],
     generate_all=IS_NIGHTLY,
-    id_pattern="{tech}-{proto}-{group}",
+    id_pattern="{vpn_protocol}-{group}",
 )
-def test_autoconnect_to_additional_group(tech, proto, group):
+def test_autoconnect_to_additional_group(vpn_protocol, group):
     """Manual TC: LVPN-6786"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
     autoconnect_base_test(group)
 
 
 @dynamic_parametrize(
     [
-        "tech", "proto", "group",
+        "vpn_protocol", "group",
     ],
-    ordered_source=[lib.NORDWHISPER_TECHNOLOGY],
+    ordered_source=[lib.NORDWHISPER_VPN_PROTOCOL],
     randomized_source=[lib.ADDITIONAL_GROUPS_NORDWHISPER],
     generate_all=IS_NIGHTLY,
-    id_pattern="{tech}-{proto}-{group}",
+    id_pattern="{vpn_protocol}-{group}",
 )
-def test_nordwhisper_autoconnect_to_additional_group(tech, proto, group):
+def test_nordwhisper_autoconnect_to_additional_group(vpn_protocol, group):
     """Manual TC: LVPN-6786"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
     autoconnect_base_test(group)
 
 
 @pytest.mark.parametrize("group", lib.DEDICATED_IP_GROUPS)
-@pytest.mark.parametrize(("tech", "proto"), lib.STANDARD_TECHNOLOGIES_NO_NORDWHISPER)
-def test_autoconnect_to_ovpn_group(tech, proto, group):
+@pytest.mark.parametrize("vpn_protocol", lib.STANDARD_VPN_PROTOCOLS_NO_NORDWHISPER)
+def test_autoconnect_to_ovpn_group(vpn_protocol, group):
     """Manual TC: LVPN-6786"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
     autoconnect_base_test(group)
 
 
 @pytest.mark.parametrize("group", lib.OBFUSCATED_GROUPS)
-@pytest.mark.parametrize(("tech", "proto"), lib.NORDWHISPER_TECHNOLOGY)
-def test_autoconnect_to_obfuscated_group(tech, proto, group):
+@pytest.mark.parametrize("vpn_protocol", lib.NORDWHISPER_VPN_PROTOCOL)
+def test_autoconnect_to_obfuscated_group(vpn_protocol, group):
     """Manual TC: LVPN-6786"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
     autoconnect_base_test(group)
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_autoconnect_to_unavailable_groups(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
+def test_autoconnect_to_unavailable_groups(vpn_protocol):
     """Manual TC: LVPN-8431"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     unavailable_groups = daemon.get_unavailable_groups()
 
