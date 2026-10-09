@@ -318,6 +318,7 @@ func IsConnectableVia(tech ServerTechnology) Predicate {
 // IsConnectableWithProtocol behaves like IsConnectableVia, but takes a VPN protocol.
 func IsConnectableWithProtocol(p config.VPNProtocol) Predicate {
 	return func(s Server) bool {
+		//exhaustive:ignore
 		switch p {
 		case config.VPNProtocol_VPN_PROTOCOL_NORDLYNX:
 			return IsConnectableVia(WireguardTech)(s)
