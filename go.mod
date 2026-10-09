@@ -28,6 +28,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/hako/durafmt v0.0.0-20210608085754-5c1018a4e16b
 	github.com/magefile/mage v1.17.2
+	github.com/mattn/go-sqlite3 v1.14.52
 	github.com/miekg/dns v1.1.72
 	github.com/milosgajdos/tenus v0.0.3
 	github.com/moby/moby/api v1.55.0
