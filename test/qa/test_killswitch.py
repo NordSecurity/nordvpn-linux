@@ -1,3 +1,5 @@
+import subprocess
+
 import pytest
 import sh
 import os
@@ -315,3 +317,30 @@ def test_killswitch_on_during_restart():
     assert network.is_not_available()
     sh.nordvpn.set.killswitch.off()
     assert network.is_available(), "Network should be available"
+
+
+def test_killswitch_default_gw():
+    """
+    Verify default gateway reachability under different settings:
+
+    - Kill Switch only: gateway not reachable
+    - Kill Switch + LAN Discovery: gateway reachable
+    """
+    def is_host_reachable(host: str, retry: int = 1, delay: int = 1):
+        work_dir = os.environ.get("WORKDIR")
+        result = subprocess.run(
+            ["python3", f"{work_dir}/test/qa/scripts/is_host_alive.py", host, str(retry), str(delay)],
+            capture_output=True,
+            text=True
+        )
+        return "True" in result.stdout
+
+    default_gw = network.get_default_gateway()
+
+    assert is_host_reachable(default_gw), "Default gateway should be reachable"
+    with lib.Defer(sh.nordvpn.set.killswitch.off):
+        sh.nordvpn.set.killswitch.on()
+        assert not is_host_reachable(default_gw), "Default gateway should not be reachable with Kill Switch enabled"
+        with lib.Defer(lambda: sh.nordvpn.set("lan-discovery", "off")):
+            sh.nordvpn.set("lan-discovery", "on")
+            assert is_host_reachable(default_gw), "Default gateway should be reachable with Kill Switch enabled and LAN Discovery enabled"
