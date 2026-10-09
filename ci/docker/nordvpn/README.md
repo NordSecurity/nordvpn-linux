@@ -36,7 +36,7 @@ services:
       - NET_ADMIN
     environment:
       - NORDVPN_LOGIN_TOKEN=0123456789abcdef
-    command: nordvpn set technology openvpn && nordvpn connect
+    command: nordvpn set protocol openvpn_udp && nordvpn connect
   ubuntu:
     image: ubuntu
     network_mode: service:nordvpn

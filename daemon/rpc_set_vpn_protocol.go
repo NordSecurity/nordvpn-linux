@@ -47,7 +47,10 @@ func (r *RPC) SetVPNProtocol(
 
 	if cfg.AutoConnect && cfg.AutoConnectData.Group == config.ServerGroup_NW_OBFUSCATED &&
 		!req.GetVpnProtocol().IsNordWhisper() {
-		return &pb.Payload{Type: internal.CodeObfuscatedNeedsNordwhisper}, nil
+		return &pb.Payload{
+			Type: internal.CodeObfuscatedNeedsNordwhisper,
+			Data: []string{req.GetVpnProtocol().DisplayName()},
+		}, nil
 	}
 
 	ech := cfg.AutoConnectData.ECH

@@ -41,7 +41,7 @@ func TestVPNProtocol_MapsToTechnologyTransportAndDisplayName(t *testing.T) {
 		{VPNProtocol_VPN_PROTOCOL_NORDLYNX, TechnologyNordLynx, TransportUnknown, "NordLynx"},
 		{VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP, TechnologyOpenVPN, TransportUDP, "OpenVPN (UDP)"},
 		{VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP, TechnologyOpenVPN, TransportTCP, "OpenVPN (TCP)"},
-		{VPNProtocol_VPN_PROTOCOL_NORDWHISPER, TechnologyNordWhisper, TransportWebTunnel, "NordWhisper (WebTunnel)"},
+		{VPNProtocol_VPN_PROTOCOL_NORDWHISPER, TechnologyNordWhisper, TransportWebTunnel, "NordWhisper"},
 		{VPNProtocol_VPN_PROTOCOL_UNSPECIFIED, TechnologyUnknown, TransportUnknown, "VPN_PROTOCOL_UNSPECIFIED"},
 		{VPNProtocol(99), TechnologyUnknown, TransportUnknown, "VPN_PROTOCOL_UNSPECIFIED"},
 	}

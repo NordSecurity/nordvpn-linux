@@ -59,7 +59,7 @@ Hostname: Verona
 IP: 127.0.0.1
 Country: Lithuania
 City: Vilnius
-Protocol: NordWhisper (WebTunnel)
+Protocol: NordWhisper
 ECH: Enabled
 Uptime: 13 seconds
 `,
@@ -81,7 +81,7 @@ Hostname: Verona
 IP: 127.0.0.1
 Country: Lithuania
 City: Vilnius
-Protocol: NordWhisper (WebTunnel)
+Protocol: NordWhisper
 ECH: Disabled
 Uptime: 13 seconds
 `,
@@ -159,7 +159,7 @@ Uptime: 13 seconds
 			expected: `Status: Connected
 Hostname: Verona
 Group: Obfuscated
-Protocol: NordWhisper (WebTunnel)
+Protocol: NordWhisper
 ECH: Disabled
 Uptime: 13 seconds
 `,

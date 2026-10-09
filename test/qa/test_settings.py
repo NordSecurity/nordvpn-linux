@@ -339,7 +339,7 @@ def test_set_protocol_nordwhisper_post_quantum_enabled():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.set.protocol("nordwhisper")
 
-    assert "This setting is not compatible with post-quantum encryption. To use NordWhisper (WebTunnel), turn off post-quantum encryption first." in ex.value.stdout.decode("utf-8")
+    assert "This setting is not compatible with post-quantum encryption. To use NordWhisper, turn off post-quantum encryption first." in ex.value.stdout.decode("utf-8")
     assert settings.Settings().get("Protocol") == "nordlynx", "VPN protocol should stay NordLynx"
 
 @pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)

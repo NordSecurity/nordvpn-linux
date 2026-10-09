@@ -207,7 +207,7 @@ def vpn_protocol_display_name(vpn_protocol: str) -> str:
         "nordlynx": "NordLynx",
         "openvpn_udp": "OpenVPN (UDP)",
         "openvpn_tcp": "OpenVPN (TCP)",
-        "nordwhisper": "NordWhisper (WebTunnel)",
+        "nordwhisper": "NordWhisper",
     }[vpn_protocol]
 
 

@@ -47,7 +47,7 @@ func (p VPNProtocol) DisplayName() string {
 	case VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP:
 		return "OpenVPN (UDP)"
 	case VPNProtocol_VPN_PROTOCOL_NORDWHISPER:
-		return "NordWhisper (WebTunnel)"
+		return "NordWhisper"
 	}
 	return VPNProtocol_VPN_PROTOCOL_UNSPECIFIED.String()
 }
