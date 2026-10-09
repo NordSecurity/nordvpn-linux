@@ -34,7 +34,7 @@ func GetServerParameters(serverTag string, groupTag string, countries core.Count
 		parameters.Group = groupConvert(groupTag)
 	}
 
-	country, city := findCountryAndCity(serverTag, countries)
+	country, city := FindCountryAndCity(serverTag, countries)
 
 	if country == nil {
 		if groupFromServerTag == config.ServerGroup_UNDEFINED {

@@ -71,7 +71,7 @@ func serverTagFromString(
 
 	tag = UnitedKingdomServerTagFix(tag)
 
-	if country, city := findCountryAndCity(tag, countries); country != nil {
+	if country, city := FindCountryAndCity(tag, countries); country != nil {
 		if city != nil {
 			return core.ServerTag{Action: core.ServerByCity, ID: city.ID}, nil
 		}
@@ -94,12 +94,12 @@ func serverTagFromString(
 	return core.ServerTag{}, fmt.Errorf("could not determine server tag from %q", tag)
 }
 
-// findCountryAndCity returns:
+// FindCountryAndCity returns:
 //
 // * the matched country and a nil city if name is a country name or country code
 // * the matched country and city if name is a city
 // * nil, nil if name is neither a country nor a city
-func findCountryAndCity(name string, countries core.Countries) (*core.Country, *core.City) {
+func FindCountryAndCity(name string, countries core.Countries) (*core.Country, *core.City) {
 	for _, country := range countries {
 		countryName := internal.SnakeCase(country.Name)
 		countryCode := internal.SnakeCase(country.Code)

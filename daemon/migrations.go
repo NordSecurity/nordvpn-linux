@@ -143,3 +143,43 @@ func MigrateDeprecatedAutoconnectToSpecificServer(configManager config.Manager, 
 
 	return nil
 }
+
+func MigrateAutoConnectDataServerTag(configManager config.Manager, dataManager *DataManager) error {
+	// everything that's left in cfg.AutoConnectData.Server tag must be properly transfered into server, county or city if applicable
+	// the serverTag must be left out empty after the migration
+	var cfg config.Config
+	if err := configManager.Load(&cfg); err != nil {
+		return fmt.Errorf("loading config: %w", err)
+	}
+
+	if cfg.AutoConnectData.ServerTag == "" {
+		//already empty, nothing to migrate
+		return nil
+	}
+	// invariant: migration from a specific server is handled by MigrateDeprecatedAutoconnectToSpecificServer
+	// invariant: here only country/city is leftout
+	// invariant: invalid tag entry is simply discarded
+	tag := cfg.AutoConnectData.ServerTag
+	if dataManager.CountryDataExists() {
+		countries := dataManager.GetCountryData().Countries
+		country, city := serverpicker.FindCountryAndCity(tag, countries)
+		if country != nil {
+			cfg.AutoConnectData.Country = strToServerTag(country.Name)
+		}
+		if city != nil {
+			cfg.AutoConnectData.City = strToServerTag(city.Name)
+		}
+		if country == nil && city == nil {
+			log.Warn("Failed to migrate Country/City property for ServerTag:", tag, " - migrating to empty")
+		}
+
+	}
+	cfg.AutoConnectData.ServerTag = ""
+	if err := configManager.SaveWith(func(c config.Config) config.Config {
+		c.AutoConnectData = cfg.AutoConnectData
+		return c
+	}); err != nil {
+		return fmt.Errorf("saving migrated config: %w", err)
+	}
+	return nil
+}
