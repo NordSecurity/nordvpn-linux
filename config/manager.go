@@ -231,6 +231,7 @@ func (f *FilesystemConfigManager) load(c *Config, copy *Config) error {
 		return err
 	}
 	migrateVPNProtocol(c, decryptedData)
+	migrateTPL(c, decryptedData)
 
 	if copy != nil {
 		*copy = *newConfig(f.machineIDGetter)
@@ -239,6 +240,7 @@ func (f *FilesystemConfigManager) load(c *Config, copy *Config) error {
 			return err
 		}
 		migrateVPNProtocol(copy, decryptedData)
+		migrateTPL(copy, decryptedData)
 	}
 
 	return nil
