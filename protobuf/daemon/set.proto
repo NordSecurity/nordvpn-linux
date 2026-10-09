@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package pb;
 
-import "common.proto";
 import "config/vpn_protocol.proto";
 
 option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
@@ -74,20 +73,6 @@ message SetTrayRequest {
   reserved "uid";
   bool tray = 3;
 }
-
-// enum SetVPNProtocolStatus {
-//   VPN_PROTOCOL_CONFIGURED = 0;
-//   VPN_PROTOCOL_CONFIGURED_VPN_ON = 1;
-//   INVALID_VPN_PROTOCOL = 2;
-// }
-
-// message SetVPNProtocolResponse {
-//   oneof response {
-//     SetErrorCode error_code = 1;
-//     SetVPNProtocolStatus set_vpn_protocol_status = 2;
-//     Payload payload = 3;
-//   }
-// }
 
 message SetVPNProtocolRequest {
   config.VPNProtocol vpn_protocol = 1;

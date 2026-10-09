@@ -22,11 +22,10 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
-import common_pb2 as common__pb2
 from config import vpn_protocol_pb2 as config_dot_vpn__protocol__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\tset.proto\x12\x02pb\x1a\x0c\x63ommon.proto\x1a\x19\x63onfig/vpn_protocol.proto\"R\n\x15SetAutoconnectRequest\x12\x0f\n\x07\x65nabled\x18\x01 \x01(\x08\x12\x12\n\nserver_tag\x18\x02 \x01(\t\x12\x14\n\x0cserver_group\x18\x03 \x01(\t\"$\n\x11SetGenericRequest\x12\x0f\n\x07\x65nabled\x18\x01 \x01(\x08\"!\n\x10SetUint32Request\x12\r\n\x05value\x18\x01 \x01(\r\"<\n\x1cSetRealTimeProtectionRequest\x12\x1c\n\x14real_time_protection\x18\x01 \x01(\x08\"\x9f\x01\n\x1dSetRealTimeProtectionResponse\x12&\n\nerror_code\x18\x01 \x01(\x0e\x32\x10.pb.SetErrorCodeH\x00\x12J\n\x1fset_real_time_protection_status\x18\x02 \x01(\x0e\x32\x1f.pb.SetRealTimeProtectionStatusH\x00\x42\n\n\x08response\"\x1c\n\rSetDNSRequest\x12\x0b\n\x03\x64ns\x18\x02 \x03(\t\"p\n\x0eSetDNSResponse\x12&\n\nerror_code\x18\x02 \x01(\x0e\x32\x10.pb.SetErrorCodeH\x00\x12*\n\x0eset_dns_status\x18\x03 \x01(\x0e\x32\x10.pb.SetDNSStatusH\x00\x42\n\n\x08response\"+\n\x14SetKillSwitchRequest\x12\x13\n\x0bkill_switch\x18\x02 \x01(\x08\"\"\n\x10SetNotifyRequest\x12\x0e\n\x06notify\x18\x03 \x01(\x08\")\n\x0eSetTrayRequest\x12\x0c\n\x04tray\x18\x03 \x01(\x08J\x04\x08\x02\x10\x03R\x03uid\"B\n\x15SetVPNProtocolRequest\x12)\n\x0cvpn_protocol\x18\x01 \x01(\x0e\x32\x13.config.VPNProtocol\"1\n\tPortRange\x12\x12\n\nstart_port\x18\x01 \x01(\x03\x12\x10\n\x08\x65nd_port\x18\x02 \x01(\x03\":\n\x19SetAllowlistSubnetRequest\x12\x0e\n\x06subnet\x18\x01 \x01(\t\x12\r\n\x05\x66orce\x18\x02 \x01(\x08\"]\n\x18SetAllowlistPortsRequest\x12\x0e\n\x06is_udp\x18\x01 \x01(\x08\x12\x0e\n\x06is_tcp\x18\x02 \x01(\x08\x12!\n\nport_range\x18\x03 \x01(\x0b\x32\r.pb.PortRange\"\xac\x01\n\x13SetAllowlistRequest\x12\x45\n\x1cset_allowlist_subnet_request\x18\x01 \x01(\x0b\x32\x1d.pb.SetAllowlistSubnetRequestH\x00\x12\x43\n\x1bset_allowlist_ports_request\x18\x02 \x01(\x0b\x32\x1c.pb.SetAllowlistPortsRequestH\x00\x42\t\n\x07request\")\n\x16SetLANDiscoveryRequest\x12\x0f\n\x07\x65nabled\x18\x01 \x01(\x08\"\x8c\x01\n\x17SetLANDiscoveryResponse\x12&\n\nerror_code\x18\x01 \x01(\x0e\x32\x10.pb.SetErrorCodeH\x00\x12=\n\x18set_lan_discovery_status\x18\x02 \x01(\x0e\x32\x19.pb.SetLANDiscoveryStatusH\x00\x42\n\n\x08response*>\n\x0cSetErrorCode\x12\x0b\n\x07\x46\x41ILURE\x10\x00\x12\x10\n\x0c\x43ONFIG_ERROR\x10\x01\x12\x0f\n\x0b\x41LREADY_SET\x10\x02*O\n\x1bSetRealTimeProtectionStatus\x12\x12\n\x0eRTP_CONFIGURED\x10\x00\x12\x1c\n\x18RTP_CONFIGURED_DNS_RESET\x10\x01*n\n\x0cSetDNSStatus\x12\x12\n\x0e\x44NS_CONFIGURED\x10\x00\x12\x1c\n\x18\x44NS_CONFIGURED_RTP_RESET\x10\x01\x12\x17\n\x13INVALID_DNS_ADDRESS\x10\x02\x12\x13\n\x0fTOO_MANY_VALUES\x10\x03*[\n\x15SetLANDiscoveryStatus\x12\x18\n\x14\x44ISCOVERY_CONFIGURED\x10\x00\x12(\n$DISCOVERY_CONFIGURED_ALLOWLIST_RESET\x10\x01\x42\x31Z/github.com/NordSecurity/nordvpn-linux/daemon/pbb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\tset.proto\x12\x02pb\x1a\x19\x63onfig/vpn_protocol.proto\"R\n\x15SetAutoconnectRequest\x12\x0f\n\x07\x65nabled\x18\x01 \x01(\x08\x12\x12\n\nserver_tag\x18\x02 \x01(\t\x12\x14\n\x0cserver_group\x18\x03 \x01(\t\"$\n\x11SetGenericRequest\x12\x0f\n\x07\x65nabled\x18\x01 \x01(\x08\"!\n\x10SetUint32Request\x12\r\n\x05value\x18\x01 \x01(\r\"<\n\x1cSetRealTimeProtectionRequest\x12\x1c\n\x14real_time_protection\x18\x01 \x01(\x08\"\x9f\x01\n\x1dSetRealTimeProtectionResponse\x12&\n\nerror_code\x18\x01 \x01(\x0e\x32\x10.pb.SetErrorCodeH\x00\x12J\n\x1fset_real_time_protection_status\x18\x02 \x01(\x0e\x32\x1f.pb.SetRealTimeProtectionStatusH\x00\x42\n\n\x08response\"\x1c\n\rSetDNSRequest\x12\x0b\n\x03\x64ns\x18\x02 \x03(\t\"p\n\x0eSetDNSResponse\x12&\n\nerror_code\x18\x02 \x01(\x0e\x32\x10.pb.SetErrorCodeH\x00\x12*\n\x0eset_dns_status\x18\x03 \x01(\x0e\x32\x10.pb.SetDNSStatusH\x00\x42\n\n\x08response\"+\n\x14SetKillSwitchRequest\x12\x13\n\x0bkill_switch\x18\x02 \x01(\x08\"\"\n\x10SetNotifyRequest\x12\x0e\n\x06notify\x18\x03 \x01(\x08\")\n\x0eSetTrayRequest\x12\x0c\n\x04tray\x18\x03 \x01(\x08J\x04\x08\x02\x10\x03R\x03uid\"B\n\x15SetVPNProtocolRequest\x12)\n\x0cvpn_protocol\x18\x01 \x01(\x0e\x32\x13.config.VPNProtocol\"1\n\tPortRange\x12\x12\n\nstart_port\x18\x01 \x01(\x03\x12\x10\n\x08\x65nd_port\x18\x02 \x01(\x03\":\n\x19SetAllowlistSubnetRequest\x12\x0e\n\x06subnet\x18\x01 \x01(\t\x12\r\n\x05\x66orce\x18\x02 \x01(\x08\"]\n\x18SetAllowlistPortsRequest\x12\x0e\n\x06is_udp\x18\x01 \x01(\x08\x12\x0e\n\x06is_tcp\x18\x02 \x01(\x08\x12!\n\nport_range\x18\x03 \x01(\x0b\x32\r.pb.PortRange\"\xac\x01\n\x13SetAllowlistRequest\x12\x45\n\x1cset_allowlist_subnet_request\x18\x01 \x01(\x0b\x32\x1d.pb.SetAllowlistSubnetRequestH\x00\x12\x43\n\x1bset_allowlist_ports_request\x18\x02 \x01(\x0b\x32\x1c.pb.SetAllowlistPortsRequestH\x00\x42\t\n\x07request\")\n\x16SetLANDiscoveryRequest\x12\x0f\n\x07\x65nabled\x18\x01 \x01(\x08\"\x8c\x01\n\x17SetLANDiscoveryResponse\x12&\n\nerror_code\x18\x01 \x01(\x0e\x32\x10.pb.SetErrorCodeH\x00\x12=\n\x18set_lan_discovery_status\x18\x02 \x01(\x0e\x32\x19.pb.SetLANDiscoveryStatusH\x00\x42\n\n\x08response*>\n\x0cSetErrorCode\x12\x0b\n\x07\x46\x41ILURE\x10\x00\x12\x10\n\x0c\x43ONFIG_ERROR\x10\x01\x12\x0f\n\x0b\x41LREADY_SET\x10\x02*O\n\x1bSetRealTimeProtectionStatus\x12\x12\n\x0eRTP_CONFIGURED\x10\x00\x12\x1c\n\x18RTP_CONFIGURED_DNS_RESET\x10\x01*n\n\x0cSetDNSStatus\x12\x12\n\x0e\x44NS_CONFIGURED\x10\x00\x12\x1c\n\x18\x44NS_CONFIGURED_RTP_RESET\x10\x01\x12\x17\n\x13INVALID_DNS_ADDRESS\x10\x02\x12\x13\n\x0fTOO_MANY_VALUES\x10\x03*[\n\x15SetLANDiscoveryStatus\x12\x18\n\x14\x44ISCOVERY_CONFIGURED\x10\x00\x12(\n$DISCOVERY_CONFIGURED_ALLOWLIST_RESET\x10\x01\x42\x31Z/github.com/NordSecurity/nordvpn-linux/daemon/pbb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -34,46 +33,46 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'set_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'Z/github.com/NordSecurity/nordvpn-linux/daemon/pb'
-  _globals['_SETERRORCODE']._serialized_start=1342
-  _globals['_SETERRORCODE']._serialized_end=1404
-  _globals['_SETREALTIMEPROTECTIONSTATUS']._serialized_start=1406
-  _globals['_SETREALTIMEPROTECTIONSTATUS']._serialized_end=1485
-  _globals['_SETDNSSTATUS']._serialized_start=1487
-  _globals['_SETDNSSTATUS']._serialized_end=1597
-  _globals['_SETLANDISCOVERYSTATUS']._serialized_start=1599
-  _globals['_SETLANDISCOVERYSTATUS']._serialized_end=1690
-  _globals['_SETAUTOCONNECTREQUEST']._serialized_start=58
-  _globals['_SETAUTOCONNECTREQUEST']._serialized_end=140
-  _globals['_SETGENERICREQUEST']._serialized_start=142
-  _globals['_SETGENERICREQUEST']._serialized_end=178
-  _globals['_SETUINT32REQUEST']._serialized_start=180
-  _globals['_SETUINT32REQUEST']._serialized_end=213
-  _globals['_SETREALTIMEPROTECTIONREQUEST']._serialized_start=215
-  _globals['_SETREALTIMEPROTECTIONREQUEST']._serialized_end=275
-  _globals['_SETREALTIMEPROTECTIONRESPONSE']._serialized_start=278
-  _globals['_SETREALTIMEPROTECTIONRESPONSE']._serialized_end=437
-  _globals['_SETDNSREQUEST']._serialized_start=439
-  _globals['_SETDNSREQUEST']._serialized_end=467
-  _globals['_SETDNSRESPONSE']._serialized_start=469
-  _globals['_SETDNSRESPONSE']._serialized_end=581
-  _globals['_SETKILLSWITCHREQUEST']._serialized_start=583
-  _globals['_SETKILLSWITCHREQUEST']._serialized_end=626
-  _globals['_SETNOTIFYREQUEST']._serialized_start=628
-  _globals['_SETNOTIFYREQUEST']._serialized_end=662
-  _globals['_SETTRAYREQUEST']._serialized_start=664
-  _globals['_SETTRAYREQUEST']._serialized_end=705
-  _globals['_SETVPNPROTOCOLREQUEST']._serialized_start=707
-  _globals['_SETVPNPROTOCOLREQUEST']._serialized_end=773
-  _globals['_PORTRANGE']._serialized_start=775
-  _globals['_PORTRANGE']._serialized_end=824
-  _globals['_SETALLOWLISTSUBNETREQUEST']._serialized_start=826
-  _globals['_SETALLOWLISTSUBNETREQUEST']._serialized_end=884
-  _globals['_SETALLOWLISTPORTSREQUEST']._serialized_start=886
-  _globals['_SETALLOWLISTPORTSREQUEST']._serialized_end=979
-  _globals['_SETALLOWLISTREQUEST']._serialized_start=982
-  _globals['_SETALLOWLISTREQUEST']._serialized_end=1154
-  _globals['_SETLANDISCOVERYREQUEST']._serialized_start=1156
-  _globals['_SETLANDISCOVERYREQUEST']._serialized_end=1197
-  _globals['_SETLANDISCOVERYRESPONSE']._serialized_start=1200
-  _globals['_SETLANDISCOVERYRESPONSE']._serialized_end=1340
+  _globals['_SETERRORCODE']._serialized_start=1328
+  _globals['_SETERRORCODE']._serialized_end=1390
+  _globals['_SETREALTIMEPROTECTIONSTATUS']._serialized_start=1392
+  _globals['_SETREALTIMEPROTECTIONSTATUS']._serialized_end=1471
+  _globals['_SETDNSSTATUS']._serialized_start=1473
+  _globals['_SETDNSSTATUS']._serialized_end=1583
+  _globals['_SETLANDISCOVERYSTATUS']._serialized_start=1585
+  _globals['_SETLANDISCOVERYSTATUS']._serialized_end=1676
+  _globals['_SETAUTOCONNECTREQUEST']._serialized_start=44
+  _globals['_SETAUTOCONNECTREQUEST']._serialized_end=126
+  _globals['_SETGENERICREQUEST']._serialized_start=128
+  _globals['_SETGENERICREQUEST']._serialized_end=164
+  _globals['_SETUINT32REQUEST']._serialized_start=166
+  _globals['_SETUINT32REQUEST']._serialized_end=199
+  _globals['_SETREALTIMEPROTECTIONREQUEST']._serialized_start=201
+  _globals['_SETREALTIMEPROTECTIONREQUEST']._serialized_end=261
+  _globals['_SETREALTIMEPROTECTIONRESPONSE']._serialized_start=264
+  _globals['_SETREALTIMEPROTECTIONRESPONSE']._serialized_end=423
+  _globals['_SETDNSREQUEST']._serialized_start=425
+  _globals['_SETDNSREQUEST']._serialized_end=453
+  _globals['_SETDNSRESPONSE']._serialized_start=455
+  _globals['_SETDNSRESPONSE']._serialized_end=567
+  _globals['_SETKILLSWITCHREQUEST']._serialized_start=569
+  _globals['_SETKILLSWITCHREQUEST']._serialized_end=612
+  _globals['_SETNOTIFYREQUEST']._serialized_start=614
+  _globals['_SETNOTIFYREQUEST']._serialized_end=648
+  _globals['_SETTRAYREQUEST']._serialized_start=650
+  _globals['_SETTRAYREQUEST']._serialized_end=691
+  _globals['_SETVPNPROTOCOLREQUEST']._serialized_start=693
+  _globals['_SETVPNPROTOCOLREQUEST']._serialized_end=759
+  _globals['_PORTRANGE']._serialized_start=761
+  _globals['_PORTRANGE']._serialized_end=810
+  _globals['_SETALLOWLISTSUBNETREQUEST']._serialized_start=812
+  _globals['_SETALLOWLISTSUBNETREQUEST']._serialized_end=870
+  _globals['_SETALLOWLISTPORTSREQUEST']._serialized_start=872
+  _globals['_SETALLOWLISTPORTSREQUEST']._serialized_end=965
+  _globals['_SETALLOWLISTREQUEST']._serialized_start=968
+  _globals['_SETALLOWLISTREQUEST']._serialized_end=1140
+  _globals['_SETLANDISCOVERYREQUEST']._serialized_start=1142
+  _globals['_SETLANDISCOVERYREQUEST']._serialized_end=1183
+  _globals['_SETLANDISCOVERYRESPONSE']._serialized_start=1186
+  _globals['_SETLANDISCOVERYRESPONSE']._serialized_end=1326
 # @@protoc_insertion_point(module_scope)
