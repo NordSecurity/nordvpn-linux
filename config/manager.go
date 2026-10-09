@@ -228,12 +228,14 @@ func (f *FilesystemConfigManager) load(c *Config, copy *Config) error {
 	if err := json.Unmarshal(decryptedData, c); err != nil {
 		return err
 	}
+	migrateTPL(c, decryptedData)
 
 	if copy != nil {
 		*copy = *newConfig(f.machineIDGetter)
 		if err := json.Unmarshal(decryptedData, copy); err != nil {
 			return err
 		}
+		migrateTPL(copy, decryptedData)
 	}
 
 	return nil
