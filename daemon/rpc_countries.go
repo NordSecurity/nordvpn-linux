@@ -19,9 +19,7 @@ func (r *RPC) Countries(ctx context.Context, in *pb.Empty) (*pb.ServerGroupsList
 		}, nil
 	}
 
-	countries, err := r.dm.Countries(
-		cfg.VPNProtocol,
-	)
+	countries, err := r.dm.Countries(cfg.VPNProtocol)
 	if err != nil {
 		log.Error("failed to get countries list", err)
 		return &pb.ServerGroupsList{

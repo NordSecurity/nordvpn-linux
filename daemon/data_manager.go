@@ -225,9 +225,7 @@ func toServerTechnology(vpnProtocol config.VPNProtocol) (core.ServerTechnology, 
 	return serverTechnology, nil
 }
 
-func (dm *DataManager) Countries(
-	vpnProtocol config.VPNProtocol,
-) ([]*pb.ServerGroup, error) {
+func (dm *DataManager) Countries(vpnProtocol config.VPNProtocol) ([]*pb.ServerGroup, error) {
 	serverTechnology, err := toServerTechnology(vpnProtocol)
 	if err != nil {
 		return nil, err
@@ -309,9 +307,7 @@ func (dm *DataManager) Cities(
 	return result, nil
 }
 
-func (dm *DataManager) Groups(
-	vpnProtocol config.VPNProtocol,
-) ([]*pb.ServerGroup, error) {
+func (dm *DataManager) Groups(vpnProtocol config.VPNProtocol) ([]*pb.ServerGroup, error) {
 	serverTechnology, err := toServerTechnology(vpnProtocol)
 	if err != nil {
 		return nil, err
