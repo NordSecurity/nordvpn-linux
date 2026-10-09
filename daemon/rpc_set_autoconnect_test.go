@@ -102,33 +102,11 @@ func TestAutoconnect(t *testing.T) {
 			eventPublished: true,
 		},
 		{
-			testName:       "works for server name using Nordlynx",
-			server:         "fr1",
-			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
-			returnCode:     internal.CodeSuccess,
-			eventPublished: true,
-		},
-		{
-			testName:       "works for server name using OpenVPN",
-			server:         "fr1",
-			config:         config.Config{AutoConnectData: config.AutoConnectData{Protocol: config.Protocol_TCP}, Technology: config.Technology_OPENVPN},
-			returnCode:     internal.CodeSuccess,
-			eventPublished: true,
-		},
-		{
-			// lt17 only speaks the legacy XOR technologies, which are not connectable any more
-			testName:       "fails for legacy XOR only server using OpenVPN",
-			server:         "lt17",
-			config:         config.Config{AutoConnectData: config.AutoConnectData{Protocol: config.Protocol_TCP}, Technology: config.Technology_OPENVPN},
-			expectedError:  internal.ErrServerIsUnavailable,
+			testName:       "fails for specific server",
+			server:         "lt15",
+			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: true, Protocol: config.Protocol_TCP}, Technology: config.Technology_OPENVPN},
+			returnCode:     internal.CodeAutoconnectToSpecificServer,
 			eventPublished: false,
-		},
-		{
-			testName:       "fails for invalid name server name using Nordlynx",
-			server:         "invalid_name",
-			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
-			eventPublished: false,
-			expectedError:  internal.ErrTagDoesNotExist,
 		},
 		{
 			testName:             "works for dedicated ip if subscription is not expired",

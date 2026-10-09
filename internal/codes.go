@@ -91,6 +91,7 @@ const (
 	CodeConnectionLimitReached                 int64 = 3076
 	CodeP2PDeprecated                          int64 = 3077
 	CodeSetDefaultsNotApplied                  int64 = 3078
+	CodeAutoconnectToSpecificServer            int64 = 3079
 )
 
 type ErrorWithCode struct {

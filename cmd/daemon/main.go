@@ -773,8 +773,10 @@ func main() {
 	go func() {
 		if err := dm.LoadData(); err != nil {
 			log.Warn("DataManager failed to load data:", err)
-		} else {
-			log.Info("data successfully loaded from disk")
+		}
+		log.Info("data successfully loaded from disk")
+		if err := daemon.MigrateDeprecatedAutoconnectToSpecificServer(fsystem, dm); err != nil {
+			log.Warn("failed to migrate autoconnect to a specific server:", err)
 		}
 	}()
 
