@@ -64,9 +64,7 @@ func (ti *Instance) handleLoginEventState(st *pb.AppState_LoginEvent) bool {
 func (ti *Instance) handleSettingsChangeState(st *pb.AppState_SettingsChange) bool {
 	changed := ti.setSettings(st.SettingsChange)
 	// identify whether we need to also update connections
-	ti.connSensor.Set(connectionSettings{
-		VPNProtocol: st.SettingsChange.GetVpnProtocol(),
-	})
+	ti.connSensor.Set(st.SettingsChange.GetVpnProtocol())
 
 	if ti.connSensor.ChangeDetected() {
 		countryListChanged := ti.updateCountryList()

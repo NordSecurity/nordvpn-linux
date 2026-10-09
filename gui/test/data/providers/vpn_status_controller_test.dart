@@ -1,8 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nordvpn/data/providers/app_state_provider.dart';
 import 'package:nordvpn/data/providers/vpn_status_controller.dart';
-import 'package:nordvpn/data/repository/vpn_repository.dart';
 import 'package:nordvpn/i18n/country_names_service.dart';
 import 'package:nordvpn/pb/daemon/config/vpn_protocol.pbenum.dart';
 import 'package:nordvpn/pb/daemon/status.pb.dart';
@@ -10,35 +8,7 @@ import 'package:nordvpn/service_locator.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 
 import '../../utils/fake_shared_preferences.dart';
-
-final class _FakeVpnRepository implements VpnRepository {
-  final StatusResponse status;
-
-  _FakeVpnRepository(this.status);
-
-  @override
-  Future<StatusResponse> fetchStatus() async => status;
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
-
-final class _FakeAppStateChange implements AppStateChange {
-  @override
-  void addVpnStatusObserver(VpnStatusObserver observer) {}
-
-  @override
-  void removeVpnStatusObserver(VpnStatusObserver observer) {}
-
-  @override
-  void addPauseEventsObserver(PauseEventsObserver observer) {}
-
-  @override
-  void removePauseEventsObserver(PauseEventsObserver observer) {}
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
+import '../../utils/provider_fakes.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -69,13 +39,9 @@ void main() {
   );
 
   Future<ProviderContainer> buildController() async {
-    final container = ProviderContainer(
-      overrides: [
-        vpnRepositoryProvider.overrideWithValue(_FakeVpnRepository(nordLynx)),
-        appStateProvider.overrideWithValue(_FakeAppStateChange()),
-      ],
+    final container = createContainer(
+      vpnRepository: FakeVpnRepository(status: nordLynx),
     );
-    addTearDown(container.dispose);
     await container.read(vpnStatusControllerProvider.future);
     return container;
   }

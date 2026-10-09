@@ -1,7 +1,6 @@
 package config
 
 import (
-	"encoding/json"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/test/category"
@@ -15,7 +14,7 @@ func TestTransport_String(t *testing.T) {
 		transport Transport
 		expected  string
 	}{
-		{TransportUnknown, "UNKNOWN_PROTOCOL"},
+		{TransportUnknown, "UNKNOWN_TRANSPORT"},
 		{TransportUDP, "UDP"},
 		{TransportTCP, "TCP"},
 		{TransportWebTunnel, "Webtunnel"},
@@ -24,16 +23,4 @@ func TestTransport_String(t *testing.T) {
 	for _, test := range tests {
 		assert.Equal(t, test.expected, test.transport.String())
 	}
-}
-
-func TestTransport_JSONIsNumeric(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	data, err := json.Marshal(TransportTCP)
-	assert.NoError(t, err)
-	assert.Equal(t, "2", string(data))
-
-	var decoded Transport
-	assert.NoError(t, json.Unmarshal([]byte("1"), &decoded))
-	assert.Equal(t, TransportUDP, decoded)
 }

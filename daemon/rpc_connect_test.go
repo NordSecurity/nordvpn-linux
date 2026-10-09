@@ -1741,7 +1741,7 @@ func TestSetVPNProtocolThenConnect_ConnectsWithSelectedProtocol(t *testing.T) {
 	tests := []struct {
 		target             config.VPNProtocol
 		expectedTech       config.Technology
-		expectedProtocol   config.Transport
+		expectedTransport  config.Transport
 		expectedServerTech core.ServerTechnology
 	}{
 		{config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP, config.TechnologyOpenVPN, config.TransportUDP, core.OpenVPNUDP},
@@ -1776,7 +1776,7 @@ func TestSetVPNProtocolThenConnect_ConnectsWithSelectedProtocol(t *testing.T) {
 		assert.NoError(t, err, "connect with %v", test.target)
 		assert.Equal(t, internal.CodeConnected, server.msg.Type, "connect with %v", test.target)
 		assert.Equal(t, []core.ServerTechnology{test.expectedServerTech}, serversAPI.requestedTech, "servers requested for %v", test.target)
-		assert.Equal(t, test.expectedProtocol, netw.ProvidedServerData.Protocol, "server data protocol for %v", test.target)
+		assert.Equal(t, test.expectedTransport, netw.ProvidedServerData.Transport, "server data protocol for %v", test.target)
 		assert.Empty(t, netw.ProvidedServerData.NordLynxPublicKey, "%v must not get NordLynx server data", test.target)
 		assert.NotEmpty(t, netw.ProvidedServerData.Hostname, "a server must be picked for %v", test.target)
 	}

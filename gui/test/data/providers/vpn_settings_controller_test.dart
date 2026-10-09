@@ -1,52 +1,20 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nordvpn/data/models/app_settings.dart';
 import 'package:nordvpn/data/models/vpn_protocol.dart';
-import 'package:nordvpn/data/providers/app_state_provider.dart';
 import 'package:nordvpn/data/providers/pending_settings_provider.dart';
 import 'package:nordvpn/data/providers/popups_provider.dart';
 import 'package:nordvpn/data/providers/vpn_settings_controller.dart';
 import 'package:nordvpn/data/repository/daemon_status_codes.dart';
-import 'package:nordvpn/data/repository/vpn_settings_repository.dart';
-import 'package:nordvpn/pb/daemon/settings.pb.dart';
 
-class _FakeVpnSettingsRepository implements VpnSettingsRepository {
-  _FakeVpnSettingsRepository(this.setVpnProtocolStatus);
+import '../../utils/provider_fakes.dart';
 
-  final int setVpnProtocolStatus;
-  VpnProtocol? requested;
-
-  @override
-  Future<ApplicationSettings> fetchSettings() async =>
-      ApplicationSettings.fromSettings(Settings());
-
-  @override
-  Future<int> setVpnProtocol(VpnProtocol vpnProtocol) async {
-    requested = vpnProtocol;
-    return setVpnProtocolStatus;
-  }
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
-
-class _FakeAppStateChange implements AppStateChange {
-  @override
-  dynamic noSuchMethod(Invocation invocation) => null;
-}
-
-Future<(ProviderContainer, _FakeVpnSettingsRepository)> _setup(
+Future<(ProviderContainer, FakeVpnSettingsRepository)> _setup(
   int setVpnProtocolStatus,
 ) async {
-  final repository = _FakeVpnSettingsRepository(setVpnProtocolStatus);
-  final container = ProviderContainer(
-    overrides: [
-      vpnSettingsProvider.overrideWithValue(repository),
-      appStateProvider.overrideWithValue(_FakeAppStateChange()),
-    ],
-    retry: (retryCount, error) => null,
+  final repository = FakeVpnSettingsRepository(
+    setVpnProtocolStatus: setVpnProtocolStatus,
   );
-  addTearDown(container.dispose);
+  final container = createContainer(vpnSettingsRepository: repository);
   await container.read(vpnSettingsControllerProvider.future);
   return (container, repository);
 }

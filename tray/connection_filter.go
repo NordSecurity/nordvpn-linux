@@ -6,35 +6,27 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 )
 
-// connectionSettings represents a part of VPN connection configuration parameters
-type connectionSettings struct {
-	VPNProtocol config.VPNProtocol
-}
-
-// connectionSettingsChangeSensor monitors changes to connection settings
+// connectionSettingsChangeSensor monitors changes to the VPN protocol
 type connectionSettingsChangeSensor struct {
-	settings connectionSettings
-	mu       sync.RWMutex
-	changed  bool
+	vpnProtocol config.VPNProtocol
+	mu          sync.RWMutex
+	changed     bool
 }
 
 // NewconnectionSettingsChangeSensor creates a new connection settings change sensor
 // which tracks whether settings has changed since the last update
 func newConnectionSettingsChangeSensor() *connectionSettingsChangeSensor {
-	return &connectionSettingsChangeSensor{
-		settings: connectionSettings{},
-		changed:  false,
-	}
+	return &connectionSettingsChangeSensor{}
 }
 
-// Set sets connection related settings
-func (s *connectionSettingsChangeSensor) Set(settings connectionSettings) {
+// Set sets the VPN protocol
+func (s *connectionSettingsChangeSensor) Set(vpnProtocol config.VPNProtocol) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.changed = s.settings != settings
+	s.changed = s.vpnProtocol != vpnProtocol
 	if s.changed {
-		s.settings = settings
+		s.vpnProtocol = vpnProtocol
 	}
 }
 

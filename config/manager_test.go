@@ -355,6 +355,7 @@ func TestConfigLoadMigratesLegacyTechnologyAndProtocol(t *testing.T) {
 	}{
 		{"openvpn tcp", `{"technology":1,"auto_connect_data":{"protocol":2}}`, VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP},
 		{"openvpn udp", `{"technology":1,"auto_connect_data":{"protocol":1}}`, VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP},
+		{"openvpn without protocol", `{"technology":1}`, VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP},
 		{"nordlynx", `{"technology":2,"auto_connect_data":{"protocol":1}}`, VPNProtocol_VPN_PROTOCOL_NORDLYNX},
 		{"nordwhisper", `{"technology":3,"auto_connect_data":{"protocol":3}}`, VPNProtocol_VPN_PROTOCOL_NORDWHISPER},
 		{"no technology keys", `{"firewall":true}`, VPNProtocol_VPN_PROTOCOL_NORDLYNX},

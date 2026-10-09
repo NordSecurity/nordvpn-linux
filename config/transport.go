@@ -15,7 +15,7 @@ const (
 func (t Transport) String() string {
 	switch t {
 	case TransportUnknown:
-		return "UNKNOWN_PROTOCOL"
+		return "UNKNOWN_TRANSPORT"
 	case TransportUDP:
 		return "UDP"
 	case TransportTCP:

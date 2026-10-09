@@ -25,7 +25,6 @@ const (
 	// Error
 	CodeFailure      int64 = 3000
 	CodeUnauthorized int64 = 3001
-	// CodeFormatError  int64 = 3003
 	// CodeConfigError is returned when config loading and/or saving fails.
 	CodeConfigError                            int64 = 3004
 	CodeEmptyPayloadError                      int64 = 3005

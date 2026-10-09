@@ -412,7 +412,7 @@ func (r *RPC) connect(
 	serverData := vpn.ServerData{
 		IP:                  subnet.Addr(),
 		Hostname:            serverSelection.Server.Hostname,
-		Protocol:            cfg.VPNProtocol.Transport(),
+		Transport:           cfg.VPNProtocol.Transport(),
 		NordLynxPublicKey:   serverSelection.Server.NordLynxPublicKey,
 		PostQuantum:         cfg.AutoConnectData.PostquantumVpn,
 		OpenVPNVersion:      serverSelection.Server.Version(),
