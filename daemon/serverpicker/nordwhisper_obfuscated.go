@@ -13,7 +13,7 @@ const ObfuscatedServersGroupTitle = "Obfuscated"
 
 // IsObfuscatedTech reports whether connections over the technology are obfuscated.
 func IsObfuscatedTech(tech config.Technology) bool {
-	return tech == config.Technology_NORDWHISPER
+	return tech == config.TechnologyNordWhisper
 }
 
 // searchGroup returns the group to look servers up by for the requested one.

@@ -60,11 +60,10 @@ func PickServer(
 
 	selectedServers := []core.Server{}
 
-	tech := cfg.Technology
-	protocol := cfg.AutoConnectData.Protocol
-	log.ServerSel.Debug("search server", tech, protocol, "with input", input)
+	vpnProtocol := cfg.VPNProtocol
+	log.ServerSel.Debug("search server", vpnProtocol, "with input", input)
 
-	serverTech := TechToServerTech(tech, protocol)
+	serverTech := TechToServerTech(vpnProtocol)
 	if serverTech == core.Unknown {
 		return ServerSelection{}, errors.New("unknown technology")
 	}
@@ -77,7 +76,7 @@ func PickServer(
 
 	// the group the servers are actually looked up by can differ from the requested ones
 	// on specific technology (edge case)
-	serverGroup := searchGroup(requestedGroup, tech)
+	serverGroup := searchGroup(requestedGroup, vpnProtocol.Technology())
 	log.ServerSel.Debug("resolved server group", requestedGroup, "search group", serverGroup)
 
 	if serverGroup == config.ServerGroup_DEDICATED_IP {

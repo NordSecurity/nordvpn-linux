@@ -47,7 +47,7 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 			return &pb.Payload{Type: internal.CodeGroupNonexisting}, nil
 		}
 
-		if cfg.Technology != config.Technology_NORDLYNX {
+		if !cfg.VPNProtocol.IsNordLynx() {
 			return &pb.Payload{Type: internal.CodeDedicatedServersNoNordlynx}, nil
 		}
 
@@ -86,7 +86,6 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 				CountryCode:        parameters.CountryCode,
 				City:               parameters.City,
 				Group:              parameters.Group,
-				Protocol:           cfg.AutoConnectData.Protocol,
 				RealTimeProtection: cfg.AutoConnectData.RealTimeProtection,
 				Obfuscate:          cfg.AutoConnectData.Obfuscate,
 				DNS:                cfg.AutoConnectData.DNS,

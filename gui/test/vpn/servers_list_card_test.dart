@@ -6,7 +6,7 @@ import 'package:nordvpn/data/providers/account_controller.dart';
 import 'package:nordvpn/data/providers/servers_list_controller.dart';
 import 'package:nordvpn/data/providers/vpn_status_controller.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
-import 'package:nordvpn/pb/daemon/config/technology.pbenum.dart';
+import 'package:nordvpn/pb/daemon/config/vpn_protocol.pbenum.dart';
 import 'package:nordvpn/service_locator.dart';
 import 'package:nordvpn/vpn/server_list_item_factory.dart';
 import 'package:nordvpn/vpn/servers_list_card.dart';
@@ -27,9 +27,9 @@ Future<void> _recordConnectRequest(ConnectArguments args) async {
 // obfuscated group tile (if listed there).
 Future<Finder> _obfuscatedTile(
   WidgetTester tester, {
-  required Technology technology,
+  required VPNProtocol vpnProtocol,
 }) async {
-  final serversList = await tester.mockedServersList(technology: technology);
+  final serversList = await tester.mockedServersList(vpnProtocol: vpnProtocol);
 
   await tester.setupWidgetTest(
     ServersListCard(onSelected: _recordConnectRequest),
@@ -72,7 +72,7 @@ void main() {
   ) async {
     final tile = await _obfuscatedTile(
       tester,
-      technology: Technology.NORDWHISPER,
+      vpnProtocol: VPNProtocol.VPN_PROTOCOL_NORDWHISPER,
     );
 
     expect(
@@ -90,7 +90,7 @@ void main() {
   ) async {
     final tile = await _obfuscatedTile(
       tester,
-      technology: Technology.NORDWHISPER,
+      vpnProtocol: VPNProtocol.VPN_PROTOCOL_NORDWHISPER,
     );
 
     await tester.tap(tile);
@@ -102,7 +102,10 @@ void main() {
   testWidgets("obfuscated group is listed but inactive without its servers", (
     tester,
   ) async {
-    final tile = await _obfuscatedTile(tester, technology: Technology.NORDLYNX);
+    final tile = await _obfuscatedTile(
+      tester,
+      vpnProtocol: VPNProtocol.VPN_PROTOCOL_NORDLYNX,
+    );
 
     // the group stays on the list so that the user knows it exists
     expect(

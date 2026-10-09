@@ -110,8 +110,7 @@ func TestConnectionInfo_VerifyDataConnectConversionToConnectionStatus(t *testing
 	tf.notificationSubscriber.stateChangeHandler.ExpectEvents(1)
 
 	event := events.DataConnect{
-		Technology:              config.Technology_OPENVPN,
-		Protocol:                config.Protocol_UDP,
+		VPNProtocol:             config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP,
 		EventStatus:             events.StatusSuccess,
 		TargetServerName:        "server1",
 		TargetServerDomain:      "42.example.pl",
@@ -136,8 +135,7 @@ func TestConnectionInfo_VerifyDataConnectConversionToConnectionStatus(t *testing
 	status := tf.sut.Status()
 	assert.Equal(t, pb.ConnectionState_CONNECTED, status.State)
 	assert.True(t, tf.sut.fullyConnected)
-	assert.Equal(t, event.Technology, status.Technology)
-	assert.Equal(t, event.Protocol, status.Protocol)
+	assert.Equal(t, event.VPNProtocol, status.VPNProtocol)
 	assert.Equal(t, event.TargetServerName, status.Name)
 	assert.Equal(t, event.TargetServerDomain, status.Hostname)
 	assert.Equal(t, event.TargetServerCountry, status.Country)
@@ -457,8 +455,7 @@ func TestConnectionInfo_RestorePreviousStatus(t *testing.T) {
 
 		connected := events.DataConnect{
 			EventStatus:        events.StatusSuccess,
-			Technology:         config.Technology_NORDLYNX,
-			Protocol:           config.Protocol_UDP,
+			VPNProtocol:        config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			TargetServerName:   "server1",
 			TargetServerDomain: "server1.example.com",
 			TargetServerIP:     netip.MustParseAddr("10.0.0.1"),
@@ -482,8 +479,7 @@ func TestConnectionInfo_RestorePreviousStatus(t *testing.T) {
 		assert.Equal(t, connected.TargetServerName, status.Name)
 		assert.Equal(t, connected.TargetServerDomain, status.Hostname)
 		assert.Equal(t, connected.TargetServerIP, status.IP)
-		assert.Equal(t, connected.Technology, status.Technology)
-		assert.Equal(t, connected.Protocol, status.Protocol)
+		assert.Equal(t, connected.VPNProtocol, status.VPNProtocol)
 	})
 
 	t.Run("restores disconnected status when the prior state was disconnected", func(t *testing.T) {

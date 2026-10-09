@@ -23,7 +23,7 @@ func (r *RPC) GetRecentConnections(
 		return nil, fmt.Errorf("reading config for recent vpn connections: %w", err)
 	}
 
-	returnOnlyObfuscatedRecent := cfg.Technology == config.Technology_NORDWHISPER
+	returnOnlyObfuscatedRecent := cfg.VPNProtocol.IsNordWhisper()
 
 	var rcValues []*pb.RecentConnectionModel
 	// filter by server technology used

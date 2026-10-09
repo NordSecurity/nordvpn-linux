@@ -98,7 +98,7 @@ func NewDCOAnalytics(publisher events.Publisher[events.DebuggerEvent]) *DCOAnaly
 
 // NotifyConnect emits the DCO status event once per successful OpenVPN connection
 func (a *DCOAnalytics) NotifyConnect(e events.DataConnect) error {
-	if e.EventStatus == events.StatusSuccess && e.Technology == config.Technology_OPENVPN {
+	if e.EventStatus == events.StatusSuccess && e.VPNProtocol.Technology() == config.TechnologyOpenVPN {
 		a.publisher.Publish(*newDCOStatusEvent().ToDebuggerEvent())
 	}
 	return nil

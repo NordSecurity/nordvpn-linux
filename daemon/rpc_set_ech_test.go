@@ -46,7 +46,7 @@ func TestSetECH(t *testing.T) {
 	}{
 		{
 			name:          "enable when disabled",
-			tech:          config.Technology_NORDWHISPER,
+			tech:          config.TechnologyNordWhisper,
 			remoteParam:   "true",
 			currentECH:    false,
 			requested:     true,
@@ -56,7 +56,7 @@ func TestSetECH(t *testing.T) {
 		},
 		{
 			name:          "disable when enabled",
-			tech:          config.Technology_NORDWHISPER,
+			tech:          config.TechnologyNordWhisper,
 			remoteParam:   "true",
 			currentECH:    true,
 			requested:     false,
@@ -66,7 +66,7 @@ func TestSetECH(t *testing.T) {
 		},
 		{
 			name:         "no-op when already enabled",
-			tech:         config.Technology_NORDWHISPER,
+			tech:         config.TechnologyNordWhisper,
 			remoteParam:  "true",
 			currentECH:   true,
 			requested:    true,
@@ -75,7 +75,7 @@ func TestSetECH(t *testing.T) {
 		},
 		{
 			name:          "enable while vpn active reports active",
-			tech:          config.Technology_NORDWHISPER,
+			tech:          config.TechnologyNordWhisper,
 			remoteParam:   "true",
 			currentECH:    false,
 			requested:     true,
@@ -86,7 +86,7 @@ func TestSetECH(t *testing.T) {
 		},
 		{
 			name:          "remote missing defaults to enabled",
-			tech:          config.Technology_NORDWHISPER,
+			tech:          config.TechnologyNordWhisper,
 			remoteParam:   "",
 			currentECH:    false,
 			requested:     true,
@@ -96,7 +96,7 @@ func TestSetECH(t *testing.T) {
 		},
 		{
 			name:          "remote error defaults to enabled",
-			tech:          config.Technology_NORDWHISPER,
+			tech:          config.TechnologyNordWhisper,
 			remoteErr:     errors.New("boom"),
 			currentECH:    false,
 			requested:     true,
@@ -106,7 +106,7 @@ func TestSetECH(t *testing.T) {
 		},
 		{
 			name:         "wrong technology openvpn",
-			tech:         config.Technology_OPENVPN,
+			tech:         config.TechnologyOpenVPN,
 			remoteParam:  "true",
 			currentECH:   false,
 			requested:    true,
@@ -115,7 +115,7 @@ func TestSetECH(t *testing.T) {
 		},
 		{
 			name:         "wrong technology nordlynx",
-			tech:         config.Technology_NORDLYNX,
+			tech:         config.TechnologyNordLynx,
 			remoteParam:  "true",
 			currentECH:   false,
 			requested:    true,
@@ -124,7 +124,7 @@ func TestSetECH(t *testing.T) {
 		},
 		{
 			name:         "globally disabled by remote config",
-			tech:         config.Technology_NORDWHISPER,
+			tech:         config.TechnologyNordWhisper,
 			remoteParam:  "false",
 			currentECH:   false,
 			requested:    true,
@@ -133,7 +133,7 @@ func TestSetECH(t *testing.T) {
 		},
 		{
 			name:         "globally disabled blocks even matching value",
-			tech:         config.Technology_NORDWHISPER,
+			tech:         config.TechnologyNordWhisper,
 			remoteParam:  "false",
 			currentECH:   true,
 			requested:    true, // matches current, but guard runs before no-op
@@ -142,7 +142,7 @@ func TestSetECH(t *testing.T) {
 		},
 		{
 			name:         "load error",
-			tech:         config.Technology_NORDWHISPER,
+			tech:         config.TechnologyNordWhisper,
 			remoteParam:  "true",
 			currentECH:   false,
 			requested:    true,
@@ -152,7 +152,7 @@ func TestSetECH(t *testing.T) {
 		},
 		{
 			name:         "save error",
-			tech:         config.Technology_NORDWHISPER,
+			tech:         config.TechnologyNordWhisper,
 			remoteParam:  "true",
 			currentECH:   false,
 			requested:    true,
@@ -165,7 +165,7 @@ func TestSetECH(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			cm := mock.NewMockConfigManager()
-			cm.Cfg.Technology = test.tech
+			cm.Cfg.VPNProtocol = vpnProtocolFor(test.tech, config.TransportUDP)
 			cm.Cfg.AutoConnectData.ECH.Set(test.currentECH)
 			if test.loadErr {
 				cm.LoadErr = assert.AnError

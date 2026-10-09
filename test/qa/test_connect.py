@@ -49,21 +49,21 @@ def disconnect_base_test():
     assert "nordlynx" not in sh.ip.a() and "nordtun" not in sh.ip.a() and "qtun" not in sh.ip.a(), "VPN interfaces should be removed"
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_quick_connect(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
+def test_quick_connect(vpn_protocol):
     """Manual TC: LVPN-559, LVPN-530"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
-    connect_base_test((tech, proto))
+    connect_base_test(vpn_protocol)
     disconnect_base_test()
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_connect_to_server_absent(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
+def test_connect_to_server_absent(vpn_protocol):
     """Manual TC: LVPN-8668"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn(get_alias(), "moon")
@@ -73,59 +73,59 @@ def test_connect_to_server_absent(tech, proto):
     assert network.is_disconnected(), "Network should be disconnected"
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_connect_to_server_random_by_name(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
+def test_connect_to_server_random_by_name(vpn_protocol):
     """Manual TC: LVPN-5800"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
-    server_info = server.get_hostname_by(tech, proto)
-    connect_base_test((tech, proto), server_info.hostname.split(".")[0], server_info.name, server_info.hostname)
+    server_info = server.get_hostname_by(vpn_protocol)
+    connect_base_test(vpn_protocol, server_info.hostname.split(".")[0], server_info.name, server_info.hostname)
     disconnect_base_test()
 
 
 @dynamic_parametrize(
     [
-        "tech", "proto", "group",
+        "vpn_protocol", "group",
     ],
-    ordered_source=[lib.STANDARD_TECHNOLOGIES_NO_NORDWHISPER],
+    ordered_source=[lib.STANDARD_VPN_PROTOCOLS_NO_NORDWHISPER],
     randomized_source=[lib.ADDITIONAL_GROUPS],
     generate_all=IS_NIGHTLY,
-    id_pattern="{tech}-{proto}-{group}",
+    id_pattern="{vpn_protocol}-{group}",
 )
-def test_connect_to_group_random_server_by_name_additional(tech, proto, group):
+def test_connect_to_group_random_server_by_name_additional(vpn_protocol, group):
     """Manual TC: LVPN-8847"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
-    server_info = server.get_hostname_by(tech, proto, group)
-    connect_base_test((tech, proto), server_info.hostname.split(".")[0], server_info.name, server_info.hostname)
+    server_info = server.get_hostname_by(vpn_protocol, group)
+    connect_base_test(vpn_protocol, server_info.hostname.split(".")[0], server_info.name, server_info.hostname)
 
     disconnect_base_test()
 
 
 @pytest.mark.parametrize("group", lib.ADDITIONAL_GROUPS_NORDWHISPER)
-@pytest.mark.parametrize(("tech", "proto"), lib.NORDWHISPER_TECHNOLOGY)
-def test_nordwhisper_connect_to_group_random_server_by_name_additional(tech, proto, group):
+@pytest.mark.parametrize("vpn_protocol", lib.NORDWHISPER_VPN_PROTOCOL)
+def test_nordwhisper_connect_to_group_random_server_by_name_additional(vpn_protocol, group):
     """Manual TC: LVPN-8847"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
-    server_info = server.get_hostname_by(tech, proto, group)
-    connect_base_test((tech, proto), server_info.hostname.split(".")[0], server_info.name, server_info.hostname)
+    server_info = server.get_hostname_by(vpn_protocol, group)
+    connect_base_test(vpn_protocol, server_info.hostname.split(".")[0], server_info.name, server_info.hostname)
 
     disconnect_base_test()
 
 
 @pytest.mark.skip("flaky test, LVPN-6277")
 # the tun interface is recreated only for OpenVPN
-@pytest.mark.parametrize(("tech", "proto"), lib.OVPN_STANDARD_TECHNOLOGIES)
-def test_connect_network_restart_recreates_tun_interface(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.OVPN_VPN_PROTOCOLS)
+def test_connect_network_restart_recreates_tun_interface(vpn_protocol):
     """Manual TC is unavailable because reconnection timing and interface changes can’t be reliably checked without automation."""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
-    connect_base_test((tech, proto))
+    connect_base_test(vpn_protocol)
 
     links = socket.if_nameindex()
     logging.log(links)
@@ -139,16 +139,16 @@ def test_connect_network_restart_recreates_tun_interface(tech, proto):
 
 
 # for Nordlynx normally the tunnel is not recreated
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES_BASIC1)
-def test_connect_network_restart_nordlynx(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS_BASIC1)
+def test_connect_network_restart_nordlynx(vpn_protocol):
     """Manual TC is unavailable because reconnection timing and interface changes can’t be reliably checked without automation."""
 
     if daemon.is_init_systemd():
         pytest.skip("LVPN-5733")
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
-    connect_base_test((tech, proto))
+    connect_base_test(vpn_protocol)
 
     links = socket.if_nameindex()
     logging.log(links)
@@ -166,22 +166,22 @@ def test_connect_network_restart_nordlynx(tech, proto):
     disconnect_base_test()
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_quick_connect_double_disconnect(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
+def test_quick_connect_double_disconnect(vpn_protocol):
     """Manual TC: LVPN-1058"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     for _ in range(2):
-        connect_base_test((tech, proto))
+        connect_base_test(vpn_protocol)
         disconnect_base_test()
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_connect_network_gone(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
+def test_connect_network_gone(vpn_protocol):
     """Manual TC: LVPN-5796"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     default_gateway = network.stop()
     with lib.Defer(lambda: network.start(default_gateway)):
@@ -191,64 +191,64 @@ def test_connect_network_gone(tech, proto):
 
 
 @pytest.mark.parametrize("group", lib.ADDITIONAL_GROUPS)
-@pytest.mark.parametrize(("tech", "proto"), lib.STANDARD_TECHNOLOGIES_NO_NORDWHISPER)
-def test_connect_to_group_additional(tech, proto, group):
+@pytest.mark.parametrize("vpn_protocol", lib.STANDARD_VPN_PROTOCOLS_NO_NORDWHISPER)
+def test_connect_to_group_additional(vpn_protocol, group):
     """Manual TC: LVPN-838"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
-    connect_base_test((tech, proto), group)
+    connect_base_test(vpn_protocol, group)
     disconnect_base_test()
 
 
 @pytest.mark.parametrize("group", lib.ADDITIONAL_GROUPS_NORDWHISPER)
-@pytest.mark.parametrize(("tech", "proto"), lib.NORDWHISPER_TECHNOLOGY)
-def test_nordwhisper_connect_to_group_additional(tech, proto, group):
+@pytest.mark.parametrize("vpn_protocol", lib.NORDWHISPER_VPN_PROTOCOL)
+def test_nordwhisper_connect_to_group_additional(vpn_protocol, group):
     """Manual TC: LVPN-838"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
-    connect_base_test((tech, proto), group)
+    connect_base_test(vpn_protocol, group)
     disconnect_base_test()
 
 
 @pytest.mark.parametrize("group", lib.DEDICATED_IP_GROUPS)
-@pytest.mark.parametrize(("tech", "proto"), lib.STANDARD_TECHNOLOGIES_NO_NORDWHISPER)
-def test_connect_to_group_ovpn(tech, proto, group):
+@pytest.mark.parametrize("vpn_protocol", lib.STANDARD_VPN_PROTOCOLS_NO_NORDWHISPER)
+def test_connect_to_group_ovpn(vpn_protocol, group):
     """Manual TC: LVPN-838"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
-    connect_base_test((tech, proto), group)
+    connect_base_test(vpn_protocol, group)
     disconnect_base_test()
 
 
 @pytest.mark.parametrize("group", lib.OBFUSCATED_GROUPS)
-@pytest.mark.parametrize(("tech", "proto"), lib.NORDWHISPER_TECHNOLOGY)
-def test_connect_to_group_obfuscated(tech, proto, group):
+@pytest.mark.parametrize("vpn_protocol", lib.NORDWHISPER_VPN_PROTOCOL)
+def test_connect_to_group_obfuscated(vpn_protocol, group):
     """Manual TC: LVPN-838"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
-    connect_base_test((tech, proto), group)
+    connect_base_test(vpn_protocol, group)
     disconnect_base_test()
 
 
 @dynamic_parametrize(
     [
-        "tech", "proto", "group",
+        "vpn_protocol", "group",
     ],
-    ordered_source=[lib.STANDARD_TECHNOLOGIES_NO_NORDWHISPER],
+    ordered_source=[lib.STANDARD_VPN_PROTOCOLS_NO_NORDWHISPER],
     randomized_source=[lib.ADDITIONAL_GROUPS],
     generate_all=IS_NIGHTLY,
-    id_pattern="{tech}-{proto}-{group}",
+    id_pattern="{vpn_protocol}-{group}",
 )
-def test_connect_to_flag_group_additional(tech, proto, group):
+def test_connect_to_flag_group_additional(vpn_protocol, group):
     """Manual TC: LVPN-8615"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
-    connect_base_test((tech, proto), ["--group", group])
+    connect_base_test(vpn_protocol, ["--group", group])
     disconnect_base_test()
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
@@ -259,13 +259,13 @@ def test_connect_to_flag_group_additional(tech, proto, group):
 
 
 @pytest.mark.parametrize("group", lib.ADDITIONAL_GROUPS_NORDWHISPER)
-@pytest.mark.parametrize(("tech", "proto"), lib.NORDWHISPER_TECHNOLOGY)
-def test_nordwhisper_connect_to_flag_group_additional(tech, proto, group):
+@pytest.mark.parametrize("vpn_protocol", lib.NORDWHISPER_VPN_PROTOCOL)
+def test_nordwhisper_connect_to_flag_group_additional(vpn_protocol, group):
     """Manual TC: LVPN-8615"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
-    connect_base_test((tech, proto), ["--group", group])
+    connect_base_test(vpn_protocol, ["--group", group])
     disconnect_base_test()
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
@@ -276,13 +276,13 @@ def test_nordwhisper_connect_to_flag_group_additional(tech, proto, group):
 
 
 @pytest.mark.parametrize("group", lib.DEDICATED_IP_GROUPS)
-@pytest.mark.parametrize(("tech", "proto"), lib.STANDARD_TECHNOLOGIES_NO_NORDWHISPER)
-def test_connect_to_flag_group_ovpn(tech, proto, group):
+@pytest.mark.parametrize("vpn_protocol", lib.STANDARD_VPN_PROTOCOLS_NO_NORDWHISPER)
+def test_connect_to_flag_group_ovpn(vpn_protocol, group):
     """Manual TC: LVPN-8615"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
-    connect_base_test((tech, proto), ["--group", group])
+    connect_base_test(vpn_protocol, ["--group", group])
     disconnect_base_test()
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
@@ -293,13 +293,13 @@ def test_connect_to_flag_group_ovpn(tech, proto, group):
 
 
 @pytest.mark.parametrize("group", lib.OBFUSCATED_GROUPS)
-@pytest.mark.parametrize(("tech", "proto"), lib.NORDWHISPER_TECHNOLOGY)
-def test_connect_to_flag_group_obfuscated(tech, proto, group):
+@pytest.mark.parametrize("vpn_protocol", lib.NORDWHISPER_VPN_PROTOCOL)
+def test_connect_to_flag_group_obfuscated(vpn_protocol, group):
     """Manual TC: LVPN-8615"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
-    connect_base_test((tech, proto), ["--group", group])
+    connect_base_test(vpn_protocol, ["--group", group])
     disconnect_base_test()
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
@@ -309,11 +309,11 @@ def test_connect_to_flag_group_obfuscated(tech, proto, group):
     assert lib.is_connect_unsuccessful(ex), "Connection with duplicate group should fail"
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_connect_to_group_invalid(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
+def test_connect_to_group_invalid(vpn_protocol):
     """Manual TC: LVPN-8633"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn(get_alias(), "--group", "nonexistent_group")
@@ -324,72 +324,72 @@ def test_connect_to_group_invalid(tech, proto):
 
 @dynamic_parametrize(
     [
-        "tech", "proto", "country",
+        "vpn_protocol", "country",
     ],
-    ordered_source=[lib.TECHNOLOGIES],
+    ordered_source=[lib.VPN_PROTOCOLS],
     randomized_source=[lib.COUNTRIES],
     generate_all=IS_NIGHTLY,
-    id_pattern="{tech}-{proto}-{country}",
+    id_pattern="{vpn_protocol}-{country}",
 )
-def test_connect_to_country(tech, proto, country):
+def test_connect_to_country(vpn_protocol, country):
     """Manual TC: LVPN-489"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
-    connect_base_test((tech, proto), country)
+    connect_base_test(vpn_protocol, country)
     disconnect_base_test()
 
 
 @dynamic_parametrize(
     [
-        "tech", "proto", "country_code",
+        "vpn_protocol", "country_code",
     ],
-    ordered_source=[lib.TECHNOLOGIES],
+    ordered_source=[lib.VPN_PROTOCOLS],
     randomized_source=[lib.COUNTRY_CODES],
     generate_all=IS_NIGHTLY,
-    id_pattern="{tech}-{proto}-{country_code}",
+    id_pattern="{vpn_protocol}-{country_code}",
 )
-def test_connect_to_country_code(tech, proto, country_code):
+def test_connect_to_country_code(vpn_protocol, country_code):
     """Manual TC: LVPN-843"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
-    connect_base_test((tech, proto), country_code)
+    connect_base_test(vpn_protocol, country_code)
     disconnect_base_test()
 
 
 @dynamic_parametrize(
     [
-        "tech", "proto", "city",
+        "vpn_protocol", "city",
     ],
-    ordered_source=[lib.TECHNOLOGIES],
+    ordered_source=[lib.VPN_PROTOCOLS],
     randomized_source=[lib.CITIES],
     generate_all=IS_NIGHTLY,
-    id_pattern="{tech}-{proto}-{city}",
+    id_pattern="{vpn_protocol}-{city}",
 )
-def test_connect_to_city(tech, proto, city):
+def test_connect_to_city(vpn_protocol, city):
     """Manual TC: LVPN-815"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
-    connect_base_test((tech, proto), city)
+    connect_base_test(vpn_protocol, city)
     disconnect_base_test()
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_connect_to_unavailable_groups(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
+def test_connect_to_unavailable_groups(vpn_protocol):
     """Manual TC: LVPN-8517"""
 
     # TODO: LVPN-257
     time.sleep(3)
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     unavailable_groups = daemon.get_unavailable_groups()
 
     for group in unavailable_groups:
         # TODO(LVPN-10935)
-        if group == "Obfuscated" and tech == "nordwhisper":
+        if group == "Obfuscated" and vpn_protocol == "nordwhisper":
             continue
 
         with pytest.raises(sh.ErrorReturnCode_1) as ex:
@@ -399,14 +399,14 @@ def test_connect_to_unavailable_groups(tech, proto):
         assert lib.is_connect_unsuccessful(ex), "Connection to unavailable group should fail"
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_connect_to_unavailable_servers(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
+def test_connect_to_unavailable_servers(vpn_protocol):
     """Manual TC: LVPN-422"""
 
     # TODO: LVPN-257
     time.sleep(3)
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     unavailable_groups = daemon.get_unavailable_groups()
 
@@ -423,16 +423,16 @@ def test_connect_to_unavailable_servers(tech, proto):
         assert lib.is_connect_unsuccessful(ex), "Connection to unavailable server should fail"
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_status_connected(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
+def test_status_connected(vpn_protocol):
     """Manual TC: LVPN-676"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     assert network.is_disconnected(), "Network should be disconnected initially"
     assert "Disconnected" in sh.nordvpn.status(), "Status should show Disconnected initially"
 
-    server_info = server.get_hostname_by(technology=tech, protocol=proto)
+    server_info = server.get_hostname_by(vpn_protocol=vpn_protocol)
     sh.nordvpn(get_alias(), server_info.hostname.split(".")[0])
 
     connect_time = time.monotonic()
@@ -455,14 +455,7 @@ def test_status_connected(tech, proto):
     assert server_info.country in status_info["country"], "Country should match server location"
     assert server_info.city in status_info["city"], "City should match server location"
 
-    assert tech.upper() in status_info["current technology"], "Technology should match current setting"
-
-    if tech == "openvpn":
-        assert proto.upper() in status_info["current protocol"], "Protocol should match current setting"
-    elif tech == "nordwhisper":
-        assert "Webtunnel" in status_info["current protocol"], "Protocol should be Webtunnel for Nordwhisper"
-    else:
-        assert "UDP" in status_info["current protocol"], "Protocol should be UDP by default"
+    assert status_info["protocol"] == lib.vpn_protocol_display_name(vpn_protocol), "Protocol should match current setting"
 
     transfer_received = float(status_info["transfer"].split(" ")[0])
     transfer_sent = float(status_info["transfer"].split(" ")[3])
@@ -481,15 +474,15 @@ def test_status_connected(tech, proto):
     disconnect_base_test()
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES_BASIC1)
-def test_connect_to_post_quantum_server(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS_BASIC1)
+def test_connect_to_post_quantum_server(vpn_protocol):
     """Manual TC: LVPN-5794"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     sh.nordvpn.set.pq("on")
 
-    connect_base_test((tech, proto))
+    connect_base_test(vpn_protocol)
 
     assert "preshared key" in sh.sudo.wg.show(), "Wireguard should have preshared key configured"
 
@@ -500,7 +493,7 @@ def test_check_routing_table_for_lan():
     """Manual TC: LVPN-8728"""
 
     # check that the routing table is correctly configured when LAN is enabled and that the tunnel IP is correct
-    lib.set_technology_and_protocol("nordlynx", "")
+    lib.set_vpn_protocol("nordlynx")
 
     default_route = network.RouteInfo.default_route_info()
     connect_base_test(("nordlynx", ""))
@@ -537,15 +530,15 @@ def test_check_routing_table_for_lan():
     disconnect_base_test()
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.STANDARD_TECHNOLOGIES_NO_NORDWHISPER)
-def test_connect_to_dedicated_ip(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.STANDARD_VPN_PROTOCOLS_NO_NORDWHISPER)
+def test_connect_to_dedicated_ip(vpn_protocol):
     """Manual TC: LVPN-8847"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     server_info = server.get_dedicated_ip()
 
-    connect_base_test((tech, proto), server_info.hostname.split(".")[0], server_info.name, server_info.hostname)
+    connect_base_test(vpn_protocol, server_info.hostname.split(".")[0], server_info.name, server_info.hostname)
     disconnect_base_test()
 
     assert network.is_disconnected(), "Network should be disconnected after disconnect"
@@ -560,7 +553,7 @@ def test_ens_connection_limit(reconnect: bool, pause: bool):
 
     ens_conn_limit_reached = 2
 
-    sh.nordvpn.set.technology("nordlynx")
+    lib.set_vpn_protocol("nordlynx")
 
     with lib.Defer(sh.nordvpn.disconnect):
         if reconnect:

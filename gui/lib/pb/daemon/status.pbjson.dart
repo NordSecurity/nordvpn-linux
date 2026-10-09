@@ -94,22 +94,6 @@ const StatusResponse$json = {
       '6': '.pb.ConnectionState',
       '10': 'state'
     },
-    {
-      '1': 'technology',
-      '3': 2,
-      '4': 1,
-      '5': 14,
-      '6': '.config.Technology',
-      '10': 'technology'
-    },
-    {
-      '1': 'protocol',
-      '3': 3,
-      '4': 1,
-      '5': 14,
-      '6': '.config.Protocol',
-      '10': 'protocol'
-    },
     {'1': 'ip', '3': 4, '4': 1, '5': 9, '10': 'ip'},
     {'1': 'hostname', '3': 5, '4': 1, '5': 9, '10': 'hostname'},
     {'1': 'country', '3': 6, '4': 1, '5': 9, '10': 'country'},
@@ -147,24 +131,35 @@ const StatusResponse$json = {
       '10': 'pauseRemainingDurationSec'
     },
     {'1': 'ech', '3': 21, '4': 1, '5': 8, '10': 'ech'},
+    {
+      '1': 'vpn_protocol',
+      '3': 22,
+      '4': 1,
+      '5': 14,
+      '6': '.config.VPNProtocol',
+      '10': 'vpnProtocol'
+    },
   ],
   '9': [
+    {'1': 2, '2': 3},
+    {'1': 3, '2': 4},
     {'1': 12, '2': 13},
   ],
+  '10': ['technology', 'protocol'],
 };
 
 /// Descriptor for `StatusResponse`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List statusResponseDescriptor = $convert.base64Decode(
     'Cg5TdGF0dXNSZXNwb25zZRIpCgVzdGF0ZRgBIAEoDjITLnBiLkNvbm5lY3Rpb25TdGF0ZVIFc3'
-    'RhdGUSMgoKdGVjaG5vbG9neRgCIAEoDjISLmNvbmZpZy5UZWNobm9sb2d5Ugp0ZWNobm9sb2d5'
-    'EiwKCHByb3RvY29sGAMgASgOMhAuY29uZmlnLlByb3RvY29sUghwcm90b2NvbBIOCgJpcBgEIA'
-    'EoCVICaXASGgoIaG9zdG5hbWUYBSABKAlSCGhvc3RuYW1lEhgKB2NvdW50cnkYBiABKAlSB2Nv'
-    'dW50cnkSEgoEY2l0eRgHIAEoCVIEY2l0eRIaCghkb3dubG9hZBgIIAEoBFIIZG93bmxvYWQSFg'
-    'oGdXBsb2FkGAkgASgEUgZ1cGxvYWQSFgoGdXB0aW1lGAogASgDUgZ1cHRpbWUSEgoEbmFtZRgL'
-    'IAEoCVIEbmFtZRI4CgpwYXJhbWV0ZXJzGA0gASgLMhgucGIuQ29ubmVjdGlvblBhcmFtZXRlcn'
-    'NSCnBhcmFtZXRlcnMSIAoLcG9zdFF1YW50dW0YDiABKAhSC3Bvc3RRdWFudHVtEiAKDGlzX21l'
-    'c2hfcGVlchgPIAEoCFIKaXNNZXNoUGVlchIXCgdieV91c2VyGBAgASgIUgZieVVzZXISIQoMY2'
-    '91bnRyeV9jb2RlGBEgASgJUgtjb3VudHJ5Q29kZRIeCgpvYmZ1c2NhdGVkGBIgASgIUgpvYmZ1'
-    'c2NhdGVkEjcKCXBhdXNlZF9hdBgTIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBSCH'
-    'BhdXNlZEF0Ej8KHHBhdXNlX3JlbWFpbmluZ19kdXJhdGlvbl9zZWMYFCABKA1SGXBhdXNlUmVt'
-    'YWluaW5nRHVyYXRpb25TZWMSEAoDZWNoGBUgASgIUgNlY2hKBAgMEA0=');
+    'RhdGUSDgoCaXAYBCABKAlSAmlwEhoKCGhvc3RuYW1lGAUgASgJUghob3N0bmFtZRIYCgdjb3Vu'
+    'dHJ5GAYgASgJUgdjb3VudHJ5EhIKBGNpdHkYByABKAlSBGNpdHkSGgoIZG93bmxvYWQYCCABKA'
+    'RSCGRvd25sb2FkEhYKBnVwbG9hZBgJIAEoBFIGdXBsb2FkEhYKBnVwdGltZRgKIAEoA1IGdXB0'
+    'aW1lEhIKBG5hbWUYCyABKAlSBG5hbWUSOAoKcGFyYW1ldGVycxgNIAEoCzIYLnBiLkNvbm5lY3'
+    'Rpb25QYXJhbWV0ZXJzUgpwYXJhbWV0ZXJzEiAKC3Bvc3RRdWFudHVtGA4gASgIUgtwb3N0UXVh'
+    'bnR1bRIgCgxpc19tZXNoX3BlZXIYDyABKAhSCmlzTWVzaFBlZXISFwoHYnlfdXNlchgQIAEoCF'
+    'IGYnlVc2VyEiEKDGNvdW50cnlfY29kZRgRIAEoCVILY291bnRyeUNvZGUSHgoKb2JmdXNjYXRl'
+    'ZBgSIAEoCFIKb2JmdXNjYXRlZBI3CglwYXVzZWRfYXQYEyABKAsyGi5nb29nbGUucHJvdG9idW'
+    'YuVGltZXN0YW1wUghwYXVzZWRBdBI/ChxwYXVzZV9yZW1haW5pbmdfZHVyYXRpb25fc2VjGBQg'
+    'ASgNUhlwYXVzZVJlbWFpbmluZ0R1cmF0aW9uU2VjEhAKA2VjaBgVIAEoCFIDZWNoEjYKDHZwbl'
+    '9wcm90b2NvbBgWIAEoDjITLmNvbmZpZy5WUE5Qcm90b2NvbFILdnBuUHJvdG9jb2xKBAgCEANK'
+    'BAgDEARKBAgMEA1SCnRlY2hub2xvZ3lSCHByb3RvY29s');

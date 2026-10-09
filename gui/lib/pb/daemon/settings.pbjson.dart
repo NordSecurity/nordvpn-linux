@@ -29,6 +29,27 @@ final $typed_data.Uint8List settingsResponseDescriptor = $convert.base64Decode(
     'ChBTZXR0aW5nc1Jlc3BvbnNlEhIKBHR5cGUYASABKANSBHR5cGUSIAoEZGF0YRgCIAEoCzIMLn'
     'BiLlNldHRpbmdzUgRkYXRh');
 
+@$core.Deprecated('Use settingsVPNProtocolsResponseDescriptor instead')
+const SettingsVPNProtocolsResponse$json = {
+  '1': 'SettingsVPNProtocolsResponse',
+  '2': [
+    {
+      '1': 'vpn_protocols',
+      '3': 1,
+      '4': 3,
+      '5': 14,
+      '6': '.config.VPNProtocol',
+      '10': 'vpnProtocols'
+    },
+  ],
+};
+
+/// Descriptor for `SettingsVPNProtocolsResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List settingsVPNProtocolsResponseDescriptor =
+    $convert.base64Decode(
+        'ChxTZXR0aW5nc1ZQTlByb3RvY29sc1Jlc3BvbnNlEjgKDXZwbl9wcm90b2NvbHMYASADKA4yEy'
+        '5jb25maWcuVlBOUHJvdG9jb2xSDHZwblByb3RvY29scw==');
+
 @$core.Deprecated('Use autoconnectDataDescriptor instead')
 const AutoconnectData$json = {
   '1': 'AutoconnectData',
@@ -59,14 +80,6 @@ final $typed_data.Uint8List autoconnectDataDescriptor = $convert.base64Decode(
 const Settings$json = {
   '1': 'Settings',
   '2': [
-    {
-      '1': 'technology',
-      '3': 1,
-      '4': 1,
-      '5': 14,
-      '6': '.config.Technology',
-      '10': 'technology'
-    },
     {'1': 'firewall', '3': 2, '4': 1, '5': 8, '10': 'firewall'},
     {'1': 'kill_switch', '3': 3, '4': 1, '5': 8, '10': 'killSwitch'},
     {
@@ -96,14 +109,6 @@ const Settings$json = {
       '5': 8,
       '10': 'realTimeProtection'
     },
-    {
-      '1': 'protocol',
-      '3': 12,
-      '4': 1,
-      '5': 14,
-      '6': '.config.Protocol',
-      '10': 'protocol'
-    },
     {'1': 'lan_discovery', '3': 13, '4': 1, '5': 8, '10': 'lanDiscovery'},
     {
       '1': 'allowlist',
@@ -124,29 +129,39 @@ const Settings$json = {
     },
     {'1': 'arp_ignore', '3': 19, '4': 1, '5': 8, '10': 'arpIgnore'},
     {'1': 'ech', '3': 20, '4': 1, '5': 8, '10': 'ech'},
+    {
+      '1': 'vpn_protocol',
+      '3': 21,
+      '4': 1,
+      '5': 14,
+      '6': '.config.VPNProtocol',
+      '10': 'vpnProtocol'
+    },
   ],
   '9': [
+    {'1': 1, '2': 2},
+    {'1': 12, '2': 13},
     {'1': 15, '2': 16},
     {'1': 16, '2': 17},
   ],
-  '10': ['obfuscate'],
+  '10': ['technology', 'protocol', 'obfuscate'],
 };
 
 /// Descriptor for `Settings`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List settingsDescriptor = $convert.base64Decode(
-    'CghTZXR0aW5ncxIyCgp0ZWNobm9sb2d5GAEgASgOMhIuY29uZmlnLlRlY2hub2xvZ3lSCnRlY2'
-    'hub2xvZ3kSGgoIZmlyZXdhbGwYAiABKAhSCGZpcmV3YWxsEh8KC2tpbGxfc3dpdGNoGAMgASgI'
-    'UgpraWxsU3dpdGNoEj8KEWF1dG9fY29ubmVjdF9kYXRhGAQgASgLMhMucGIuQXV0b2Nvbm5lY3'
-    'REYXRhUg9hdXRvQ29ubmVjdERhdGESGAoHbWVzaG5ldBgGIAEoCFIHbWVzaG5ldBIYCgdyb3V0'
-    'aW5nGAcgASgIUgdyb3V0aW5nEhYKBmZ3bWFyaxgIIAEoDVIGZndtYXJrEkEKEWFuYWx5dGljc1'
-    '9jb25zZW50GAkgASgOMhQuY29uc2VudC5Db25zZW50TW9kZVIQYW5hbHl0aWNzQ29uc2VudBIQ'
-    'CgNkbnMYCiADKAlSA2RucxIwChRyZWFsX3RpbWVfcHJvdGVjdGlvbhgLIAEoCFIScmVhbFRpbW'
-    'VQcm90ZWN0aW9uEiwKCHByb3RvY29sGAwgASgOMhAuY29uZmlnLlByb3RvY29sUghwcm90b2Nv'
-    'bBIjCg1sYW5fZGlzY292ZXJ5GA0gASgIUgxsYW5EaXNjb3ZlcnkSKwoJYWxsb3dsaXN0GA4gAS'
-    'gLMg0ucGIuQWxsb3dsaXN0UglhbGxvd2xpc3QSJwoPcG9zdHF1YW50dW1fdnBuGBEgASgIUg5w'
-    'b3N0cXVhbnR1bVZwbhI9Cg11c2VyX3NldHRpbmdzGBIgASgLMhgucGIuVXNlclNwZWNpZmljU2'
-    'V0dGluZ3NSDHVzZXJTZXR0aW5ncxIdCgphcnBfaWdub3JlGBMgASgIUglhcnBJZ25vcmUSEAoD'
-    'ZWNoGBQgASgIUgNlY2hKBAgPEBBKBAgQEBFSCW9iZnVzY2F0ZQ==');
+    'CghTZXR0aW5ncxIaCghmaXJld2FsbBgCIAEoCFIIZmlyZXdhbGwSHwoLa2lsbF9zd2l0Y2gYAy'
+    'ABKAhSCmtpbGxTd2l0Y2gSPwoRYXV0b19jb25uZWN0X2RhdGEYBCABKAsyEy5wYi5BdXRvY29u'
+    'bmVjdERhdGFSD2F1dG9Db25uZWN0RGF0YRIYCgdtZXNobmV0GAYgASgIUgdtZXNobmV0EhgKB3'
+    'JvdXRpbmcYByABKAhSB3JvdXRpbmcSFgoGZndtYXJrGAggASgNUgZmd21hcmsSQQoRYW5hbHl0'
+    'aWNzX2NvbnNlbnQYCSABKA4yFC5jb25zZW50LkNvbnNlbnRNb2RlUhBhbmFseXRpY3NDb25zZW'
+    '50EhAKA2RucxgKIAMoCVIDZG5zEjAKFHJlYWxfdGltZV9wcm90ZWN0aW9uGAsgASgIUhJyZWFs'
+    'VGltZVByb3RlY3Rpb24SIwoNbGFuX2Rpc2NvdmVyeRgNIAEoCFIMbGFuRGlzY292ZXJ5EisKCW'
+    'FsbG93bGlzdBgOIAEoCzINLnBiLkFsbG93bGlzdFIJYWxsb3dsaXN0EicKD3Bvc3RxdWFudHVt'
+    'X3ZwbhgRIAEoCFIOcG9zdHF1YW50dW1WcG4SPQoNdXNlcl9zZXR0aW5ncxgSIAEoCzIYLnBiLl'
+    'VzZXJTcGVjaWZpY1NldHRpbmdzUgx1c2VyU2V0dGluZ3MSHQoKYXJwX2lnbm9yZRgTIAEoCFIJ'
+    'YXJwSWdub3JlEhAKA2VjaBgUIAEoCFIDZWNoEjYKDHZwbl9wcm90b2NvbBgVIAEoDjITLmNvbm'
+    'ZpZy5WUE5Qcm90b2NvbFILdnBuUHJvdG9jb2xKBAgBEAJKBAgMEA1KBAgPEBBKBAgQEBFSCnRl'
+    'Y2hub2xvZ3lSCHByb3RvY29sUglvYmZ1c2NhdGU=');
 
 @$core.Deprecated('Use userSpecificSettingsDescriptor instead')
 const UserSpecificSettings$json = {

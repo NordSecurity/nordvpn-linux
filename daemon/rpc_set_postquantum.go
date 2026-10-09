@@ -28,9 +28,9 @@ func (r *RPC) SetPostQuantum(ctx context.Context, in *pb.SetGenericRequest) (*pb
 		return &pb.Payload{Type: internal.CodeDedicatedServersPq}, nil
 	}
 
-	if cfg.Technology != config.Technology_NORDLYNX {
+	if !cfg.VPNProtocol.IsNordLynx() {
 		return &pb.Payload{Type: internal.CodePqWithoutNordlynx,
-			Data: []string{config.TechNameToUpperCamelCase(cfg.Technology)}}, nil
+			Data: []string{config.TechNameToUpperCamelCase(cfg.VPNProtocol.Technology())}}, nil
 	}
 
 	if err := r.cm.SaveWith(func(c config.Config) config.Config {

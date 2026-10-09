@@ -138,8 +138,8 @@ def test_speed_thresholds(speedtest_results_path):
     :raises AssertionError: If upload speed is below MIN_UPLOAD_MBPS.
     :raises AssertionError: If ping latency exceeds MAX_PING_MS.
     """
-    tech = "nordlynx"
-    lib.set_technology_and_protocol(tech, "")
+    vpn_protocol = "nordlynx"
+    lib.set_vpn_protocol(vpn_protocol)
 
     with lib.Defer(sh.nordvpn.disconnect):
         sh.nordvpn.connect()
@@ -186,8 +186,8 @@ def test_speed_degradation(speedtest_results_path):
     """
     baseline_data = _run_speedtest()
 
-    tech = "nordlynx"
-    lib.set_technology_and_protocol(tech, "")
+    vpn_protocol = "nordlynx"
+    lib.set_vpn_protocol(vpn_protocol)
 
     with lib.Defer(sh.nordvpn.disconnect):
         sh.nordvpn.connect()
@@ -207,7 +207,7 @@ def test_speed_degradation(speedtest_results_path):
             "upload_mbps": baseline_data["upload_mbps"],
             "ping_ms": baseline_data["ping_ms"],
         },
-        tech: {
+        vpn_protocol: {
             "download_mbps": vpn_data["download_mbps"],
             "upload_mbps": vpn_data["upload_mbps"],
             "ping_ms": vpn_data["ping_ms"],

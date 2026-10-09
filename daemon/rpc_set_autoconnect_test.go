@@ -41,77 +41,77 @@ func TestAutoconnect(t *testing.T) {
 		{
 			testName:       "autoconnect works for OpenVPN",
 			server:         "",
-			config:         config.Config{AutoConnectData: config.AutoConnectData{Protocol: config.Protocol_TCP}, Technology: config.Technology_OPENVPN},
+			config:         config.Config{VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP},
 			returnCode:     internal.CodeSuccess,
 			eventPublished: true,
 		},
 		{
 			testName:       "autoconnect works for NordLynx",
 			server:         "",
-			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false}, VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX},
 			returnCode:     internal.CodeSuccess,
 			eventPublished: true,
 		},
 		{
 			testName:       "works for country code using Nordlynx",
 			server:         "de",
-			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false}, VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX},
 			returnCode:     internal.CodeSuccess,
 			eventPublished: true,
 		},
 		{
 			testName:       "autoconnect works for country code de using OpenVPN",
 			server:         "de",
-			config:         config.Config{AutoConnectData: config.AutoConnectData{Protocol: config.Protocol_TCP}, Technology: config.Technology_OPENVPN},
+			config:         config.Config{VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP},
 			returnCode:     internal.CodeSuccess,
 			eventPublished: true,
 		},
 		{
 			testName:       "autoconnect works for country code lt using OpenVPN",
 			server:         "lt",
-			config:         config.Config{AutoConnectData: config.AutoConnectData{Protocol: config.Protocol_TCP}, Technology: config.Technology_OPENVPN},
+			config:         config.Config{VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP},
 			returnCode:     internal.CodeSuccess,
 			eventPublished: true,
 		},
 		{
 			testName:       "works for country name using Nordlynx",
 			server:         "germany",
-			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false}, VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX},
 			returnCode:     internal.CodeSuccess,
 			eventPublished: true,
 		},
 		{
 			testName:       "works for city name using Nordlynx",
 			server:         "berlin",
-			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false}, VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX},
 			returnCode:     internal.CodeSuccess,
 			eventPublished: true,
 		},
 		{
 			testName:       "works for country and city name using Nordlynx",
 			server:         "germany berlin",
-			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false}, VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX},
 			returnCode:     internal.CodeSuccess,
 			eventPublished: true,
 		},
 		{
 			testName:       "works for group name using Nordlynx",
 			server:         "double_vpn",
-			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false}, VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX},
 			returnCode:     internal.CodeSuccess,
 			eventPublished: true,
 		},
 		{
 			testName:       "fails for specific server",
 			server:         "lt15",
-			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: true, Protocol: config.Protocol_TCP}, Technology: config.Technology_OPENVPN},
+			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: true}, VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP},
 			returnCode:     internal.CodeAutoconnectToSpecificServer,
 			eventPublished: false,
 		},
 		{
 			testName:             "works for dedicated ip if subscription is not expired",
 			server:               "dedicated_ip",
-			config:               config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			config:               config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false}, VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX},
 			isDedicatedIPExpired: false,
 			returnCode:           internal.CodeSuccess,
 			eventPublished:       true,
@@ -119,7 +119,7 @@ func TestAutoconnect(t *testing.T) {
 		{
 			testName:             "fails to connect dedicated IP when subscription expired",
 			server:               "dedicated_ip",
-			config:               config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			config:               config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false}, VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX},
 			isDedicatedIPExpired: true,
 			returnCode:           internal.CodeDedicatedIPRenewError,
 			eventPublished:       false,
@@ -127,7 +127,7 @@ func TestAutoconnect(t *testing.T) {
 		{
 			testName:                        "works for dedicated servers if subscription is available and tech is set to NordLynx",
 			server:                          "dedicated_server",
-			config:                          config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			config:                          config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false}, VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX},
 			isDedicatedServerExpired:        false,
 			isDedicatedServerFeatureEnabled: true,
 			dedicatedServerList:             core.DedicatedServers{core.DedicatedServer{Status: core.DedicatedServerStatusRunning}},
@@ -137,7 +137,7 @@ func TestAutoconnect(t *testing.T) {
 		{
 			testName:                        "fails to connect to a dedicated server if tech is not set to NordLynx",
 			server:                          "dedicated_server",
-			config:                          config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_OPENVPN},
+			config:                          config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false}, VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP},
 			isDedicatedServerExpired:        false,
 			isDedicatedServerFeatureEnabled: true,
 			dedicatedServerList:             core.DedicatedServers{core.DedicatedServer{Status: core.DedicatedServerStatusRunning}},
@@ -147,7 +147,7 @@ func TestAutoconnect(t *testing.T) {
 		{
 			testName:                        "fails to connect to a dedicated server if server is not ready",
 			server:                          "dedicated_server",
-			config:                          config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			config:                          config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false}, VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX},
 			isDedicatedServerExpired:        false,
 			isDedicatedServerFeatureEnabled: true,
 			dedicatedServerList:             core.DedicatedServers{core.DedicatedServer{Status: "not running"}},
@@ -157,7 +157,7 @@ func TestAutoconnect(t *testing.T) {
 		{
 			testName:                        "fails to connect to a dedicated server if dedicated server list is empty",
 			server:                          "dedicated_server",
-			config:                          config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			config:                          config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false}, VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX},
 			isDedicatedServerExpired:        false,
 			isDedicatedServerFeatureEnabled: true,
 			dedicatedServerList:             core.DedicatedServers{},
@@ -167,7 +167,7 @@ func TestAutoconnect(t *testing.T) {
 		{
 			testName:                        "fails to connect to a dedicated server if service is expired",
 			server:                          "dedicated_server",
-			config:                          config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			config:                          config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false}, VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX},
 			isDedicatedServerExpired:        true,
 			isDedicatedServerFeatureEnabled: true,
 			dedicatedServerList:             core.DedicatedServers{},
@@ -177,7 +177,7 @@ func TestAutoconnect(t *testing.T) {
 		{
 			testName:                        "fails to connect to a dedicated server if feature is disabled in remote config",
 			server:                          "dedicated_server",
-			config:                          config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			config:                          config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false}, VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX},
 			isDedicatedServerExpired:        false,
 			isDedicatedServerFeatureEnabled: false,
 			dedicatedServerList:             core.DedicatedServers{core.DedicatedServer{Status: core.DedicatedServerStatusRunning}},
@@ -187,7 +187,7 @@ func TestAutoconnect(t *testing.T) {
 		{
 			testName:                        "fails to connect to a dedicated server if post quantum is on",
 			server:                          "dedicated_server",
-			config:                          config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP, PostquantumVpn: true}, Technology: config.Technology_NORDLYNX},
+			config:                          config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, PostquantumVpn: true}, VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX},
 			isDedicatedServerExpired:        false,
 			isDedicatedServerFeatureEnabled: true,
 			dedicatedServerList:             core.DedicatedServers{core.DedicatedServer{Status: core.DedicatedServerStatusRunning}},
@@ -197,7 +197,7 @@ func TestAutoconnect(t *testing.T) {
 		{
 			testName:       "fails to connect using p2p server tag",
 			server:         "p2p",
-			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false}, VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX},
 			returnCode:     internal.CodeP2PDeprecated,
 			eventPublished: false,
 		},
@@ -205,7 +205,7 @@ func TestAutoconnect(t *testing.T) {
 			testName:       "fails to connect using p2p server group",
 			server:         "",
 			group:          "p2p",
-			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false}, VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX},
 			returnCode:     internal.CodeP2PDeprecated,
 			eventPublished: false,
 		},
@@ -213,7 +213,7 @@ func TestAutoconnect(t *testing.T) {
 			testName:       "works disabling autoconnect using p2p server tag",
 			server:         "p2p",
 			disable:        true,
-			config:         config.Config{AutoConnect: true, AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			config:         config.Config{AutoConnect: true, AutoConnectData: config.AutoConnectData{Obfuscate: false}, VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX},
 			returnCode:     internal.CodeSuccess,
 			eventPublished: true,
 		},
@@ -221,7 +221,7 @@ func TestAutoconnect(t *testing.T) {
 			testName:       "works disabling autoconnect using p2p server group",
 			group:          "p2p",
 			disable:        true,
-			config:         config.Config{AutoConnect: true, AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			config:         config.Config{AutoConnect: true, AutoConnectData: config.AutoConnectData{Obfuscate: false}, VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX},
 			returnCode:     internal.CodeSuccess,
 			eventPublished: true,
 		},
@@ -286,10 +286,10 @@ func TestAutoconnect(t *testing.T) {
 func TestAutoconnect_ObfuscatedGroupNeedsNordWhisper(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	for _, tech := range []config.Technology{config.Technology_OPENVPN, config.Technology_NORDLYNX} {
-		t.Run(tech.String(), func(t *testing.T) {
+	for _, vpnProtocol := range []config.VPNProtocol{config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP, config.VPNProtocol_VPN_PROTOCOL_NORDLYNX} {
+		t.Run(vpnProtocol.String(), func(t *testing.T) {
 			mockConfigManager := newMockConfigManager()
-			mockConfigManager.c.Technology = tech
+			mockConfigManager.c.VPNProtocol = vpnProtocol
 			mockPublisherSubscriber := events.MockPublisherSubscriber[bool]{}
 			dm := DataManager{
 				serversData: ServersData{Servers: core_test.ServersList()},
@@ -325,7 +325,7 @@ func TestAutoconnect_SavesCorrectAutoconnectData(t *testing.T) {
 		testName    string
 		serverGroup string
 		tag         string
-		technology  config.Technology
+		vpnProtocol config.VPNProtocol
 		expected    config.AutoConnectData
 	}{
 		{
@@ -336,7 +336,7 @@ func TestAutoconnect_SavesCorrectAutoconnectData(t *testing.T) {
 		{
 			testName:    "for obfuscated servers over nordwhisper",
 			serverGroup: "obfuscated",
-			technology:  config.Technology_NORDWHISPER,
+			vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
 			expected:    config.AutoConnectData{Group: config.ServerGroup_NW_OBFUSCATED},
 		},
 		{
@@ -383,8 +383,8 @@ func TestAutoconnect_SavesCorrectAutoconnectData(t *testing.T) {
 				Autoconnect: &mockPublisherSubscriber,
 			},
 		}
-		if test.technology != config.Technology_UNKNOWN_TECHNOLOGY {
-			mockConfigManager.c.Technology = test.technology
+		if test.vpnProtocol != config.VPNProtocol_VPN_PROTOCOL_UNSPECIFIED {
+			mockConfigManager.c.VPNProtocol = test.vpnProtocol
 		}
 
 		dm := DataManager{

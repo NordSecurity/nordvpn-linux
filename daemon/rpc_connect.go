@@ -221,7 +221,7 @@ func (r *RPC) connectWithStoredServerSelection(
 			return true, srv.Send(&pb.Payload{Type: internal.CodeFailure})
 		}
 		// second, if feature is enabled, check if technology is correct
-		if cfg.Technology != config.Technology_NORDLYNX {
+		if !cfg.VPNProtocol.IsNordLynx() {
 			return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersNoNordlynx})
 		}
 		// third, if technology is correct, check if post quantum is enabled(pq is not supported for dedicated servers)
@@ -282,7 +282,7 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 			return true, srv.Send(&pb.Payload{Type: internal.CodeGroupNonexisting})
 		}
 		// second, if feature is enabled, check if technology is correct
-		if cfg.Technology != config.Technology_NORDLYNX {
+		if !cfg.VPNProtocol.IsNordLynx() {
 			return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersNoNordlynx})
 		}
 		// third, if technology is correct, check if post quantum is enabled(pq is not supported for dedicated servers)
@@ -300,7 +300,7 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 		return true, srv.Send(&pb.Payload{Type: expirationCheckResult})
 	}
 
-	if cfg.Technology == config.Technology_NORDWHISPER && !features.NordWhisperEnabled {
+	if cfg.VPNProtocol.IsNordWhisper() && !features.NordWhisperEnabled {
 		return true, srv.Send(&pb.Payload{Type: internal.CodeTechnologyDisabled})
 	}
 
@@ -311,8 +311,8 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 
 	inputServerTag := internal.RemoveNonAlphanumeric(in.GetServerTag())
 
-	log.Debugf("picking servers for %v technology, input serverTag=%q serverGroup=%q, server excluded from lookup=%q",
-		cfg.Technology, in.GetServerTag(), in.GetServerGroup(), excludedServer)
+	log.Debugf("picking servers for %v vpn protocol, input serverTag=%q serverGroup=%q, server excluded from lookup=%q",
+		cfg.VPNProtocol, in.GetServerTag(), in.GetServerGroup(), excludedServer)
 
 	serverSelection, err := selectServer(r, &insights, cfg, inputServerTag, in.GetServerGroup(), excludedServer)
 	if err != nil {
@@ -412,7 +412,7 @@ func (r *RPC) connect(
 	serverData := vpn.ServerData{
 		IP:                  subnet.Addr(),
 		Hostname:            serverSelection.Server.Hostname,
-		Protocol:            cfg.AutoConnectData.Protocol,
+		Transport:           cfg.VPNProtocol.Transport(),
 		NordLynxPublicKey:   serverSelection.Server.NordLynxPublicKey,
 		PostQuantum:         cfg.AutoConnectData.PostquantumVpn,
 		OpenVPNVersion:      serverSelection.Server.Version(),
@@ -431,10 +431,9 @@ func (r *RPC) connect(
 	serverSelectionRule := determineServerSelectionRule(parameters)
 	r.connectionInfo.SetServerSelectionData(serverSelectionRule, serverSelection.Remote)
 
-	offeredGroups := serverpicker.EffectiveGroups(*serverSelection.Server, cfg.Technology)
+	offeredGroups := serverpicker.EffectiveGroups(*serverSelection.Server, cfg.VPNProtocol.Technology())
 	event := events.DataConnect{
-		Protocol:                cfg.AutoConnectData.Protocol,
-		Technology:              cfg.Technology,
+		VPNProtocol:             cfg.VPNProtocol,
 		RealTimeProtection:      cfg.AutoConnectData.RealTimeProtection,
 		IsPostQuantum:           cfg.AutoConnectData.PostquantumVpn,
 		IsECHEnabled:            r.getECHEnabledField(cfg).Get(),
@@ -486,8 +485,7 @@ func (r *RPC) connect(
 	}
 
 	disconnectSender := events.NewDisconnectSender(events.DataDisconnect{
-		Protocol:           cfg.AutoConnectData.Protocol,
-		Technology:         cfg.Technology,
+		VPNProtocol:        cfg.VPNProtocol,
 		RealTimeProtection: cfg.AutoConnectData.RealTimeProtection,
 		RecommendationUUID: string(serverSelection.RecommendationUUID),
 		VPNConnReason:      vpnConnReason,

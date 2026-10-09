@@ -194,17 +194,15 @@ func TestMigrateObfuscatedSettingsToNordWhisper(t *testing.T) {
 			cfg: config.Config{
 				AutoConnectData: config.AutoConnectData{
 					Obfuscate: true,
-					Protocol:  config.Protocol_TCP,
 				},
-				Technology: config.Technology_OPENVPN,
+				VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP,
 			},
 			isNordWhisperEnabled: true,
 			expected: config.Config{
 				AutoConnectData: config.AutoConnectData{
 					Obfuscate: false,
-					Protocol:  config.Protocol_Webtunnel,
 				},
-				Technology: config.Technology_NORDWHISPER,
+				VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
 			},
 		},
 		{
@@ -212,20 +210,18 @@ func TestMigrateObfuscatedSettingsToNordWhisper(t *testing.T) {
 			cfg: config.Config{
 				AutoConnectData: config.AutoConnectData{
 					Obfuscate: true,
-					Protocol:  config.Protocol_TCP,
 					Group:     config.ServerGroup_OVPN_OBFUSCATED,
 				},
 
-				Technology: config.Technology_OPENVPN,
+				VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP,
 			},
 			isNordWhisperEnabled: false,
 			expected: config.Config{
 				AutoConnectData: config.AutoConnectData{
 					Obfuscate: false,
-					Protocol:  config.Protocol_TCP,
 					Group:     config.ServerGroup_UNDEFINED,
 				},
-				Technology: config.Technology_OPENVPN,
+				VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP,
 			},
 		},
 		{
@@ -233,19 +229,17 @@ func TestMigrateObfuscatedSettingsToNordWhisper(t *testing.T) {
 			cfg: config.Config{
 				AutoConnectData: config.AutoConnectData{
 					Obfuscate: true,
-					Protocol:  config.Protocol_TCP,
 					Group:     config.ServerGroup_OVPN_OBFUSCATED,
 				},
-				Technology: config.Technology_OPENVPN,
+				VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP,
 			},
 			isNordWhisperEnabled: false,
 			expected: config.Config{
 				AutoConnectData: config.AutoConnectData{
 					Obfuscate: false,
-					Protocol:  config.Protocol_TCP,
 					Group:     config.ServerGroup_UNDEFINED,
 				},
-				Technology: config.Technology_OPENVPN,
+				VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP,
 			},
 		},
 		{
@@ -253,17 +247,15 @@ func TestMigrateObfuscatedSettingsToNordWhisper(t *testing.T) {
 			cfg: config.Config{
 				AutoConnectData: config.AutoConnectData{
 					Obfuscate: true,
-					Protocol:  config.Protocol_Webtunnel,
 				},
-				Technology: config.Technology_NORDWHISPER,
+				VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
 			},
 			isNordWhisperEnabled: true,
 			expected: config.Config{
 				AutoConnectData: config.AutoConnectData{
 					Obfuscate: false,
-					Protocol:  config.Protocol_Webtunnel,
 				},
-				Technology: config.Technology_NORDWHISPER,
+				VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
 			},
 		},
 	}

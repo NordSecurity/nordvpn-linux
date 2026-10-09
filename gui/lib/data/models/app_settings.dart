@@ -65,7 +65,7 @@ abstract class ApplicationSettings with _$ApplicationSettings {
       analyticsConsent: _convertToConsentLevel(settings.analyticsConsent),
       autoConnect: settings.autoConnectData.enabled,
       autoConnectLocation: autoConnectData,
-      protocol: convertToVpnProtocol(settings.technology, settings.protocol),
+      protocol: vpnProtocolFromPb(settings.vpnProtocol),
       killSwitch: settings.killSwitch,
       lanDiscovery: settings.lanDiscovery,
       routing: settings.routing,

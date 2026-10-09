@@ -122,7 +122,7 @@ func (r *RPC) GetServers(ctx context.Context, in *pb.Empty) (*pb.ServersResponse
 
 	return &pb.ServersResponse{Response: &pb.ServersResponse_Servers{
 		Servers: &pb.ServersMap{
-			ServersByCountry: serversListToServersMap(servers, cfg.Technology),
+			ServersByCountry: serversListToServersMap(servers, cfg.VPNProtocol.Technology()),
 		},
 	}}, nil
 }

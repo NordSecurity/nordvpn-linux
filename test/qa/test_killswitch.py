@@ -31,11 +31,11 @@ MSG_KILLSWITCH_ON = "Kill Switch has been successfully set to 'enabled'."
 MSG_KILLSWITCH_OFF = "Kill Switch has been successfully set to 'disabled'."
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_killswitch_on_disconnected(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
+def test_killswitch_on_disconnected(vpn_protocol):
     """Manual TC: LVPN-419"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
     assert network.is_available(), "Network should be available"
 
     assert MSG_KILLSWITCH_ON in sh.nordvpn.set.killswitch("on"), "Kill switch enable message should be shown"
@@ -49,11 +49,11 @@ def test_killswitch_on_disconnected(tech, proto):
     assert network.is_available(), "Network should be available"
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_killswitch_on_connect(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
+def test_killswitch_on_connect(vpn_protocol):
     """Manual TC: LVPN-8707"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
     assert network.is_available(), "Network should be available"
 
     assert MSG_KILLSWITCH_ON in sh.nordvpn.set.killswitch("on"), "Kill switch enable message should be shown"
@@ -78,11 +78,11 @@ def test_killswitch_on_connect(tech, proto):
     assert network.is_available(), "Network should be available"
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_killswitch_on_connected(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
+def test_killswitch_on_connected(vpn_protocol):
     """Manual TC: LVPN-1394"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
     assert network.is_available(), "Network should be available"
 
     with lib.Defer(sh.nordvpn.disconnect):
@@ -101,11 +101,11 @@ def test_killswitch_on_connected(tech, proto):
     assert network.is_available(), "Network should be available"
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_killswitch_off_connected(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
+def test_killswitch_off_connected(vpn_protocol):
     """Manual TC: LVPN-2195"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
     assert network.is_available(), "Network should be available"
 
     assert MSG_KILLSWITCH_ON in sh.nordvpn.set.killswitch("on"), "Kill switch enable message should be shown"
@@ -128,19 +128,19 @@ def test_killswitch_off_connected(tech, proto):
 
 @dynamic_parametrize(
     [
-        "tech_from", "proto_from",
-        "tech_to", "proto_to",
+        "vpn_protocol_from",
+        "vpn_protocol_to",
     ],
-    ordered_source=[lib.TECHNOLOGIES],
-    randomized_source=[lib.TECHNOLOGIES],
+    ordered_source=[lib.VPN_PROTOCOLS],
+    randomized_source=[lib.VPN_PROTOCOLS],
     generate_all=IS_NIGHTLY,
-    id_pattern="{tech_from}-{proto_from}-"
-               "{tech_to}-{proto_to}",
+    id_pattern="{vpn_protocol_from}-"
+               "{vpn_protocol_to}",
 )
-def test_killswitch_reconnect(tech_from, proto_from, tech_to, proto_to):
+def test_killswitch_reconnect(vpn_protocol_from, vpn_protocol_to):
     """Manual TC: LVPN-8716"""
 
-    lib.set_technology_and_protocol(tech_from, proto_from)
+    lib.set_vpn_protocol(vpn_protocol_from)
     assert network.is_available(), "Network should be available"
 
     assert MSG_KILLSWITCH_ON in sh.nordvpn.set.killswitch("on"), "Kill switch enable message should be shown"
@@ -154,7 +154,7 @@ def test_killswitch_reconnect(tech_from, proto_from, tech_to, proto_to):
             print(output)
             assert network.is_connected(), "Network should be connected"
 
-            lib.set_technology_and_protocol(tech_to, proto_to)
+            lib.set_vpn_protocol(vpn_protocol_to)
             assert network.is_connected(), "Network should be connected after changing protocol"
             output = sh.nordvpn.connect()
             print(output)

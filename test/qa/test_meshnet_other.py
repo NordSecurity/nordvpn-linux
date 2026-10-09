@@ -39,10 +39,10 @@ def test_allowlist_incoming_connection():
     ssh_client.exec_command("nordvpn set killswitch off")
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
 # This doesn't directly test meshnet, but it uses it
-def test_set_defaults_when_logged_in_2nd_set(tech, proto):
-    lib.set_technology_and_protocol(tech, proto)
+def test_set_defaults_when_logged_in_2nd_set(vpn_protocol):
+    lib.set_vpn_protocol(vpn_protocol)
 
     sh_no_tty.nordvpn.set.fwmark("0xe2f2")
     sh_no_tty.nordvpn.set.killswitch("on")
@@ -62,10 +62,10 @@ def test_set_defaults_when_logged_in_2nd_set(tech, proto):
     assert settings.app_has_defaults_settings(True), "App should have default settings after restore"
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
 # This doesn't directly test meshnet, but it uses it
-def test_set_defaults_when_logged_out_1st_set(tech, proto):
-    lib.set_technology_and_protocol(tech, proto)
+def test_set_defaults_when_logged_out_1st_set(vpn_protocol):
+    lib.set_vpn_protocol(vpn_protocol)
 
     sh_no_tty.nordvpn.set.fwmark("0xe2f2")
     sh_no_tty.nordvpn.set.killswitch("on")

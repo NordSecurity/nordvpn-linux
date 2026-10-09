@@ -868,20 +868,11 @@ func getSetSubcommands(cmd *cmd, isMeshnetEnabled bool) []*cli.Command {
 		},
 		{
 			Name:         "protocol",
-			Usage:        SetProtocolUsageText,
-			Action:       cmd.SetProtocol,
-			BashComplete: cmd.SetProtocolAutoComplete,
-			ArgsUsage:    SetProtocolArgsUsageText,
-			Description:  SetProtocolDescription,
-			Hidden:       cmd.Except(config.Technology_OPENVPN),
-		},
-		{
-			Name:         "technology",
-			Usage:        SetTechnologyUsageText,
-			Action:       cmd.SetTechnology,
-			BashComplete: cmd.SetTechnologyAutoComplete,
-			ArgsUsage:    SetTechnologyArgsUsageText,
-			Description:  SetTechnologyDescription,
+			Usage:        SetVPNProtocolUsageText,
+			Action:       cmd.SetVPNProtocol,
+			BashComplete: cmd.SetVPNProtocolAutoComplete,
+			ArgsUsage:    SetVPNProtocolArgsUsageText,
+			Description:  buildVPNProtocolDescription(),
 		},
 		{
 			Name:      "lan-discovery",
@@ -909,7 +900,7 @@ func getSetSubcommands(cmd *cmd, isMeshnetEnabled bool) []*cli.Command {
 				"post-quantum",
 				"post-quantum",
 			),
-			Hidden: cmd.Except(config.Technology_NORDLYNX),
+			Hidden: cmd.Except(config.TechnologyNordLynx),
 		},
 		{
 			Name:         "arp-ignore",
@@ -939,7 +930,7 @@ func getSetSubcommands(cmd *cmd, isMeshnetEnabled bool) []*cli.Command {
 				"ech",
 				"ech",
 			),
-			Hidden: cmd.Except(config.Technology_NORDWHISPER),
+			Hidden: cmd.Except(config.TechnologyNordWhisper),
 		})
 	}
 

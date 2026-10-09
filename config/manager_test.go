@@ -130,22 +130,22 @@ func TestConfigDefaultValues(t *testing.T) {
 			settingsFile: "testdata/settings_3.10.0.dat",
 			installFile:  "testdata/install_3.10.0.dat",
 			autoconnect:  true,
-			technology:   Technology_NORDLYNX,
+			technology:   TechnologyNordLynx,
 		},
 		{
 			settingsFile: "testdata/settings_3.12.0.dat",
 			installFile:  "testdata/install_3.12.0.dat",
-			technology:   Technology_OPENVPN,
+			technology:   TechnologyOpenVPN,
 		},
 		{
 			settingsFile: "testdata/settings_3.13.0.dat",
 			installFile:  "testdata/install_3.13.0.dat",
-			technology:   Technology_NORDLYNX,
+			technology:   TechnologyNordLynx,
 		},
 		{
 			settingsFile: "testdata/settings_3.14.0.dat",
 			installFile:  "testdata/install_3.14.0.dat",
-			technology:   Technology_NORDLYNX,
+			technology:   TechnologyNordLynx,
 		},
 	}
 
@@ -156,7 +156,7 @@ func TestConfigDefaultValues(t *testing.T) {
 			err := fs.Load(&cfg)
 			require.NoError(t, err)
 			assert.Equal(t, defaultFWMarkValue, cfg.FirewallMark)
-			assert.Equal(t, test.technology, cfg.Technology)
+			assert.Equal(t, test.technology, cfg.VPNProtocol.Technology())
 			assert.True(t, cfg.Firewall)
 			assert.True(t, cfg.Routing.Get())
 			assert.False(t, cfg.Mesh)
@@ -343,4 +343,46 @@ func TestConfigLoadsLegacyAllowlistKey(t *testing.T) {
 	require.NotNil(t, cfg.AutoConnectData.LegacyAllowlist)
 	assert.Equal(t, expected, *cfg.AutoConnectData.LegacyAllowlist)
 	assert.Equal(t, Allowlist{}, cfg.AutoConnectData.Allowlist)
+}
+
+func TestConfigLoadMigratesLegacyTechnologyAndProtocol(t *testing.T) {
+	category.Set(t, category.File)
+
+	tests := []struct {
+		name     string
+		json     string
+		expected VPNProtocol
+	}{
+		{"openvpn tcp", `{"technology":1,"auto_connect_data":{"protocol":2}}`, VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP},
+		{"openvpn udp", `{"technology":1,"auto_connect_data":{"protocol":1}}`, VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP},
+		{"openvpn without protocol", `{"technology":1}`, VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP},
+		{"nordlynx", `{"technology":2,"auto_connect_data":{"protocol":1}}`, VPNProtocol_VPN_PROTOCOL_NORDLYNX},
+		{"nordwhisper", `{"technology":3,"auto_connect_data":{"protocol":3}}`, VPNProtocol_VPN_PROTOCOL_NORDWHISPER},
+		{"no technology keys", `{"firewall":true}`, VPNProtocol_VPN_PROTOCOL_NORDLYNX},
+		{"vpn_protocol wins over legacy keys", `{"vpn_protocol":3,"technology":2,"auto_connect_data":{"protocol":1}}`, VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP},
+	}
+
+	for _, test := range tests {
+		filesystem := fs.NewSystemFileHandleMock(t)
+		configManager := NewFilesystemConfigManager("/location", "/vault", "", NewMachineID(os.ReadFile, os.Hostname), &filesystem, nil)
+		filesystem.WriteFile("/location", append(append([]byte{}, decryptedConfigFileHeader...), test.json...), internal.PermUserRW)
+
+		var cfg, copyCfg Config
+		require.NoError(t, configManager.load(&cfg, &copyCfg), test.name)
+
+		assert.Equal(t, test.expected, cfg.VPNProtocol, test.name)
+		assert.Equal(t, test.expected, copyCfg.VPNProtocol, "%s: copy must be migrated too", test.name)
+	}
+}
+
+func TestConfigLoadNewInstallationDefaultsToNordLynx(t *testing.T) {
+	category.Set(t, category.File)
+
+	filesystem := fs.NewSystemFileHandleMock(t)
+	configManager := NewFilesystemConfigManager("/location", "/vault", "", NewMachineID(os.ReadFile, os.Hostname), &filesystem, nil)
+
+	var cfg Config
+	require.NoError(t, configManager.Load(&cfg))
+
+	assert.Equal(t, VPNProtocol_VPN_PROTOCOL_NORDLYNX, cfg.VPNProtocol)
 }

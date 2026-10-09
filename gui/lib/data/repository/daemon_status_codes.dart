@@ -5,6 +5,7 @@ final class DaemonStatusCode {
   static const connecting = 1001;
   static const connected = 1002;
   static const disconnected = 1003;
+  static const successReconnectRequired = 1010;
 
   static const nothingToDo = 2000;
   static const vpnIsRunning = 2002;
@@ -29,11 +30,12 @@ final class DaemonStatusCode {
   static const technologyDisabled = 3051;
   static const allowlistSubnetTooWideWarn = 3060;
   static const allowlistSubnetWiderConfirm = 3061;
+  static const dedicatedServersNoNordlynx = 3068;
   static const connectionLimitReached = 3076;
   static const setDefaultsNotApplied = 3078;
+  static const obfuscatedNeedsNordWhisper = 3080;
 
   // custom GUI defined error codes
-  static const invalidTechnology = 5000;
   static const allowListModified = 5001;
   static const dnsListModified = 5002;
   static const tooManyValues = 5003;

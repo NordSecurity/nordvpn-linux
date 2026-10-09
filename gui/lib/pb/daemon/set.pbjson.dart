@@ -61,21 +61,6 @@ final $typed_data.Uint8List setDNSStatusDescriptor = $convert.base64Decode(
     'CgxTZXRETlNTdGF0dXMSEgoORE5TX0NPTkZJR1VSRUQQABIcChhETlNfQ09ORklHVVJFRF9SVF'
     'BfUkVTRVQQARIXChNJTlZBTElEX0ROU19BRERSRVNTEAISEwoPVE9PX01BTllfVkFMVUVTEAM=');
 
-@$core.Deprecated('Use setProtocolStatusDescriptor instead')
-const SetProtocolStatus$json = {
-  '1': 'SetProtocolStatus',
-  '2': [
-    {'1': 'PROTOCOL_CONFIGURED', '2': 0},
-    {'1': 'PROTOCOL_CONFIGURED_VPN_ON', '2': 1},
-    {'1': 'INVALID_TECHNOLOGY', '2': 2},
-  ],
-};
-
-/// Descriptor for `SetProtocolStatus`. Decode as a `google.protobuf.EnumDescriptorProto`.
-final $typed_data.Uint8List setProtocolStatusDescriptor = $convert.base64Decode(
-    'ChFTZXRQcm90b2NvbFN0YXR1cxIXChNQUk9UT0NPTF9DT05GSUdVUkVEEAASHgoaUFJPVE9DT0'
-    'xfQ09ORklHVVJFRF9WUE5fT04QARIWChJJTlZBTElEX1RFQ0hOT0xPR1kQAg==');
-
 @$core.Deprecated('Use setLANDiscoveryStatusDescriptor instead')
 const SetLANDiscoveryStatus$json = {
   '1': 'SetLANDiscoveryStatus',
@@ -272,79 +257,25 @@ const SetTrayRequest$json = {
 final $typed_data.Uint8List setTrayRequestDescriptor = $convert.base64Decode(
     'Cg5TZXRUcmF5UmVxdWVzdBISCgR0cmF5GAMgASgIUgR0cmF5SgQIAhADUgN1aWQ=');
 
-@$core.Deprecated('Use setProtocolRequestDescriptor instead')
-const SetProtocolRequest$json = {
-  '1': 'SetProtocolRequest',
+@$core.Deprecated('Use setVPNProtocolRequestDescriptor instead')
+const SetVPNProtocolRequest$json = {
+  '1': 'SetVPNProtocolRequest',
   '2': [
     {
-      '1': 'protocol',
-      '3': 2,
-      '4': 1,
-      '5': 14,
-      '6': '.config.Protocol',
-      '10': 'protocol'
-    },
-  ],
-};
-
-/// Descriptor for `SetProtocolRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List setProtocolRequestDescriptor = $convert.base64Decode(
-    'ChJTZXRQcm90b2NvbFJlcXVlc3QSLAoIcHJvdG9jb2wYAiABKA4yEC5jb25maWcuUHJvdG9jb2'
-    'xSCHByb3RvY29s');
-
-@$core.Deprecated('Use setProtocolResponseDescriptor instead')
-const SetProtocolResponse$json = {
-  '1': 'SetProtocolResponse',
-  '2': [
-    {
-      '1': 'error_code',
+      '1': 'vpn_protocol',
       '3': 1,
       '4': 1,
       '5': 14,
-      '6': '.pb.SetErrorCode',
-      '9': 0,
-      '10': 'errorCode'
-    },
-    {
-      '1': 'set_protocol_status',
-      '3': 2,
-      '4': 1,
-      '5': 14,
-      '6': '.pb.SetProtocolStatus',
-      '9': 0,
-      '10': 'setProtocolStatus'
-    },
-  ],
-  '8': [
-    {'1': 'response'},
-  ],
-};
-
-/// Descriptor for `SetProtocolResponse`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List setProtocolResponseDescriptor = $convert.base64Decode(
-    'ChNTZXRQcm90b2NvbFJlc3BvbnNlEjEKCmVycm9yX2NvZGUYASABKA4yEC5wYi5TZXRFcnJvck'
-    'NvZGVIAFIJZXJyb3JDb2RlEkcKE3NldF9wcm90b2NvbF9zdGF0dXMYAiABKA4yFS5wYi5TZXRQ'
-    'cm90b2NvbFN0YXR1c0gAUhFzZXRQcm90b2NvbFN0YXR1c0IKCghyZXNwb25zZQ==');
-
-@$core.Deprecated('Use setTechnologyRequestDescriptor instead')
-const SetTechnologyRequest$json = {
-  '1': 'SetTechnologyRequest',
-  '2': [
-    {
-      '1': 'technology',
-      '3': 2,
-      '4': 1,
-      '5': 14,
-      '6': '.config.Technology',
-      '10': 'technology'
+      '6': '.config.VPNProtocol',
+      '10': 'vpnProtocol'
     },
   ],
 };
 
-/// Descriptor for `SetTechnologyRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List setTechnologyRequestDescriptor = $convert.base64Decode(
-    'ChRTZXRUZWNobm9sb2d5UmVxdWVzdBIyCgp0ZWNobm9sb2d5GAIgASgOMhIuY29uZmlnLlRlY2'
-    'hub2xvZ3lSCnRlY2hub2xvZ3k=');
+/// Descriptor for `SetVPNProtocolRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List setVPNProtocolRequestDescriptor = $convert.base64Decode(
+    'ChVTZXRWUE5Qcm90b2NvbFJlcXVlc3QSNgoMdnBuX3Byb3RvY29sGAEgASgOMhMuY29uZmlnLl'
+    'ZQTlByb3RvY29sUgt2cG5Qcm90b2NvbA==');
 
 @$core.Deprecated('Use portRangeDescriptor instead')
 const PortRange$json = {

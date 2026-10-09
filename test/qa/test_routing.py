@@ -10,10 +10,10 @@ from lib import allowlist, daemon, firewall, network, settings
 pytestmark = pytest.mark.usefixtures("add_and_delete_random_route", "nordvpnd_scope_function")
 
 
-def get_network_interface(tech):
-    if tech == "openvpn":
+def get_network_interface(vpn_protocol):
+    if vpn_protocol.startswith("openvpn"):
         return "nordtun"
-    if tech == "nordwhisper":
+    if vpn_protocol == "nordwhisper":
         return "qtun"
     return "nordlynx"
 
@@ -29,11 +29,11 @@ MSG_ROUTING_ON_ALREADY = "Routing is already set to 'enabled'."
 MSG_ROUTING_USED_BY_MESH = "Routing is currently used by Meshnet. Disable it first."
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_routing_enabled_connect(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
+def test_routing_enabled_connect(vpn_protocol):
     """Manual TC: LVPN-898"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     allowlist.add_subnet_to_allowlist([f"{SUBNET_1}/32", f"{SUBNET_2}/32", f"{SUBNET_3}/32"])
 
@@ -48,17 +48,17 @@ def test_routing_enabled_connect(tech, proto):
     assert SUBNET_3 in policy_rules, f"Subnet {SUBNET_3} should be in policy rules"
 
     policy_routes = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
-    assert get_network_interface(tech) in policy_routes, "Network interface should be in policy routes"
+    assert get_network_interface(vpn_protocol) in policy_routes, "Network interface should be in policy routes"
 
     assert settings.is_routing_enabled(), "Routing should be enabled"
 
 
 @pytest.mark.skip("LVPN-3273; LVPN-1574")
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_routing_disabled_connect(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
+def test_routing_disabled_connect(vpn_protocol):
     """Manual TC: LVPN-900"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     allowlist.add_subnet_to_allowlist([f"{SUBNET_1}/32"])
 
@@ -72,41 +72,41 @@ def test_routing_disabled_connect(tech, proto):
     assert "fwmark" not in sh.ip.rule.show.table(firewall.IP_ROUTE_TABLE), "fwmark should not be in policy rules when routing is disabled"
     assert SUBNET_1 not in sh.ip.route(), f"Subnet {SUBNET_1} should not be in routes when routing is disabled"
 
-    assert get_network_interface(tech) not in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE), "Network interface should not be in policy routes when routing is disabled"
+    assert get_network_interface(vpn_protocol) not in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE), "Network interface should not be in policy routes when routing is disabled"
 
     assert MSG_ROUTING_ON_ALREADY in sh.nordvpn.set.routing.on(), "Routing should be enabled (already was enabled)"
     assert settings.is_routing_enabled(), "Routing should be enabled"
 
 
 @pytest.mark.skip("LVPN-3273")
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_connected_routing_disable_enable(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
+def test_connected_routing_disable_enable(vpn_protocol):
     """Manual TC: LVPN-714"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     print(sh.nordvpn.connect())
     assert network.is_available(), "Network should be available when connected"
 
     assert MSG_ROUTING_OFF in sh.nordvpn.set.routing.off(), "Routing should be disabled successfully"
     assert not settings.is_routing_enabled(), "Routing should be disabled"
-    assert get_network_interface(tech) not in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE), "Network interface should not be in policy routes when routing is disabled"
+    assert get_network_interface(vpn_protocol) not in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE), "Network interface should not be in policy routes when routing is disabled"
     assert "mark" not in sh.ip.rule(), "mark should not be in rules when routing is disabled"
     assert network.is_not_available(), "Network should not be available when routing is disabled"
 
     assert MSG_ROUTING_ON in sh.nordvpn.set.routing.on(), "Routing should be enabled successfully"
     assert settings.is_routing_enabled(), "Routing should be enabled"
-    assert get_network_interface(tech) in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE), "Network interface should be in policy routes when routing is enabled"
+    assert get_network_interface(vpn_protocol) in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE), "Network interface should be in policy routes when routing is enabled"
     assert "mark" in sh.ip.rule(), "mark should be in rules when routing is enabled"
     assert network.is_available(), "Network should be available when routing is enabled"
 
 
 @pytest.mark.skip("LVPN-3273; LVPN-1574")
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_connected_routing_enable_disable(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
+def test_connected_routing_enable_disable(vpn_protocol):
     """Manual TC: LVPN-716"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     assert MSG_ROUTING_OFF in sh.nordvpn.set.routing.off(), "Routing should be disabled successfully"
     assert not settings.is_routing_enabled(), "Routing should be disabled"
@@ -116,45 +116,45 @@ def test_connected_routing_enable_disable(tech, proto):
 
     assert MSG_ROUTING_ON in sh.nordvpn.set.routing.on(), "Routing should be enabled successfully"
     assert settings.is_routing_enabled(), "Routing should be enabled"
-    assert get_network_interface(tech) in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE), "Network interface should be in policy routes when routing is enabled"
+    assert get_network_interface(vpn_protocol) in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE), "Network interface should be in policy routes when routing is enabled"
     assert "mark" in sh.ip.rule(), "mark should be in rules when routing is enabled"
     assert network.is_available(), "Network should be available when routing is enabled"
 
     assert MSG_ROUTING_OFF in sh.nordvpn.set.routing.off(), "Routing should be disabled successfully"
     assert not settings.is_routing_enabled(), "Routing should be disabled"
-    assert get_network_interface(tech) not in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE), "Network interface should not be in policy routes when routing is disabled"
+    assert get_network_interface(vpn_protocol) not in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE), "Network interface should not be in policy routes when routing is disabled"
     assert "mark" not in sh.ip.rule(), "mark should not be in rules when routing is disabled"
     assert network.is_not_available(), "Network should not be available when routing is disabled"
 
 
 @pytest.mark.skip("LVPN-4360")
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES_BASIC1)
-def test_meshnet_on_routing_disable(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS_BASIC1)
+def test_meshnet_on_routing_disable(vpn_protocol):
     """Manual TC: LVPN-892"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     sh.nordvpn.set.mesh.on()
     assert MSG_ROUTING_USED_BY_MESH in sh.nordvpn.set.routing.off(), "Should not allow disabling routing when meshnet is enabled"
     assert settings.is_routing_enabled(), "Routing should remain enabled when meshnet is active"
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_routing_already_enabled(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
+def test_routing_already_enabled(vpn_protocol):
     """Manual TC: LVPN-8758"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
     lib.set_routing("on")
 
     assert MSG_ROUTING_ON_ALREADY in sh.nordvpn.set.routing.on(), "Should show routing already enabled message"
     assert settings.is_routing_enabled(), "Routing should be enabled"
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_routing_already_disabled(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
+def test_routing_already_disabled(vpn_protocol):
     """Manual TC: LVPN-8759"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
     lib.set_routing("off")
 
     assert MSG_ROUTING_OFF_ALREADY in sh.nordvpn.set.routing.off(), "Should show routing already disabled message"
@@ -162,46 +162,46 @@ def test_routing_already_disabled(tech, proto):
 
 
 @pytest.mark.skip("LVPN-3273")
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_toggle_routing_in_the_middle_of_the_connection(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
+def test_toggle_routing_in_the_middle_of_the_connection(vpn_protocol):
     """"Manual TC is unavailable since toggling routing mid-connection and validating dynamic ip rule/routing table changes requires automation to observe state transitions accurately."""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     print(sh.nordvpn.connect())
 
     routes = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     rules = sh.ip.rule()
-    assert get_network_interface(tech) in routes, "Network interface should be in policy routes when connected"
+    assert get_network_interface(vpn_protocol) in routes, "Network interface should be in policy routes when connected"
     assert "mark" in rules, "mark should be in rules when connected"
     assert network.is_available(), "Network should be available when connected"
 
     lib.set_routing("off")
     routes = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     rules = sh.ip.rule()
-    assert get_network_interface(tech) not in routes, "Network interface should not be in policy routes when routing is disabled"
+    assert get_network_interface(vpn_protocol) not in routes, "Network interface should not be in policy routes when routing is disabled"
     assert "mark" not in rules, "mark should not be in rules when routing is disabled"
     assert network.is_not_available(), "Network should not be available when routing is disabled"
 
     lib.set_routing("on")
     routes = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     rules = sh.ip.rule()
-    assert get_network_interface(tech) in routes, "Network interface should be in policy routes when routing is enabled"
+    assert get_network_interface(vpn_protocol) in routes, "Network interface should be in policy routes when routing is enabled"
     assert "mark" in rules, "mark should be in rules when routing is enabled"
     assert network.is_available(), "Network should be available when routing is enabled"
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_routing_when_iprule_already_exists(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
+def test_routing_when_iprule_already_exists(vpn_protocol):
     """"Manual TC is unavailable since this test manipulates low-level ip rule and routing table entries that cannot be reliably reproduced or validated without automation."""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     print(sh.nordvpn.connect())
 
     routes = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     rules = sh.ip.rule()
-    assert f"default dev {get_network_interface(tech)}" in routes, "Default route should include network interface when connected"
+    assert f"default dev {get_network_interface(vpn_protocol)}" in routes, "Default route should include network interface when connected"
     assert "mark" in rules, "mark should be in rules when routing is enabled"
     assert network.is_available(), "Network should be available when connected"
 
@@ -222,12 +222,12 @@ def test_routing_when_iprule_already_exists(tech, proto):
 
         routes = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
         rules = sh.ip.rule()
-        assert f"default dev {get_network_interface(tech)}" in routes, "Default route should include network interface when connected"
+        assert f"default dev {get_network_interface(vpn_protocol)}" in routes, "Default route should include network interface when connected"
         assert "mark" in rules, "mark should be in rules when routing is enabled"
         assert network.is_available(), "Network should be available when connected"
 
         routes = sh.ip.route.show.table("main")
-        assert f"default dev {get_network_interface(tech)}" not in routes, "Network interface should not be in main route table"
+        assert f"default dev {get_network_interface(vpn_protocol)}" not in routes, "Network interface should not be in main route table"
 
 
 def test_routing_applied_after_set_defaults_with_routing_disabled():

@@ -394,7 +394,7 @@ func TestServers(t *testing.T) {
 		serversErr       error
 		obfuscate        bool
 		technology       config.Technology
-		protocol         config.Protocol
+		protocol         config.Transport
 		configErr        error
 		expectedResponse *pb.ServersResponse
 	}{
@@ -402,8 +402,8 @@ func TestServers(t *testing.T) {
 			name:        "success openvpn TCP",
 			serversList: servers,
 			obfuscate:   false,
-			technology:  config.Technology_OPENVPN,
-			protocol:    config.Protocol_TCP,
+			technology:  config.TechnologyOpenVPN,
+			protocol:    config.TransportTCP,
 			expectedResponse: &pb.ServersResponse{
 				Response: &pb.ServersResponse_Servers{Servers: &pb.ServersMap{
 					ServersByCountry: expectedServersOpenVPNTCP,
@@ -413,8 +413,8 @@ func TestServers(t *testing.T) {
 		{
 			name:        "success openvpn UDP ignores legacy XOR technologies and tag",
 			serversList: servers,
-			technology:  config.Technology_OPENVPN,
-			protocol:    config.Protocol_UDP,
+			technology:  config.TechnologyOpenVPN,
+			protocol:    config.TransportUDP,
 			expectedResponse: &pb.ServersResponse{
 				Response: &pb.ServersResponse_Servers{Servers: &pb.ServersMap{
 					ServersByCountry: expectedServersOpenVPNUDP,
@@ -425,7 +425,7 @@ func TestServers(t *testing.T) {
 			name:        "success wireguard",
 			serversList: servers,
 			obfuscate:   false,
-			technology:  config.Technology_NORDLYNX,
+			technology:  config.TechnologyNordLynx,
 			expectedResponse: &pb.ServersResponse{
 				Response: &pb.ServersResponse_Servers{Servers: &pb.ServersMap{
 					ServersByCountry: expectedServersWireguard,
@@ -456,9 +456,8 @@ func TestServers(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			cfgManager := mock.NewMockConfigManager()
 			cfgManager.LoadErr = test.configErr
-			cfgManager.Cfg.Technology = test.technology
+			cfgManager.Cfg.VPNProtocol = vpnProtocolFor(test.technology, test.protocol)
 			cfgManager.Cfg.AutoConnectData.Obfuscate = test.obfuscate
-			cfgManager.Cfg.AutoConnectData.Protocol = test.protocol
 
 			dm := DataManager{}
 			dm.serversData.Servers = test.serversList
@@ -492,21 +491,19 @@ func TestLegacyXORServersNeverSurface(t *testing.T) {
 		[]core.ServerTechnology{core.OpenVPNUDPObfuscated, core.OpenVPNTCPObfuscated})
 
 	tests := []struct {
-		tech  config.Technology
-		proto config.Protocol
+		vpnProtocol config.VPNProtocol
 	}{
-		{tech: config.Technology_NORDLYNX, proto: config.Protocol_UDP},
-		{tech: config.Technology_OPENVPN, proto: config.Protocol_TCP},
-		{tech: config.Technology_OPENVPN, proto: config.Protocol_UDP},
-		{tech: config.Technology_NORDWHISPER, proto: config.Protocol_Webtunnel},
+		{vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX},
+		{vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP},
+		{vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP},
+		{vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER},
 	}
 
 	for _, test := range tests {
-		t.Run(test.tech.String()+"/"+test.proto.String(), func(t *testing.T) {
+		t.Run(test.vpnProtocol.String(), func(t *testing.T) {
 			dm := DataManager{serversData: ServersData{Servers: core.Servers{standard, legacyXOR}}}
 			cfgManager := mock.NewMockConfigManager()
-			cfgManager.Cfg.Technology = test.tech
-			cfgManager.Cfg.AutoConnectData.Protocol = test.proto
+			cfgManager.Cfg.VPNProtocol = test.vpnProtocol
 			r := RPC{dm: &dm, cm: cfgManager}
 
 			resp, err := r.GetServers(context.Background(), &pb.Empty{})
@@ -515,13 +512,13 @@ func TestLegacyXORServersNeverSurface(t *testing.T) {
 			assert.Len(t, countries, 1, "only the standard server's country is expected")
 			assert.NotContains(t, fmt.Sprint(countries), legacyXOR.Hostname)
 
-			groups, err := dm.Groups(test.tech, test.proto)
+			groups, err := dm.Groups(test.vpnProtocol)
 			assert.NoError(t, err)
 			names := make([]string, 0, len(groups))
 			for _, group := range groups {
 				names = append(names, group.Name)
 			}
-			if test.tech == config.Technology_NORDWHISPER {
+			if test.vpnProtocol.IsNordWhisper() {
 				assert.Contains(t, names, "Obfuscated")
 			} else {
 				assert.NotContains(t, names, "Obfuscated")
@@ -531,7 +528,7 @@ func TestLegacyXORServersNeverSurface(t *testing.T) {
 
 	t.Run("a fleet of only XOR servers lists nothing", func(t *testing.T) {
 		dm := DataManager{serversData: ServersData{Servers: core.Servers{legacyXOR}}}
-		groups, err := dm.Groups(config.Technology_OPENVPN, config.Protocol_TCP)
+		groups, err := dm.Groups(config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP)
 		assert.NoError(t, err)
 		assert.Empty(t, groups)
 	})
@@ -564,21 +561,20 @@ func TestObfuscatedGroupNeverComesFromAServerTag(t *testing.T) {
 		})
 
 	tests := []struct {
-		tech             config.Technology
-		proto            config.Protocol
+		vpnProtocol      config.VPNProtocol
 		expectObfuscated bool
 	}{
-		{tech: config.Technology_NORDLYNX, proto: config.Protocol_UDP},
-		{tech: config.Technology_OPENVPN, proto: config.Protocol_TCP},
-		{tech: config.Technology_OPENVPN, proto: config.Protocol_UDP},
-		{tech: config.Technology_NORDWHISPER, proto: config.Protocol_Webtunnel, expectObfuscated: true},
+		{vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX},
+		{vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP},
+		{vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP},
+		{vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER, expectObfuscated: true},
 	}
 
 	for _, test := range tests {
-		t.Run(test.tech.String()+"/"+test.proto.String(), func(t *testing.T) {
+		t.Run(test.vpnProtocol.String(), func(t *testing.T) {
 			dm := DataManager{serversData: ServersData{Servers: core.Servers{tagged, untagged}}}
 
-			groups, err := dm.Groups(test.tech, test.proto)
+			groups, err := dm.Groups(test.vpnProtocol)
 			assert.NoError(t, err)
 			names := make([]string, 0, len(groups))
 			for _, group := range groups {
@@ -592,8 +588,7 @@ func TestObfuscatedGroupNeverComesFromAServerTag(t *testing.T) {
 			}
 
 			cfgManager := mock.NewMockConfigManager()
-			cfgManager.Cfg.Technology = test.tech
-			cfgManager.Cfg.AutoConnectData.Protocol = test.proto
+			cfgManager.Cfg.VPNProtocol = test.vpnProtocol
 			r := RPC{dm: &dm, cm: cfgManager}
 
 			resp, err := r.GetServers(context.Background(), &pb.Empty{})
@@ -651,30 +646,25 @@ func TestObfuscatedGroupIsSynthesizedForGUI(t *testing.T) {
 
 	tests := []struct {
 		name             string
-		tech             config.Technology
-		proto            config.Protocol
+		vpnProtocol      config.VPNProtocol
 		expectObfuscated bool
 	}{
 		{
 			name:             "nordwhisper mirrors the standard servers",
-			tech:             config.Technology_NORDWHISPER,
-			proto:            config.Protocol_Webtunnel,
+			vpnProtocol:      config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
 			expectObfuscated: true,
 		},
 		{
-			name:  "openvpn tcp reports no obfuscated servers",
-			tech:  config.Technology_OPENVPN,
-			proto: config.Protocol_TCP,
+			name:        "openvpn tcp reports no obfuscated servers",
+			vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP,
 		},
 		{
-			name:  "openvpn udp reports no obfuscated servers",
-			tech:  config.Technology_OPENVPN,
-			proto: config.Protocol_UDP,
+			name:        "openvpn udp reports no obfuscated servers",
+			vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP,
 		},
 		{
-			name:  "nordlynx reports no obfuscated servers",
-			tech:  config.Technology_NORDLYNX,
-			proto: config.Protocol_UDP,
+			name:        "nordlynx reports no obfuscated servers",
+			vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 		},
 	}
 
@@ -682,8 +672,7 @@ func TestObfuscatedGroupIsSynthesizedForGUI(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			dm := DataManager{serversData: ServersData{Servers: core.Servers{standard, p2p, dedicatedIP}}}
 			cfgManager := mock.NewMockConfigManager()
-			cfgManager.Cfg.Technology = test.tech
-			cfgManager.Cfg.AutoConnectData.Protocol = test.proto
+			cfgManager.Cfg.VPNProtocol = test.vpnProtocol
 			r := RPC{dm: &dm, cm: cfgManager}
 
 			resp, err := r.GetServers(context.Background(), &pb.Empty{})

@@ -15,8 +15,7 @@ import 'dart:core' as $core;
 import 'package:fixnum/fixnum.dart' as $fixnum;
 import 'package:protobuf/protobuf.dart' as $pb;
 
-import 'config/protocol.pbenum.dart' as $0;
-import 'config/technology.pbenum.dart' as $1;
+import 'config/vpn_protocol.pbenum.dart' as $0;
 import 'set.pbenum.dart';
 
 export 'package:protobuf/protobuf.dart' show GeneratedMessageGenericExtensions;
@@ -658,199 +657,60 @@ class SetTrayRequest extends $pb.GeneratedMessage {
   void clearTray() => $_clearField(3);
 }
 
-class SetProtocolRequest extends $pb.GeneratedMessage {
-  factory SetProtocolRequest({
-    $0.Protocol? protocol,
+class SetVPNProtocolRequest extends $pb.GeneratedMessage {
+  factory SetVPNProtocolRequest({
+    $0.VPNProtocol? vpnProtocol,
   }) {
     final result = create();
-    if (protocol != null) result.protocol = protocol;
+    if (vpnProtocol != null) result.vpnProtocol = vpnProtocol;
     return result;
   }
 
-  SetProtocolRequest._();
+  SetVPNProtocolRequest._();
 
-  factory SetProtocolRequest.fromBuffer($core.List<$core.int> data,
+  factory SetVPNProtocolRequest.fromBuffer($core.List<$core.int> data,
           [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
       create()..mergeFromBuffer(data, registry);
-  factory SetProtocolRequest.fromJson($core.String json,
+  factory SetVPNProtocolRequest.fromJson($core.String json,
           [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
       create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-      _omitMessageNames ? '' : 'SetProtocolRequest',
+      _omitMessageNames ? '' : 'SetVPNProtocolRequest',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
-    ..aE<$0.Protocol>(2, _omitFieldNames ? '' : 'protocol',
-        enumValues: $0.Protocol.values)
+    ..aE<$0.VPNProtocol>(1, _omitFieldNames ? '' : 'vpnProtocol',
+        enumValues: $0.VPNProtocol.values)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SetProtocolRequest clone() => deepCopy();
+  SetVPNProtocolRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SetProtocolRequest copyWith(void Function(SetProtocolRequest) updates) =>
-      super.copyWith((message) => updates(message as SetProtocolRequest))
-          as SetProtocolRequest;
+  SetVPNProtocolRequest copyWith(
+          void Function(SetVPNProtocolRequest) updates) =>
+      super.copyWith((message) => updates(message as SetVPNProtocolRequest))
+          as SetVPNProtocolRequest;
 
   @$core.override
   $pb.BuilderInfo get info_ => _i;
 
   @$core.pragma('dart2js:noInline')
-  static SetProtocolRequest create() => SetProtocolRequest._();
+  static SetVPNProtocolRequest create() => SetVPNProtocolRequest._();
   @$core.override
-  SetProtocolRequest createEmptyInstance() => create();
+  SetVPNProtocolRequest createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static SetProtocolRequest getDefault() => _defaultInstance ??=
-      $pb.GeneratedMessage.$_defaultFor<SetProtocolRequest>(create);
-  static SetProtocolRequest? _defaultInstance;
-
-  @$pb.TagNumber(2)
-  $0.Protocol get protocol => $_getN(0);
-  @$pb.TagNumber(2)
-  set protocol($0.Protocol value) => $_setField(2, value);
-  @$pb.TagNumber(2)
-  $core.bool hasProtocol() => $_has(0);
-  @$pb.TagNumber(2)
-  void clearProtocol() => $_clearField(2);
-}
-
-enum SetProtocolResponse_Response { errorCode, setProtocolStatus, notSet }
-
-class SetProtocolResponse extends $pb.GeneratedMessage {
-  factory SetProtocolResponse({
-    SetErrorCode? errorCode,
-    SetProtocolStatus? setProtocolStatus,
-  }) {
-    final result = create();
-    if (errorCode != null) result.errorCode = errorCode;
-    if (setProtocolStatus != null) result.setProtocolStatus = setProtocolStatus;
-    return result;
-  }
-
-  SetProtocolResponse._();
-
-  factory SetProtocolResponse.fromBuffer($core.List<$core.int> data,
-          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromBuffer(data, registry);
-  factory SetProtocolResponse.fromJson($core.String json,
-          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromJson(json, registry);
-
-  static const $core.Map<$core.int, SetProtocolResponse_Response>
-      _SetProtocolResponse_ResponseByTag = {
-    1: SetProtocolResponse_Response.errorCode,
-    2: SetProtocolResponse_Response.setProtocolStatus,
-    0: SetProtocolResponse_Response.notSet
-  };
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-      _omitMessageNames ? '' : 'SetProtocolResponse',
-      package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
-      createEmptyInstance: create)
-    ..oo(0, [1, 2])
-    ..aE<SetErrorCode>(1, _omitFieldNames ? '' : 'errorCode',
-        enumValues: SetErrorCode.values)
-    ..aE<SetProtocolStatus>(2, _omitFieldNames ? '' : 'setProtocolStatus',
-        enumValues: SetProtocolStatus.values)
-    ..hasRequiredFields = false;
-
-  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SetProtocolResponse clone() => deepCopy();
-  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SetProtocolResponse copyWith(void Function(SetProtocolResponse) updates) =>
-      super.copyWith((message) => updates(message as SetProtocolResponse))
-          as SetProtocolResponse;
-
-  @$core.override
-  $pb.BuilderInfo get info_ => _i;
-
-  @$core.pragma('dart2js:noInline')
-  static SetProtocolResponse create() => SetProtocolResponse._();
-  @$core.override
-  SetProtocolResponse createEmptyInstance() => create();
-  @$core.pragma('dart2js:noInline')
-  static SetProtocolResponse getDefault() => _defaultInstance ??=
-      $pb.GeneratedMessage.$_defaultFor<SetProtocolResponse>(create);
-  static SetProtocolResponse? _defaultInstance;
+  static SetVPNProtocolRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<SetVPNProtocolRequest>(create);
+  static SetVPNProtocolRequest? _defaultInstance;
 
   @$pb.TagNumber(1)
-  @$pb.TagNumber(2)
-  SetProtocolResponse_Response whichResponse() =>
-      _SetProtocolResponse_ResponseByTag[$_whichOneof(0)]!;
+  $0.VPNProtocol get vpnProtocol => $_getN(0);
   @$pb.TagNumber(1)
-  @$pb.TagNumber(2)
-  void clearResponse() => $_clearField($_whichOneof(0));
-
+  set vpnProtocol($0.VPNProtocol value) => $_setField(1, value);
   @$pb.TagNumber(1)
-  SetErrorCode get errorCode => $_getN(0);
+  $core.bool hasVpnProtocol() => $_has(0);
   @$pb.TagNumber(1)
-  set errorCode(SetErrorCode value) => $_setField(1, value);
-  @$pb.TagNumber(1)
-  $core.bool hasErrorCode() => $_has(0);
-  @$pb.TagNumber(1)
-  void clearErrorCode() => $_clearField(1);
-
-  @$pb.TagNumber(2)
-  SetProtocolStatus get setProtocolStatus => $_getN(1);
-  @$pb.TagNumber(2)
-  set setProtocolStatus(SetProtocolStatus value) => $_setField(2, value);
-  @$pb.TagNumber(2)
-  $core.bool hasSetProtocolStatus() => $_has(1);
-  @$pb.TagNumber(2)
-  void clearSetProtocolStatus() => $_clearField(2);
-}
-
-class SetTechnologyRequest extends $pb.GeneratedMessage {
-  factory SetTechnologyRequest({
-    $1.Technology? technology,
-  }) {
-    final result = create();
-    if (technology != null) result.technology = technology;
-    return result;
-  }
-
-  SetTechnologyRequest._();
-
-  factory SetTechnologyRequest.fromBuffer($core.List<$core.int> data,
-          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromBuffer(data, registry);
-  factory SetTechnologyRequest.fromJson($core.String json,
-          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromJson(json, registry);
-
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-      _omitMessageNames ? '' : 'SetTechnologyRequest',
-      package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
-      createEmptyInstance: create)
-    ..aE<$1.Technology>(2, _omitFieldNames ? '' : 'technology',
-        enumValues: $1.Technology.values)
-    ..hasRequiredFields = false;
-
-  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SetTechnologyRequest clone() => deepCopy();
-  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SetTechnologyRequest copyWith(void Function(SetTechnologyRequest) updates) =>
-      super.copyWith((message) => updates(message as SetTechnologyRequest))
-          as SetTechnologyRequest;
-
-  @$core.override
-  $pb.BuilderInfo get info_ => _i;
-
-  @$core.pragma('dart2js:noInline')
-  static SetTechnologyRequest create() => SetTechnologyRequest._();
-  @$core.override
-  SetTechnologyRequest createEmptyInstance() => create();
-  @$core.pragma('dart2js:noInline')
-  static SetTechnologyRequest getDefault() => _defaultInstance ??=
-      $pb.GeneratedMessage.$_defaultFor<SetTechnologyRequest>(create);
-  static SetTechnologyRequest? _defaultInstance;
-
-  @$pb.TagNumber(2)
-  $1.Technology get technology => $_getN(0);
-  @$pb.TagNumber(2)
-  set technology($1.Technology value) => $_setField(2, value);
-  @$pb.TagNumber(2)
-  $core.bool hasTechnology() => $_has(0);
-  @$pb.TagNumber(2)
-  void clearTechnology() => $_clearField(2);
+  void clearVpnProtocol() => $_clearField(1);
 }
 
 class PortRange extends $pb.GeneratedMessage {

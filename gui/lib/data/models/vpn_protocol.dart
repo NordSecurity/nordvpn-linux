@@ -1,10 +1,7 @@
 import 'package:nordvpn/logger.dart';
-import 'package:nordvpn/pb/daemon/config/protocol.pbenum.dart';
-import 'package:nordvpn/pb/daemon/config/technology.pbenum.dart';
+import 'package:nordvpn/pb/daemon/config/vpn_protocol.pbenum.dart' as pb;
 
-// Declares the existing protocols supported by the application.
-// A protocol from the GUI is equivalent to the pair (technology + protocol)
-// from daemon
+// VPN protocols supported by the application, mirroring the daemon's pb.VPNProtocol.
 enum VpnProtocol {
   unknown, // this can be used to handle future case for new protocols
   nordlynx,
@@ -13,60 +10,42 @@ enum VpnProtocol {
   nordWhisper,
 }
 
-// Convert from Technology and protocol to VpnProtocol
-VpnProtocol convertToVpnProtocol(Technology technology, Protocol protocol) {
-  switch (technology) {
-    case Technology.NORDLYNX:
+// Convert from the daemon's VPN protocol to VpnProtocol
+VpnProtocol vpnProtocolFromPb(pb.VPNProtocol vpnProtocol) {
+  switch (vpnProtocol) {
+    case pb.VPNProtocol.VPN_PROTOCOL_NORDLYNX:
       return VpnProtocol.nordlynx;
-    case Technology.OPENVPN:
-      return (protocol == Protocol.TCP)
-          ? VpnProtocol.openVpnTcp
-          : VpnProtocol.openVpnUdp;
-    case Technology.UNKNOWN_TECHNOLOGY:
-      return VpnProtocol.unknown;
-    case Technology.NORDWHISPER:
+    case pb.VPNProtocol.VPN_PROTOCOL_OPENVPN_UDP:
+      return VpnProtocol.openVpnUdp;
+    case pb.VPNProtocol.VPN_PROTOCOL_OPENVPN_TCP:
+      return VpnProtocol.openVpnTcp;
+    case pb.VPNProtocol.VPN_PROTOCOL_NORDWHISPER:
       return VpnProtocol.nordWhisper;
     default:
-      assert(false);
       return VpnProtocol.unknown;
   }
-}
-
-(Technology technology, Protocol protocol) toTechnologyAndProtocol(
-  VpnProtocol vpnProtocol,
-) {
-  Technology technology;
-  Protocol protocol;
-  switch (vpnProtocol) {
-    case VpnProtocol.unknown:
-      assert(false);
-      logger.e("Incorrect protocol value VpnProtocol.unknown");
-      technology = Technology.NORDLYNX;
-      protocol = Protocol.UDP;
-
-    case VpnProtocol.nordlynx:
-      technology = Technology.NORDLYNX;
-      protocol = Protocol.UDP;
-      break;
-    case VpnProtocol.openVpnUdp:
-      technology = Technology.OPENVPN;
-      protocol = Protocol.UDP;
-      break;
-    case VpnProtocol.openVpnTcp:
-      technology = Technology.OPENVPN;
-      protocol = Protocol.TCP;
-      break;
-    case VpnProtocol.nordWhisper:
-      technology = Technology.NORDWHISPER;
-      protocol = Protocol.Webtunnel;
-      break;
-  }
-
-  return (technology, protocol);
 }
 
 extension VpnProtocolExt on VpnProtocol {
   bool isOpenVpn() {
     return this == VpnProtocol.openVpnTcp || this == VpnProtocol.openVpnUdp;
+  }
+
+  // Convert to the daemon's VPN protocol
+  pb.VPNProtocol toPb() {
+    switch (this) {
+      case VpnProtocol.unknown:
+        assert(false);
+        logger.e("Incorrect protocol value VpnProtocol.unknown");
+        return pb.VPNProtocol.VPN_PROTOCOL_UNSPECIFIED;
+      case VpnProtocol.nordlynx:
+        return pb.VPNProtocol.VPN_PROTOCOL_NORDLYNX;
+      case VpnProtocol.openVpnUdp:
+        return pb.VPNProtocol.VPN_PROTOCOL_OPENVPN_UDP;
+      case VpnProtocol.openVpnTcp:
+        return pb.VPNProtocol.VPN_PROTOCOL_OPENVPN_TCP;
+      case VpnProtocol.nordWhisper:
+        return pb.VPNProtocol.VPN_PROTOCOL_NORDWHISPER;
+    }
   }
 }

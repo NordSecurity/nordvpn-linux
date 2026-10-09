@@ -35,56 +35,48 @@ pytestmark = pytest.mark.usefixtures("nordvpnd_scope_function")
 
 @dynamic_parametrize(
     [
-        "target_tech", "target_proto",
-        "source_tech", "source_proto",
+        "target_vpn_protocol",
+        "source_vpn_protocol",
     ],
-    ordered_source=[lib.TECHNOLOGIES],
-    randomized_source=[lib.TECHNOLOGIES],
+    ordered_source=[lib.VPN_PROTOCOLS],
+    randomized_source=[lib.VPN_PROTOCOLS],
     generate_all=IS_NIGHTLY,
-    id_pattern="{source_tech}-{source_proto}-"
-              "{target_tech}-{target_proto}",
+    id_pattern="{source_vpn_protocol}-"
+              "{target_vpn_protocol}",
 )
 def test_reconnect_matrix(
-        source_tech,
-        target_tech,
-        source_proto,
-        target_proto,
+        source_vpn_protocol,
+        target_vpn_protocol,
 ):
     """Manual TC: LVPN-8674, LVPN-8694, LVPN-676"""
-    lib.set_technology_and_protocol(source_tech, source_proto)
+    lib.set_vpn_protocol(source_vpn_protocol)
     connect_base_test()
 
-    lib.set_technology_and_protocol(target_tech, target_proto)
+    lib.set_vpn_protocol(target_vpn_protocol)
     connect_base_test()
 
     status_info = daemon.get_status_data()
 
-    assert target_tech.upper() in status_info["current technology"], "Current technology should match target technology"
-
-    if target_tech == "openvpn":
-        assert target_proto.upper() in status_info["current protocol"], "Current protocol should match target protocol"
-    elif target_tech == "nordwhisper":
-        assert "Webtunnel" in status_info["current protocol"], "Current protocol should be Webtunnel for nordwhisper"
-    else:
-        assert "UDP" in status_info["current protocol"], "Current protocol should be UDP"
+    assert status_info["protocol"] == lib.vpn_protocol_display_name(target_vpn_protocol), \
+        "Current protocol should match target protocol"
 
     disconnect_base_test()
 
 
 @dynamic_parametrize(
     [
-        "tech", "proto", "country", "city",
+        "vpn_protocol", "country", "city",
     ],
-    ordered_source=[lib.TECHNOLOGIES],
+    ordered_source=[lib.VPN_PROTOCOLS],
     randomized_source=[list(zip(lib.COUNTRIES, lib.CITIES, strict=False))],
     generate_all=IS_NIGHTLY,
     id_pattern="{country}-{city}-"
-               "{tech}-{proto}",
+               "{vpn_protocol}",
 )
-def test_connect_country_and_city(tech, proto, country, city):
+def test_connect_country_and_city(vpn_protocol, country, city):
     """Manual TC: LVPN-8610"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     connect_base_test(country)
     connect_base_test(city)
@@ -95,77 +87,61 @@ def test_connect_country_and_city(tech, proto, country, city):
 
 @dynamic_parametrize(
     [
-        "target_tech", "target_proto",
-        "source_tech", "source_proto",
+        "target_vpn_protocol",
+        "source_vpn_protocol",
     ],
-    ordered_source=[lib.STANDARD_TECHNOLOGIES],
-    randomized_source=[lib.STANDARD_TECHNOLOGIES],
+    ordered_source=[lib.STANDARD_VPN_PROTOCOLS],
+    randomized_source=[lib.STANDARD_VPN_PROTOCOLS],
     generate_all=IS_NIGHTLY,
-    id_pattern="{source_tech}-{source_proto}-"
-              "{target_tech}-{target_proto}",
+    id_pattern="{source_vpn_protocol}-"
+              "{target_vpn_protocol}",
 )
 def test_status_change_technology_and_protocol(
-        source_tech,
-        target_tech,
-        source_proto,
-        target_proto,
+        source_vpn_protocol,
+        target_vpn_protocol,
 ):
     """Manual TC: LVPN-676"""
 
-    lib.set_technology_and_protocol(source_tech, source_proto)
+    lib.set_vpn_protocol(source_vpn_protocol)
 
     sh.nordvpn(get_alias())
     status_info = daemon.get_status_data()
 
-    assert source_tech.upper() in status_info["current technology"], "Current technology should match source technology"
+    source_name = lib.vpn_protocol_display_name(source_vpn_protocol)
+    assert status_info["protocol"] == source_name, "Current protocol should match source protocol"
 
-    if source_tech == "openvpn":
-        assert source_proto.upper() in status_info["current protocol"], "Current protocol should match source protocol"
-    elif source_tech == "nordwhisper":
-        assert "Webtunnel" in status_info["current protocol"], "Current protocol should be Webtunnel for nordwhisper"
-    else:
-        assert "UDP" in status_info["current protocol"], "Current protocol should be UDP"
-
-    lib.set_technology_and_protocol(target_tech, target_proto)
-    assert source_tech.upper() in status_info["current technology"], "Current technology should remain source technology"
-
-    if source_tech == "openvpn":
-        assert source_proto.upper() in status_info["current protocol"], "Current protocol should remain source protocol"
-    elif source_tech == "nordwhisper":
-        assert "Webtunnel" in status_info["current protocol"], "Current protocol should remain Webtunnel for nordwhisper"
-    else:
-        assert "UDP" in status_info["current protocol"], "Current protocol should remain UDP"
+    lib.set_vpn_protocol(target_vpn_protocol)
+    status_info = daemon.get_status_data()
+    assert status_info["protocol"] == source_name, "Connection protocol should remain source protocol until reconnect"
 
     disconnect_base_test()
 
 
 @dynamic_parametrize(
     [
-        "target_tech", "target_proto", "target_group",
-        "source_tech", "source_proto", "source_group",
+        "target_vpn_protocol", "target_group",
+        "source_vpn_protocol", "source_group",
     ],
-    ordered_source=[[(*tech, group) for tech, group in product(lib.STANDARD_TECHNOLOGIES, lib.ADDITIONAL_GROUPS[-1:])]],
-    randomized_source=[[(*tech, group) for tech, group in product(lib.STANDARD_TECHNOLOGIES, lib.ADDITIONAL_GROUPS[-1:])]],
+    ordered_source=[[(vpn_protocol, group) for vpn_protocol, group in product(lib.STANDARD_VPN_PROTOCOLS, lib.ADDITIONAL_GROUPS[-1:])]],
+    randomized_source=[[(vpn_protocol, group) for vpn_protocol, group in product(lib.STANDARD_VPN_PROTOCOLS, lib.ADDITIONAL_GROUPS[-1:])]],
     generate_all=IS_NIGHTLY,
-    id_pattern="{source_tech}-{source_proto}-"
-               "{target_tech}-{target_proto}-"
+    id_pattern="{source_vpn_protocol}-"
+               "{target_vpn_protocol}-"
                "{source_group}-{target_group}",
 )
 def test_reconnect_to_additional_group(
-    source_tech,
-    target_tech,
-    source_proto,
-    target_proto,
+    source_vpn_protocol,
+    target_vpn_protocol,
     source_group,
     target_group,
 ):
     """Manual TC: LVPN-8682"""
 
-    lib.set_technology_and_protocol(source_tech, source_proto)
+    lib.set_vpn_protocol(source_vpn_protocol)
 
     connect_base_test(source_group)
 
-    lib.set_technology_and_protocol(target_tech, target_proto)
+    lib.set_vpn_protocol(target_vpn_protocol)
 
     connect_base_test(target_group)
 
@@ -174,31 +150,29 @@ def test_reconnect_to_additional_group(
 
 @dynamic_parametrize(
     [
-        "target_tech", "target_proto", "target_country",
-        "source_tech", "source_proto", "source_country",
+        "target_vpn_protocol", "target_country",
+        "source_vpn_protocol", "source_country",
     ],
-    ordered_source=[[(*tech, group) for tech, group in product(lib.STANDARD_TECHNOLOGIES, lib.COUNTRIES[-2:])]],
-    randomized_source=[[(*tech, group) for tech, group in product(lib.STANDARD_TECHNOLOGIES, lib.COUNTRIES[-2:])]],
+    ordered_source=[[(vpn_protocol, group) for vpn_protocol, group in product(lib.STANDARD_VPN_PROTOCOLS, lib.COUNTRIES[-2:])]],
+    randomized_source=[[(vpn_protocol, group) for vpn_protocol, group in product(lib.STANDARD_VPN_PROTOCOLS, lib.COUNTRIES[-2:])]],
     generate_all=IS_NIGHTLY,
-    id_pattern="{source_tech}-{source_proto}-"
-               "{target_tech}-{target_proto}-"
+    id_pattern="{source_vpn_protocol}-"
+               "{target_vpn_protocol}-"
                "{source_country}-{target_country}",
 )
 def test_reconnect_to_server_by_country_name(
-    source_tech,
-    target_tech,
-    source_proto,
-    target_proto,
+    source_vpn_protocol,
+    target_vpn_protocol,
     source_country,
     target_country,
 ):
     """Manual TC: LVPN-8689"""
 
-    lib.set_technology_and_protocol(source_tech, source_proto)
+    lib.set_vpn_protocol(source_vpn_protocol)
 
     connect_base_test(source_country)
 
-    lib.set_technology_and_protocol(target_tech, target_proto)
+    lib.set_vpn_protocol(target_vpn_protocol)
 
     connect_base_test(target_country)
 

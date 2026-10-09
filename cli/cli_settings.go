@@ -33,10 +33,7 @@ func (c *cmd) Settings(ctx *cli.Context) error {
 	}
 	meshEnabled := isMeshnetEnabled(c)
 
-	fmt.Printf("Technology: %s\n", settings.GetTechnology())
-	if settings.Technology == config.Technology_OPENVPN {
-		fmt.Printf("Protocol: %s\n", settings.GetProtocol())
-	}
+	fmt.Printf("Protocol: %s\n", settings.GetVpnProtocol().DisplayName())
 	fmt.Printf("Firewall: %+v\n", nstrings.GetBoolLabel(settings.GetFirewall()))
 	fmt.Printf("Firewall Mark: 0x%x\n", settings.GetFwmark())
 	fmt.Printf("Routing: %+v\n", nstrings.GetBoolLabel(settings.GetRouting()))
@@ -62,10 +59,10 @@ func (c *cmd) Settings(ctx *cli.Context) error {
 		fmt.Printf("DNS: %+v\n", strings.Join(settings.Dns, ", "))
 	}
 	fmt.Printf("LAN Discovery: %+v\n", nstrings.GetBoolLabel(settings.LanDiscovery))
-	if settings.Technology == config.Technology_NORDLYNX {
+	if settings.VpnProtocol.Technology() == config.TechnologyNordLynx {
 		fmt.Printf("Post-quantum VPN: %+v\n", nstrings.GetBoolLabel(settings.PostquantumVpn))
 	}
-	if settings.Technology == config.Technology_NORDWHISPER {
+	if settings.VpnProtocol.Technology() == config.TechnologyNordWhisper {
 		fmt.Printf("ECH: %+v\n", nstrings.GetBoolLabel(settings.Ech))
 	}
 	fmt.Printf("ARP Ignore: %+v\n", nstrings.GetBoolLabel(settings.ArpIgnore))

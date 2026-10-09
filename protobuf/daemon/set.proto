@@ -2,10 +2,9 @@ syntax = "proto3";
 
 package pb;
 
-option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
+import "config/vpn_protocol.proto";
 
-import "config/protocol.proto";
-import "config/technology.proto";
+option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
 
 enum SetErrorCode {
   FAILURE = 0;
@@ -75,25 +74,8 @@ message SetTrayRequest {
   bool tray = 3;
 }
 
-message SetProtocolRequest {
-  config.Protocol protocol = 2;
-}
-
-enum SetProtocolStatus {
-  PROTOCOL_CONFIGURED = 0;
-  PROTOCOL_CONFIGURED_VPN_ON = 1;
-  INVALID_TECHNOLOGY = 2;
-}
-
-message SetProtocolResponse {
-  oneof response {
-    SetErrorCode error_code = 1;
-    SetProtocolStatus set_protocol_status = 2;
-  }
-}
-
-message SetTechnologyRequest {
-  config.Technology technology = 2;
+message SetVPNProtocolRequest {
+  config.VPNProtocol vpn_protocol = 1;
 }
 
 message PortRange {

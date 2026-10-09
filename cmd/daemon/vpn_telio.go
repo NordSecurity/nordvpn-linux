@@ -25,13 +25,13 @@ func getNordlynxVPN(
 ) (*libtelio.Libtelio, error) {
 	telio, err := libtelio.New(!envIsDev, eventsDbPath, fwmark, cfg, appVersion, eventsPublisher, ensEnabled)
 	if err != nil {
-		return nil, fmt.Errorf("creating telio instance:", err)
+		return nil, fmt.Errorf("creating telio instance: %w", err)
 	}
 	return telio, nil
 }
 
 func meshnetImplementation(fn daemon.FactoryFunc) (meshnet.Mesh, error) {
-	vpn, err := fn(config.Technology_NORDLYNX)
+	vpn, err := fn(config.TechnologyNordLynx)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func meshnetImplementation(fn daemon.FactoryFunc) (meshnet.Mesh, error) {
 }
 
 func keygenImplementation(fn daemon.FactoryFunc) (devicekey.KeyGenerator, error) {
-	vpn, err := fn(config.Technology_NORDLYNX)
+	vpn, err := fn(config.TechnologyNordLynx)
 	if err != nil {
 		return nil, err
 	}

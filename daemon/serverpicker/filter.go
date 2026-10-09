@@ -9,7 +9,7 @@ import (
 // MatchesUserSettings reports whether the server can be connected to with the
 // technology and protocol from cfg.
 func MatchesUserSettings(s core.Server, cfg config.Config) bool {
-	return core.IsConnectableWithProtocol(cfg.Technology, cfg.AutoConnectData.Protocol)(s)
+	return core.IsConnectableWithProtocol(cfg.VPNProtocol)(s)
 }
 
 // selectFilterForLocalServers - it will return a filter function that is compatible only with local cached server
@@ -41,25 +41,17 @@ func selectFilterForLocalServers(tag string, group config.ServerGroup) core.Pred
 // TechToServerTech maps the user connection settings to the corresponding core
 // server technology. It is exported because it is also used directly by the
 // daemon (e.g. when filtering recent connections).
-func TechToServerTech(tech config.Technology, protocol config.Protocol) core.ServerTechnology {
-	switch tech {
-	case config.Technology_NORDLYNX:
+func TechToServerTech(p config.VPNProtocol) core.ServerTechnology {
+	//exhaustive:ignore
+	switch p {
+	case config.VPNProtocol_VPN_PROTOCOL_NORDLYNX:
 		return core.WireguardTech
-	case config.Technology_OPENVPN:
-		switch protocol {
-		case config.Protocol_TCP:
-			return core.OpenVPNTCP
-		case config.Protocol_UDP:
-			return core.OpenVPNUDP
-		case config.Protocol_Webtunnel:
-			break
-		case config.Protocol_UNKNOWN_PROTOCOL:
-			break
-		}
-	case config.Technology_NORDWHISPER:
+	case config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP:
+		return core.OpenVPNTCP
+	case config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP:
+		return core.OpenVPNUDP
+	case config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER:
 		return core.NordWhisperTech
-	case config.Technology_UNKNOWN_TECHNOLOGY:
-		break
 	}
 	return core.Unknown
 }

@@ -80,10 +80,9 @@ final class MockVpnStatus extends CancelableDelayed {
       ip: "NOT IP",
       download: Int64(0),
       postQuantum: settings.postquantumVpn,
-      protocol: settings.protocol,
       upload: Int64(0),
       uptime: Int64(0),
-      technology: settings.technology,
+      vpnProtocol: settings.vpnProtocol,
       parameters: ConnectionParameters(
         country: countryName,
         countryCode: countryCode,

@@ -15,17 +15,12 @@ func NewSubscriber() *DaemonSettingsSubscriber {
 	return &DaemonSettingsSubscriber{}
 }
 
-func (l *DaemonSettingsSubscriber) NotifyTechnology(data config.Technology) error {
-	printSettingsChange("Technology", data.String())
-	return nil
-}
-
 func (l *DaemonSettingsSubscriber) NotifyMeshnet(data bool) error {
 	printSettingsChange("Meshnet", boolToString(data))
 	return nil
 }
 
-func (l *DaemonSettingsSubscriber) NotifyProtocol(data config.Protocol) error {
+func (l *DaemonSettingsSubscriber) NotifyVPNProtocol(data config.VPNProtocol) error {
 	printSettingsChange("Protocol", data.String())
 	return nil
 }

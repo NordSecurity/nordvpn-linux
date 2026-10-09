@@ -52,9 +52,9 @@ func (c *cmd) AllowlistAddPorts(ctx *cli.Context) error {
 		isTCP = true
 	} else {
 		switch args.Get(3) {
-		case config.Protocol_UDP.String():
+		case config.TransportUDP.String():
 			isUDP = true
-		case config.Protocol_TCP.String():
+		case config.TransportTCP.String():
 			isTCP = true
 		default:
 			return formatError(argsParseError(ctx))
@@ -115,14 +115,8 @@ func (c *cmd) AllowlistAddPortsAutoComplete(ctx *cli.Context) {
 		fmt.Println(stringProtocol)
 	case 3:
 		// show available protocols
-		resp, err := c.client.SettingsProtocols(context.Background(), &pb.Empty{})
-		if err != nil {
-			return
-		}
-
-		for _, item := range resp.Data {
-			fmt.Println(item)
-		}
+		fmt.Println(config.TransportUDP.String())
+		fmt.Println(config.TransportTCP.String())
 	default:
 		return
 	}

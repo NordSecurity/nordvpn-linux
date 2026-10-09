@@ -16,10 +16,8 @@ TECH_NORDLYNX = 35
 TECH_NORDWHISPER = 51
 
 TECH_IDS = {
-    "openvpn": {
-        "udp": TECH_OPENVPN_UDP,
-        "tcp": TECH_OPENVPN_TCP,
-    },
+    "openvpn_udp": TECH_OPENVPN_UDP,
+    "openvpn_tcp": TECH_OPENVPN_TCP,
     "nordlynx": TECH_NORDLYNX,
     "nordwhisper": TECH_NORDWHISPER,
 }
@@ -78,14 +76,14 @@ def _exclude_dedicated_ip_servers(servers: list[dict]) -> list[dict]:
     return non_dip_servers
 
 
-def get_hostname_by(technology="", protocol="", group_name="", exclude_dip=False):
+def get_hostname_by(vpn_protocol="", group_name="", exclude_dip=False):
     """
     Returns server name and hostname from core API.
 
     If exclude_dip is True, skips Dedicated_IP servers.
     """
 
-    (tech_id, group_id) = get_request_parameters(technology, protocol, group_name)
+    (tech_id, group_id) = get_request_parameters(vpn_protocol, group_name)
 
     # api limits
     time.sleep(2)
@@ -125,10 +123,10 @@ def get_hostname_by(technology="", protocol="", group_name="", exclude_dip=False
     return ServerInfo(server_info=server)
 
 
-def get_random_virtual_server(technology="", protocol="", obfuscated="", group_name=""):
+def get_random_virtual_server(vpn_protocol="", group_name=""):
     """Returns a virtual server's name and hostname from core API."""
 
-    (tech_id, group_id) = get_request_parameters(technology, protocol, obfuscated, group_name)
+    (tech_id, group_id) = get_request_parameters(vpn_protocol, group_name)
 
     # api limits
     time.sleep(2)
@@ -200,16 +198,10 @@ def get_dedicated_ip():
     return ServerInfo(server_info=server_info)
 
 
-def get_request_parameters(technology="", protocol="", group_name=""):
+def get_request_parameters(vpn_protocol="", group_name=""):
     """Returns (technology id, group id) for the core API."""
-    tech_id = None
+    tech_id = TECH_IDS.get(vpn_protocol)
     group_id = 0
-
-    if technology != "":
-        if protocol != "":
-            tech_id = TECH_IDS.get(technology, {}).get(protocol)
-        else:
-            tech_id = TECH_IDS.get(technology)
 
     if group_name != "":
         group_id = GROUP_IDS.get(group_name, GROUP_STANDARD_VPN_SERVERS)

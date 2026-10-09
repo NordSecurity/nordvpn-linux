@@ -98,7 +98,7 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.P
 		log.Error(err)
 	}
 
-	v, err := r.factory(cfg.Technology)
+	v, err := r.factory(cfg.VPNProtocol.Technology())
 	if err != nil {
 		log.Error(err)
 		return &pb.Payload{
