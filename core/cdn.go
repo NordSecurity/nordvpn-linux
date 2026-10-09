@@ -18,8 +18,6 @@ type OvpnTemplateVariant int
 const (
 	// OvpnTemplateStandard is used when the data channel is not offloaded to the kernel.
 	OvpnTemplateStandard OvpnTemplateVariant = iota
-	// OvpnTemplateObfuscated is used for XOR obfuscated connections.
-	OvpnTemplateObfuscated
 )
 
 // CDN provides methods to interact with Nord's Content Delivery Network
@@ -127,8 +125,6 @@ func (api *CDNAPI) FetchConfigTemplate(
 	switch variant {
 	case OvpnTemplateStandard:
 		path = ovpnTemplateURL
-	case OvpnTemplateObfuscated:
-		path = ovpnObfsTemplateURL
 	default:
 		return nil, nil, fmt.Errorf("unknown OpenVPN config template variant: %d", variant)
 	}

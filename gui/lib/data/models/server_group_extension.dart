@@ -11,7 +11,7 @@ extension Convert on ServerGroup {
       ServerGroup.ONION_OVER_VPN => ServerType.onionOverVpn,
       ServerGroup.DEDICATED_IP => ServerType.dedicatedIP,
       ServerGroup.STANDARD_VPN_SERVERS => ServerType.standardVpn,
-      ServerGroup.OBFUSCATED => ServerType.obfuscated,
+      ServerGroup.NW_OBFUSCATED => ServerType.obfuscated,
       _ => null,
     };
   }

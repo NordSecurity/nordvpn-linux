@@ -5,11 +5,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nordvpn/config.dart';
 import 'package:nordvpn/constants.dart';
 import 'package:nordvpn/data/mocks/daemon/grpc_server.dart';
+import 'package:nordvpn/data/mocks/daemon/mock_daemon.dart';
+import 'package:nordvpn/data/models/servers_list.dart';
+import 'package:nordvpn/data/providers/servers_list_controller.dart';
 import 'package:nordvpn/main.dart';
-import 'package:nordvpn/pb/daemon/servers.pb.dart';
+import 'package:nordvpn/pb/daemon/config/technology.pbenum.dart';
+// Technology is also declared there, the config one is the settings value
+import 'package:nordvpn/pb/daemon/servers.pb.dart' hide Technology;
 import 'package:nordvpn/pb/daemon/settings.pb.dart';
 import 'package:nordvpn/service_locator.dart';
 import 'package:nordvpn/theme/theme.dart';
+import 'package:riverpod/misc.dart' show Override;
 import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 
 import 'app_ctl.dart';
@@ -128,12 +134,45 @@ extension Helper on WidgetTester {
     return AppCtl(tester: this, urlLauncher: urlLauncher);
   }
 
+  // The servers list the mocked daemon reports for [technology], grouped the
+  // same way the app groups it.
+  Future<ServersList> mockedServersList({
+    required Technology technology,
+  }) async {
+    final daemon = MockDaemon();
+    addTearDown(daemon.serversList.dispose);
+
+    // the mock replies on the real event loop, not on the test's fake clock
+    await runAsync(() async {
+      await daemon.appSettings.setSettings(technology: technology);
+      await pumpEventQueue();
+    });
+
+    final container = ProviderContainer(
+      overrides: [
+        serversListControllerProvider.overrideWithBuild(
+          (ref, notifier) => ServersList.empty(),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    container
+        .read(serversListControllerProvider.notifier)
+        .onServersListChanged(daemon.serversList.serversList);
+
+    return container.read(serversListControllerProvider).value!;
+  }
+
   // Used in widget testing to create the MaterialApp and the theme
   // In this case the gRPC server is not started.
-  Future<void> setupWidgetTest(Widget child) async {
+  Future<void> setupWidgetTest(
+    Widget child, {
+    List<Override> overrides = const [],
+  }) async {
     await pumpWidget(
       ProviderScope(
-        overrides: [],
+        overrides: overrides,
         retry: (retryCount, error) => null,
         child: Builder(
           builder: (context) {

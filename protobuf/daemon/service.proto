@@ -62,7 +62,6 @@ service Daemon {
   rpc SetAutoConnect(SetAutoconnectRequest) returns (Payload);
   rpc SetProtocol(SetProtocolRequest) returns (SetProtocolResponse);
   rpc SetTechnology(SetTechnologyRequest) returns (Payload);
-  rpc SetObfuscate(SetGenericRequest) returns (Payload);
   rpc SetPostQuantum(SetGenericRequest) returns (Payload);
   rpc SetECH(SetGenericRequest) returns (Payload);
   rpc GetRecentConnections(RecentConnectionsRequest) returns (RecentConnectionsResponse);

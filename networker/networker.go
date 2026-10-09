@@ -455,6 +455,17 @@ func (netw *Combined) configureNetwork(
 		return err
 	}
 
+	if netw.isMeshnetSet && serverData.DedicatedServer {
+		netw.publisher.Publish("adding ds route for meshnet")
+		if err := netw.router.Add(routes.Route{
+			Subnet: internal.NordLynxSubnet,
+			Device: netw.vpnet.Tun().Interface(),
+		}); err != nil {
+			log.Netw.Warn("adding ds route for meshnet:", err)
+			// Continue - not critical for meshnet functionality
+		}
+	}
+
 	if err := netw.configureDNS(serverData, nameservers); err != nil {
 		return err
 	}
@@ -537,6 +548,17 @@ func (netw *Combined) restart(
 	// assuming all other routing rules are left as it was before restart
 	if err = netw.addDefaultRoute(); err != nil {
 		return err
+	}
+
+	if netw.isMeshnetSet && serverData.DedicatedServer {
+		netw.publisher.Publish("restoring ds route for meshnet after VPN restart")
+		if err := netw.router.Add(routes.Route{
+			Subnet: internal.NordLynxSubnet,
+			Device: netw.vpnet.Tun().Interface(),
+		}); err != nil {
+			log.Netw.Warn("adding ds route for meshnet during restart:", err)
+			// Continue - not critical for meshnet functionality
+		}
 	}
 
 	if err := netw.configureDNS(serverData, nameservers); err != nil {
@@ -1165,6 +1187,17 @@ func (netw *Combined) setMesh(
 			"creating default mesh route: %w",
 			err,
 		)
+	}
+
+	if netw.isVpnSet && netw.lastServer.DedicatedServer {
+		netw.publisher.Publish("adding ds route for meshnet")
+		if err := netw.router.Add(routes.Route{
+			Subnet: internal.NordLynxSubnet,
+			Device: netw.vpnet.Tun().Interface(),
+		}); err != nil {
+			log.Netw.Warn("adding ds route for meshnet:", err)
+			// Continue - not critical for meshnet functionality
+		}
 	}
 
 	err = netw.refresh(cfg)

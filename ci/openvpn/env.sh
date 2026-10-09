@@ -2,17 +2,10 @@
 
 set -euxo pipefail
 
-# This needs to be in sync with TUNNELBLICK_TAG
 OPENVPN_VERSION="2.6.22"
 export OPENVPN_VERSION
 OPENVPN_SHA256SUM="f46df740f05f86020137a41cfc8814352391cf861ed57f57b4e815cb97c1d2cf"
 export OPENVPN_SHA256SUM
-
-# Used to download the patches for OpenVPN obfuscation. This needs to be in sync with OPENVPN_VERSION.
-TUNNELBLICK_TAG="v9.0"
-export TUNNELBLICK_TAG
-TUNNELBLICK_SHA256SUM="ea4e810e15c963a53fe3625cf37e078ed118b9a6879d92ce9a01c3395c9aad42"
-export TUNNELBLICK_SHA256SUM
 
 OPENSSL_VERSION="3.0.22"
 export OPENSSL_VERSION

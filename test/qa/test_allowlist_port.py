@@ -39,17 +39,16 @@ def test_allowlist_add_multiple_port_ranges_cli_output():
         "port",
         "tech",
         "proto",
-        "obfuscated",
     ],
     ordered_source=[lib.PORTS + lib.PORTS_RANGE],
     randomized_source=[lib.TECHNOLOGIES],
-    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
+    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}",
     always_pair=lib.TECHNOLOGIES_BASIC1[0],
 )
-def test_allowlist_does_not_create_new_routes_when_adding_deleting_port_disconnected(tech, proto, obfuscated, port):
+def test_allowlist_does_not_create_new_routes_when_adding_deleting_port_disconnected(tech, proto, port):
     """Manual TC: LVPN-8956"""
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
     output_before_add = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     allowlist.add_ports_to_allowlist([port])
     assert not firewall.is_active(), "Firewall is not configured"
@@ -67,16 +66,15 @@ def test_allowlist_does_not_create_new_routes_when_adding_deleting_port_disconne
         "port",
         "tech",
         "proto",
-        "obfuscated",
     ],
     ordered_source=[lib.PORTS + lib.PORTS_RANGE],
     randomized_source=[lib.TECHNOLOGIES],
-    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
+    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}",
     always_pair=lib.TECHNOLOGIES_BASIC1[0],
 )
-def test_allowlist_does_not_create_new_routes_when_adding_deleting_port_connected(tech, proto, obfuscated, port):
+def test_allowlist_does_not_create_new_routes_when_adding_deleting_port_connected(tech, proto, port):
     """Manual TC: LVPN-8957"""
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
 
     sh.nordvpn.connect()
 
@@ -98,17 +96,16 @@ def test_allowlist_does_not_create_new_routes_when_adding_deleting_port_connecte
         "port",
         "tech",
         "proto",
-        "obfuscated",
     ],
     ordered_source=[lib.PORTS],
     randomized_source=[lib.TECHNOLOGIES],
-    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
+    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}",
     always_pair=lib.TECHNOLOGIES_BASIC1[0],
 )
-def test_allowlist_port_twice_disconnected(tech, proto, obfuscated, port):
-    """Manual TC: LVPN-759"""
+def test_allowlist_port_twice_disconnected(tech, proto, port):
+    """Manual TC: LVPN-8958"""
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
 
     allowlist.add_ports_to_allowlist([port])
 
@@ -129,17 +126,16 @@ def test_allowlist_port_twice_disconnected(tech, proto, obfuscated, port):
         "port",
         "tech",
         "proto",
-        "obfuscated",
     ],
     ordered_source=[lib.PORTS],
     randomized_source=[lib.TECHNOLOGIES_BASIC2],
-    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
+    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}",
     always_pair=lib.TECHNOLOGIES_BASIC1[0],
 )
-def test_allowlist_port_twice_connected(tech, proto, obfuscated, port):
+def test_allowlist_port_twice_connected(tech, proto, port):
     """Manual TC: LVPN-8958"""
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
 
     sh.nordvpn.connect()
     assert not firewall.is_source_port_reachable([port])
@@ -166,17 +162,16 @@ def test_allowlist_port_twice_connected(tech, proto, obfuscated, port):
         "port",
         "tech",
         "proto",
-        "obfuscated",
     ],
     ordered_source=[lib.PORTS + lib.PORTS_RANGE],
     randomized_source=[lib.TECHNOLOGIES],
-    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
+    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}",
     always_pair=lib.TECHNOLOGIES_BASIC1[0],
 )
-def test_allowlist_port_and_remove_disconnected(tech, proto, obfuscated, port):
+def test_allowlist_port_and_remove_disconnected(tech, proto, port):
     """Manual TC: LVPN-8959"""
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
 
     allowlist.add_ports_to_allowlist([port])
     assert not firewall.is_active() and firewall.is_source_port_reachable([port]), "Firewall is not configured and traffic from the port is reachable"
@@ -190,17 +185,16 @@ def test_allowlist_port_and_remove_disconnected(tech, proto, obfuscated, port):
         "port",
         "tech",
         "proto",
-        "obfuscated",
     ],
     ordered_source=[lib.PORTS + lib.PORTS_RANGE],
     randomized_source=[lib.TECHNOLOGIES],
-    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
+    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}",
     always_pair=lib.TECHNOLOGIES_BASIC1[0],
 )
-def test_allowlist_port_and_remove_connected(tech, proto, obfuscated, port):
-    """Manual TC: LVPN-8958"""
+def test_allowlist_port_and_remove_connected(tech, proto, port):
+    """Manual TC: LVPN-8959"""
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
 
     sh.nordvpn.connect()
     assert not firewall.is_source_port_reachable([port])
@@ -217,17 +211,16 @@ def test_allowlist_port_and_remove_connected(tech, proto, obfuscated, port):
         "port",
         "tech",
         "proto",
-        "obfuscated",
     ],
     ordered_source=[lib.PORTS],
     randomized_source=[lib.TECHNOLOGIES],
-    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
+    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}",
     always_pair=lib.TECHNOLOGIES_BASIC1[0],
 )
-def test_allowlist_port_remove_nonexistent_disconnected(tech, proto, obfuscated, port):
-    """Manual TC: LVPN-728"""
+def test_allowlist_port_remove_nonexistent_disconnected(tech, proto, port):
+    """Manual TC: LVPN-8960"""
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         if port.protocol == lib.Protocol.ALL:
@@ -244,17 +237,16 @@ def test_allowlist_port_remove_nonexistent_disconnected(tech, proto, obfuscated,
         "port",
         "tech",
         "proto",
-        "obfuscated",
     ],
     ordered_source=[lib.PORTS],
     randomized_source=[lib.TECHNOLOGIES],
-    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
+    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}",
     always_pair=lib.TECHNOLOGIES_BASIC1[0],
 )
-def test_allowlist_port_remove_nonexistent_connected(tech, proto, obfuscated, port):
+def test_allowlist_port_remove_nonexistent_connected(tech, proto, port):
     """Manual TC: LVPN-8960"""
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
 
     sh.nordvpn.connect()
 
@@ -273,48 +265,46 @@ def test_allowlist_port_remove_nonexistent_connected(tech, proto, obfuscated, po
         "port",
         "tech",
         "proto",
-        "obfuscated",
     ],
     ordered_source=[lib.PORTS_RANGE],
     randomized_source=[lib.TECHNOLOGIES],
-    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
+    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}",
     always_pair=lib.TECHNOLOGIES_BASIC1[0],
 )
-def test_allowlist_port_range_remove_nonexistent_disconnected(tech, proto, obfuscated, port):
-    """Manual TC: LVPN-3779"""
-
-    port_range = port.value.split(":")
-
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
-
-    with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        if port.protocol == lib.Protocol.ALL:
-            sh.nordvpn("allowlist", "remove", "ports", port_range[0], port_range[1])
-        else:
-            sh.nordvpn("allowlist", "remove", "ports", port_range[0], port_range[1], "protocol", port.protocol)
-
-    expected_message = allowlist.MSG_ALLOWLIST_PORT_RANGE_REMOVE_ERROR % (port.value.replace(":", " - "), port.protocol)
-    assert expected_message in ex.value.stdout.decode("utf-8"), "Error message should indicate port range remove failed"
-
-
-@dynamic_parametrize(
-    [
-        "port",
-        "tech",
-        "proto",
-        "obfuscated",
-    ],
-    ordered_source=[lib.PORTS_RANGE],
-    randomized_source=[lib.TECHNOLOGIES],
-    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
-    always_pair=lib.TECHNOLOGIES_BASIC1[0],
-)
-def test_allowlist_port_range_remove_nonexistent_connected(tech, proto, obfuscated, port):
+def test_allowlist_port_range_remove_nonexistent_disconnected(tech, proto, port):
     """Manual TC: LVPN-8961"""
 
     port_range = port.value.split(":")
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
+
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+        if port.protocol == lib.Protocol.ALL:
+            sh.nordvpn("allowlist", "remove", "ports", port_range[0], port_range[1])
+        else:
+            sh.nordvpn("allowlist", "remove", "ports", port_range[0], port_range[1], "protocol", port.protocol)
+
+    expected_message = allowlist.MSG_ALLOWLIST_PORT_RANGE_REMOVE_ERROR % (port.value.replace(":", " - "), port.protocol)
+    assert expected_message in ex.value.stdout.decode("utf-8"), "Error message should indicate port range remove failed"
+
+
+@dynamic_parametrize(
+    [
+        "port",
+        "tech",
+        "proto",
+    ],
+    ordered_source=[lib.PORTS_RANGE],
+    randomized_source=[lib.TECHNOLOGIES],
+    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}",
+    always_pair=lib.TECHNOLOGIES_BASIC1[0],
+)
+def test_allowlist_port_range_remove_nonexistent_connected(tech, proto, port):
+    """Manual TC: LVPN-8961"""
+
+    port_range = port.value.split(":")
+
+    lib.set_technology_and_protocol(tech, proto)
 
     sh.nordvpn.connect()
 
@@ -333,17 +323,16 @@ def test_allowlist_port_range_remove_nonexistent_connected(tech, proto, obfuscat
         "port",
         "tech",
         "proto",
-        "obfuscated",
     ],
     ordered_source=[lib.PORTS_RANGE],
     randomized_source=[lib.TECHNOLOGIES],
-    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
+    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}",
     always_pair=lib.TECHNOLOGIES_BASIC1[0],
 )
-def test_allowlist_port_range_twice_disconnected(tech, proto, obfuscated, port):
-    """Manual TC: LVPN-3789"""
+def test_allowlist_port_range_twice_disconnected(tech, proto, port):
+    """Manual TC: LVPN-8962"""
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
 
     for _ in range(2):
         allowlist.add_ports_to_allowlist([port])
@@ -356,17 +345,16 @@ def test_allowlist_port_range_twice_disconnected(tech, proto, obfuscated, port):
         "port",
         "tech",
         "proto",
-        "obfuscated",
     ],
     ordered_source=[lib.PORTS_RANGE],
     randomized_source=[lib.TECHNOLOGIES],
-    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
+    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}",
     always_pair=lib.TECHNOLOGIES_BASIC1[0],
 )
-def test_allowlist_port_range_twice_connected(tech, proto, obfuscated, port):
+def test_allowlist_port_range_twice_connected(tech, proto, port):
     """Manual TC: LVPN-8962"""
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
 
     sh.nordvpn.connect()
 
@@ -381,20 +369,19 @@ def test_allowlist_port_range_twice_connected(tech, proto, obfuscated, port):
         "port",
         "tech",
         "proto",
-        "obfuscated",
     ],
     ordered_source=[lib.PORTS_RANGE],
     randomized_source=[lib.TECHNOLOGIES],
-    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
+    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}",
     always_pair=lib.TECHNOLOGIES_BASIC1[0],
 )
-def test_allowlist_port_range_when_port_from_range_already_allowlisted_disconnected(tech, proto, obfuscated, port):
-    """Manual TC: LVPN-724"""
+def test_allowlist_port_range_when_port_from_range_already_allowlisted_disconnected(tech, proto, port):
+    """Manual TC: LVPN-8963"""
 
     port_range = port.value.split(":")
     random_port_from_port_range = str(random.randint(int(port_range[0]), int(port_range[1])))
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
 
     already_allowlisted_port = lib.Port(random_port_from_port_range, port.protocol)
     allowlist.add_ports_to_allowlist([already_allowlisted_port])
@@ -409,20 +396,19 @@ def test_allowlist_port_range_when_port_from_range_already_allowlisted_disconnec
         "port",
         "tech",
         "proto",
-        "obfuscated",
     ],
     ordered_source=[lib.PORTS_RANGE],
     randomized_source=[lib.TECHNOLOGIES],
-    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
+    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}",
     always_pair=lib.TECHNOLOGIES_BASIC1[0],
 )
-def test_allowlist_port_range_when_port_from_range_already_allowlisted_connected(tech, proto, obfuscated, port):
+def test_allowlist_port_range_when_port_from_range_already_allowlisted_connected(tech, proto, port):
     """Manual TC: LVPN-8963"""
 
     port_range = port.value.split(":")
     random_port_from_port_range = str(random.randint(int(port_range[0]), int(port_range[1])))
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
 
     sh.nordvpn.connect()
 

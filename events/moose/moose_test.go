@@ -1404,7 +1404,7 @@ func TestReportAutoConnectTarget(t *testing.T) {
 		},
 		{
 			name:      "group - obfuscated",
-			ac:        config.AutoConnectData{Group: config.ServerGroup_OBFUSCATED},
+			ac:        config.AutoConnectData{Group: config.ServerGroup_NW_OBFUSCATED},
 			wantPref:  moose.NordvpnappConnectionPreferenceSpecific,
 			wantGroup: moose.NordvpnappServerGroupObfuscated,
 		},
@@ -1574,6 +1574,8 @@ func noopDisconnectAmbientMooseFuncs(sub *Subscriber) {
 	sub.mooseFuncs.setServerCityCurrentState = func(_ string) uint32 { return 0 }
 	sub.mooseFuncs.unsetServerDomainCurrentState = func() uint32 { return 0 }
 	sub.mooseFuncs.unsetServerCityCurrentState = func() uint32 { return 0 }
+	sub.mooseFuncs.setTechnologyCurrentState = func(_ moose.NordvpnappVpnConnectionTechnology) uint32 { return 0 }
+	sub.mooseFuncs.setProtocolCurrentState = func(_ moose.NordvpnappVpnConnectionProtocol) uint32 { return 0 }
 }
 
 func TestNotifyDisconnect_AfterSensitiveConnect_SkipsRecommendationUuidContext(t *testing.T) {

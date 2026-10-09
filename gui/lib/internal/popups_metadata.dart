@@ -177,9 +177,6 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code, {Object? userData}) {
       },
     ),
 
-    // Reconnect to apply obfuscation or post-quantum changes
-    // These are applied immediately and user is just informed to reconnect
-    PopupCodes.reconnectToChangeObfuscation ||
     PopupCodes.reconnectToChangePostQuantum => InfoPopupMetadata(
       id: PopupCodes.reconnectToChangeProtocol,
       title: t.ui.reconnectToApplyChanges,

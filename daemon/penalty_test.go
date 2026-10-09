@@ -11,10 +11,9 @@ import (
 )
 
 const (
-	DistanceDelta    = 0.00001
-	ObfuscationDelta = 0.00001
-	LoadDelta        = 0.001
-	PenaltyDelta     = 0.001
+	DistanceDelta = 0.00001
+	LoadDelta     = 0.001
+	PenaltyDelta  = 0.001
 )
 
 func TestDistancePenalty(t *testing.T) {
@@ -97,43 +96,20 @@ func TestHubPenalty(t *testing.T) {
 	}
 }
 
-func TestObfuscationPenalty(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	tests := []struct {
-		obfuscated    bool
-		t, tmin, tmax int64
-		expected      float64
-	}{
-		{false, 12357387, 1239, 1867484685, 0},
-		{true, 1483279200, 1467374400, 1522781999, 0.999975},
-		{true, 1522781999, 1522781999, 1522981000, 1},
-		{true, 1552329600, 1545329600, 1555329600, 0.98764686},
-	}
-
-	for _, item := range tests {
-		got := obfuscationPenalty(item.obfuscated, item.t, item.tmin, item.tmax)
-		assert.LessOrEqual(t, math.Abs(item.expected-got), ObfuscationDelta)
-	}
-}
-
 func TestPenalty(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		obfuscated                                           bool
 		d, dmin, dmax                                        float64
-		t, tmin, tmax, load                                  int64
+		load                                                 int64
 		userCountry, serverCountry                           string
 		hubscore, randomComponent, expected, expectedPartial float64
 	}{
-		{true, 7000, 500, 8579,
-			1552329600, 1545329600, 1555329600,
+		{7000, 500, 8579,
 			20, "us", "uk", 0.68, 0,
-			4.936194, 0.936194,
+			3.94854714, -0.05145286,
 		},
-		{false, 500, 500, 10000,
-			1552329600, 1522781999, 1522981000,
+		{500, 500, 10000,
 			45, "tl", "tl", 0, 0,
 			869.8740656, 0.000142,
 		},
@@ -148,7 +124,7 @@ func TestPenalty(t *testing.T) {
 		for i := 0; i < 500; i++ {
 			// run through some different random values
 			item.randomComponent = randFloat(time.Now().UnixNano(), 0, 0.001)
-			got, gotPartial := penalty(item.obfuscated, item.d, item.dmin, item.dmax, item.t, item.tmin, item.tmax,
+			got, gotPartial := penalty(item.d, item.dmin, item.dmax,
 				item.load, item.userCountry, item.serverCountry, hubScore, item.randomComponent)
 
 			assert.LessOrEqual(t, math.Abs(item.expected-got), PenaltyDelta)

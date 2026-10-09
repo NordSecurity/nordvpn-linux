@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
-	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/fs"
 	"github.com/stretchr/testify/assert"
@@ -486,7 +485,7 @@ func TestRecentConnectionsStore_CheckExistence_CreatesFile(t *testing.T) {
 
 	data, err := fs.ReadFile("/test/path")
 	require.NoError(t, err)
-	assert.Equal(t, []byte("[]"), data)
+	assert.Equal(t, `{"version":1,"connections":[]}`, string(data))
 }
 
 func TestRecentConnectionsStore_Save_Error(t *testing.T) {
@@ -523,42 +522,6 @@ func TestRecentConnectionsStore_Load_Error(t *testing.T) {
 	assert.Nil(t, connections)
 }
 
-func TestRecentConnectionsStore_Add_ServerTechnologiesSorting(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	fs := fs.NewSystemFileHandleMock(t)
-	store := NewRecentConnectionsStore("/test/path", &fs, nil)
-
-	conn1 := Model{
-		Country:            "Germany",
-		ConnectionType:     config.ServerSelectionRule_COUNTRY,
-		ServerTechnologies: []core.ServerTechnology{3, 1, 2},
-	}
-
-	err := store.Add(conn1)
-	require.NoError(t, err)
-
-	connections, err := store.Get()
-	require.NoError(t, err)
-	require.Len(t, connections, 1)
-
-	assert.Equal(t, []core.ServerTechnology{1, 2, 3}, connections[0].ServerTechnologies, "ServerTechnologies should be sorted")
-
-	conn2 := Model{
-		Country:            "Germany",
-		ConnectionType:     config.ServerSelectionRule_COUNTRY,
-		ServerTechnologies: []core.ServerTechnology{2, 3, 1},
-	}
-
-	err = store.Add(conn2)
-	require.NoError(t, err)
-
-	connections, err = store.Get()
-	require.NoError(t, err)
-	require.Len(t, connections, 1, "Should have only one connection as they match after sorting")
-	assert.Equal(t, []core.ServerTechnology{1, 2, 3}, connections[0].ServerTechnologies)
-}
-
 func TestRecentConnectionsStore_Get_LoadErrorRecreatesFile(t *testing.T) {
 	category.Set(t, category.Unit)
 
@@ -573,7 +536,7 @@ func TestRecentConnectionsStore_Get_LoadErrorRecreatesFile(t *testing.T) {
 
 	data, err := fs.ReadFile("/test/path")
 	require.NoError(t, err)
-	assert.Equal(t, []byte("[]"), data, "File should be recreated with empty array")
+	assert.Equal(t, `{"version":1,"connections":[]}`, string(data), "File should be recreated with empty array")
 }
 
 func TestRecentConnectionsStore_Get_LoadErrorWithSaveError(t *testing.T) {
@@ -969,11 +932,10 @@ func TestRecentConnectionsStore_PopPending_ReturnsClone(t *testing.T) {
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	original := Model{
-		Country:            "Netherlands",
-		City:               "Amsterdam",
-		ConnectionType:     config.ServerSelectionRule_CITY,
-		CountryCode:        "NL",
-		ServerTechnologies: []core.ServerTechnology{1, 2, 3},
+		Country:        "Netherlands",
+		City:           "Amsterdam",
+		ConnectionType: config.ServerSelectionRule_CITY,
+		CountryCode:    "NL",
 	}
 
 	store.AddPending(original)
@@ -983,7 +945,6 @@ func TestRecentConnectionsStore_PopPending_ReturnsClone(t *testing.T) {
 
 	// Modify the retrieved model
 	retrieved.Country = "Belgium"
-	retrieved.ServerTechnologies[0] = 999
 
 	// Add the same pending again and verify it wasn't affected
 	store.AddPending(original)
@@ -1293,6 +1254,75 @@ func TestRecentConnectionsStore_EventPublisher_ConcurrentOperations(t *testing.T
 
 	assert.Greater(t, finalCount, 0, "Should have published events for successful operations")
 	assert.LessOrEqual(t, finalCount, operations, "Should not publish more events than operations")
+}
+
+func TestRecentConnectionsStore_FileMigration(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := fs.NewSystemFileHandleMock(t)
+	existingConnections := []Model{
+		{
+			Country:        "Germany",
+			ConnectionType: config.ServerSelectionRule_COUNTRY,
+		},
+		{
+			ConnectionType: config.ServerSelectionRule_RECOMMENDED,
+		},
+		{
+			Group:          config.ServerGroup_OVPN_OBFUSCATED,
+			ConnectionType: config.ServerSelectionRule_RECOMMENDED,
+		},
+	}
+	data, _ := json.Marshal(existingConnections)
+	fs.AddFile("/test/path", data)
+
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
+
+	connections, err := store.Get()
+	connectionsWithConnTech := []Model{
+		{
+			Country:        "Germany",
+			ConnectionType: config.ServerSelectionRule_COUNTRY,
+		},
+		{
+			ConnectionType: config.ServerSelectionRule_RECOMMENDED,
+		},
+	}
+	require.NoError(t, err)
+	assert.Equal(t, connectionsWithConnTech, connections)
+
+	data, err = fs.ReadFile("/test/path")
+	require.NoError(t, err)
+	expectedFileContent := `{"version":1,"connections":[{"country":"Germany","connection-type":3},{"connection-type":1}]}`
+	assert.Equal(t, expectedFileContent, string(data))
+}
+
+func TestRecentConnectionsStore_NewFormatIsKept(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := fs.NewSystemFileHandleMock(t)
+	expectedFileContent := `{"version":1,"connections":[{"country":"Germany","connection-type":3},{"connection-type":1}]}`
+	fs.AddFile("/test/path", []byte(expectedFileContent))
+
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
+
+	connections, err := store.Get()
+	connectionsWithConnTech := []Model{
+		{
+			Country:        "Germany",
+			ConnectionType: config.ServerSelectionRule_COUNTRY,
+		},
+		{
+			ConnectionType: config.ServerSelectionRule_RECOMMENDED,
+		},
+	}
+	require.NoError(t, err)
+	assert.Equal(t, connectionsWithConnTech, connections)
+
+	data, err := fs.ReadFile("/test/path")
+	require.NoError(t, err)
+
+	assert.Equal(t, expectedFileContent, string(data))
 }
 
 func TestRecentConnectionsStore_Migrations(t *testing.T) {

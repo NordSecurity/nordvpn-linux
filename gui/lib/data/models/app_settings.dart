@@ -26,7 +26,6 @@ abstract class ApplicationSettings with _$ApplicationSettings {
     required bool lanDiscovery,
     required bool routing,
     required bool postQuantum,
-    required bool obfuscatedServers,
     required bool firewall,
     required int firewallMark,
     required bool customDns,
@@ -71,7 +70,6 @@ abstract class ApplicationSettings with _$ApplicationSettings {
       lanDiscovery: settings.lanDiscovery,
       routing: settings.routing,
       postQuantum: settings.postquantumVpn,
-      obfuscatedServers: settings.obfuscate,
       firewall: settings.firewall,
       firewallMark: settings.fwmark,
       customDns: settings.dns.isNotEmpty,
@@ -84,10 +82,7 @@ abstract class ApplicationSettings with _$ApplicationSettings {
   }
 
   bool areDipServersSupported() {
-    return !obfuscatedServers &&
-        ((protocol == VpnProtocol.nordlynx) ||
-            (protocol == VpnProtocol.openVpnUdp) ||
-            (protocol == VpnProtocol.openVpnTcp));
+    return protocol == VpnProtocol.nordlynx || protocol.isOpenVpn();
   }
 }
 

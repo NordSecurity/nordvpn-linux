@@ -2,13 +2,17 @@ package main
 
 import (
 	"bytes"
+	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/netip"
 	"testing"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"github.com/NordSecurity/nordvpn-linux/test/mock"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -23,7 +27,7 @@ type workingResolver struct {
 	IP string
 }
 
-func (w workingResolver) Resolve(string) ([]netip.Addr, error) {
+func (w workingResolver) Resolve(context.Context, string) ([]netip.Addr, error) {
 	if w.IP != "" {
 		return []netip.Addr{netip.MustParseAddr(w.IP)}, nil
 	}
@@ -153,6 +157,118 @@ func Test_validateHttpTransportsString(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.value, func(t *testing.T) {
 			assert.Equal(t, test.expectedValue, validateHTTPTransportsString(test.value))
+		})
+	}
+}
+
+// mockDNSResolver lets each test case control the resolver's return values.
+type mockDNSResolver struct {
+	addrs []netip.Addr
+	err   error
+}
+
+func (m mockDNSResolver) Resolve(ctx context.Context, domain string) ([]netip.Addr, error) {
+	return m.addrs, m.err
+}
+
+func TestResolverWrapper_ResolveDomainName(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name                   string
+		resolverAddrs          []netip.Addr
+		resolverErr            error
+		loadErr                error
+		initialBackoff         time.Duration
+		initialNextAttemptUnix time.Time
+		domain                 string
+		expectedAddress        string
+		errorIsExpected        bool
+		expectedBackoff        time.Duration
+		expectedBackoffSet     bool
+	}{
+		{
+			name:            "successful IPv4 resolution",
+			resolverAddrs:   []netip.Addr{netip.MustParseAddr("1.2.3.4")},
+			domain:          "example.com",
+			expectedAddress: "1.2.3.4",
+		},
+		{
+			name:               "success clears existing backoff",
+			resolverAddrs:      []netip.Addr{netip.MustParseAddr("1.2.3.4")},
+			initialBackoff:     60 * time.Minute,
+			domain:             "example.com",
+			expectedAddress:    "1.2.3.4",
+			expectedBackoff:    0 * time.Minute,
+			expectedBackoffSet: false,
+		},
+		{
+			name:               "resolve error returns raw domain",
+			resolverErr:        errors.New("dns failure"),
+			domain:             "example.com",
+			expectedAddress:    "example.com",
+			expectedBackoff:    5 * time.Minute,
+			expectedBackoffSet: true,
+		},
+		{
+			name:               "backoff escalates 5 to 30 on failure",
+			resolverErr:        errors.New("dns failure"),
+			initialBackoff:     5 * time.Minute,
+			domain:             "example.com",
+			expectedAddress:    "example.com",
+			expectedBackoff:    30 * time.Minute,
+			expectedBackoffSet: true,
+		},
+		{
+			name:               "backoff caps at 60 minutes",
+			resolverErr:        errors.New("dns failure"),
+			initialBackoff:     60 * time.Minute,
+			domain:             "example.com",
+			expectedAddress:    "example.com",
+			expectedBackoff:    60 * time.Minute,
+			expectedBackoffSet: true,
+		},
+		{
+			name:                   "in backoff mode returns raw domain without resolving",
+			initialNextAttemptUnix: time.Now().Add(time.Hour),
+			domain:                 "example.com",
+			expectedAddress:        "example.com",
+			expectedBackoffSet:     true,
+		},
+		{
+			name:            "empty resolver result returns error",
+			resolverAddrs:   []netip.Addr{},
+			domain:          "example.com",
+			errorIsExpected: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			cfgManager := mock.NewMockConfigManager()
+			cfgManager.LoadErr = test.loadErr
+
+			resolver := mockDNSResolver{
+				addrs: test.resolverAddrs,
+				err:   test.resolverErr,
+			}
+
+			resolverWrapper := newResolverWithBackoff(resolver)
+			resolverWrapper.backoff = test.initialBackoff
+			resolverWrapper.nextInternalDNSAttempt = test.initialNextAttemptUnix
+
+			resolvedAddress, err := resolverWrapper.resolveDomainName(context.Background(), test.domain)
+
+			assert.Equal(t, test.expectedAddress, resolvedAddress, "Domain name was resolved to an unexpected address.")
+			if test.errorIsExpected {
+				assert.Error(t, err, "Expected error not returned by the resolver wrapper.")
+			} else {
+				assert.NoError(t, err, "Unexpected error returned by the resolver wrapper.")
+			}
+			assert.Equal(t, test.expectedBackoff, resolverWrapper.backoff,
+				"Unexpected backoff value after DNS resolution attempt.")
+			assert.Equal(t, test.expectedBackoffSet, resolverWrapper.isInBackoffModeThreadSafe(),
+				"Backoff not set as expected after DNS resolution attempt.")
 		})
 	}
 }

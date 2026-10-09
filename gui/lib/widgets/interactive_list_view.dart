@@ -14,8 +14,6 @@ final class InteractiveListView extends StatefulWidget {
 
   // the error widget when a search and no results are found
   final Widget noResultsFoundWidget;
-  // when not null it will be displayed when nothing is searched instead of empty list
-  final Widget? emptyListWidget;
   final bool showEmptyListAtStartup;
   final List<dynamic> items;
   final Widget Function(BuildContext context, dynamic item) itemBuilder;
@@ -34,7 +32,6 @@ final class InteractiveListView extends StatefulWidget {
     required this.noResultsFoundWidget,
     required this.searchBarSize,
     required this.showEmptyListAtStartup,
-    required this.emptyListWidget,
     this.searchTextController,
     required this.beginSearchAfter,
   });
@@ -173,7 +170,7 @@ class _InteractiveListViewState extends State<InteractiveListView> {
     final controller = widget.searchTextController ?? _searchController;
     if ((widget.showEmptyListAtStartup) &&
         (controller.text.length < widget.beginSearchAfter)) {
-      return widget.emptyListWidget ?? const SizedBox.shrink();
+      return const SizedBox.shrink();
     }
     return widget.noResultsFoundWidget;
   }
