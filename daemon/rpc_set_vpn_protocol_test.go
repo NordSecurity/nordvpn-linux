@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
+	core_test "github.com/NordSecurity/nordvpn-linux/test/mock/core"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	"github.com/stretchr/testify/assert"
 )
@@ -364,5 +366,93 @@ func TestSetVPNProtocol_ToNordWhisper_KeepsECH(t *testing.T) {
 		msg := fmt.Sprintf("stored ECH %v", stored)
 		assert.Equal(t, internal.CodeSuccess, resp.Type, msg)
 		assert.Equal(t, stored, env.cm.Cfg.AutoConnectData.ECH.Get(), "%s: ECH must be kept when switching to NordWhisper", msg)
+	}
+}
+
+func TestSetVPNProtocolCheckAutoConnectData(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name             string
+		cfg              config.Config
+		changeToProtocol config.VPNProtocol
+		expectedResponse *pb.Payload
+	}{
+		{
+			name: "set technology works when autoconnect is off",
+			cfg: config.Config{
+				VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+				AutoConnect: false,
+				AutoConnectData: config.AutoConnectData{
+					Group: config.ServerGroup_DOUBLE_VPN,
+				},
+			},
+			changeToProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
+			expectedResponse: &pb.Payload{
+				Type: internal.CodeSuccess,
+				Data: []string{config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER.DisplayName()},
+			},
+		},
+		{
+			name: "works when autoconnect is on and autoconnect has compatible settings",
+			cfg: config.Config{
+				VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+				AutoConnect: true,
+				AutoConnectData: config.AutoConnectData{
+					Group: config.ServerGroup_DOUBLE_VPN,
+				},
+			},
+			changeToProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP,
+			expectedResponse: &pb.Payload{
+				Type: internal.CodeSuccess,
+				Data: []string{config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP.DisplayName()},
+			},
+		},
+		{
+			name: "fails when autoconnect is on and autoconnect is with incompatible settings",
+			cfg: config.Config{
+				VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+				AutoConnect: true,
+				AutoConnectData: config.AutoConnectData{
+					Group: config.ServerGroup_DOUBLE_VPN,
+				},
+			},
+			changeToProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
+			expectedResponse: &pb.Payload{
+				Type: internal.CodeProtocolIncompatibleWithAutoconnect,
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			configManager := mock.NewMockConfigManager()
+			configManager.Cfg = &test.cfg
+
+			remoteConfigGetter := mock.NewRemoteConfigMock()
+			remoteConfigGetter.NordWhisperEnabled = true
+			dm := DataManager{serversData: ServersData{Servers: core_test.ServersList()}}
+
+			r := RPC{
+				remoteConfigGetter: remoteConfigGetter,
+				cm:                 configManager,
+				netw:               &networker.Mock{},
+				factory:            func(t config.Technology) (vpn.VPN, error) { return nil, nil },
+				events:             daemonevents.NewEventsEmpty(),
+				dm:                 &dm,
+				serversAPI:         core_test.NewMockFailingServersAPI(errors.New("500")),
+			}
+
+			resp, err := r.SetVPNProtocol(context.Background(), &pb.SetVPNProtocolRequest{
+				VpnProtocol: test.changeToProtocol,
+			})
+			assert.NoError(t, err)
+			assert.Equal(t, test.expectedResponse, resp)
+			if resp.Type == internal.CodeSuccess {
+				assert.Equal(t, test.changeToProtocol, configManager.Cfg.VPNProtocol)
+			} else {
+				assert.Equal(t, test.cfg.VPNProtocol, configManager.Cfg.VPNProtocol)
+			}
+		})
 	}
 }

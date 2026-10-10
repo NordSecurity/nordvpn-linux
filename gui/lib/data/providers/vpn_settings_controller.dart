@@ -62,7 +62,10 @@ class VpnSettingsController extends _$VpnSettingsController
     }
 
     // VPN is not connected - apply the change directly
-    return await _setValue((repository) => repository.setVpnProtocol(protocol));
+    return await _setValue(
+      (repository) => repository.setVpnProtocol(protocol),
+      userData: protocol.displayName(),
+    );
   }
 
   /// Applies the pending protocol change.

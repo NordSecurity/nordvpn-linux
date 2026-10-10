@@ -55,6 +55,8 @@ func (c *cmd) SetVPNProtocol(ctx *cli.Context) error {
 		color.Yellow(fmt.Sprintf(MsgAlreadySet, "VPN Protocol", resp.Data[0]))
 	case internal.CodeConfigError:
 		return formatError(ErrConfig)
+	case internal.CodeProtocolIncompatibleWithAutoconnect:
+		return formatError(fmt.Errorf(MsgIncompatibleTechWithAutoconnect, vpnProto.DisplayName()))
 	case internal.CodeSuccessReconnectRequired:
 		color.Green(fmt.Sprintf(MsgSetSuccess, "VPN Protocol", resp.Data[0]))
 		color.Yellow(SetReconnect)

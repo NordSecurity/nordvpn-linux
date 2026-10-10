@@ -93,6 +93,7 @@ const (
 	CodeSetDefaultsNotApplied                  int64 = 3078
 	CodeAutoconnectToSpecificServer            int64 = 3079
 	CodeObfuscatedNeedsNordwhisper             int64 = 3080
+	CodeProtocolIncompatibleWithAutoconnect    int64 = 3081
 )
 
 type ErrorWithCode struct {

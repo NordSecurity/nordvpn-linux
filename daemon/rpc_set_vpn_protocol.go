@@ -66,6 +66,20 @@ func (r *RPC) SetVPNProtocol(
 		}, nil
 	}
 
+	if cfg.AutoConnect {
+		serverTag, serverGroup := generateTagFromAutoConnect(cfg)
+		c := cfg
+		c.VPNProtocol = req.GetVpnProtocol()
+		c.AutoConnectData.ECH = ech
+		insights := r.dm.GetInsightsData().Insights
+		if _, err := selectServer(r, &insights, c, serverTag, serverGroup, ""); err != nil {
+			log.Error("no server found for auto-connect data and new server technology: ", cfg.AutoConnectData, req.GetVpnProtocol().DisplayName(), err)
+			return &pb.Payload{
+				Type: internal.CodeProtocolIncompatibleWithAutoconnect,
+			}, nil
+		}
+	}
+
 	updateConfigFn := func(c config.Config) config.Config {
 		c.VPNProtocol = req.GetVpnProtocol()
 		c.AutoConnectData.ECH = ech
@@ -91,4 +105,21 @@ func (r *RPC) SetVPNProtocol(
 	}
 
 	return payload, nil
+}
+
+// TODO: check if this is still needed after LVPN-9355
+func generateTagFromAutoConnect(cfg config.Config) (string, string) {
+	var tag, group string
+	if cfg.AutoConnectData.Group != config.ServerGroup_UNDEFINED {
+		group = cfg.AutoConnectData.Group.String()
+	}
+
+	if cfg.AutoConnectData.Country != "" {
+		tag = cfg.AutoConnectData.Country
+		if cfg.AutoConnectData.City != "" {
+			tag += " " + cfg.AutoConnectData.City
+		}
+	}
+
+	return tag, group
 }
