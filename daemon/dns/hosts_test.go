@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/netip"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/test/category"
@@ -246,4 +247,33 @@ func TestHostFileSetter_UnsetHosts(t *testing.T) {
 			assert.Equal(t, test.after, string(actual))
 		})
 	}
+}
+
+func TestNoopHostsSetter(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	filename := filepath.Join(t.TempDir(), "hosts")
+	original := "127.0.0.1\tlocalhost\n"
+	require.NoError(t, os.WriteFile(filename, []byte(original), 0644))
+	before, err := os.Stat(filename)
+	require.NoError(t, err)
+
+	setter := NoopHostsSetter{}
+	assert.NoError(t, setter.SetHosts(Hosts{{FQDN: "peer.nord"}}))
+	assert.NoError(t, setter.UnsetHosts())
+
+	after, err := os.Stat(filename)
+	require.NoError(t, err)
+	content, err := os.ReadFile(filename)
+	require.NoError(t, err)
+
+	assert.Equal(t, original, string(content))         // bytes untouched
+	assert.Equal(t, before.ModTime(), after.ModTime()) // never opened
+}
+
+func TestNewHostnameSetter(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	assert.IsType(t, NoopHostsSetter{}, NewHostnameSetter(true, HostsFilePath))
+	assert.IsType(t, &HostsFileSetter{}, NewHostnameSetter(false, HostsFilePath))
 }
