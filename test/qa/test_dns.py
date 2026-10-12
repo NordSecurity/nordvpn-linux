@@ -26,7 +26,7 @@ def test_set_tpl_on_off_connected(tech, proto, obfuscated):
 
         assert settings.is_tpl_enabled(), "TPL should be enabled after setting it to on"
         assert settings.dns_visible_in_settings(["disabled"]), "DNS should show as disabled in settings when TPL is enabled"
-        # assert dns.is_set_for(dns.DNS_TPL), "DNS should be set for TPL when connected with TPL enabled"
+        assert dns.is_set_for(dns.DNS_TPL), "DNS should be set for TPL when connected with TPL enabled"
 
         tpl_alias = dns.get_tpl_alias()
         assert "Real-time protection has been successfully set to 'disabled'." in sh.nordvpn.set(tpl_alias, "off"), "TPL disable should show success message"
@@ -39,25 +39,25 @@ def test_set_tpl_on_off_connected(tech, proto, obfuscated):
     assert dns.is_unset(), "DNS should be unset after disconnecting from VPN server"
 
 
-# @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-# def test_set_tpl_on_and_connect(tech, proto, obfuscated):
-#     """Manual TC: LVPN-1603"""
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+def test_set_tpl_on_and_connect(tech, proto, obfuscated):
+    """Manual TC: LVPN-1603"""
 
-#     lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-#     tpl_alias = dns.get_tpl_alias()
-#     assert "Real-time protection has been successfully set to 'enabled'." in sh.nordvpn.set(tpl_alias, "on"), "TPL enable should show success message"
+    tpl_alias = dns.get_tpl_alias()
+    assert "Real-time protection has been successfully set to 'enabled'." in sh.nordvpn.set(tpl_alias, "on"), "TPL enable should show success message"
 
-#     assert settings.is_tpl_enabled(), "TPL should be enabled after setting it to on"
-#     assert settings.dns_visible_in_settings(["disabled"]), "DNS should show as disabled in settings when TPL is enabled"
-#     assert dns.is_unset(), "DNS should be unset before connecting to VPN server"
+    assert settings.is_tpl_enabled(), "TPL should be enabled after setting it to on"
+    assert settings.dns_visible_in_settings(["disabled"]), "DNS should show as disabled in settings when TPL is enabled"
+    assert dns.is_unset(), "DNS should be unset before connecting to VPN server"
 
-#     with lib.Defer(sh.nordvpn.disconnect):
-#         sh.nordvpn.connect()
+    with lib.Defer(sh.nordvpn.disconnect):
+        sh.nordvpn.connect()
 
-#         assert dns.is_set_for(dns.DNS_TPL), "DNS should be set for TPL when connected with TPL enabled"
+        assert dns.is_set_for(dns.DNS_TPL), "DNS should be set for TPL when connected with TPL enabled"
 
-#     assert dns.is_unset(), "DNS should be unset after disconnecting from VPN server"
+    assert dns.is_unset(), "DNS should be unset after disconnecting from VPN server"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -477,6 +477,6 @@ def test_custom_dns_removed_when_tpl_enabled_connected(tech, proto, obfuscated, 
         assert dns.DNS_MSG_WARNING_DISABLING in output, "TPL warning message should appear when enabling TPL with custom DNS set while connected"
         assert settings.is_tpl_enabled(), "TPL should be enabled after setting it to on while connected"
         assert not settings.dns_visible_in_settings(nameserver), "Custom nameserver should be removed from settings when TPL is enabled while connected"
-        # assert dns.is_set_for(dns.DNS_TPL), "DNS should be set for TPL after enabling TPL while connected"
+        assert dns.is_set_for(dns.DNS_TPL), "DNS should be set for TPL after enabling TPL while connected"
 
     assert dns.is_unset(), "DNS should be unset after disconnecting from VPN server"
