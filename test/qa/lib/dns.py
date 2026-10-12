@@ -7,7 +7,7 @@ import sh
 DNS_NORD = ["103.86.96.100", "103.86.99.100"]
 
 # Used for test parametrization.
-DNS_TPL = ["103.86.96.96", "103.86.99.99"]
+DNS_TPL = ["103.86.96.108", "103.86.99.108"]
 
 # Used for test parametrization, when the same test has to be run with different Threat Protection Lite alias.
 TPL_ALIAS = [
