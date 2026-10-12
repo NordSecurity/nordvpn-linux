@@ -397,6 +397,13 @@ class DaemonClient extends $grpc.Client {
         options: options);
   }
 
+  $grpc.ResponseFuture<$0.Payload> setSanitization(
+    $15.SetGenericRequest request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createUnaryCall(_$setSanitization, request, options: options);
+  }
+
   // method descriptors
 
   static final _$isLoggedIn =
@@ -614,6 +621,11 @@ class DaemonClient extends $grpc.Client {
           '/pb.Daemon/CollectDiagnostics',
           ($0.Empty value) => value.writeToBuffer(),
           $0.DiagnosticsProgress.fromBuffer);
+  static final _$setSanitization =
+      $grpc.ClientMethod<$15.SetGenericRequest, $0.Payload>(
+          '/pb.Daemon/SetSanitization',
+          ($15.SetGenericRequest value) => value.writeToBuffer(),
+          $0.Payload.fromBuffer);
 }
 
 @$pb.GrpcServiceName('pb.Daemon')
@@ -968,6 +980,14 @@ abstract class DaemonServiceBase extends $grpc.Service {
         true,
         ($core.List<$core.int> value) => $0.Empty.fromBuffer(value),
         ($0.DiagnosticsProgress value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$15.SetGenericRequest, $0.Payload>(
+        'SetSanitization',
+        setSanitization_Pre,
+        false,
+        false,
+        ($core.List<$core.int> value) =>
+            $15.SetGenericRequest.fromBuffer(value),
+        ($0.Payload value) => value.writeToBuffer()));
   }
 
   $async.Future<$1.IsLoggedInResponse> isLoggedIn_Pre(
@@ -1342,4 +1362,12 @@ abstract class DaemonServiceBase extends $grpc.Service {
 
   $async.Stream<$0.DiagnosticsProgress> collectDiagnostics(
       $grpc.ServiceCall call, $0.Empty request);
+
+  $async.Future<$0.Payload> setSanitization_Pre($grpc.ServiceCall $call,
+      $async.Future<$15.SetGenericRequest> $request) async {
+    return setSanitization($call, await $request);
+  }
+
+  $async.Future<$0.Payload> setSanitization(
+      $grpc.ServiceCall call, $15.SetGenericRequest request);
 }

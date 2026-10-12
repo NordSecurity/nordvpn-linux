@@ -146,6 +146,7 @@ type DataConnect struct {
 	PauseInterval           time.Duration
 	UnpausedByUser          bool
 	VPNConnReason           VPNConnectionReason
+	Private                 bool
 }
 
 // DataConnectChangeNotif is used to provide notifications for internal listeners of ConnectionStatus

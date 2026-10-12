@@ -77,7 +77,7 @@ func (n *NameServers) FetchRTPServers(fetcher ServersFetcher, timeoutFn Calculat
 		servers, err := fetcher()
 		if err == nil && len(servers.Servers) > 0 {
 			// copy to ensure pointer is not later modified from outside
-			log.Info("RTP servers updated to", servers.Servers)
+			log.Info("RTP servers updated to", log.DoNotSanitize(servers.Servers))
 			s := slices.Clone(servers.Servers)
 			n.rtpServers.Store(&s)
 

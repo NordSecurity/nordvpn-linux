@@ -65,6 +65,7 @@ const (
 	Daemon_SubscribeToStateChanges_FullMethodName  = "/pb.Daemon/SubscribeToStateChanges"
 	Daemon_InjectVpnConnectionError_FullMethodName = "/pb.Daemon/InjectVpnConnectionError"
 	Daemon_CollectDiagnostics_FullMethodName       = "/pb.Daemon/CollectDiagnostics"
+	Daemon_SetSanitization_FullMethodName          = "/pb.Daemon/SetSanitization"
 )
 
 // DaemonClient is the client API for Daemon service.
@@ -131,6 +132,7 @@ type DaemonClient interface {
 	InjectVpnConnectionError(ctx context.Context, in *InjectVpnConnectionErrorRequest, opts ...grpc.CallOption) (*Payload, error)
 	// ==================== Diagnostics ====================
 	CollectDiagnostics(ctx context.Context, in *Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DiagnosticsProgress], error)
+	SetSanitization(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
 }
 
 type daemonClient struct {
@@ -637,6 +639,16 @@ func (c *daemonClient) CollectDiagnostics(ctx context.Context, in *Empty, opts .
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Daemon_CollectDiagnosticsClient = grpc.ServerStreamingClient[DiagnosticsProgress]
 
+func (c *daemonClient) SetSanitization(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Payload)
+	err := c.cc.Invoke(ctx, Daemon_SetSanitization_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DaemonServer is the server API for Daemon service.
 // All implementations must embed UnimplementedDaemonServer
 // for forward compatibility.
@@ -701,6 +713,7 @@ type DaemonServer interface {
 	InjectVpnConnectionError(context.Context, *InjectVpnConnectionErrorRequest) (*Payload, error)
 	// ==================== Diagnostics ====================
 	CollectDiagnostics(*Empty, grpc.ServerStreamingServer[DiagnosticsProgress]) error
+	SetSanitization(context.Context, *SetGenericRequest) (*Payload, error)
 	mustEmbedUnimplementedDaemonServer()
 }
 
@@ -848,6 +861,9 @@ func (UnimplementedDaemonServer) InjectVpnConnectionError(context.Context, *Inje
 }
 func (UnimplementedDaemonServer) CollectDiagnostics(*Empty, grpc.ServerStreamingServer[DiagnosticsProgress]) error {
 	return status.Errorf(codes.Unimplemented, "method CollectDiagnostics not implemented")
+}
+func (UnimplementedDaemonServer) SetSanitization(context.Context, *SetGenericRequest) (*Payload, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetSanitization not implemented")
 }
 func (UnimplementedDaemonServer) mustEmbedUnimplementedDaemonServer() {}
 func (UnimplementedDaemonServer) testEmbeddedByValue()                {}
@@ -1670,6 +1686,24 @@ func _Daemon_CollectDiagnostics_Handler(srv interface{}, stream grpc.ServerStrea
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Daemon_CollectDiagnosticsServer = grpc.ServerStreamingServer[DiagnosticsProgress]
 
+func _Daemon_SetSanitization_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetGenericRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).SetSanitization(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Daemon_SetSanitization_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).SetSanitization(ctx, req.(*SetGenericRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Daemon_ServiceDesc is the grpc.ServiceDesc for Daemon service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1844,6 +1878,10 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "InjectVpnConnectionError",
 			Handler:    _Daemon_InjectVpnConnectionError_Handler,
+		},
+		{
+			MethodName: "SetSanitization",
+			Handler:    _Daemon_SetSanitization_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

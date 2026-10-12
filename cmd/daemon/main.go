@@ -136,7 +136,12 @@ func main() {
 	if *ksMode {
 		log.Info("Daemon running in killswitch mode")
 	}
-	stopLevelWatcher := log.SetupLogger(logWriter(), internal.LogLevelFile, log.DefaultLevel())
+	stopLevelWatcher := log.SetupLogger(
+		logWriter(),
+		internal.LogLevelFile,
+		log.DefaultLevel(),
+		internal.IsDevEnv(Environment),
+	)
 	defer stopLevelWatcher()
 
 	// pprof
