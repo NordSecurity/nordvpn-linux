@@ -27,12 +27,12 @@ func (c *cmd) settings() (*pb.Settings, error) {
 }
 
 // Except returns true if technology in the app configuration is different than tech.
-func (c *cmd) Except(tech config.Technology) bool {
+func (c *cmd) Except(protocol config.VPNProtocol) bool {
 	settings, err := c.settings()
 	if err != nil {
 		return false
 	}
-	return settings.GetVpnProtocol().Technology() != tech
+	return settings.GetVpnProtocol() != protocol
 }
 
 // SetBoolAutocomplete shows booleans suggestions

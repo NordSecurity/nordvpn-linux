@@ -1896,7 +1896,7 @@ func (s *Server) connect(
 		vpn.ServerData{
 			IP:                peer.Address,
 			Hostname:          peer.Hostname,
-			Transport:         config.TransportUDP,
+			VPNProtocol:       config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			NordLynxPublicKey: peer.PublicKey,
 		},
 		cfg.AutoConnectData.Allowlist,

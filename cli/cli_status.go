@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/client"
-	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/nstrings"
@@ -88,14 +87,14 @@ func Status(resp *pb.StatusResponse) string {
 			fmt.Sprintf("Protocol: %s\n", resp.VpnProtocol.DisplayName()),
 		)
 
-		if resp.VpnProtocol.Technology() == config.TechnologyNordLynx {
+		if resp.VpnProtocol.IsNordLynx() {
 			b.WriteString(
 				fmt.Sprintf("Post-quantum VPN: %s\n",
 					internal.Title(nstrings.GetBoolLabel(resp.PostQuantum))),
 			)
 		}
 
-		if resp.VpnProtocol.Technology() == config.TechnologyNordWhisper {
+		if resp.VpnProtocol.IsNordWhisper() {
 			b.WriteString(
 				fmt.Sprintf("ECH: %s\n",
 					internal.Title(nstrings.GetBoolLabel(resp.Ech))),

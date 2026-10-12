@@ -124,28 +124,28 @@ func TestConfigDefaultValues(t *testing.T) {
 		settingsFile string
 		installFile  string
 		autoconnect  bool
-		technology   Technology
+		isProtocol   func(VPNProtocol) bool
 	}{
 		{
 			settingsFile: "testdata/settings_3.10.0.dat",
 			installFile:  "testdata/install_3.10.0.dat",
 			autoconnect:  true,
-			technology:   TechnologyNordLynx,
+			isProtocol:   VPNProtocol.IsNordLynx,
 		},
 		{
 			settingsFile: "testdata/settings_3.12.0.dat",
 			installFile:  "testdata/install_3.12.0.dat",
-			technology:   TechnologyOpenVPN,
+			isProtocol:   VPNProtocol.IsOpenVPN,
 		},
 		{
 			settingsFile: "testdata/settings_3.13.0.dat",
 			installFile:  "testdata/install_3.13.0.dat",
-			technology:   TechnologyNordLynx,
+			isProtocol:   VPNProtocol.IsNordLynx,
 		},
 		{
 			settingsFile: "testdata/settings_3.14.0.dat",
 			installFile:  "testdata/install_3.14.0.dat",
-			technology:   TechnologyNordLynx,
+			isProtocol:   VPNProtocol.IsNordLynx,
 		},
 	}
 
@@ -156,7 +156,7 @@ func TestConfigDefaultValues(t *testing.T) {
 			err := fs.Load(&cfg)
 			require.NoError(t, err)
 			assert.Equal(t, defaultFWMarkValue, cfg.FirewallMark)
-			assert.Equal(t, test.technology, cfg.VPNProtocol.Technology())
+			assert.True(t, test.isProtocol(cfg.VPNProtocol), "vpn protocol %v", cfg.VPNProtocol)
 			assert.True(t, cfg.Firewall)
 			assert.True(t, cfg.Routing.Get())
 			assert.False(t, cfg.Mesh)

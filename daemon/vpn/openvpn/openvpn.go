@@ -92,7 +92,7 @@ func (ovpn *OpenVPN) Start(
 	}
 
 	err := setOpenVPNConfig(
-		serverData.Transport,
+		serverData.VPNProtocol,
 		serverData.IP,
 		serverData.OpenVPNVersion,
 	)

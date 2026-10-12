@@ -31,7 +31,7 @@ func technologiesToProtobuf(technologies core.Technologies) []pb.Technology {
 
 // groupsToProtobuf returns the groups the server offers under the technology as a slice of
 // config.ServerGroup, keeping only the ones of interest to the GUI
-func groupsToProtobuf(server core.Server, technology config.Technology) []config.ServerGroup {
+func groupsToProtobuf(server core.Server, protocol config.VPNProtocol) []config.ServerGroup {
 	filter := []config.ServerGroup{
 		config.ServerGroup_DOUBLE_VPN,
 		config.ServerGroup_ONION_OVER_VPN,
@@ -40,7 +40,7 @@ func groupsToProtobuf(server core.Server, technology config.Technology) []config
 		config.ServerGroup_NW_OBFUSCATED,
 	}
 
-	groups := serverpicker.EffectiveGroups(server, technology)
+	groups := serverpicker.EffectiveGroups(server, protocol)
 	desiredGroups := []config.ServerGroup{}
 	for _, filterGroup := range filter {
 		if slices.ContainsFunc(groups, core.ByGroup(filterGroup)) {
@@ -53,7 +53,7 @@ func groupsToProtobuf(server core.Server, technology config.Technology) []config
 
 func serversListToServersMap(
 	internalServers core.Servers,
-	technology config.Technology,
+	protocol config.VPNProtocol,
 ) []*pb.ServerCountry {
 	type serversMap map[string]map[string][]*pb.Server
 
@@ -65,7 +65,7 @@ func serversListToServersMap(
 		s := &pb.Server{
 			Id:           server.ID,
 			HostName:     server.Hostname,
-			ServerGroups: groupsToProtobuf(server, technology),
+			ServerGroups: groupsToProtobuf(server, protocol),
 			Technologies: technologiesToProtobuf(server.Technologies),
 		}
 
@@ -122,7 +122,7 @@ func (r *RPC) GetServers(ctx context.Context, in *pb.Empty) (*pb.ServersResponse
 
 	return &pb.ServersResponse{Response: &pb.ServersResponse_Servers{
 		Servers: &pb.ServersMap{
-			ServersByCountry: serversListToServersMap(servers, cfg.VPNProtocol.Technology()),
+			ServersByCountry: serversListToServersMap(servers, cfg.VPNProtocol),
 		},
 	}}, nil
 }

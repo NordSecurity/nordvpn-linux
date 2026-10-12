@@ -412,7 +412,7 @@ func (r *RPC) connect(
 	serverData := vpn.ServerData{
 		IP:                  subnet.Addr(),
 		Hostname:            serverSelection.Server.Hostname,
-		Transport:           cfg.VPNProtocol.Transport(),
+		VPNProtocol:         cfg.VPNProtocol,
 		NordLynxPublicKey:   serverSelection.Server.NordLynxPublicKey,
 		PostQuantum:         cfg.AutoConnectData.PostquantumVpn,
 		OpenVPNVersion:      serverSelection.Server.Version(),
@@ -431,7 +431,7 @@ func (r *RPC) connect(
 	serverSelectionRule := determineServerSelectionRule(parameters)
 	r.connectionInfo.SetServerSelectionData(serverSelectionRule, serverSelection.Remote)
 
-	offeredGroups := serverpicker.EffectiveGroups(*serverSelection.Server, cfg.VPNProtocol.Technology())
+	offeredGroups := serverpicker.EffectiveGroups(*serverSelection.Server, cfg.VPNProtocol)
 	event := events.DataConnect{
 		VPNProtocol:             cfg.VPNProtocol,
 		RealTimeProtection:      cfg.AutoConnectData.RealTimeProtection,
@@ -594,4 +594,4 @@ func determineTargetServerGroup(
 	return config.ServerGroup_UNDEFINED
 }
 
-type FactoryFunc func(config.Technology) (vpn.VPN, error)
+type FactoryFunc func(config.VPNProtocol) (vpn.VPN, error)

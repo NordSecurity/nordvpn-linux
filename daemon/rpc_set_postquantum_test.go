@@ -84,7 +84,7 @@ func TestSetPostquantumVpn(t *testing.T) {
 		pq                     bool
 		meshnet                bool
 		vpnActive              bool
-		tech                   config.Technology
+		tech                   config.VPNProtocol
 		autoconnect            bool
 		autoconnectTargetGroup config.ServerGroup
 		payload                *pb.Payload
@@ -95,7 +95,7 @@ func TestSetPostquantumVpn(t *testing.T) {
 			pq:             false,
 			meshnet:        false,
 			vpnActive:      false,
-			tech:           config.TechnologyUnknown,
+			tech:           config.VPNProtocol_VPN_PROTOCOL_UNSPECIFIED,
 			payload:        &conflictUnknownTechPayload,
 			eventPublished: false,
 		},
@@ -104,7 +104,7 @@ func TestSetPostquantumVpn(t *testing.T) {
 			pq:             false,
 			meshnet:        false,
 			vpnActive:      false,
-			tech:           config.TechnologyNordLynx,
+			tech:           config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			payload:        &successPayload,
 			eventPublished: true,
 		},
@@ -113,7 +113,7 @@ func TestSetPostquantumVpn(t *testing.T) {
 			pq:             true,
 			meshnet:        false,
 			vpnActive:      false,
-			tech:           config.TechnologyUnknown,
+			tech:           config.VPNProtocol_VPN_PROTOCOL_UNSPECIFIED,
 			payload:        &conflictUnknownTechPayload,
 			eventPublished: false,
 		},
@@ -122,7 +122,7 @@ func TestSetPostquantumVpn(t *testing.T) {
 			pq:             true,
 			meshnet:        false,
 			vpnActive:      false,
-			tech:           config.TechnologyNordLynx,
+			tech:           config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			payload:        &successPayload,
 			eventPublished: true,
 		},
@@ -139,7 +139,7 @@ func TestSetPostquantumVpn(t *testing.T) {
 			pq:             false,
 			meshnet:        false,
 			vpnActive:      true,
-			tech:           config.TechnologyNordLynx,
+			tech:           config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			payload:        &successWithVPNPayload,
 			eventPublished: true,
 		},
@@ -148,7 +148,7 @@ func TestSetPostquantumVpn(t *testing.T) {
 			pq:             true,
 			meshnet:        false,
 			vpnActive:      false,
-			tech:           config.TechnologyOpenVPN,
+			tech:           config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP,
 			payload:        &conflictOpenVPNTechPayload,
 			eventPublished: false,
 		},
@@ -157,7 +157,7 @@ func TestSetPostquantumVpn(t *testing.T) {
 			pq:             true,
 			meshnet:        false,
 			vpnActive:      false,
-			tech:           config.TechnologyNordWhisper,
+			tech:           config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
 			payload:        &conflictNordWhisperPayload,
 			eventPublished: false,
 		},
@@ -168,7 +168,7 @@ func TestSetPostquantumVpn(t *testing.T) {
 			vpnActive:              false,
 			autoconnect:            true,
 			autoconnectTargetGroup: config.ServerGroup_DEDICATED_SERVER,
-			tech:                   config.TechnologyNordLynx,
+			tech:                   config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			payload:                &conflictDedicatedServerPayload,
 		},
 	}
@@ -176,7 +176,7 @@ func TestSetPostquantumVpn(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.testName, func(t *testing.T) {
 			mockConfigManager.c.Mesh = test.meshnet
-			mockConfigManager.c.VPNProtocol = vpnProtocolFor(test.tech, config.TransportUDP)
+			mockConfigManager.c.VPNProtocol = test.tech
 			mockConfigManager.c.AutoConnect = test.autoconnect
 			mockConfigManager.c.AutoConnectData.Group = test.autoconnectTargetGroup
 			mockConfigManager.c.AutoConnectData.PostquantumVpn = !test.pq

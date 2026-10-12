@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 
@@ -46,9 +45,9 @@ func (c *cmd) AllowlistAddPort(ctx *cli.Context) error {
 		isTCP = true
 	} else {
 		switch args.Get(2) {
-		case config.TransportUDP.String():
+		case stringUDP:
 			isUDP = true
-		case config.TransportTCP.String():
+		case stringTCP:
 			isTCP = true
 		default:
 			return formatError(argsParseError(ctx))
@@ -114,8 +113,8 @@ func (c *cmd) AllowlistAddPortAutoComplete(ctx *cli.Context) {
 		fmt.Println(stringProtocol)
 	case 2:
 		// show available protocols
-		fmt.Println(config.TransportUDP.String())
-		fmt.Println(config.TransportTCP.String())
+		fmt.Println(stringUDP)
+		fmt.Println(stringTCP)
 	default:
 		return
 	}
@@ -127,9 +126,9 @@ func (c *cmd) AllowlistAddPortAutoComplete(ctx *cli.Context) {
 // * UDP|TCP
 func getProtocolStr(isTCP bool, isUDP bool) string {
 	if isTCP && !isUDP {
-		return config.TransportTCP.String()
+		return stringTCP
 	} else if isUDP && !isTCP {
-		return config.TransportUDP.String()
+		return stringUDP
 	}
-	return fmt.Sprintf("%s|%s", config.TransportUDP, config.TransportTCP)
+	return stringUDP + "|" + stringTCP
 }

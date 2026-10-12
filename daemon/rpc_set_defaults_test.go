@@ -64,7 +64,7 @@ func TestResetToDefaults_PauseVariants(t *testing.T) {
 				ncClient:       &mock.NotificationClientMock{},
 				publisher:      &subs.Subject[string]{},
 				credentialsAPI: &testcore.CredentialsAPIMock{},
-				factory:        func(t config.Technology) (vpn.VPN, error) { return nil, nil },
+				factory:        func(t config.VPNProtocol) (vpn.VPN, error) { return nil, nil },
 				events: &daemonevents.Events{
 					User:    &daemonevents.LoginEvents{Logout: &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{}},
 					Service: &daemonevents.ServiceEvents{Disconnect: mockedDisconnectEvents},
@@ -224,7 +224,7 @@ func TestSetDefaults_Logout(t *testing.T) {
 				ncClient:                  &mock.NotificationClientMock{},
 				publisher:                 &subs.Subject[string]{},
 				credentialsAPI:            &setDefaultsCredentialsAPIMock{deleteTokenErr: test.deleteTokenErr},
-				factory:                   func(config.Technology) (vpn.VPN, error) { return nil, nil },
+				factory:                   func(config.VPNProtocol) (vpn.VPN, error) { return nil, nil },
 				events:                    daemonEvents,
 				recentVPNConnStore:        recents.NewRecentConnectionsStore("/test/path", &fs, nil),
 				pauseManager:              &mock.PauseSchedulerMock{},

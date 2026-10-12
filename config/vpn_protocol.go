@@ -6,36 +6,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/features"
 )
 
-// Technology returns technology used for the selected vpn protocol
-func (p VPNProtocol) Technology() Technology {
-	//exhaustive:ignore
-	switch p {
-	case VPNProtocol_VPN_PROTOCOL_NORDLYNX:
-		return TechnologyNordLynx
-	case VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP, VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP:
-		return TechnologyOpenVPN
-	case VPNProtocol_VPN_PROTOCOL_NORDWHISPER:
-		return TechnologyNordWhisper
-	}
-	return TechnologyUnknown
-}
-
-// Transport returns transport used for the selected vpn protocol
-func (p VPNProtocol) Transport() Transport {
-	//exhaustive:ignore
-	switch p {
-	case VPNProtocol_VPN_PROTOCOL_NORDLYNX:
-		return TransportUnknown
-	case VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP:
-		return TransportTCP
-	case VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP:
-		return TransportUDP
-	case VPNProtocol_VPN_PROTOCOL_NORDWHISPER:
-		return TransportWebTunnel
-	}
-	return TransportUnknown
-}
-
 // DisplayName converts vpn protocol to string representation
 func (p VPNProtocol) DisplayName() string {
 	//exhaustive:ignore
@@ -52,31 +22,51 @@ func (p VPNProtocol) DisplayName() string {
 	return VPNProtocol_VPN_PROTOCOL_UNSPECIFIED.String()
 }
 
-// IsNordLynx reports whether p uses the NordLynx technology.
+// TechNameToUpperCamelCase returns the technology name of the vpn protocol as an UpperCamelCase string
+func TechNameToUpperCamelCase(p VPNProtocol) string {
+	//exhaustive:ignore
+	switch p {
+	case VPNProtocol_VPN_PROTOCOL_NORDLYNX:
+		return "NordLynx"
+	case VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP, VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP:
+		return "OpenVPN"
+	case VPNProtocol_VPN_PROTOCOL_NORDWHISPER:
+		return "NordWhisper"
+	}
+	return ""
+}
+
+// IsNordLynx reports whether p uses the NordLynx protocol.
 func (p VPNProtocol) IsNordLynx() bool {
-	return p.Technology() == TechnologyNordLynx
+	return p == VPNProtocol_VPN_PROTOCOL_NORDLYNX
 }
 
-// IsOpenVPN reports whether p uses the OpenVPN technology (TCP or UDP).
+// IsOpenVPN reports whether p uses the OpenVPN protocol family.
 func (p VPNProtocol) IsOpenVPN() bool {
-	return p.Technology() == TechnologyOpenVPN
+	return p == VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP || p == VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP
 }
 
-// IsNordWhisper reports whether p uses the NordWhisper technology.
+// IsNordWhisper reports whether p uses the NordWhisper protocol.
 func (p VPNProtocol) IsNordWhisper() bool {
-	return p.Technology() == TechnologyNordWhisper
+	return p == VPNProtocol_VPN_PROTOCOL_NORDWHISPER
 }
+
+// technology and protocol values stored by versions before vpn_protocol
+const (
+	legacyTechnologyOpenVPN     = 1
+	legacyTechnologyNordWhisper = 3
+	legacyProtocolTCP           = 2
+)
 
 // vpnProtocolFromLegacy maps the technology and protocol stored by versions before vpn_protocol.
-func vpnProtocolFromLegacy(tech Technology, proto Transport) VPNProtocol {
-	//exhaustive:ignore
+func vpnProtocolFromLegacy(tech int32, proto int32) VPNProtocol {
 	switch tech {
-	case TechnologyOpenVPN:
-		if proto == TransportTCP {
+	case legacyTechnologyOpenVPN:
+		if proto == legacyProtocolTCP {
 			return VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP
 		}
 		return VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP
-	case TechnologyNordWhisper:
+	case legacyTechnologyNordWhisper:
 		return VPNProtocol_VPN_PROTOCOL_NORDWHISPER
 	}
 	return VPNProtocol_VPN_PROTOCOL_NORDLYNX
@@ -88,9 +78,9 @@ func migrateVPNProtocol(c *Config, data []byte) {
 		return
 	}
 	var legacy struct {
-		Technology      Technology `json:"technology"`
+		Technology      int32 `json:"technology"`
 		AutoConnectData struct {
-			Protocol Transport `json:"protocol"`
+			Protocol int32 `json:"protocol"`
 		} `json:"auto_connect_data"`
 	}
 	_ = json.Unmarshal(data, &legacy)

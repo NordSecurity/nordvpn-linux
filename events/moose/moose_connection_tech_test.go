@@ -96,8 +96,8 @@ func TestNotifyVPNProtocol_Disconnected_ReportsEffectiveState(t *testing.T) {
 			err := sub.NotifyVPNProtocol(tt.vpnProtocol)
 
 			assert.NilError(t, err)
-			wantTech := connectionTechnologyToInternalType(tt.vpnProtocol.Technology())
-			wantProto := connectionProtocolToInternalType(analyticsProtocol(tt.vpnProtocol))
+			wantTech := connectionTechnologyToInternalType(tt.vpnProtocol)
+			wantProto := connectionProtocolToInternalType(tt.vpnProtocol)
 			assert.DeepEqual(t, []moose.NordvpnappVpnConnectionTechnology{wantTech}, rec.userPrefTech)
 			assert.DeepEqual(t, []moose.NordvpnappVpnConnectionTechnology{wantTech}, rec.currentTech)
 			assert.DeepEqual(t, []moose.NordvpnappVpnConnectionProtocol{wantProto}, rec.userPrefProto)
@@ -112,7 +112,7 @@ func TestNotifyVPNProtocol_Unspecified_ReturnsError(t *testing.T) {
 
 	err := sub.NotifyVPNProtocol(config.VPNProtocol_VPN_PROTOCOL_UNSPECIFIED)
 
-	assert.ErrorIs(t, err, errUnknownTechnology)
+	assert.ErrorIs(t, err, errUnknownVPNProtocol)
 	assert.Equal(t, 0, len(rec.userPrefTech))
 	assert.Equal(t, 0, len(rec.currentTech))
 	assert.Equal(t, 0, len(rec.userPrefProto))
@@ -161,7 +161,7 @@ func TestNotifyVPNProtocol_MeshnetPeerOnly_IsNotDeferred(t *testing.T) {
 	assert.NilError(t, sub.NotifyVPNProtocol(config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER))
 
 	assert.DeepEqual(t,
-		[]moose.NordvpnappVpnConnectionTechnology{connectionTechnologyToInternalType(config.TechnologyNordWhisper)},
+		[]moose.NordvpnappVpnConnectionTechnology{moose.NordvpnappVpnConnectionTechnologyNordwhisper},
 		rec.currentTech)
 
 	assert.NilError(t, sub.NotifyDisconnect(events.DataDisconnect{EventStatus: events.StatusSuccess}))
@@ -170,8 +170,8 @@ func TestNotifyVPNProtocol_MeshnetPeerOnly_IsNotDeferred(t *testing.T) {
 func TestVPNProtocolChangeWhileConnected_ReportedOnNextConnect(t *testing.T) {
 	category.Set(t, category.Unit)
 	sub, rec := newTechTestSubscriber()
-	udp := connectionProtocolToInternalType(config.TransportUDP)
-	webtunnel := connectionProtocolToInternalType(config.TransportWebTunnel)
+	udp := moose.NordvpnappVpnConnectionProtocolUdp
+	webtunnel := moose.NordvpnappVpnConnectionProtocolWebtunnel
 
 	assert.NilError(t, sub.NotifyVPNProtocol(config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP))
 

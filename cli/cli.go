@@ -900,7 +900,7 @@ func getSetSubcommands(cmd *cmd, isMeshnetEnabled bool) []*cli.Command {
 				"post-quantum",
 				"post-quantum",
 			),
-			Hidden: cmd.Except(config.TechnologyNordLynx),
+			Hidden: cmd.Except(config.VPNProtocol_VPN_PROTOCOL_NORDLYNX),
 		},
 		{
 			Name:         "arp-ignore",
@@ -930,7 +930,7 @@ func getSetSubcommands(cmd *cmd, isMeshnetEnabled bool) []*cli.Command {
 				"ech",
 				"ech",
 			),
-			Hidden: cmd.Except(config.TechnologyNordWhisper),
+			Hidden: cmd.Except(config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER),
 		})
 	}
 

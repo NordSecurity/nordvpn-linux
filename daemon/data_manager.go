@@ -321,7 +321,7 @@ func (dm *DataManager) Groups(vpnProtocol config.VPNProtocol) ([]*pb.ServerGroup
 			continue
 		}
 
-		for _, group := range serverpicker.EffectiveGroups(server, vpnProtocol.Technology()) {
+		for _, group := range serverpicker.EffectiveGroups(server, vpnProtocol) {
 			if groupsSet.Contains(group.Title) {
 				continue
 			}

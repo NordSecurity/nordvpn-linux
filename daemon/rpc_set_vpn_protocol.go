@@ -39,7 +39,7 @@ func (r *RPC) SetVPNProtocol(
 		return &pb.Payload{Type: internal.CodeDedicatedServersNoNordlynx}, nil
 	}
 
-	v, err := r.factory(req.GetVpnProtocol().Technology())
+	v, err := r.factory(req.GetVpnProtocol())
 	if err != nil {
 		log.Error(err)
 		return &pb.Payload{Type: internal.CodeConfigError}, nil

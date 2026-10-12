@@ -76,7 +76,7 @@ func PickServer(
 
 	// the group the servers are actually looked up by can differ from the requested ones
 	// on specific technology (edge case)
-	serverGroup := searchGroup(requestedGroup, vpnProtocol.Technology())
+	serverGroup := searchGroup(requestedGroup, vpnProtocol)
 	log.ServerSel.Debug("resolved server group", requestedGroup, "search group", serverGroup)
 
 	if serverGroup == config.ServerGroup_DEDICATED_IP {

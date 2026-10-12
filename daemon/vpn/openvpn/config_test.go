@@ -13,7 +13,7 @@ import (
 func TestSetOpenVPNConfigRequiresServerVersion(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	err := setOpenVPNConfig(config.TransportUDP, netip.MustParseAddr("192.0.2.1"), "")
+	err := setOpenVPNConfig(config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP, netip.MustParseAddr("192.0.2.1"), "")
 
 	assert.ErrorIs(t, err, ErrServerVersion)
 }
@@ -23,28 +23,28 @@ func TestGetConfigIdentifier(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		protocol config.Transport
+		protocol config.VPNProtocol
 		expected openvpnID
 		err      bool
 	}{
 		{
 			name:     "udp",
-			protocol: config.TransportUDP,
+			protocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP,
 			expected: techUDP,
 		},
 		{
 			name:     "tcp",
-			protocol: config.TransportTCP,
+			protocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP,
 			expected: techTCP,
 		},
 		{
-			name:     "webtunnel is not an OpenVPN protocol",
-			protocol: config.TransportWebTunnel,
+			name:     "nordwhisper is not an OpenVPN protocol",
+			protocol: config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
 			err:      true,
 		},
 		{
 			name:     "unknown protocol",
-			protocol: config.TransportUnknown,
+			protocol: config.VPNProtocol_VPN_PROTOCOL_UNSPECIFIED,
 			err:      true,
 		},
 	}

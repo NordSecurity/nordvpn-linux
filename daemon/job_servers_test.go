@@ -52,23 +52,6 @@ func newMockConfigManager() *mockConfigManager {
 	}}
 }
 
-// vpnProtocolFor maps a test's technology and protocol to a VPN protocol.
-func vpnProtocolFor(tech config.Technology, proto config.Transport) config.VPNProtocol {
-	//exhaustive:ignore
-	switch tech {
-	case config.TechnologyOpenVPN:
-		if proto == config.TransportTCP {
-			return config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP
-		}
-		return config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP
-	case config.TechnologyNordLynx:
-		return config.VPNProtocol_VPN_PROTOCOL_NORDLYNX
-	case config.TechnologyNordWhisper:
-		return config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER
-	}
-	return config.VPNProtocol_VPN_PROTOCOL_UNSPECIFIED
-}
-
 func (m *mockConfigManager) SaveWith(f config.SaveFunc) error {
 	m.c = f(m.c)
 	return nil

@@ -198,14 +198,14 @@ func TestRPCConnect(t *testing.T) {
 	}{
 		{
 			name: "Quick connect works",
-			factory: func(config.Technology) (vpn.VPN, error) {
+			factory: func(config.VPNProtocol) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
 			resp: internal.CodeConnected,
 		},
 		{
 			name: "Fail for broken Networker and VPN",
-			factory: func(config.Technology) (vpn.VPN, error) {
+			factory: func(config.VPNProtocol) (vpn.VPN, error) {
 				return &mock.FailingVPN{}, nil
 			},
 			setup: func(rpc *RPC) {
@@ -215,7 +215,7 @@ func TestRPCConnect(t *testing.T) {
 		},
 		{
 			name: "Fail when VPN subscription is expired",
-			factory: func(config.Technology) (vpn.VPN, error) {
+			factory: func(config.VPNProtocol) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
 			setup: func(rpc *RPC) {
@@ -225,7 +225,7 @@ func TestRPCConnect(t *testing.T) {
 		},
 		{
 			name: "Fail when VPN subscription API calls fails",
-			factory: func(config.Technology) (vpn.VPN, error) {
+			factory: func(config.VPNProtocol) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
 			setup: func(rpc *RPC) {
@@ -236,7 +236,7 @@ func TestRPCConnect(t *testing.T) {
 		{
 			name:      "Connects using country name",
 			serverTag: "germany",
-			factory: func(config.Technology) (vpn.VPN, error) {
+			factory: func(config.VPNProtocol) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
 			resp: internal.CodeConnected,
@@ -244,7 +244,7 @@ func TestRPCConnect(t *testing.T) {
 		{
 			name:      "Connects using country name + city name",
 			serverTag: "germany berlin",
-			factory: func(config.Technology) (vpn.VPN, error) {
+			factory: func(config.VPNProtocol) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
 			resp: internal.CodeConnected,
@@ -252,7 +252,7 @@ func TestRPCConnect(t *testing.T) {
 		{
 			name:      "Connects for city name",
 			serverTag: "berlin",
-			factory: func(config.Technology) (vpn.VPN, error) {
+			factory: func(config.VPNProtocol) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
 			resp: internal.CodeConnected,
@@ -260,7 +260,7 @@ func TestRPCConnect(t *testing.T) {
 		{
 			name:      "Connects using country code + city name",
 			serverTag: "de berlin",
-			factory: func(config.Technology) (vpn.VPN, error) {
+			factory: func(config.VPNProtocol) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
 			resp: internal.CodeConnected,
@@ -268,7 +268,7 @@ func TestRPCConnect(t *testing.T) {
 		{
 			name:      "Connects using country code",
 			serverTag: "de",
-			factory: func(config.Technology) (vpn.VPN, error) {
+			factory: func(config.VPNProtocol) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
 			resp: internal.CodeConnected,
@@ -276,7 +276,7 @@ func TestRPCConnect(t *testing.T) {
 		{
 			name:        "Dedicated IP group connect works",
 			serverGroup: "Dedicated_IP",
-			factory: func(config.Technology) (vpn.VPN, error) {
+			factory: func(config.VPNProtocol) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
 			setup: func(rpc *RPC) {
@@ -292,7 +292,7 @@ func TestRPCConnect(t *testing.T) {
 		{
 			name:      "Dedicated IP with server name works",
 			serverTag: "lt7",
-			factory: func(config.Technology) (vpn.VPN, error) {
+			factory: func(config.VPNProtocol) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
 			setup: func(rpc *RPC) {
@@ -308,7 +308,7 @@ func TestRPCConnect(t *testing.T) {
 		{
 			name:      "Dedicated IP with server name multiple servers in service works",
 			serverTag: "lt7",
-			factory: func(config.Technology) (vpn.VPN, error) {
+			factory: func(config.VPNProtocol) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
 			setup: func(rpc *RPC) {
@@ -324,7 +324,7 @@ func TestRPCConnect(t *testing.T) {
 		{
 			name:      "fails when Dedicated IP subscription is expired",
 			serverTag: "lt7",
-			factory: func(config.Technology) (vpn.VPN, error) {
+			factory: func(config.VPNProtocol) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
 			setup: func(rpc *RPC) {
@@ -335,7 +335,7 @@ func TestRPCConnect(t *testing.T) {
 		{
 			name:      "fails for Dedicated IP when API fails",
 			serverTag: "lt7",
-			factory: func(config.Technology) (vpn.VPN, error) {
+			factory: func(config.VPNProtocol) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
 			setup: func(rpc *RPC) {
@@ -347,7 +347,7 @@ func TestRPCConnect(t *testing.T) {
 		{
 			name:      "fails when server not into Dedicated IP servers list",
 			serverTag: "lt8",
-			factory: func(config.Technology) (vpn.VPN, error) {
+			factory: func(config.VPNProtocol) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
 
@@ -364,7 +364,7 @@ func TestRPCConnect(t *testing.T) {
 		{
 			name:      "fails because Dedicated IP servers list is empty",
 			serverTag: "lt7",
-			factory: func(config.Technology) (vpn.VPN, error) {
+			factory: func(config.VPNProtocol) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
 			setup: func(rpc *RPC) {
@@ -381,7 +381,7 @@ func TestRPCConnect(t *testing.T) {
 			name:        "Connects using p2p group as flag",
 			serverTag:   "",
 			serverGroup: "p2p",
-			factory: func(config.Technology) (vpn.VPN, error) {
+			factory: func(config.VPNProtocol) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
 			resp: internal.CodeP2PDeprecated,
@@ -390,7 +390,7 @@ func TestRPCConnect(t *testing.T) {
 			name:        "Connects using p2p group as tag",
 			serverTag:   "p2p",
 			serverGroup: "",
-			factory: func(config.Technology) (vpn.VPN, error) {
+			factory: func(config.VPNProtocol) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
 			resp: internal.CodeP2PDeprecated,
@@ -399,7 +399,7 @@ func TestRPCConnect(t *testing.T) {
 			name:        "Connects using p2p group and country as tag",
 			serverTag:   "de p2p",
 			serverGroup: "",
-			factory: func(config.Technology) (vpn.VPN, error) {
+			factory: func(config.VPNProtocol) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
 			resp: internal.CodeP2PDeprecated,
@@ -408,7 +408,7 @@ func TestRPCConnect(t *testing.T) {
 			name:        "Connects using p2p group as flag and country as tag",
 			serverTag:   "de",
 			serverGroup: "p2p",
-			factory: func(config.Technology) (vpn.VPN, error) {
+			factory: func(config.VPNProtocol) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
 			resp: internal.CodeP2PDeprecated,
@@ -564,7 +564,7 @@ func TestRPCConnect_RecentConnections(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			rpc := testRPCLocal(t)
-			rpc.factory = func(config.Technology) (vpn.VPN, error) {
+			rpc.factory = func(config.VPNProtocol) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			}
 
@@ -616,7 +616,7 @@ func TestRPCConnect_RecentConnectionsOnFailure_PreviousConnectionStored(t *testi
 
 	rpc := testRPCLocal(t)
 
-	rpc.factory = func(config.Technology) (vpn.VPN, error) {
+	rpc.factory = func(config.VPNProtocol) (vpn.VPN, error) {
 		return &mock.WorkingVPN{}, nil
 	}
 
@@ -627,7 +627,7 @@ func TestRPCConnect_RecentConnectionsOnFailure_PreviousConnectionStored(t *testi
 
 	// Now try to switch to France but it fails (making networker fail)
 	rpc.netw = testnetworker.Failing{}
-	rpc.factory = func(config.Technology) (vpn.VPN, error) {
+	rpc.factory = func(config.VPNProtocol) (vpn.VPN, error) {
 		return &mock.FailingVPN{}, nil
 	}
 
@@ -653,7 +653,7 @@ func TestRPCConnect_RecentConnectionsOnFailure_MultipleConnectionsPreserved(t *t
 	defer testsCleanup()
 
 	rpc := testRPCLocal(t)
-	rpc.factory = func(config.Technology) (vpn.VPN, error) {
+	rpc.factory = func(config.VPNProtocol) (vpn.VPN, error) {
 		return &mock.WorkingVPN{}, nil
 	}
 
@@ -667,7 +667,7 @@ func TestRPCConnect_RecentConnectionsOnFailure_MultipleConnectionsPreserved(t *t
 
 	// Now try to connect to a Double_VPN server but it fails (making networker fail)
 	rpc.netw = testnetworker.Failing{}
-	rpc.factory = func(config.Technology) (vpn.VPN, error) {
+	rpc.factory = func(config.VPNProtocol) (vpn.VPN, error) {
 		return &mock.FailingVPN{}, nil
 	}
 
@@ -692,7 +692,7 @@ func TestRPCConnect_RecentConnectionsMultiple(t *testing.T) {
 	defer testsCleanup()
 
 	rpc := testRPCLocal(t)
-	rpc.factory = func(config.Technology) (vpn.VPN, error) {
+	rpc.factory = func(config.VPNProtocol) (vpn.VPN, error) {
 		return &mock.WorkingVPN{}, nil
 	}
 
@@ -950,28 +950,28 @@ func Test_determineServerGroup(t *testing.T) {
 		name   string
 		server core.Server
 		params serverpicker.ServerParameters
-		tech   config.Technology
+		tech   config.VPNProtocol
 		want   config.ServerGroup
 	}{
 		{
 			name:   "NordWhisper with no requested group is attributed to Obfuscated",
 			server: standardOnly,
 			params: serverpicker.ServerParameters{},
-			tech:   config.TechnologyNordWhisper,
+			tech:   config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
 			want:   config.ServerGroup_NW_OBFUSCATED,
 		},
 		{
 			name:   "NordWhisper with requested Obfuscated group the server does not carry",
 			server: standardOnly,
 			params: serverpicker.ServerParameters{Group: config.ServerGroup_NW_OBFUSCATED},
-			tech:   config.TechnologyNordWhisper,
+			tech:   config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
 			want:   config.ServerGroup_NW_OBFUSCATED,
 		},
 		{
 			name:   "NordWhisper with requested group the server does not carry",
 			server: standardOnly,
 			params: serverpicker.ServerParameters{Group: config.ServerGroup_DOUBLE_VPN},
-			tech:   config.TechnologyNordWhisper,
+			tech:   config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
 			want:   config.ServerGroup_NW_OBFUSCATED,
 		},
 		{
@@ -981,7 +981,7 @@ func Test_determineServerGroup(t *testing.T) {
 				core.Group{ID: config.ServerGroup_DOUBLE_VPN, Title: "Double VPN"},
 			),
 			params: serverpicker.ServerParameters{Group: config.ServerGroup_DOUBLE_VPN},
-			tech:   config.TechnologyNordWhisper,
+			tech:   config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
 			want:   config.ServerGroup_DOUBLE_VPN,
 		},
 		{
@@ -990,7 +990,7 @@ func Test_determineServerGroup(t *testing.T) {
 				core.Group{ID: config.ServerGroup_DOUBLE_VPN, Title: "Double VPN"},
 			),
 			params: serverpicker.ServerParameters{},
-			tech:   config.TechnologyNordWhisper,
+			tech:   config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
 			want:   config.ServerGroup_UNDEFINED,
 		},
 		{
@@ -999,14 +999,14 @@ func Test_determineServerGroup(t *testing.T) {
 				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 			}},
 			params: serverpicker.ServerParameters{},
-			tech:   config.TechnologyNordWhisper,
+			tech:   config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
 			want:   config.ServerGroup_STANDARD_VPN_SERVERS,
 		},
 		{
 			name:   "NordLynx with no requested group falls back to standard group",
 			server: standardOnly,
 			params: serverpicker.ServerParameters{},
-			tech:   config.TechnologyNordLynx,
+			tech:   config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			want:   config.ServerGroup_STANDARD_VPN_SERVERS,
 		},
 		{
@@ -1016,7 +1016,7 @@ func Test_determineServerGroup(t *testing.T) {
 				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 			}},
 			params: serverpicker.ServerParameters{},
-			tech:   config.TechnologyOpenVPN,
+			tech:   config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP,
 			want:   config.ServerGroup_STANDARD_VPN_SERVERS,
 		},
 		{
@@ -1044,7 +1044,7 @@ func Test_determineServerGroup(t *testing.T) {
 				{ID: config.ServerGroup_OVPN_OBFUSCATED, Title: "Obfuscated"},
 			}},
 			params: serverpicker.ServerParameters{Group: config.ServerGroup_NW_OBFUSCATED},
-			tech:   config.TechnologyOpenVPN,
+			tech:   config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP,
 			want:   config.ServerGroup_STANDARD_VPN_SERVERS,
 		},
 		{
@@ -1068,7 +1068,7 @@ func Test_determineServerGroup(t *testing.T) {
 				{ID: config.ServerGroup_OVPN_OBFUSCATED, Title: "Double VPN"},
 			}},
 			params: serverpicker.ServerParameters{Group: config.ServerGroup_NW_OBFUSCATED},
-			tech:   config.TechnologyOpenVPN,
+			tech:   config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP,
 			want:   config.ServerGroup_UNDEFINED,
 		},
 		{
@@ -1142,7 +1142,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 		postQuantum                bool
 		dedicatedServersResponse   core.DedicatedServers
 		connectResponse            core.DedicatedServerConnectResponse
-		technology                 config.Technology
+		technology                 config.VPNProtocol
 		serviceCheckErr            error
 		dedicatedServersFetchErr   error
 		connectErr                 error
@@ -1156,7 +1156,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 			isDedicatedServersExpired:  false,
 			dedicatedServersResponse:   dedicatedServers,
 			connectResponse:            connectResponse,
-			technology:                 config.TechnologyNordLynx,
+			technology:                 config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			expectedStatus:             internal.CodeConnected,
 			expectedConnectRequestUUID: serverUUID.String(),
 			expectedConnectRequest:     connectRequest,
@@ -1164,37 +1164,37 @@ func TestConnect_DedicatedServers(t *testing.T) {
 		{
 			name:                      "dedicated servers service has expired",
 			isDedicatedServersExpired: true,
-			technology:                config.TechnologyNordLynx,
+			technology:                config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			expectedStatus:            internal.CodeDedicatedServersRenewError,
 		},
 		{
 			name:                     "empty dedicated servers list",
 			dedicatedServersResponse: core.DedicatedServers{},
-			technology:               config.TechnologyNordLynx,
+			technology:               config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			expectedStatus:           internal.CodeDedicatedServersServiceButNoServers,
 		},
 		{
 			name:                     "dedicated server not ready",
 			dedicatedServersResponse: core.DedicatedServers{dedicatedServerNotReady},
-			technology:               config.TechnologyNordLynx,
+			technology:               config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			expectedStatus:           internal.CodeDedicatedServersNotReady,
 		},
 		{
 			name:                     "technology is not nordlynx",
 			dedicatedServersResponse: dedicatedServers,
 			connectResponse:          connectResponse,
-			technology:               config.TechnologyOpenVPN,
+			technology:               config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP,
 			expectedStatus:           internal.CodeDedicatedServersNoNordlynx,
 		},
 		{
 			name:            "dedicated server service check fails",
-			technology:      config.TechnologyNordLynx,
+			technology:      config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			serviceCheckErr: errors.New("error"),
 			expectedErr:     internal.ErrUnhandled,
 		},
 		{
 			name:                     "dedicated servers fetch fails",
-			technology:               config.TechnologyNordLynx,
+			technology:               config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			dedicatedServersFetchErr: errors.New("error"),
 			expectedErr:              internal.ErrUnhandled,
 		},
@@ -1202,7 +1202,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 			name:                       "connect fails",
 			isDedicatedServersExpired:  false,
 			dedicatedServersResponse:   dedicatedServers,
-			technology:                 config.TechnologyNordLynx,
+			technology:                 config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			connectErr:                 errors.New("error"),
 			expectedErr:                internal.ErrUnhandled,
 			expectedConnectRequestUUID: serverUUID.String(),
@@ -1214,24 +1214,24 @@ func TestConnect_DedicatedServers(t *testing.T) {
 		{
 			name:                     "dedicated server is stopped",
 			dedicatedServersResponse: core.DedicatedServers{dedicatedServerStopped},
-			technology:               config.TechnologyNordLynx,
+			technology:               config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			expectedStatus:           internal.CodeDedicatedServersCanNotConnect,
 		},
 		{
 			name:                     "dedicated server is stopping",
 			dedicatedServersResponse: core.DedicatedServers{dedicatedServerStopping},
-			technology:               config.TechnologyNordLynx,
+			technology:               config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			expectedStatus:           internal.CodeDedicatedServersCanNotConnect,
 		},
 		{
 			name:                     "dedicated server status is case-insensitive",
 			dedicatedServersResponse: core.DedicatedServers{dedicatedServerUppercaseStopped},
-			technology:               config.TechnologyNordLynx,
+			technology:               config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			expectedStatus:           internal.CodeDedicatedServersCanNotConnect,
 		},
 		{
 			name:                       "API returns 400 - session limit reached",
-			technology:                 config.TechnologyNordLynx,
+			technology:                 config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			dedicatedServersResponse:   dedicatedServers,
 			expectedConnectRequestUUID: serverUUID.String(),
 			expectedConnectRequest:     connectRequest,
@@ -1240,7 +1240,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 		},
 		{
 			name:                       "API returns 400 - device not found",
-			technology:                 config.TechnologyNordLynx,
+			technology:                 config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			dedicatedServersResponse:   dedicatedServers,
 			expectedConnectRequestUUID: serverUUID.String(),
 			expectedConnectRequest:     connectRequest,
@@ -1249,7 +1249,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 		},
 		{
 			name:                       "API returns 400 - device not registered",
-			technology:                 config.TechnologyNordLynx,
+			technology:                 config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			dedicatedServersResponse:   dedicatedServers,
 			expectedConnectRequestUUID: serverUUID.String(),
 			expectedConnectRequest:     connectRequest,
@@ -1258,7 +1258,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 		},
 		{
 			name:                       "API returns 400 - public key mismatch",
-			technology:                 config.TechnologyNordLynx,
+			technology:                 config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			dedicatedServersResponse:   dedicatedServers,
 			expectedConnectRequestUUID: serverUUID.String(),
 			expectedConnectRequest:     connectRequest,
@@ -1267,7 +1267,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 		},
 		{
 			name:                       "API returns 400 - server offline",
-			technology:                 config.TechnologyNordLynx,
+			technology:                 config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			dedicatedServersResponse:   dedicatedServers,
 			expectedConnectRequestUUID: serverUUID.String(),
 			expectedConnectRequest:     connectRequest,
@@ -1276,7 +1276,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 		},
 		{
 			name:                       "API returns 400 - server not found",
-			technology:                 config.TechnologyNordLynx,
+			technology:                 config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			dedicatedServersResponse:   dedicatedServers,
 			expectedConnectRequestUUID: serverUUID.String(),
 			expectedConnectRequest:     connectRequest,
@@ -1285,7 +1285,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 		},
 		{
 			name:                       "API returns 400 - invalid form data",
-			technology:                 config.TechnologyNordLynx,
+			technology:                 config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			dedicatedServersResponse:   dedicatedServers,
 			expectedConnectRequestUUID: serverUUID.String(),
 			expectedConnectRequest:     connectRequest,
@@ -1296,7 +1296,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 			name:                      "post quantum is on",
 			isDedicatedServersExpired: false,
 			postQuantum:               true,
-			technology:                config.TechnologyNordLynx,
+			technology:                config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			expectedStatus:            internal.CodeDedicatedServersPq,
 		},
 	}
@@ -1323,7 +1323,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 			}
 
 			configManagerMock := rpc.cm.(*mockConfigManager)
-			configManagerMock.c.VPNProtocol = vpnProtocolFor(test.technology, config.TransportUDP)
+			configManagerMock.c.VPNProtocol = test.technology
 			configManagerMock.c.AutoConnectData.PostquantumVpn = test.postQuantum
 
 			mockRPCServer := &mockRPCServer{}
@@ -1479,7 +1479,7 @@ func Test_offeredGroups_NordWhisper_ContainTargetGroup(t *testing.T) {
 		core.Group{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 	)
 
-	offered := serverpicker.EffectiveGroups(server, config.TechnologyNordWhisper)
+	offered := serverpicker.EffectiveGroups(server, config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER)
 
 	assert.Equal(t, []config.ServerGroup{config.ServerGroup_STANDARD_VPN_SERVERS, config.ServerGroup_NW_OBFUSCATED}, offered.IDs())
 	assert.Contains(t, offered.IDs(), determineTargetServerGroup(offered, serverpicker.ServerParameters{}))
@@ -1740,12 +1740,10 @@ func TestSetVPNProtocolThenConnect_ConnectsWithSelectedProtocol(t *testing.T) {
 
 	tests := []struct {
 		target             config.VPNProtocol
-		expectedTech       config.Technology
-		expectedTransport  config.Transport
 		expectedServerTech core.ServerTechnology
 	}{
-		{config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP, config.TechnologyOpenVPN, config.TransportUDP, core.OpenVPNUDP},
-		{config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP, config.TechnologyOpenVPN, config.TransportTCP, core.OpenVPNTCP},
+		{config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP, core.OpenVPNUDP},
+		{config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP, core.OpenVPNTCP},
 	}
 
 	for _, test := range tests {
@@ -1755,9 +1753,9 @@ func TestSetVPNProtocolThenConnect_ConnectsWithSelectedProtocol(t *testing.T) {
 		netw := &testnetworker.Mock{}
 		rpc.netw = netw
 		rpc.pauseManager = &mock.PauseSchedulerMock{}
-		var builtTech []config.Technology
-		rpc.factory = func(tech config.Technology) (vpn.VPN, error) {
-			builtTech = append(builtTech, tech)
+		var builtFor []config.VPNProtocol
+		rpc.factory = func(vpnProtocol config.VPNProtocol) (vpn.VPN, error) {
+			builtFor = append(builtFor, vpnProtocol)
 			return &mock.WorkingVPN{}, nil
 		}
 		_ = rpc.cm.SaveWith(func(c config.Config) config.Config {
@@ -1768,7 +1766,7 @@ func TestSetVPNProtocolThenConnect_ConnectsWithSelectedProtocol(t *testing.T) {
 		setResp, err := rpc.SetVPNProtocol(context.Background(), &pb.SetVPNProtocolRequest{VpnProtocol: test.target})
 		assert.NoError(t, err)
 		assert.Equal(t, internal.CodeSuccess, setResp.Type, "set protocol %v", test.target)
-		assert.Equal(t, []config.Technology{test.expectedTech}, builtTech, "VPN backend built for %v", test.target)
+		assert.Equal(t, []config.VPNProtocol{test.target}, builtFor, "VPN backend built for %v", test.target)
 
 		server := &mockRPCServer{}
 		err = rpc.Connect(&pb.ConnectRequest{}, server)
@@ -1776,7 +1774,7 @@ func TestSetVPNProtocolThenConnect_ConnectsWithSelectedProtocol(t *testing.T) {
 		assert.NoError(t, err, "connect with %v", test.target)
 		assert.Equal(t, internal.CodeConnected, server.msg.Type, "connect with %v", test.target)
 		assert.Equal(t, []core.ServerTechnology{test.expectedServerTech}, serversAPI.requestedTech, "servers requested for %v", test.target)
-		assert.Equal(t, test.expectedTransport, netw.ProvidedServerData.Transport, "server data protocol for %v", test.target)
+		assert.Equal(t, test.target, netw.ProvidedServerData.VPNProtocol, "server data protocol for %v", test.target)
 		assert.Empty(t, netw.ProvidedServerData.NordLynxPublicKey, "%v must not get NordLynx server data", test.target)
 		assert.NotEmpty(t, netw.ProvidedServerData.Hostname, "a server must be picked for %v", test.target)
 	}

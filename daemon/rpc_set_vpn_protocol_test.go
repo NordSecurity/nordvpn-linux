@@ -38,7 +38,7 @@ func newSetVPNProtocolEnv(current config.VPNProtocol) setVPNProtocolEnv {
 			remoteConfigGetter: mock.NewRemoteConfigMock(),
 			cm:                 cm,
 			netw:               netw,
-			factory:            func(config.Technology) (vpn.VPN, error) { return nil, nil },
+			factory:            func(config.VPNProtocol) (vpn.VPN, error) { return nil, nil },
 			events:             evts,
 		},
 		cm:        cm,
@@ -262,7 +262,7 @@ func TestSetVPNProtocol_VPNFactoryError_ReturnsConfigError(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	env := newSetVPNProtocolEnv(config.VPNProtocol_VPN_PROTOCOL_NORDLYNX)
-	env.rpc.factory = func(config.Technology) (vpn.VPN, error) { return nil, fmt.Errorf("no such technology") }
+	env.rpc.factory = func(config.VPNProtocol) (vpn.VPN, error) { return nil, fmt.Errorf("no such technology") }
 
 	resp := env.call(t, config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP)
 

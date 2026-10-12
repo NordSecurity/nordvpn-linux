@@ -2393,25 +2393,6 @@ func TestNotifyDisconnect_TriggerAndExceptionFields(t *testing.T) {
 	}
 }
 
-func TestAnalyticsProtocol(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	tests := []struct {
-		vpnProtocol config.VPNProtocol
-		expected    config.Transport
-	}{
-		{config.VPNProtocol_VPN_PROTOCOL_NORDLYNX, config.TransportUDP},
-		{config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP, config.TransportUDP},
-		{config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP, config.TransportTCP},
-		{config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER, config.TransportWebTunnel},
-		{config.VPNProtocol_VPN_PROTOCOL_UNSPECIFIED, config.TransportUnknown},
-	}
-
-	for _, test := range tests {
-		assert.Equal(t, test.expected, analyticsProtocol(test.vpnProtocol), "vpn protocol %v", test.vpnProtocol)
-	}
-}
-
 func TestNotifyConnect_ReportsTechnologyAndProtocolFromVPNProtocol(t *testing.T) {
 	category.Set(t, category.Unit)
 
@@ -2424,6 +2405,7 @@ func TestNotifyConnect_ReportsTechnologyAndProtocolFromVPNProtocol(t *testing.T)
 		{config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP, moose.NordvpnappVpnConnectionTechnologyOpenvpn, moose.NordvpnappVpnConnectionProtocolUdp},
 		{config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP, moose.NordvpnappVpnConnectionTechnologyOpenvpn, moose.NordvpnappVpnConnectionProtocolTcp},
 		{config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER, moose.NordvpnappVpnConnectionTechnologyNordwhisper, moose.NordvpnappVpnConnectionProtocolWebtunnel},
+		{config.VPNProtocol_VPN_PROTOCOL_UNSPECIFIED, moose.NordvpnappVpnConnectionTechnologyNone, moose.NordvpnappVpnConnectionProtocolNone},
 	}
 
 	for _, test := range tests {

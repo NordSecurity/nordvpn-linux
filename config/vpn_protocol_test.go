@@ -13,27 +13,25 @@ func TestAvailableVPNProtocols_NeverContainsUnspecified(t *testing.T) {
 	assert.NotContains(t, AvailableVPNProtocols(), VPNProtocol_VPN_PROTOCOL_UNSPECIFIED)
 }
 
-func TestVPNProtocol_MapsToTechnologyTransportAndDisplayName(t *testing.T) {
+func TestVPNProtocol_DisplayNameAndTechName(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
 		protocol    VPNProtocol
-		technology  Technology
-		transport   Transport
 		displayName string
+		techName    string
 	}{
-		{VPNProtocol_VPN_PROTOCOL_NORDLYNX, TechnologyNordLynx, TransportUnknown, "NordLynx"},
-		{VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP, TechnologyOpenVPN, TransportUDP, "OpenVPN (UDP)"},
-		{VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP, TechnologyOpenVPN, TransportTCP, "OpenVPN (TCP)"},
-		{VPNProtocol_VPN_PROTOCOL_NORDWHISPER, TechnologyNordWhisper, TransportWebTunnel, "NordWhisper"},
-		{VPNProtocol_VPN_PROTOCOL_UNSPECIFIED, TechnologyUnknown, TransportUnknown, "VPN_PROTOCOL_UNSPECIFIED"},
-		{VPNProtocol(99), TechnologyUnknown, TransportUnknown, "VPN_PROTOCOL_UNSPECIFIED"},
+		{VPNProtocol_VPN_PROTOCOL_NORDLYNX, "NordLynx", "NordLynx"},
+		{VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP, "OpenVPN (UDP)", "OpenVPN"},
+		{VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP, "OpenVPN (TCP)", "OpenVPN"},
+		{VPNProtocol_VPN_PROTOCOL_NORDWHISPER, "NordWhisper", "NordWhisper"},
+		{VPNProtocol_VPN_PROTOCOL_UNSPECIFIED, "VPN_PROTOCOL_UNSPECIFIED", ""},
+		{VPNProtocol(99), "VPN_PROTOCOL_UNSPECIFIED", ""},
 	}
 
 	for _, test := range tests {
-		assert.Equal(t, test.technology, test.protocol.Technology(), "Technology() of %v", test.protocol)
-		assert.Equal(t, test.transport, test.protocol.Transport(), "Transport() of %v", test.protocol)
 		assert.Equal(t, test.displayName, test.protocol.DisplayName(), "DisplayName() of %v", test.protocol)
+		assert.Equal(t, test.techName, TechNameToUpperCamelCase(test.protocol), "TechNameToUpperCamelCase() of %v", test.protocol)
 	}
 }
 

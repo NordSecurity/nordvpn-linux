@@ -393,8 +393,7 @@ func TestServers(t *testing.T) {
 		serversList      core.Servers
 		serversErr       error
 		obfuscate        bool
-		technology       config.Technology
-		protocol         config.Transport
+		vpnProtocol      config.VPNProtocol
 		configErr        error
 		expectedResponse *pb.ServersResponse
 	}{
@@ -402,8 +401,7 @@ func TestServers(t *testing.T) {
 			name:        "success openvpn TCP",
 			serversList: servers,
 			obfuscate:   false,
-			technology:  config.TechnologyOpenVPN,
-			protocol:    config.TransportTCP,
+			vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP,
 			expectedResponse: &pb.ServersResponse{
 				Response: &pb.ServersResponse_Servers{Servers: &pb.ServersMap{
 					ServersByCountry: expectedServersOpenVPNTCP,
@@ -413,8 +411,7 @@ func TestServers(t *testing.T) {
 		{
 			name:        "success openvpn UDP ignores legacy XOR technologies and tag",
 			serversList: servers,
-			technology:  config.TechnologyOpenVPN,
-			protocol:    config.TransportUDP,
+			vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP,
 			expectedResponse: &pb.ServersResponse{
 				Response: &pb.ServersResponse_Servers{Servers: &pb.ServersMap{
 					ServersByCountry: expectedServersOpenVPNUDP,
@@ -425,7 +422,7 @@ func TestServers(t *testing.T) {
 			name:        "success wireguard",
 			serversList: servers,
 			obfuscate:   false,
-			technology:  config.TechnologyNordLynx,
+			vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			expectedResponse: &pb.ServersResponse{
 				Response: &pb.ServersResponse_Servers{Servers: &pb.ServersMap{
 					ServersByCountry: expectedServersWireguard,
@@ -456,7 +453,7 @@ func TestServers(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			cfgManager := mock.NewMockConfigManager()
 			cfgManager.LoadErr = test.configErr
-			cfgManager.Cfg.VPNProtocol = vpnProtocolFor(test.technology, test.protocol)
+			cfgManager.Cfg.VPNProtocol = test.vpnProtocol
 			cfgManager.Cfg.AutoConnectData.Obfuscate = test.obfuscate
 
 			dm := DataManager{}

@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/client"
-	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/nstrings"
@@ -59,10 +58,10 @@ func (c *cmd) Settings(ctx *cli.Context) error {
 		fmt.Printf("DNS: %+v\n", strings.Join(settings.Dns, ", "))
 	}
 	fmt.Printf("LAN Discovery: %+v\n", nstrings.GetBoolLabel(settings.LanDiscovery))
-	if settings.VpnProtocol.Technology() == config.TechnologyNordLynx {
+	if settings.VpnProtocol.IsNordLynx() {
 		fmt.Printf("Post-quantum VPN: %+v\n", nstrings.GetBoolLabel(settings.PostquantumVpn))
 	}
-	if settings.VpnProtocol.Technology() == config.TechnologyNordWhisper {
+	if settings.VpnProtocol.IsNordWhisper() {
 		fmt.Printf("ECH: %+v\n", nstrings.GetBoolLabel(settings.Ech))
 	}
 	fmt.Printf("ARP Ignore: %+v\n", nstrings.GetBoolLabel(settings.ArpIgnore))

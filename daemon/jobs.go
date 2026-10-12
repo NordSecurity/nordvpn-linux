@@ -302,7 +302,7 @@ func isSystemShutdownSignal(sig *dbus.Signal) bool {
 func (r *RPC) fallbackVPNProtocol(target config.VPNProtocol) error {
 	log.Debug("technology was configured to NordWhisper, but NordWhisper was disabled, switching to",
 		target.String())
-	v, err := r.factory(target.Technology())
+	v, err := r.factory(target)
 	if err != nil {
 		return fmt.Errorf("failed to build VPN instance: %s", err)
 	}
