@@ -801,53 +801,6 @@ func TestNotifyDNS(t *testing.T) {
 	}
 }
 
-func TestHasSensitiveServerGroup(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	cases := []struct {
-		name   string
-		groups []config.ServerGroup
-		want   bool
-	}{
-		{
-			name: "contains_dedicated_ip",
-			groups: []config.ServerGroup{
-				config.ServerGroup_DEDICATED_IP,
-				config.ServerGroup_STANDARD_VPN_SERVERS,
-			},
-			want: true,
-		},
-		{
-			name:   "only_dedicated_ip",
-			groups: []config.ServerGroup{config.ServerGroup_DEDICATED_IP},
-			want:   true,
-		},
-		{
-			name: "no_sensitive_groups",
-			groups: []config.ServerGroup{
-				config.ServerGroup_STANDARD_VPN_SERVERS,
-			},
-			want: false,
-		},
-		{
-			name:   "empty_slice",
-			groups: []config.ServerGroup{},
-			want:   false,
-		},
-		{
-			name:   "nil_slice",
-			groups: nil,
-			want:   false,
-		},
-	}
-
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			assert.Equal(t, c.want, hasSensitiveServerGroup(c.groups))
-		})
-	}
-}
-
 func TestSetDedicatedServerServiceStatus(t *testing.T) {
 	category.Set(t, category.Unit)
 

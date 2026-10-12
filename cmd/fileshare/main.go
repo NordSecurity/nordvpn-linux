@@ -52,6 +52,7 @@ func main() {
 		logFile,
 		internal.LogLevelFile,
 		log.DefaultLevel(),
+		internal.IsDevEnv(Environment),
 	)
 	defer stopLevelWatcher()
 
@@ -64,6 +65,8 @@ func main() {
 	} else if f, ok := logFile.(*os.File); ok {
 		redirectNativeOutput(f)
 	}
+
+	log.Info("DEBUG:", Environment)
 
 	processStatus := fileshare_process.NewFileshareGRPCProcessManager().ProcessStatus()
 	switch processStatus {

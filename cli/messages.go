@@ -420,4 +420,12 @@ Your browsing activities remain private, regardless of your choice.
 	MsgDiagnosticsSuccess    = "Diagnostics collected successfully.\nFile saved to: %s"
 	MsgDiagnosticsFailure    = "We couldn't collect diagnostic logs. Please try again or contact our support team."
 	MsgDiagnosticsDisclaimer = "WARNING: This file contains sensitive information about your system and configuration. Share it only with our support team through a secure channel."
+
+	// Log sanitization
+	SetSanitizationUsageText = "Controls whether sensitive values are logged or not. The setting does not persist between reboots."
+
+	MsgDisableSanitizationNothingToDo = "Sanitization is already %s."
+	MsgDisableSanitizationNonRoot     = "You need root privileges in order to disable sanitization."
+	MsgDisableSanitizationWarning     = "Sanitization disabled, all sensitive data will be logged unitll reboot."
+	MsgDisableSanitizationSuccess     = "Sanitization %s."
 )

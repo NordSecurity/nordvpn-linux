@@ -832,27 +832,8 @@ func (s *Subscriber) NotifyAllowlist(data events.DataAllowlist) error {
 	return nil
 }
 
-// sensitiveServerGroups lists server groups whose connections require stripping
-// sensitive fields from analytics.
-var sensitiveServerGroups = []config.ServerGroup{
-	config.ServerGroup_DEDICATED_IP,
-	config.ServerGroup_DEDICATED_SERVER,
-}
-
-// hasSensitiveServerGroup reports whether any group the chosen server belongs to
-// is on the sensitive list.
-// Note. Independent of the user-requested group.
-func hasSensitiveServerGroup(groups []config.ServerGroup) bool {
-	for _, g := range groups {
-		if slices.Contains(sensitiveServerGroups, g) {
-			return true
-		}
-	}
-	return false
-}
-
 func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
-	sensitive := hasSensitiveServerGroup(data.ServerGroups)
+	sensitive := config.HasSensitiveServerGroup(data.ServerGroups)
 
 	var connected techProto
 	s.mux.Lock()
