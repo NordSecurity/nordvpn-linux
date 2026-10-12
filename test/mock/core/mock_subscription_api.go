@@ -3,6 +3,7 @@ package core_test
 import "github.com/NordSecurity/nordvpn-linux/core"
 
 type MockSubscriptionAPI struct {
+	PurchasesFunc func() (core.PurchasesResult, error)
 }
 
 func NewMockSubscriptionAPI() *MockSubscriptionAPI {
@@ -18,5 +19,8 @@ func (m *MockSubscriptionAPI) Payments() ([]core.PaymentResponse, error) {
 }
 
 func (m *MockSubscriptionAPI) Purchases() (core.PurchasesResult, error) {
+	if m.PurchasesFunc != nil {
+		return m.PurchasesFunc()
+	}
 	return core.PurchasesResult{}, nil
 }

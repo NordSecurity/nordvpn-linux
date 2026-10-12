@@ -7,19 +7,20 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/log"
-	"github.com/NordSecurity/nordvpn-linux/network"
 )
 
 func JobPurchases(
 	api core.SubscriptionAPI,
 	purchasesPublisher events.Publisher[[]core.Purchase],
+	backoff func(int) time.Duration,
+	sleep func(context.Context, time.Duration) bool,
 ) func(context.Context) {
 	return func(ctx context.Context) {
 		for i := 0; i < 5; i++ {
 			result, err := api.Purchases()
 			if err != nil {
 				log.Error("purchases job: request failed:", err)
-				if !sleep(ctx, network.ExponentialBackoff(i)) {
+				if !sleep(ctx, backoff(i)) {
 					return
 				}
 				continue
@@ -39,6 +40,7 @@ func JobPurchases(
 				continue
 
 			case core.PurchaseStatusUnknown:
+				fallthrough
 			default:
 				log.Error("purchases job: unexpected status:", result.Status)
 				return
@@ -50,7 +52,7 @@ func JobPurchases(
 }
 
 // Returns true if wait completed, false if canceled
-func sleep(ctx context.Context, d time.Duration) bool {
+func PurchasesJobSleepFunction(ctx context.Context, d time.Duration) bool {
 	t := time.NewTimer(d)
 	defer t.Stop()
 

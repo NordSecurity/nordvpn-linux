@@ -110,7 +110,7 @@ func (r *RPC) StartJobs(
 	}
 
 	if _, err := r.scheduler.NewJob(gocron.DurationJob(24*time.Hour),
-		gocron.NewTask(JobPurchases(r.subscriptionAPI, purchasesPublisher)),
+		gocron.NewTask(JobPurchases(r.subscriptionAPI, purchasesPublisher, network.ExponentialBackoff, PurchasesJobSleepFunction)),
 		gocron.WithName("job purchases"),
 		gocron.WithEventListeners(gocron.AfterJobRunsWithError(gocronErrorLogger))); err != nil {
 		log.Warn("job purchases schedule error:", err)
