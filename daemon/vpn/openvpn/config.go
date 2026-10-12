@@ -157,7 +157,6 @@ func generateConfigXML(serverIP netip.Addr, identifier openvpnID) ([]byte, error
 func getConfigIdentifier(protocol config.VPNProtocol) (openvpnID, error) {
 	if protocol == config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP {
 		return techUDP, nil
-
 	}
 	if protocol == config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP {
 		return techTCP, nil
@@ -177,11 +176,13 @@ func addExtraParameters(data []byte, serverIP netip.Addr, protocol config.VPNPro
 	args = addOrReplaceArgument(args, "ping-timer-rem", "ping-timer-rem$")
 	// override openvpn proto
 	if serverIP.Is6() {
-		if protocol == config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP {
+		//exhaustive:ignore
+		switch protocol {
+		case config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP:
 			args = addOrReplaceArgument(args, "proto udp6", "proto udp6$")
-		} else if protocol == config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP {
+		case config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP:
 			args = addOrReplaceArgument(args, "proto tcp6", "proto tcp6$")
-		} else {
+		default:
 			return errors.New("unknown protocol")
 		}
 	}
