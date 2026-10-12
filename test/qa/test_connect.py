@@ -593,3 +593,13 @@ def test_ens_connection_limit(reconnect: bool, pause: bool):
 
         assert "Disconnected" in sh.nordvpn.status(), "Wrong status"
         assert network.is_available(), "Network should be available"
+
+
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES_BASIC1)
+def test_pq_off_after_set_defaults_with_pq_enabled(tech, proto):
+    lib.set_technology_and_protocol(tech, proto)
+    sh.nordvpn.set.pq.on()
+    sh.nordvpn.set.defaults()
+    with lib.Defer(sh.nordvpn.disconnect):
+        sh.nordvpn.connect()
+        assert "preshared key" not in sh.sudo.wg.show(), "Wireguard should not have preshared key configured"
