@@ -177,8 +177,8 @@ func main() {
 		log.Error("failed to migrate legacy config:", err)
 	}
 
-	// Remove any remains of IPv6 settings and remove overlapping allowlist subnets
-	if err := fsystem.SaveWith(daemon.ConfigCleanup); err != nil {
+	// Migrate the application settings
+	if err := fsystem.SaveWith(daemon.MigrateConfig); err != nil {
 		log.Error("failed to cleanup config:", err)
 	}
 
@@ -773,8 +773,10 @@ func main() {
 	go func() {
 		if err := dm.LoadData(); err != nil {
 			log.Warn("DataManager failed to load data:", err)
-		} else {
-			log.Info("data successfully loaded from disk")
+		}
+		log.Info("data successfully loaded from disk")
+		if err := daemon.MigrateDeprecatedAutoconnectToSpecificServer(fsystem, dm); err != nil {
+			log.Warn("failed to migrate autoconnect to a specific server:", err)
 		}
 	}()
 

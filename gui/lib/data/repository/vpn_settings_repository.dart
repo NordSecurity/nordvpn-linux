@@ -88,13 +88,6 @@ class VpnSettingsRepository {
     return DaemonStatusCode.success;
   }
 
-  Future<int> setObfuscated(bool value) async {
-    final result = await _client.setObfuscate(
-      SetGenericRequest(enabled: value),
-    );
-    return _checkSettingsUpdate(result);
-  }
-
   Future<int> setAnalytics(bool value) async {
     final result = await _client.setAnalytics(
       SetGenericRequest(enabled: value),
@@ -272,11 +265,11 @@ class VpnSettingsRepository {
     return result.type.toInt();
   }
 
-  Future<int> resetToDefaults() async {
+  Future<({int status, List<String> failedSettings})> resetToDefaults() async {
     final result = await _client.setDefaults(
       SetDefaultsRequest(noLogout: true),
     );
-    return result.type.toInt();
+    return (status: result.type.toInt(), failedSettings: result.data.toList());
   }
 
   Future<int> setPostQuantum(bool value) async {

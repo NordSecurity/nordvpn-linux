@@ -60,11 +60,11 @@ class NotificationCaptureThread(Thread):
         self.value = capture_notifications(self.expected_message)
 
 
-def connect_and_capture_notifications(tech, proto, obfuscated) -> NotificationCaptureThreadResult:
+def connect_and_capture_notifications(tech, proto) -> NotificationCaptureThreadResult:
     """Returns [True, True, True] if notification with all expected contents from NordVPN was captured while connecting to VPN server."""
 
     # Choose server for test, so we know the full expected message
-    server_info = server.get_hostname_by(tech, proto, obfuscated)
+    server_info = server.get_hostname_by(tech, proto)
     expected_msg = f"You are connected to {server_info.name} ({server_info.hostname})"
 
     # We try to capture notifications using other thread when connecting to NordVPN server

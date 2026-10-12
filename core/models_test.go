@@ -339,85 +339,6 @@ func TestIsOnline(t *testing.T) {
 	}
 }
 
-func TestIsObfuscated(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	tests := []struct {
-		name     string
-		server   Server
-		expected bool
-	}{
-		{
-			name: "openvpn both obfuscated technologies online and server online",
-			server: Server{
-				Status: Online,
-				Technologies: Technologies{
-					Technology{
-						ID:    OpenVPNUDPObfuscated,
-						Pivot: Pivot{Status: Online},
-					},
-					Technology{
-						ID:    OpenVPNTCPObfuscated,
-						Pivot: Pivot{Status: Online},
-					},
-				},
-			},
-			expected: true,
-		},
-		{
-			name: "openvpn both obfuscated technologies online but server offline",
-			server: Server{
-				Status: Offline,
-				Technologies: Technologies{
-					Technology{
-						ID:    OpenVPNUDPObfuscated,
-						Pivot: Pivot{Status: Online},
-					},
-					Technology{
-						ID:    OpenVPNTCPObfuscated,
-						Pivot: Pivot{Status: Online},
-					},
-				},
-			},
-			expected: false,
-		},
-		{
-			name: "openvpn one obfuscate technology online and server online",
-			server: Server{
-				Status: Online,
-				Technologies: Technologies{
-					Technology{
-						ID:    OpenVPNUDPObfuscated,
-						Pivot: Pivot{Status: Online},
-					},
-					Technology{
-						ID:    OpenVPNTCPObfuscated,
-						Pivot: Pivot{Status: Offline},
-					},
-				},
-			},
-			expected: true,
-		},
-		{
-			name: "not obfuscated online technology with online server",
-			server: Server{
-				Status: Online,
-				Technologies: Technologies{
-					Technology{
-						ID:    WireguardTech,
-						Pivot: Pivot{Status: Online},
-					},
-				},
-			},
-			expected: false,
-		},
-	}
-
-	for _, test := range tests {
-		assert.Equal(t, test.expected, IsObfuscated()(test.server))
-	}
-}
-
 func TestIsConnectableVia(t *testing.T) {
 	category.Set(t, category.Unit)
 
@@ -978,6 +899,33 @@ func TestNewCountryCode_SetsCountryCodeToLowercase(t *testing.T) {
 		t.Run(codeStr, func(t *testing.T) {
 			cc := NewCountryCode(codeStr)
 			assert.Equal(t, cc.cc, "us")
+		})
+	}
+}
+
+func TestGroups_IDs(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name     string
+		groups   Groups
+		expected []config.ServerGroup
+	}{
+		{
+			name: "every group id in order",
+			groups: Groups{
+				{ID: config.ServerGroup_DEDICATED_IP, Title: "Dedicated IP"},
+				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
+			},
+			expected: []config.ServerGroup{config.ServerGroup_DEDICATED_IP, config.ServerGroup_STANDARD_VPN_SERVERS},
+		},
+		{name: "empty groups", groups: Groups{}, expected: []config.ServerGroup{}},
+		{name: "nil groups", groups: nil, expected: []config.ServerGroup{}},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			assert.Equal(t, test.expected, test.groups.IDs())
 		})
 	}
 }

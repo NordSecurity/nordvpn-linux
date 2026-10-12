@@ -94,6 +94,12 @@ func (fw *Firewall) Disable() error {
 	return fw.impl.Flush()
 }
 
+func (fw *Firewall) IsEnabled() bool {
+	fw.mu.Lock()
+	defer fw.mu.Unlock()
+	return fw.enabled
+}
+
 func (fw *Firewall) Flush() error {
 	fw.mu.Lock()
 	defer fw.mu.Unlock()

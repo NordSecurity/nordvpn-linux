@@ -44,16 +44,17 @@ Example: nordvpn set %s off
 Supported values for <enabled>: 1, true, enable, on, enabled
 Example: nordvpn set %s on`
 
-	ObfuscateOnServerNotObfuscated              = "We couldn’t turn on obfuscation because the current auto-connect server doesn’t support it. Set a different server for auto-connect to use obfuscation."
-	ObfuscateOffServerObfuscated                = "We couldn’t turn off obfuscation because your current auto-connect server is obfuscated by default. Set a different server for auto-connect, then turn off obfuscation."
 	AutoConnectOnNonObfuscatedServerObfuscateOn = "Your selected server doesn’t support obfuscation. Choose a different server or turn off obfuscation."
 	AutoConnectOnObfuscatedServerObfuscateOff   = "Turn on obfuscation to connect to obfuscated servers."
 	SetAutoConnectForceOff                      = "Auto-connect was turned off because the setting change is incompatible with your current auto-connect preferences. Please turn on auto-connect again if you wish to continue using it."
+	AutoConnectToSpecificServer                 = "Auto-connect to a specific server is no longer supported. Use a country, city, or server group instead."
 
 	SetRealTimeProtectionDisableDNS = "Disabling DNS."
 	SetRealTimeProtectionAlreadySet = "Real-time protection is already set to `%s`."
 
-	SetDefaultsSuccess = "Settings were successfully restored to defaults."
+	SetDefaultsSuccess                   = "Settings were successfully restored to defaults."
+	SetDefaultsPartialSuccess            = "Some default settings could not be applied. The reset finished, but these settings may not be active: %s. Run 'nordvpn set defaults' again to retry. If the problem continues, contact support."
+	SetDefaultsNetworkSettingsNotApplied = "Some default network settings could not be applied. Run 'nordvpn set defaults' again to retry. If the problem continues, contact support."
 
 	FirewallRequired = "Firewall must be enabled to use '%s'."
 
@@ -62,8 +63,6 @@ Example: nordvpn set %s on`
 
 	SetTraySuccess      = "Tray set to '%s' successfully."
 	SetTrayNothingToSet = "Tray is already set to '%s'."
-
-	SetObfuscateUnavailable = "Obfuscation is not available with the current technology. Change the technology to OpenVPN to use obfuscation."
 
 	SetProtocolUnavailable = "This setting is only available when the selected protocol is OpenVPN."
 	SetProtocolAlreadySet  = "Protocol is already set to %s"
@@ -368,7 +367,7 @@ Provide a [transfer_id] argument to list files in the specified transfer.`
 	SetTechnologyDisablePQ = "This setting is not compatible with post-quantum encryption. To use %s, turn off post-quantum encryption first."
 	SetPqAndMeshnet        = "The post-quantum VPN and Meshnet can't run at the same time. Please turn off one feature to use the other."
 	SetPqAndMeshnetServer  = "Meshnet isn’t compatible with post-quantum encryption. Reconnect to the VPN to fully disable post-quantum protection and try again."
-	SetPqUsageText         = "Enables or disables post-quantum encryption. When enabled, the encryption protects your VPN connection against potential quantum computer attacks.\nNote: Currently, post-quantum encryption works only with standard NordLynx servers, so it won’t activate when you use a dedicated IP, OpenVPN, NordWhisper or obfuscated servers.\nThe feature is not compatible with Meshnet."
+	SetPqUsageText         = "Enables or disables post-quantum encryption. When enabled, the encryption protects your VPN connection against potential quantum computer attacks.\nNote: Currently, post-quantum encryption works only with standard NordLynx servers, so it won’t activate when you use a dedicated IP, OpenVPN or NordWhisper.\nThe feature is not compatible with Meshnet."
 
 	SetDefaultsLogoutFlagText        = "Log out after restoring settings to their default values. Example: nordvpn set defaults --logout"
 	SetDefaultsOffKillswitchFlagText = "Turn off Kill Switch when restoring settings to their default values. Example: nordvpn set defaults --off-killswitch"

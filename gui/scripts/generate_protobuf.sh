@@ -1,18 +1,10 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -euox pipefail
 OUT="${PWD}/gui/lib/pb"
 echo $OUT
 rm -fr "$OUT"
 mkdir -p "$OUT"
 
-# There is a problem with dart and google protobuf https://github.com/google/protobuf.dart/issues/483
-# Generate once google protobufs and then create symbolic links into each folder.
-# Alternative is to let protoc generate the folders multiple times automatically
-echo Generate google protobufs using `dart --version`
-GOOGLE_PROTO_ROOT_DIR="/usr/include"
-for FILE in "timestamp.proto"; do
-    protoc -I="$GOOGLE_PROTO_ROOT_DIR" --dart_out="$OUT" "$GOOGLE_PROTO_ROOT_DIR/google/protobuf/$FILE"
-done
 
 # used GRPC files
 GRPC_FILES=(

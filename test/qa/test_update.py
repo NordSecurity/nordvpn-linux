@@ -153,18 +153,13 @@ def test_fileshare_available_after_update():
     fileshare.files_from_transfer_exist_in_filesystem(remote_transfer_id, [wdir], ssh_client)
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_quick_connect_after_update(tech, proto, obfuscated):
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_quick_connect_after_update(tech, proto):
     """Manual TC: LVPN-8506"""
 
-    if tech == "openvpn" and proto == "udp" and obfuscated == "on":
-        tech_name = lib.technology_to_upper_camel_case(tech)
-        expected_msg = f"Technology has been successfully set to '{tech_name}'."
-        assert expected_msg in sh.nordvpn.set.technology(tech), "Technology should be successfully set"
+    lib.set_technology_and_protocol(tech, proto)
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
-
-    connect_base_test((tech, proto, obfuscated))
+    connect_base_test((tech, proto))
     disconnect_base_test()
 
 

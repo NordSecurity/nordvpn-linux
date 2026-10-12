@@ -16,7 +16,7 @@ func ItemValueFromServerGroup(
 	switch group {
 	case config.ServerGroup_DEDICATED_IP:
 		return pb.UIEvent_DIP
-	case config.ServerGroup_OBFUSCATED:
+	case config.ServerGroup_NW_OBFUSCATED:
 		return pb.UIEvent_OBFUSCATED
 	case config.ServerGroup_ONION_OVER_VPN:
 		return pb.UIEvent_ONION_OVER_VPN

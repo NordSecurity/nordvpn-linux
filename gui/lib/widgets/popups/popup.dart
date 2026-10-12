@@ -109,7 +109,8 @@ abstract class Popup extends ConsumerWidget {
   // Accessible name of the popup, read by the screen reader when it opens.
   // Subclasses override it when their visible heading is not [title].
   @protected
-  String semanticLabel(WidgetRef ref) => joinSemanticLabel(title, message(ref));
+  String semanticLabel(WidgetRef ref) =>
+      joinSemanticLabel(title, metadata.semanticsMessage(ref));
 
   @protected
   String joinSemanticLabel(String heading, String body) => body.isEmpty

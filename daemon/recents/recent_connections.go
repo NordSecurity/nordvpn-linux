@@ -1,7 +1,6 @@
 package recents
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"slices"
@@ -86,9 +85,6 @@ func (r *RecentConnectionsStore) Add(model Model) error {
 		connections = []Model{}
 	}
 
-	// Sort server technologies, so that the order does not affect equality checks
-	slices.Sort(model.ServerTechnologies)
-
 	// Find matches that have the same connection model with technologies and connection type
 	// considered
 	matches := newFilter(model, connections).
@@ -96,7 +92,6 @@ func (r *RecentConnectionsStore) Add(model Model) error {
 			config.ServerSelectionRule_SPECIFIC_SERVER,
 			config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP,
 		}).
-		withTechnologies(model.ServerTechnologies).
 		apply()
 
 	// For now we select input model as the entry to insert
@@ -216,7 +211,6 @@ func (r *RecentConnectionsStore) MigrateDeprecatedP2PGroup() error {
 
 		connections[i].Group = config.ServerGroup_UNDEFINED
 		changed = true
-		slices.Sort(connections[i].ServerTechnologies)
 		firstStage = append(firstStage, connections[i])
 	}
 
@@ -244,7 +238,7 @@ func (r *RecentConnectionsStore) MigrateDeprecatedP2PGroup() error {
 }
 
 func (r *RecentConnectionsStore) save(values []Model) error {
-	data, err := json.Marshal(values)
+	data, err := encode(values)
 	if err != nil {
 		return fmt.Errorf("marshaling vpn connections store: %w", err)
 	}
@@ -262,12 +256,23 @@ func (r *RecentConnectionsStore) load() ([]Model, error) {
 		return nil, fmt.Errorf("reading recent connections store: %w", err)
 	}
 
-	var connections []Model
-	if err := json.Unmarshal(data, &connections); err != nil {
+	f, err := decode(data)
+	if err != nil {
 		return nil, fmt.Errorf("unmarshaling vpn connections store: %w", err)
 	}
 
-	return connections, nil
+	if f.Version == unversionedFile {
+		// migrate to version 1
+		connections := migrateToVersion1(f.Connections)
+		if err := r.save(connections); err != nil {
+			// just log an error, the f.connections are correct
+			// so the file will be saved correctly at the next save
+			log.Recents.Error("failed to save to the new format")
+		}
+		return connections, nil
+	}
+
+	return f.Connections, nil
 }
 
 func (r *RecentConnectionsStore) checkExistence() error {

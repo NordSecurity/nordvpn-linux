@@ -40,19 +40,12 @@ func updateTemplateCache(cdn core.CDN, variant core.OvpnTemplateVariant, cachePa
 }
 
 func JobTemplates(cdn core.CDN) func() {
-	// ovpnTemplates maps every OpenVPN config template variant to the file it is cached in.
-	var ovpnTemplates = map[core.OvpnTemplateVariant]string{
-		core.OvpnTemplateStandard:   internal.OvpnTemplatePath,
-		core.OvpnTemplateObfuscated: internal.OvpnObfsTemplatePath,
-	}
-
 	return func() {
-		for variant, cachePath := range ovpnTemplates {
-			go func() {
-				if err := updateTemplateCache(cdn, variant, cachePath); err != nil {
-					log.Warn("updating config template cache:", err)
-				}
-			}()
-		}
+		go func() {
+			err := updateTemplateCache(cdn, core.OvpnTemplateStandard, internal.OvpnTemplatePath)
+			if err != nil {
+				log.Warn("updating config template cache:", err)
+			}
+		}()
 	}
 }

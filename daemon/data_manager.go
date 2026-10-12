@@ -12,6 +12,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/daemon/serverpicker"
 	event "github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
@@ -219,7 +220,6 @@ func (dm *DataManager) SetVersionData(version semver.Version, newerAvailable boo
 func toServerTechnology(
 	technology config.Technology,
 	protocol config.Protocol,
-	obfuscated bool,
 ) (core.ServerTechnology, error) {
 	var serverTechnology core.ServerTechnology
 	switch technology {
@@ -228,17 +228,9 @@ func toServerTechnology(
 	case config.Technology_OPENVPN:
 		switch protocol {
 		case config.Protocol_TCP:
-			if obfuscated {
-				serverTechnology = core.OpenVPNTCPObfuscated
-			} else {
-				serverTechnology = core.OpenVPNTCP
-			}
+			serverTechnology = core.OpenVPNTCP
 		case config.Protocol_UDP:
-			if obfuscated {
-				serverTechnology = core.OpenVPNUDPObfuscated
-			} else {
-				serverTechnology = core.OpenVPNUDP
-			}
+			serverTechnology = core.OpenVPNUDP
 		case config.Protocol_Webtunnel:
 			return 0, errors.New("webtunnel protocol is not compatible with opevpn")
 		case config.Protocol_UNKNOWN_PROTOCOL:
@@ -255,9 +247,8 @@ func toServerTechnology(
 func (dm *DataManager) Countries(
 	technology config.Technology,
 	protocol config.Protocol,
-	obfuscated bool,
 ) ([]*pb.ServerGroup, error) {
-	serverTechnology, err := toServerTechnology(technology, protocol, obfuscated)
+	serverTechnology, err := toServerTechnology(technology, protocol)
 	if err != nil {
 		return nil, err
 	}
@@ -300,9 +291,8 @@ func (dm *DataManager) Cities(
 	countryName string,
 	technology config.Technology,
 	protocol config.Protocol,
-	obfuscated bool,
 ) ([]*pb.ServerGroup, error) {
-	serverTechnology, err := toServerTechnology(technology, protocol, obfuscated)
+	serverTechnology, err := toServerTechnology(technology, protocol)
 	if err != nil {
 		return nil, err
 	}
@@ -343,9 +333,8 @@ func (dm *DataManager) Cities(
 func (dm *DataManager) Groups(
 	technology config.Technology,
 	protocol config.Protocol,
-	obfuscated bool,
 ) ([]*pb.ServerGroup, error) {
-	serverTechnology, err := toServerTechnology(technology, protocol, obfuscated)
+	serverTechnology, err := toServerTechnology(technology, protocol)
 	if err != nil {
 		return nil, err
 	}
@@ -358,7 +347,7 @@ func (dm *DataManager) Groups(
 			continue
 		}
 
-		for _, group := range server.Groups {
+		for _, group := range serverpicker.EffectiveGroups(server, technology) {
 			if groupsSet.Contains(group.Title) {
 				continue
 			}

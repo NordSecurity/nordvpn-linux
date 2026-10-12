@@ -34,7 +34,7 @@ final class RecommendedServerProvider
   RecommendedServer create() => RecommendedServer();
 }
 
-String _$recommendedServerHash() => r'3cb3940c85c955e503e25e4efa333a9957edb1ba';
+String _$recommendedServerHash() => r'6ea92dfb0a20221b1a1ea2af2970275cd4cd0ebb';
 
 abstract class _$RecommendedServer
     extends $AsyncNotifier<RecommendedServerLocation> {

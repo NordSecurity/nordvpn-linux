@@ -13,6 +13,7 @@ import 'package:nordvpn/pb/daemon/account.pb.dart';
 import 'package:nordvpn/pb/daemon/cities.pb.dart';
 import 'package:nordvpn/pb/daemon/common.pb.dart';
 import 'package:nordvpn/pb/daemon/config/analytics_consent.pb.dart';
+import 'package:nordvpn/pb/daemon/config/technology.pb.dart' as cfg;
 import 'package:nordvpn/pb/daemon/connect.pb.dart';
 import 'package:nordvpn/pb/daemon/defaults.pb.dart';
 import 'package:nordvpn/pb/daemon/features.pb.dart';
@@ -258,11 +259,6 @@ final class MockDaemon extends DaemonServiceBase {
   }
 
   @override
-  Future<Payload> setObfuscate(ServiceCall call, SetGenericRequest request) {
-    return appSettings.setSettings(obfuscate: request.enabled);
-  }
-
-  @override
   Future<Payload> setPostQuantum(ServiceCall call, SetGenericRequest request) {
     return appSettings.setSettings(postquantumVpn: request.enabled);
   }
@@ -375,7 +371,9 @@ final class MockDaemon extends DaemonServiceBase {
   ) {
     return Future.value(
       RecentConnectionsResponse(
-        connections: recentConnections.getConnections(),
+        connections: recentConnections.getConnections(
+          appSettings.currentSettings.technology == cfg.Technology.NORDWHISPER,
+        ),
       ),
     );
   }

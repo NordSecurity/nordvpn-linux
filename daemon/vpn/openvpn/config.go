@@ -29,10 +29,8 @@ const ovpnConfig = `<?xml version="1.0"?>
 type openvpnID string
 
 const (
-	techXORUDP openvpnID = "openvpn_xor_udp"
-	techUDP    openvpnID = "openvpn_udp"
-	techXORTCP openvpnID = "openvpn_xor_tcp"
-	techTCP    openvpnID = "openvpn_tcp"
+	techUDP openvpnID = "openvpn_udp"
+	techTCP openvpnID = "openvpn_tcp"
 
 	interfaceType = "tun"
 	InterfaceName = "nordtun"
@@ -53,25 +51,20 @@ type ovpnConfigData struct {
 
 // setOpenVPNConfig is used to pass generated config to the OpenVPN process.
 // Config has to be passed everytime when new OpenVPN process is started.
-func setOpenVPNConfig(protocol config.Protocol, serverIP netip.Addr, obfuscated bool, serverVersion string) error {
+func setOpenVPNConfig(protocol config.Protocol, serverIP netip.Addr, serverVersion string) error {
 	if serverVersion == "" {
 		return ErrServerVersion
 	}
-	return generateConfigFile(protocol, serverIP, obfuscated)
+	return generateConfigFile(protocol, serverIP)
 }
 
-func generateConfigFile(protocol config.Protocol, serverIP netip.Addr, obfuscated bool) error {
-	templatePath := internal.OvpnTemplatePath
-	if obfuscated {
-		templatePath = internal.OvpnObfsTemplatePath
-	}
-
-	identifier, err := getConfigIdentifier(protocol, obfuscated)
+func generateConfigFile(protocol config.Protocol, serverIP netip.Addr) error {
+	identifier, err := getConfigIdentifier(protocol)
 	if err != nil {
 		return fmt.Errorf("getting config identifier: %w", err)
 	}
 
-	template, err := internal.FileRead(templatePath)
+	template, err := internal.FileRead(internal.OvpnTemplatePath)
 	if err != nil {
 		return fmt.Errorf("reading ovpn template file: %w", err)
 	}
@@ -161,17 +154,11 @@ func generateConfigXML(serverIP netip.Addr, identifier openvpnID) ([]byte, error
 	return out.Bytes(), err
 }
 
-func getConfigIdentifier(protocol config.Protocol, obfuscated bool) (openvpnID, error) {
+func getConfigIdentifier(protocol config.Protocol) (openvpnID, error) {
 	switch protocol {
 	case config.Protocol_UDP:
-		if obfuscated {
-			return techXORUDP, nil
-		}
 		return techUDP, nil
 	case config.Protocol_TCP:
-		if obfuscated {
-			return techXORTCP, nil
-		}
 		return techTCP, nil
 	case config.Protocol_Webtunnel:
 		fallthrough
@@ -191,7 +178,7 @@ func addExtraParameters(data []byte, serverIP netip.Addr, protocol config.Protoc
 	args = addOrReplaceArgument(args, "ping 15", "ping .*$")
 	args = addOrReplaceArgument(args, "ping-restart 0", "ping-restart .*$")
 	args = addOrReplaceArgument(args, "ping-timer-rem", "ping-timer-rem$")
-	// override openvpn proto (obfuscated sets multiple remotes)
+	// override openvpn proto
 	if serverIP.Is6() {
 		switch protocol {
 		case config.Protocol_UDP:

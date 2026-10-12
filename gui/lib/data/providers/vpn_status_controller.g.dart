@@ -37,7 +37,7 @@ final class VpnStatusControllerProvider
 }
 
 String _$vpnStatusControllerHash() =>
-    r'5252557228b877cf9b12ba9ffa73d0662805ad8f';
+    r'ee15ce0810e640b5f50875d2afdc8665d9bec825';
 
 /// Handles the VPN connection functionality
 

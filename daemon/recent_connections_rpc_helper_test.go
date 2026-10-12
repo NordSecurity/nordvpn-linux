@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
-	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/recents"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/fs"
@@ -189,11 +188,10 @@ func TestStorePendingRecentConnection_WithServerTechnologies(t *testing.T) {
 	store := recents.NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	model := recents.Model{
-		Country:            "Netherlands",
-		City:               "Amsterdam",
-		ConnectionType:     config.ServerSelectionRule_CITY,
-		CountryCode:        "NL",
-		ServerTechnologies: []core.ServerTechnology{1, 3, 5},
+		Country:        "Netherlands",
+		City:           "Amsterdam",
+		ConnectionType: config.ServerSelectionRule_CITY,
+		CountryCode:    "NL",
 	}
 
 	store.AddPending(model)
@@ -205,7 +203,6 @@ func TestStorePendingRecentConnection_WithServerTechnologies(t *testing.T) {
 	require.Len(t, connections, 1)
 	assert.Equal(t, model.Country, connections[0].Country)
 	assert.Equal(t, model.City, connections[0].City)
-	assert.ElementsMatch(t, model.ServerTechnologies, connections[0].ServerTechnologies)
 }
 
 func TestStorePendingRecentConnection_FullWorkflow(t *testing.T) {

@@ -1,10 +1,12 @@
 package network
 
 import (
+	"context"
 	"fmt"
 	"net/netip"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
@@ -46,15 +48,15 @@ func NewResolver(
 }
 
 type DNSResolver interface {
-	Resolve(domain string) ([]netip.Addr, error)
+	Resolve(ctx context.Context, domain string) ([]netip.Addr, error)
 }
 
-func (r *Resolver) Resolve(domain string) ([]netip.Addr, error) {
+func (r *Resolver) Resolve(ctx context.Context, domain string) ([]netip.Addr, error) {
 	nameservers := r.servers.Get(false)
-	return r.resolveWithNameservers(domain, FilterInvalidIPs(nameservers), "udp")
+	return r.resolveWithNameservers(ctx, domain, FilterInvalidIPs(nameservers), "udp")
 }
 
-func (r *Resolver) resolveWithNameservers(domain string, nameservers []string, protocol string) ([]netip.Addr, error) {
+func (r *Resolver) resolveWithNameservers(ctx context.Context, domain string, nameservers []string, protocol string) ([]netip.Addr, error) {
 	r.Lock()
 	defer r.Unlock()
 
@@ -67,7 +69,10 @@ func (r *Resolver) resolveWithNameservers(domain string, nameservers []string, p
 			// While connected to VPN, send the DNS requests thru the tunnel so no fwmark
 			fwmark = noFwMark
 		}
-		ipAddrs, err = lookupAddress(domain, nameserver, protocol, fwmark)
+
+		resolveCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		ipAddrs, err = lookupAddress(resolveCtx, domain, nameserver, protocol, fwmark)
+		cancel()
 
 		if err == nil {
 			return ipAddrs, nil

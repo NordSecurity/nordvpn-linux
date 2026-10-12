@@ -512,10 +512,6 @@ final class NordVpnTheme {
       searchErrorStyle: design.typography.body.copyWith(
         color: design.semanticColors.textCritical,
       ),
-      obfuscationSearchWarningStyle: design.typography.body.copyWith(
-        color: design.semanticColors.textSecondary,
-      ),
-      obfuscatedItemBackgroundColor: design.semanticColors.bgSecondaryActive,
       cardShadow: mode == ThemeMode.light
           ? AppBoxShadows.lightBevel
           : AppBoxShadows.darkBevel,

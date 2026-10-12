@@ -28,7 +28,6 @@ func NewEventsEmpty() *Events {
 		&subs.Subject[bool]{},
 		&subs.Subject[bool]{},
 		&subs.Subject[bool]{},
-		&subs.Subject[bool]{},
 		&subs.Subject[any]{},
 		&subs.Subject[events.DataConnect]{},
 		&subs.Subject[events.DataDisconnect]{},
@@ -55,7 +54,6 @@ func NewEvents(
 	protocol events.PublishSubcriber[config.Protocol],
 	allowlist events.PublishSubcriber[events.DataAllowlist],
 	technology events.PublishSubcriber[config.Technology],
-	obfuscate events.PublishSubcriber[bool],
 	firewall events.PublishSubcriber[bool],
 	routing events.PublishSubcriber[bool],
 	notify events.PublishSubcriber[bool],
@@ -85,7 +83,6 @@ func NewEvents(
 			Protocol:           protocol,
 			Allowlist:          allowlist,
 			Technology:         technology,
-			Obfuscate:          obfuscate,
 			Firewall:           firewall,
 			Routing:            routing,
 			Notify:             notify,
@@ -137,7 +134,6 @@ type SettingsPublisher interface {
 	NotifyProtocol(config.Protocol) error
 	NotifyAllowlist(events.DataAllowlist) error
 	NotifyTechnology(config.Technology) error
-	NotifyObfuscate(bool) error
 	NotifyFirewall(bool) error
 	NotifyRouting(bool) error
 	NotifyNotify(bool) error
@@ -173,7 +169,6 @@ func (s *SettingsEvents) Subscribe(to SettingsPublisher) {
 	s.Protocol.Subscribe(to.NotifyProtocol)
 	s.Allowlist.Subscribe(to.NotifyAllowlist)
 	s.Technology.Subscribe(to.NotifyTechnology)
-	s.Obfuscate.Subscribe(to.NotifyObfuscate)
 	s.Firewall.Subscribe(to.NotifyFirewall)
 	s.Routing.Subscribe(to.NotifyRouting)
 	s.Notify.Subscribe(to.NotifyNotify)
@@ -229,7 +224,6 @@ func (s *SettingsEvents) Publish(cfg config.Config) {
 	})
 	s.Meshnet.Publish(cfg.Mesh)
 	s.Technology.Publish(cfg.Technology)
-	s.Obfuscate.Publish(cfg.AutoConnectData.Obfuscate)
 	s.Notify.Publish(len(cfg.UsersData.NotifyOff) <= 0)
 	s.LANDiscovery.Publish(cfg.LanDiscovery)
 	s.PostquantumVPN.Publish(cfg.AutoConnectData.PostquantumVpn)

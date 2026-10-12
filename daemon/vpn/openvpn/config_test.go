@@ -13,7 +13,7 @@ import (
 func TestSetOpenVPNConfigRequiresServerVersion(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	err := setOpenVPNConfig(config.Protocol_UDP, netip.MustParseAddr("192.0.2.1"), false, "")
+	err := setOpenVPNConfig(config.Protocol_UDP, netip.MustParseAddr("192.0.2.1"), "")
 
 	assert.ErrorIs(t, err, ErrServerVersion)
 }
@@ -22,34 +22,40 @@ func TestGetConfigIdentifier(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		protocol   config.Protocol
-		obfuscated bool
-		expected   openvpnID
+		name     string
+		protocol config.Protocol
+		expected openvpnID
+		err      bool
 	}{
 		{
-			protocol:   config.Protocol_UDP,
-			obfuscated: true,
-			expected:   techXORUDP,
+			name:     "udp",
+			protocol: config.Protocol_UDP,
+			expected: techUDP,
 		},
 		{
-			protocol:   config.Protocol_UDP,
-			obfuscated: false,
-			expected:   techUDP,
+			name:     "tcp",
+			protocol: config.Protocol_TCP,
+			expected: techTCP,
 		},
 		{
-			protocol:   config.Protocol_TCP,
-			obfuscated: true, expected: techXORTCP,
+			name:     "webtunnel is not an OpenVPN protocol",
+			protocol: config.Protocol_Webtunnel,
+			err:      true,
 		},
 		{
-			protocol:   config.Protocol_TCP,
-			obfuscated: false,
-			expected:   techTCP,
+			name:     "unknown protocol",
+			protocol: config.Protocol_UNKNOWN_PROTOCOL,
+			err:      true,
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(string(test.expected), func(t *testing.T) {
-			got, err := getConfigIdentifier(test.protocol, test.obfuscated)
+		t.Run(test.name, func(t *testing.T) {
+			got, err := getConfigIdentifier(test.protocol)
+			if test.err {
+				assert.Error(t, err)
+				return
+			}
 			assert.NoError(t, err)
 			assert.Equal(t, test.expected, got)
 		})
@@ -64,16 +70,8 @@ func TestGenerateConfigXML(t *testing.T) {
 		expected   string
 	}{
 		{
-			identifier: techXORUDP,
-			expected:   "<?xml version=\"1.0\"?>\n<?xml-stylesheet type=\"xml/xsl\"?>\n<config>\n  <ips>\n    <ip address=\"1.1.1.1\" />\n  </ips>\n  <technology identifier=\"openvpn_xor_udp\"/>\n</config>\n",
-		},
-		{
 			identifier: techUDP,
 			expected:   "<?xml version=\"1.0\"?>\n<?xml-stylesheet type=\"xml/xsl\"?>\n<config>\n  <ips>\n    <ip address=\"1.1.1.1\" />\n  </ips>\n  <technology identifier=\"openvpn_udp\"/>\n</config>\n",
-		},
-		{
-			identifier: techXORTCP,
-			expected:   "<?xml version=\"1.0\"?>\n<?xml-stylesheet type=\"xml/xsl\"?>\n<config>\n  <ips>\n    <ip address=\"1.1.1.1\" />\n  </ips>\n  <technology identifier=\"openvpn_xor_tcp\"/>\n</config>\n",
 		},
 		{
 			identifier: techTCP,
@@ -109,16 +107,9 @@ func TestGenerateConfig(t *testing.T) {
 			config:     configV1,
 		},
 		{
-			name:       "XOR 1.0",
-			ip:         netip.MustParseAddr("5.5.5.5"),
-			identifier: techXORTCP,
-			template:   configXORV1Template,
-			config:     configXORV1,
-		},
-		{
 			name:       "invalid template",
 			ip:         netip.MustParseAddr("5.5.5.5"),
-			identifier: techXORTCP,
+			identifier: techTCP,
 			template:   "invalid",
 			config:     "",
 			err:        true,
@@ -126,7 +117,7 @@ func TestGenerateConfig(t *testing.T) {
 		{
 			name:       "importingTemplate",
 			ip:         netip.MustParseAddr("5.5.5.5"),
-			identifier: techXORTCP,
+			identifier: techTCP,
 			template: `<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
 	<xsl:include href="nonexistant.xsl"/>
 	<xsl:apply-templates/>

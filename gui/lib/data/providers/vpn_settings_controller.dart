@@ -96,28 +96,13 @@ class VpnSettingsController extends _$VpnSettingsController
   }
 
   Future<int> resetToDefaults() async {
-    return await ref.read(vpnSettingsProvider).resetToDefaults();
-  }
-
-  Future<int> setObfuscated(bool value) async {
-    final status = await _setValue(
-      (repository) => repository.setObfuscated(value),
-      popupCodeOverrides: {
-        DaemonStatusCode.vpnIsRunning: PopupCodes.reconnectToChangeObfuscation,
-      },
-    );
-    // When VPN is paused, the daemon saves the value but returns success
-    // (IsVPNActive()=false), so _setValue skips the popup (success is in the
-    // ignore list). Show the popup explicitly here.
-    if (status == DaemonStatusCode.success) {
-      final vpnStatus = ref.read(vpnStatusControllerProvider).value;
-      if (vpnStatus != null && vpnStatus.isPaused()) {
-        ref
-            .read(popupsProvider.notifier)
-            .show(PopupCodes.reconnectToChangeObfuscation);
-      }
+    final result = await ref.read(vpnSettingsProvider).resetToDefaults();
+    if (result.status == DaemonStatusCode.setDefaultsNotApplied) {
+      ref
+          .read(popupsProvider.notifier)
+          .show(result.status, userData: result.failedSettings);
     }
-    return status;
+    return result.status;
   }
 
   Future<int> setAnalytics(bool value) async {
@@ -318,13 +303,13 @@ class VpnSettingsController extends _$VpnSettingsController
   /// The popupCodeOverrides map allows overriding daemon status codes with custom popup codes.
   /// This is useful when different settings need specific popup messages for the same daemon code.
   ///
-  /// Example: Both obfuscation and post-quantum changes return vpnIsRunning, but we want
-  /// different popup messages for each:
+  /// Example: both post-quantum and virtual location changes return vpnIsRunning, but we
+  /// want different popup messages for each:
   /// ```dart
   /// _setValue(
-  ///   (repo) => repo.setObfuscated(value),
+  ///   (repo) => repo.setPostQuantum(value),
   ///   popupCodeOverrides: {
-  ///     DaemonStatusCode.vpnIsRunning: PopupCodes.reconnectToChangeObfuscation,
+  ///     DaemonStatusCode.vpnIsRunning: PopupCodes.reconnectToChangePostQuantum,
   ///   },
   /// );
   /// ```

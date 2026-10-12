@@ -114,6 +114,28 @@ void main() {
       expect(announced, isNot(contains(t.ui.nordVpn)));
     });
 
+    // If a Popup comes with an URL, then TTS engine must not read out the whole URL, only its name
+    testWidgets('announcement reads link, without its URL', (tester) async {
+      await tester.setupWidgetTest(
+        infoPopup(
+          text:
+              "Check the [test name URL](https://example.com/help?utm_source=app).",
+        ),
+      );
+
+      final announced = tester.takeAnnouncements().single.message;
+      expect(
+        announced,
+        t.a11y.popupWithContent(
+          title: title,
+          message:
+              "Check the ${t.a11y.link(name: "test name URL")}.",
+        ),
+      );
+      expect(announced, isNot(contains("example.com")));
+      expect(announced, isNot(contains("](")));
+    });
+
     testWidgets('popup with an empty message announces its title alone', (
       tester,
     ) async {

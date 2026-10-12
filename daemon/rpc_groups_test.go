@@ -2,12 +2,14 @@ package daemon
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/daemon/serverpicker"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
@@ -189,6 +191,77 @@ func TestRPCGroups_Successful(t *testing.T) {
 			assert.Equal(t, test.statusCode, payload.Type)
 			assert.Equal(t, len(test.expected), len(payload.Servers))
 			assert.ElementsMatch(t, test.expected, payload.Servers)
+		})
+	}
+}
+
+func TestGroups_ObfuscatedIsListedOnlyUnderNordWhisper(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	allTechs := []core.ServerTechnology{
+		core.OpenVPNTCP, core.OpenVPNUDP, core.WireguardTech, core.NordWhisperTech,
+	}
+	standard := getServer(1, "standard1", "Germany", "de", "Berlin",
+		core.Groups{{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"}},
+		allTechs)
+	legacyXOR := getServer(3, "xor1", "Canada", "ca", "Toronto",
+		core.Groups{{ID: config.ServerGroup_OVPN_OBFUSCATED, Title: "Obfuscated Servers"}},
+		[]core.ServerTechnology{core.OpenVPNUDPObfuscated, core.OpenVPNTCPObfuscated})
+
+	tests := []struct {
+		name     string
+		servers  core.Servers
+		tech     config.Technology
+		proto    config.Protocol
+		expected bool
+	}{
+		{
+			name:     "listed over nordwhisper",
+			servers:  core.Servers{standard, legacyXOR},
+			tech:     config.Technology_NORDWHISPER,
+			proto:    config.Protocol_Webtunnel,
+			expected: true,
+		},
+		{
+			name:    "not listed over nordlynx",
+			servers: core.Servers{standard, legacyXOR},
+			tech:    config.Technology_NORDLYNX,
+			proto:   config.Protocol_UDP,
+		},
+		{
+			name:    "not listed over openvpn tcp",
+			servers: core.Servers{standard, legacyXOR},
+			tech:    config.Technology_OPENVPN,
+			proto:   config.Protocol_TCP,
+		},
+		{
+			name:    "not listed over openvpn udp",
+			servers: core.Servers{standard, legacyXOR},
+			tech:    config.Technology_OPENVPN,
+			proto:   config.Protocol_UDP,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			dm := DataManager{serversData: ServersData{Servers: test.servers}}
+
+			groups, err := dm.Groups(test.tech, test.proto)
+			assert.NoError(t, err)
+
+			names := make([]string, 0, len(groups))
+			for _, group := range groups {
+				names = append(names, group.Name)
+			}
+
+			obfuscated := internal.Title(serverpicker.ObfuscatedServersGroupTitle)
+			if test.expected {
+				assert.Contains(t, names, obfuscated)
+				assert.Equal(t, 1, strings.Count(strings.Join(names, " "), obfuscated),
+					"the group must be reported exactly once")
+			} else {
+				assert.NotContains(t, names, obfuscated)
+			}
 		})
 	}
 }

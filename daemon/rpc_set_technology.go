@@ -98,6 +98,9 @@ func (r *RPC) SetTechnology(ctx context.Context, in *pb.SetTechnologyRequest) (*
 	r.netw.SetVPN(v)
 
 	r.events.Settings.Technology.Publish(in.GetTechnology())
+	if protocol != cfg.AutoConnectData.Protocol {
+		r.events.Settings.Protocol.Publish(protocol)
+	}
 
 	payload.Data = []string{strconv.FormatBool(r.netw.IsVPNActive()),
 		config.TechNameToUpperCamelCase(in.GetTechnology())}

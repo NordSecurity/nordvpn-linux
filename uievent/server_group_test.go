@@ -28,7 +28,7 @@ func TestItemValueFromServerGroupString(t *testing.T) {
 		},
 		{
 			name:     "obfuscated",
-			group:    "obfuscated_servers",
+			group:    "obfuscated",
 			expected: pb.UIEvent_OBFUSCATED,
 		},
 		{

@@ -8,13 +8,13 @@ from lib import notify, settings
 pytestmark = pytest.mark.usefixtures("nordvpnd_scope_module", "collect_logs", "disable_notifications")
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_notifications_disabled_connect(tech, proto, obfuscated):
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_notifications_disabled_connect(tech, proto):
+    lib.set_technology_and_protocol(tech, proto)
 
     assert not settings.is_notify_enabled(), "Notifications should be disabled"
 
-    connect_notification = notify.connect_and_capture_notifications(tech, proto, obfuscated)
+    connect_notification = notify.connect_and_capture_notifications(tech, proto)
 
     assert connect_notification == notify.NOTIFICATION_NOT_DETECTED, \
         notify.print_tidy_exception(connect_notification, notify.NOTIFICATION_NOT_DETECTED)
@@ -25,14 +25,14 @@ def test_notifications_disabled_connect(tech, proto, obfuscated):
         notify.print_tidy_exception(connect_notification, notify.NOTIFICATION_NOT_DETECTED)
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_notifications_enabled_connect(tech, proto, obfuscated):
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_notifications_enabled_connect(tech, proto):
+    lib.set_technology_and_protocol(tech, proto)
 
     sh.nordvpn.set.notify.on()
     assert settings.is_notify_enabled(), "Notifications should be enabled"
 
-    connect_notification = notify.connect_and_capture_notifications(tech, proto, obfuscated)
+    connect_notification = notify.connect_and_capture_notifications(tech, proto)
 
     # Should fail here, if tested with 3.16.6, since notification icon is missing
     assert connect_notification == notify.NOTIFICATION_DETECTED, \
@@ -44,14 +44,14 @@ def test_notifications_enabled_connect(tech, proto, obfuscated):
         notify.print_tidy_exception(disconnect_notification, notify.NOTIFICATION_DETECTED)
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_notifications_enabled_connected_disable(tech, proto, obfuscated):
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_notifications_enabled_connected_disable(tech, proto):
+    lib.set_technology_and_protocol(tech, proto)
 
     sh.nordvpn.set.notify.on()
     assert settings.is_notify_enabled(), "Notifications should be enabled"
 
-    connect_notification = notify.connect_and_capture_notifications(tech, proto, obfuscated)
+    connect_notification = notify.connect_and_capture_notifications(tech, proto)
 
     # Should fail here, if tested with 3.16.6, since notification icon is missing
     assert connect_notification == notify.NOTIFICATION_DETECTED, \
@@ -65,13 +65,13 @@ def test_notifications_enabled_connected_disable(tech, proto, obfuscated):
         notify.print_tidy_exception(disconnect_notification, notify.NOTIFICATION_NOT_DETECTED)
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_notifications_disabled_connected_enable(tech, proto, obfuscated):
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_notifications_disabled_connected_enable(tech, proto):
+    lib.set_technology_and_protocol(tech, proto)
 
     assert not settings.is_notify_enabled(), "Notifications should be disabled"
 
-    connect_notification = notify.connect_and_capture_notifications(tech, proto, obfuscated)
+    connect_notification = notify.connect_and_capture_notifications(tech, proto)
 
     assert connect_notification == notify.NOTIFICATION_NOT_DETECTED, \
         notify.print_tidy_exception(connect_notification, notify.NOTIFICATION_NOT_DETECTED)
@@ -85,9 +85,9 @@ def test_notifications_disabled_connected_enable(tech, proto, obfuscated):
         notify.print_tidy_exception(disconnect_notification, notify.NOTIFICATION_DETECTED)
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_notify_already_enabled_disconnected(tech, proto, obfuscated):
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_notify_already_enabled_disconnected(tech, proto):
+    lib.set_technology_and_protocol(tech, proto)
 
     sh.nordvpn.set.notify.on()
     assert settings.is_notify_enabled(), "Notifications should be enabled"
@@ -97,9 +97,9 @@ def test_notify_already_enabled_disconnected(tech, proto, obfuscated):
     assert settings.is_notify_enabled(), "Notifications should be enabled"
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_notify_already_enabled_connected(tech, proto, obfuscated):
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_notify_already_enabled_connected(tech, proto):
+    lib.set_technology_and_protocol(tech, proto)
 
     with lib.Defer(sh.nordvpn.disconnect):
         sh.nordvpn.connect()
@@ -112,9 +112,9 @@ def test_notify_already_enabled_connected(tech, proto, obfuscated):
         assert settings.is_notify_enabled(), "Notifications should be enabled"
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_notify_already_disabled_disconnected(tech, proto, obfuscated):
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_notify_already_disabled_disconnected(tech, proto):
+    lib.set_technology_and_protocol(tech, proto)
 
     assert not settings.is_notify_enabled(), "Notifications should be disabled"
 
@@ -123,9 +123,9 @@ def test_notify_already_disabled_disconnected(tech, proto, obfuscated):
     assert not settings.is_notify_enabled(), "Notifications should be disabled"
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_notify_already_disabled_connected(tech, proto, obfuscated):
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_notify_already_disabled_connected(tech, proto):
+    lib.set_technology_and_protocol(tech, proto)
 
     with lib.Defer(sh.nordvpn.disconnect):
         sh.nordvpn.connect()

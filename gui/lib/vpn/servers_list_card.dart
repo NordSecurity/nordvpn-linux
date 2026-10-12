@@ -11,7 +11,6 @@ import 'package:nordvpn/data/providers/vpn_settings_controller.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/internal/images_manager.dart';
 import 'package:nordvpn/internal/popup_codes.dart';
-import 'package:nordvpn/router/routes.dart';
 import 'package:nordvpn/service_locator.dart';
 import 'package:nordvpn/theme/app_theme.dart';
 import 'package:nordvpn/i18n/string_translation_extension.dart';
@@ -31,8 +30,10 @@ final class ServerListWidgetKeys {
   static const doubleVpn = Key("serverListDoubleVpn");
   static const onionOverVpn = Key("serverListOnionOverVpn");
   static const dedicatedIp = Key("serverListDedicatedIP");
+  static const obfuscatedVpn = Key("serverListObfuscated");
   static const search = Key("serverListSearch");
   static const countriesServersList = Key("serverListCountries");
+  static const specialtyServersList = Key("serverListSpecialty");
   static const recentConnections = Key("recentConnections");
 }
 
@@ -117,29 +118,17 @@ final class _ServersListCardState extends State<ServersListCard> {
     ServersList serversList,
     WidgetRef ref,
   ) {
-    final isObfuscationEnabled =
-        serversList.standardServersList.isEmpty &&
-        serversList.obfuscatedServersList.isNotEmpty;
-
     final serverSelectionView = (!_showSearchView)
-        ? _buildTabBarView(context, serversList, ref, isObfuscationEnabled)
-        : _buildSearchList(context, serversList, ref, isObfuscationEnabled);
+        ? _buildTabBarView(context, serversList, ref)
+        : _buildSearchList(context, serversList, ref);
 
-    return Column(
-      spacing: context.appTheme.verticalSpaceSmall,
-      children: [
-        if (isObfuscationEnabled)
-          _showObfuscatedMessage(context, t.ui.turnOffObfuscationLocations),
-        Expanded(child: serverSelectionView),
-      ],
-    );
+    return serverSelectionView;
   }
 
   Widget _buildTabBarView(
     BuildContext context,
     ServersList serversList,
     WidgetRef ref,
-    bool isObfuscationEnabled,
   ) {
     final serverListTheme = context.serversListTheme;
 
@@ -191,13 +180,7 @@ final class _ServersListCardState extends State<ServersListCard> {
                   thickness: 1,
                   color: context.appTheme.dividerColor,
                 ),
-                Expanded(
-                  child: _buildTabsWithServers(
-                    serversList,
-                    ref,
-                    isObfuscationEnabled,
-                  ),
-                ),
+                Expanded(child: _buildTabsWithServers(serversList, ref)),
               ],
             ),
           ),
@@ -206,28 +189,18 @@ final class _ServersListCardState extends State<ServersListCard> {
     );
   }
 
-  Widget _buildTabsWithServers(
-    ServersList serversList,
-    WidgetRef ref,
-    bool isObfuscationEnabled,
-  ) {
+  Widget _buildTabsWithServers(ServersList serversList, WidgetRef ref) {
     return TabBarView(
       children: [
-        _buildServersList(serversList, ref, isObfuscationEnabled),
-        _buildSpecialtyServersList(serversList, ref, isObfuscationEnabled),
+        _buildServersList(serversList, ref),
+        _buildSpecialtyServersList(serversList, ref),
       ],
     );
   }
 
   // Builds the countries servers list from the tabbar
-  Widget _buildServersList(
-    ServersList serversList,
-    WidgetRef ref,
-    bool isObfuscationEnabled,
-  ) {
-    final servers = isObfuscationEnabled
-        ? serversList.obfuscatedServersList
-        : serversList.standardServersList;
+  Widget _buildServersList(ServersList serversList, WidgetRef ref) {
+    final servers = serversList.standardServersList;
 
     // count additional quick connect tile if specified
     final itemsCount = servers.length + (widget.withQuickConnectTile ? 1 : 0);
@@ -248,13 +221,8 @@ final class _ServersListCardState extends State<ServersListCard> {
                     left: appTheme.horizontalSpaceVerySmall,
                   ),
                   title: Text(fastestServerLabel, style: appTheme.body),
-                  onTap: () async => await widget.onSelected(
-                    ConnectArguments(
-                      specialtyGroup: isObfuscationEnabled
-                          ? ServerType.obfuscated
-                          : null,
-                    ),
-                  ),
+                  onTap: () async =>
+                      await widget.onSelected(ConnectArguments()),
                 );
               }
               // adjust for additional quick connect tile if specified
@@ -264,9 +232,6 @@ final class _ServersListCardState extends State<ServersListCard> {
                 country: servers[idx],
                 onTap: (args) async => await widget.onSelected(args),
                 enabled: widget.enabled,
-                specialtyGroup: isObfuscationEnabled
-                    ? ServerType.obfuscated
-                    : null,
               );
             },
           ),
@@ -276,11 +241,7 @@ final class _ServersListCardState extends State<ServersListCard> {
   }
 
   // Show the specialty servers in the tabbar
-  Widget _buildSpecialtyServersList(
-    ServersList serversList,
-    WidgetRef ref,
-    bool isObfuscatedOn,
-  ) {
+  Widget _buildSpecialtyServersList(ServersList serversList, WidgetRef ref) {
     final specialtyServersOrder = [
       (
         type: ServerType.dedicatedIP,
@@ -297,12 +258,18 @@ final class _ServersListCardState extends State<ServersListCard> {
         description: t.ui.onionOverVpnDesc,
         key: ServerListWidgetKeys.onionOverVpn,
       ),
+      (
+        type: ServerType.obfuscated,
+        description: t.ui.obfuscatedServersDesc,
+        key: ServerListWidgetKeys.obfuscatedVpn,
+      ),
     ];
 
     return Column(
       children: [
         Expanded(
           child: ListView.builder(
+            key: ServerListWidgetKeys.specialtyServersList,
             itemCount: specialtyServersOrder.length,
             itemBuilder: (context, index) {
               final group = specialtyServersOrder[index];
@@ -310,14 +277,14 @@ final class _ServersListCardState extends State<ServersListCard> {
               final description = group.description;
               final key = group.key;
               if (type == ServerType.dedicatedIP) {
-                return _buildDipListItem(key, ref, serversList, isObfuscatedOn);
+                return _buildDipListItem(key, ref, serversList);
               }
               final servers = serversList.specialtyServersList(type);
               return widget.itemFactory.forSpecialtyServer(
                 key: key,
                 context: context,
                 type: type,
-                enabled: servers.isNotEmpty && !isObfuscatedOn,
+                enabled: servers.isNotEmpty,
                 servers: servers,
                 subtitle: description,
                 onTap: (args) => widget.onSelected(args),
@@ -336,12 +303,7 @@ final class _ServersListCardState extends State<ServersListCard> {
   }
 
   // Build the list item for dedicated IP
-  Widget _buildDipListItem(
-    Key key,
-    WidgetRef ref,
-    ServersList serversList,
-    bool isObfuscatedOn,
-  ) {
+  Widget _buildDipListItem(Key key, WidgetRef ref, ServersList serversList) {
     return Consumer(
       builder: (context, ref, child) {
         final accountProvider = ref.watch(accountControllerProvider);
@@ -465,7 +427,6 @@ final class _ServersListCardState extends State<ServersListCard> {
     BuildContext context,
     ServersList serversList,
     WidgetRef ref,
-    bool isObfuscationEnabled,
   ) {
     return SearchableServersList.forServersList(
       leadingWidget: IconButton(
@@ -479,35 +440,8 @@ final class _ServersListCardState extends State<ServersListCard> {
       ),
       serversList: serversList,
       searchTextController: _searchTextController,
-      specialtyServer: isObfuscationEnabled ? ServerType.obfuscated : null,
       onTap: (args) => widget.onSelected(args),
       allowServerNameSearch: widget.allowServerNameSearch,
-    );
-  }
-
-  Widget _showObfuscatedMessage(BuildContext context, String message) {
-    final appTheme = context.appTheme;
-    final serversListTheme = context.serversListTheme;
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: appTheme.horizontalSpace,
-        vertical: appTheme.verticalSpaceVerySmall,
-      ),
-      color: serversListTheme.obfuscatedItemBackgroundColor,
-      child: Row(
-        spacing: appTheme.horizontalSpace,
-        children: [
-          Expanded(child: Text(message, style: appTheme.body)),
-          TextButton(
-            onPressed: () =>
-                context.navigateToRoute(AppRoute.settingsSecurityAndPrivacy),
-            style: ButtonStyle(
-              padding: WidgetStateProperty.all(const EdgeInsets.only(right: 4)),
-            ),
-            child: Text(t.ui.goToSettings),
-          ),
-        ],
-      ),
     );
   }
 }
