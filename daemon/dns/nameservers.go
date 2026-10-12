@@ -103,7 +103,7 @@ func shuffleNameservers(nameservers []string) []string {
 }
 
 func isNordDNSServer(address string) bool {
-	return internal.Contains(defaultServers, address) || internal.Contains(defaultRTPServers, address)
+	return internal.Contains(defaultServers, address) || internal.Contains(defaultTpServers, address)
 }
 
 func areOnlyNordDNSServers(addresses []string) bool {

@@ -202,7 +202,7 @@ func TestAreOnlyNordDNSServers(t *testing.T) {
 		},
 		{
 			name:      "all TP servers",
-			addresses: defaultRTPServers,
+			addresses: defaultTpServers,
 			expected:  true,
 		},
 		{
@@ -212,7 +212,7 @@ func TestAreOnlyNordDNSServers(t *testing.T) {
 		},
 		{
 			name:      "combined NordDNS and external servers",
-			addresses: []string{"1.1.1.1", primaryNameserver4, realTimeProtectionPrimaryNameserver4},
+			addresses: []string{"1.1.1.1", primaryNameserver4, threatProtectionLitePrimaryNameserver4},
 			expected:  false,
 		},
 		{
