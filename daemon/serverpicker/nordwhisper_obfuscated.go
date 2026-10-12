@@ -25,7 +25,7 @@ func searchGroup(requested config.ServerGroup, protocol config.VPNProtocol) conf
 	return requested
 }
 
-// withObfuscatedAlias adds the Obfuscated group for obfuscated technologies.
+// withObfuscatedAlias adds the Obfuscated group for obfuscated protocol.
 func withObfuscatedAlias(
 	groups core.Groups,
 	s core.Server,

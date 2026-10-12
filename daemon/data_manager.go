@@ -218,7 +218,7 @@ func (dm *DataManager) SetVersionData(version semver.Version, newerAvailable boo
 }
 
 func toServerTechnology(vpnProtocol config.VPNProtocol) (core.ServerTechnology, error) {
-	serverTechnology := serverpicker.TechToServerTech(vpnProtocol)
+	serverTechnology := serverpicker.VPNProtocolToServerTech(vpnProtocol)
 	if serverTechnology == core.Unknown {
 		return 0, fmt.Errorf("invalid vpn protocol: %v", vpnProtocol)
 	}

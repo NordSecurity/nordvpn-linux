@@ -29,7 +29,7 @@ func technologiesToProtobuf(technologies core.Technologies) []pb.Technology {
 	return technologiesProto
 }
 
-// groupsToProtobuf returns the groups the server offers under the technology as a slice of
+// groupsToProtobuf returns the groups the server offers under the protocol as a slice of
 // config.ServerGroup, keeping only the ones of interest to the GUI
 func groupsToProtobuf(server core.Server, protocol config.VPNProtocol) []config.ServerGroup {
 	filter := []config.ServerGroup{

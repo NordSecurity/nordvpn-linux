@@ -227,19 +227,19 @@ func TestIsObfuscatedProtocol(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		tech     config.VPNProtocol
-		expected bool
+		vpnProtocol config.VPNProtocol
+		expected    bool
 	}{
-		{tech: config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER, expected: true},
-		{tech: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX, expected: false},
-		{tech: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP, expected: false},
-		{tech: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP, expected: false},
-		{tech: config.VPNProtocol_VPN_PROTOCOL_UNSPECIFIED, expected: false},
+		{vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER, expected: true},
+		{vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX, expected: false},
+		{vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP, expected: false},
+		{vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP, expected: false},
+		{vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_UNSPECIFIED, expected: false},
 	}
 
 	for _, test := range tests {
-		t.Run(test.tech.String(), func(t *testing.T) {
-			assert.Equal(t, test.expected, IsObfuscatedProtocol(test.tech))
+		t.Run(test.vpnProtocol.String(), func(t *testing.T) {
+			assert.Equal(t, test.expected, IsObfuscatedProtocol(test.vpnProtocol))
 		})
 	}
 }
@@ -248,52 +248,52 @@ func TestSearchGroup(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		name      string
-		requested config.ServerGroup
-		tech      config.VPNProtocol
-		expected  config.ServerGroup
+		name        string
+		requested   config.ServerGroup
+		vpnProtocol config.VPNProtocol
+		expected    config.ServerGroup
 	}{
 		{
-			name:      "obfuscated over nordwhisper is searched as standard",
-			requested: config.ServerGroup_NW_OBFUSCATED,
-			tech:      config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
-			expected:  config.ServerGroup_STANDARD_VPN_SERVERS,
+			name:        "obfuscated over nordwhisper is searched as standard",
+			requested:   config.ServerGroup_NW_OBFUSCATED,
+			vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
+			expected:    config.ServerGroup_STANDARD_VPN_SERVERS,
 		},
 		{
-			name:      "obfuscated over nordlynx is left alone",
-			requested: config.ServerGroup_NW_OBFUSCATED,
-			tech:      config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
-			expected:  config.ServerGroup_NW_OBFUSCATED,
+			name:        "obfuscated over nordlynx is left alone",
+			requested:   config.ServerGroup_NW_OBFUSCATED,
+			vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+			expected:    config.ServerGroup_NW_OBFUSCATED,
 		},
 		{
-			name:      "obfuscated over openvpn is left alone",
-			requested: config.ServerGroup_NW_OBFUSCATED,
-			tech:      config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP,
-			expected:  config.ServerGroup_NW_OBFUSCATED,
+			name:        "obfuscated over openvpn is left alone",
+			requested:   config.ServerGroup_NW_OBFUSCATED,
+			vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP,
+			expected:    config.ServerGroup_NW_OBFUSCATED,
 		},
 		{
-			name:      "other groups are never touched",
-			requested: config.ServerGroup_DOUBLE_VPN,
-			tech:      config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
-			expected:  config.ServerGroup_DOUBLE_VPN,
+			name:        "other groups are never touched",
+			requested:   config.ServerGroup_DOUBLE_VPN,
+			vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
+			expected:    config.ServerGroup_DOUBLE_VPN,
 		},
 		{
-			name:      "standard stays standard",
-			requested: config.ServerGroup_STANDARD_VPN_SERVERS,
-			tech:      config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
-			expected:  config.ServerGroup_STANDARD_VPN_SERVERS,
+			name:        "standard stays standard",
+			requested:   config.ServerGroup_STANDARD_VPN_SERVERS,
+			vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
+			expected:    config.ServerGroup_STANDARD_VPN_SERVERS,
 		},
 		{
-			name:      "undefined stays undefined",
-			requested: config.ServerGroup_UNDEFINED,
-			tech:      config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
-			expected:  config.ServerGroup_UNDEFINED,
+			name:        "undefined stays undefined",
+			requested:   config.ServerGroup_UNDEFINED,
+			vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
+			expected:    config.ServerGroup_UNDEFINED,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			assert.Equal(t, test.expected, searchGroup(test.requested, test.tech))
+			assert.Equal(t, test.expected, searchGroup(test.requested, test.vpnProtocol))
 		})
 	}
 }
@@ -315,7 +315,7 @@ func TestEffectiveGroups(t *testing.T) {
 		groups       core.Groups
 		technologies core.Technologies
 		status       core.Status
-		tech         config.VPNProtocol
+		vpnProtocol  config.VPNProtocol
 		expected     core.Groups
 	}{
 		{
@@ -323,7 +323,7 @@ func TestEffectiveGroups(t *testing.T) {
 			groups:       core.Groups{standard},
 			technologies: nordWhisper,
 			status:       core.Online,
-			tech:         config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
+			vpnProtocol:  config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
 			expected:     core.Groups{standard, obfuscated},
 		},
 		{
@@ -331,7 +331,7 @@ func TestEffectiveGroups(t *testing.T) {
 			groups:       core.Groups{standard},
 			technologies: nordWhisper,
 			status:       core.Online,
-			tech:         config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+			vpnProtocol:  config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			expected:     core.Groups{standard},
 		},
 		{
@@ -339,7 +339,7 @@ func TestEffectiveGroups(t *testing.T) {
 			groups:       core.Groups{doubleVpn},
 			technologies: nordWhisper,
 			status:       core.Online,
-			tech:         config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
+			vpnProtocol:  config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
 			expected:     core.Groups{doubleVpn},
 		},
 		{
@@ -347,7 +347,7 @@ func TestEffectiveGroups(t *testing.T) {
 			groups:       core.Groups{standard},
 			technologies: wireguardOnly,
 			status:       core.Online,
-			tech:         config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
+			vpnProtocol:  config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
 			expected:     core.Groups{standard},
 		},
 		{
@@ -355,7 +355,7 @@ func TestEffectiveGroups(t *testing.T) {
 			groups:       core.Groups{standard},
 			technologies: nordWhisperOffline,
 			status:       core.Online,
-			tech:         config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
+			vpnProtocol:  config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
 			expected:     core.Groups{standard},
 		},
 		{
@@ -363,7 +363,7 @@ func TestEffectiveGroups(t *testing.T) {
 			groups:       core.Groups{standard},
 			technologies: nordWhisper,
 			status:       core.Offline,
-			tech:         config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
+			vpnProtocol:  config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
 			expected:     core.Groups{standard},
 		},
 		{
@@ -371,7 +371,7 @@ func TestEffectiveGroups(t *testing.T) {
 			groups:       core.Groups{xor, standard},
 			technologies: nordWhisper,
 			status:       core.Online,
-			tech:         config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP,
+			vpnProtocol:  config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP,
 			expected:     core.Groups{standard},
 		},
 		{
@@ -379,7 +379,7 @@ func TestEffectiveGroups(t *testing.T) {
 			groups:       core.Groups{xor, standard},
 			technologies: nordWhisper,
 			status:       core.Online,
-			tech:         config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
+			vpnProtocol:  config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
 			expected:     core.Groups{standard, obfuscated},
 		},
 		{
@@ -387,7 +387,7 @@ func TestEffectiveGroups(t *testing.T) {
 			groups:       core.Groups{},
 			technologies: nordWhisper,
 			status:       core.Online,
-			tech:         config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
+			vpnProtocol:  config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
 			expected:     core.Groups{},
 		},
 	}
@@ -400,7 +400,7 @@ func TestEffectiveGroups(t *testing.T) {
 				Status:       test.status,
 			}
 
-			got := EffectiveGroups(server, test.tech)
+			got := EffectiveGroups(server, test.vpnProtocol)
 
 			assert.Equal(t, test.expected, got)
 			assert.Equal(t, test.groups, server.Groups)
@@ -715,7 +715,7 @@ func TestServerTagFromString(t *testing.T) {
 	}
 }
 
-func TestTechToServerTech(t *testing.T) {
+func TestVPNProtocolToServerTech(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
@@ -742,7 +742,7 @@ func TestTechToServerTech(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got := TechToServerTech(test.vpnProtocol)
+			got := VPNProtocolToServerTech(test.vpnProtocol)
 			assert.Equal(t, test.expected, got)
 		})
 	}
@@ -1062,7 +1062,7 @@ func TestRecommendationUUID_GetServersRemote(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			filter := core.ServersFilter{
 				Group: test.group,
-				Tech:  TechToServerTech(test.vpnProtocol),
+				Tech:  VPNProtocolToServerTech(test.vpnProtocol),
 				Tag:   test.tag,
 				Limit: apiServersLimit,
 			}

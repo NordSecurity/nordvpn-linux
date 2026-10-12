@@ -1109,10 +1109,10 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 		return fmt.Errorf("setting is-on-VPN current state after disconnect: %w", err)
 	}
 
-	// Once disconnected, the configured technology/protocol takes effect on the next
+	// Once disconnected, the configured vpn-protocol takes effect on the next
 	// connection. This also reports changes made while the tunnel was up.
 	if err := s.reportEffectiveConnection(configured); err != nil {
-		return fmt.Errorf("setting technology/protocol current state after disconnect: %w", err)
+		return fmt.Errorf("setting vpn-protocol current state after disconnect: %w", err)
 	}
 
 	return nil

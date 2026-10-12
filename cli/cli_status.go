@@ -87,12 +87,10 @@ func Status(resp *pb.StatusResponse) string {
 			fmt.Sprintf("Protocol: %s\n", resp.VpnProtocol.DisplayName()),
 		)
 
-		if resp.VpnProtocol.IsNordLynx() {
-			b.WriteString(
-				fmt.Sprintf("Post-quantum VPN: %s\n",
-					internal.Title(nstrings.GetBoolLabel(resp.PostQuantum))),
-			)
-		}
+		b.WriteString(
+			fmt.Sprintf("Post-quantum VPN: %s\n",
+				internal.Title(nstrings.GetBoolLabel(resp.PostQuantum))),
+		)
 
 		if resp.VpnProtocol.IsNordWhisper() {
 			b.WriteString(

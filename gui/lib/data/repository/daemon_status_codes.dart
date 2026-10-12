@@ -27,7 +27,7 @@ final class DaemonStatusCode {
   static const allowlistPortOutOfRange = 3046;
   static const allowlistPortNoop = 3047;
   static const featureHidden = 3050;
-  static const technologyDisabled = 3051;
+  static const protocolDisabled = 3051;
   static const allowlistSubnetTooWideWarn = 3060;
   static const allowlistSubnetWiderConfirm = 3061;
   static const dedicatedServersNoNordlynx = 3068;

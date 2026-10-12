@@ -220,11 +220,11 @@ func (r *RPC) connectWithStoredServerSelection(
 			// show general error because anyways he should not get here
 			return true, srv.Send(&pb.Payload{Type: internal.CodeFailure})
 		}
-		// second, if feature is enabled, check if technology is correct
+		// second, if feature is enabled, check if protocol is correct
 		if !cfg.VPNProtocol.IsNordLynx() {
 			return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersNoNordlynx})
 		}
-		// third, if technology is correct, check if post quantum is enabled(pq is not supported for dedicated servers)
+		// third, if protocol is correct, check if post quantum is enabled(pq is not supported for dedicated servers)
 		if cfg.AutoConnectData.PostquantumVpn {
 			return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersPq})
 		}
@@ -281,11 +281,11 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 			// show general error because anyways he should not get here
 			return true, srv.Send(&pb.Payload{Type: internal.CodeGroupNonexisting})
 		}
-		// second, if feature is enabled, check if technology is correct
+		// second, if feature is enabled, check if protocol is correct
 		if !cfg.VPNProtocol.IsNordLynx() {
 			return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersNoNordlynx})
 		}
-		// third, if technology is correct, check if post quantum is enabled(pq is not supported for dedicated servers)
+		// third, if protocol is correct, check if post quantum is enabled(pq is not supported for dedicated servers)
 		if cfg.AutoConnectData.PostquantumVpn {
 			return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersPq})
 		}
@@ -301,7 +301,7 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 	}
 
 	if cfg.VPNProtocol.IsNordWhisper() && !features.NordWhisperEnabled {
-		return true, srv.Send(&pb.Payload{Type: internal.CodeTechnologyDisabled})
+		return true, srv.Send(&pb.Payload{Type: internal.CodeProtocolDisabled})
 	}
 
 	insights := r.dm.GetInsightsData().Insights

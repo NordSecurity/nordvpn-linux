@@ -10,7 +10,7 @@ import 'package:nordvpn/data/models/servers_list.dart';
 import 'package:nordvpn/data/providers/servers_list_controller.dart';
 import 'package:nordvpn/main.dart';
 import 'package:nordvpn/pb/daemon/config/vpn_protocol.pbenum.dart';
-// Technology is also declared there, the config one is the settings value
+// Protocol is also declared there, the config one is the settings value
 import 'package:nordvpn/pb/daemon/servers.pb.dart' hide Technology;
 import 'package:nordvpn/pb/daemon/settings.pb.dart';
 import 'package:nordvpn/service_locator.dart';

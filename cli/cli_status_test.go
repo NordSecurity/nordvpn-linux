@@ -60,6 +60,7 @@ IP: 127.0.0.1
 Country: Lithuania
 City: Vilnius
 Protocol: NordWhisper
+Post-quantum VPN: Disabled
 ECH: Enabled
 Uptime: 13 seconds
 `,
@@ -82,6 +83,7 @@ IP: 127.0.0.1
 Country: Lithuania
 City: Vilnius
 Protocol: NordWhisper
+Post-quantum VPN: Disabled
 ECH: Disabled
 Uptime: 13 seconds
 `,
@@ -160,6 +162,7 @@ Uptime: 13 seconds
 Hostname: Verona
 Group: Obfuscated
 Protocol: NordWhisper
+Post-quantum VPN: Disabled
 ECH: Disabled
 Uptime: 13 seconds
 `,

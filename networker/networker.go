@@ -579,7 +579,7 @@ func (netw *Combined) restart(
 	}
 
 	// configure firewall
-	// update only the interface name, in case there is a different VPN technology used
+	// update only the interface name, in case there is a different VPN protocol used
 	tunnelIP, _ := netw.vpnet.Tun().IP()
 	newCfg := netw.fwConfig.CopyWith(
 		firewall.WithTunnelInterface(netw.vpnet.Tun().Interface().Name, tunnelIP),
@@ -670,7 +670,7 @@ func (netw *Combined) stop() error {
 	return nil
 }
 
-// switchToNextVpn check if VPN technology was changed when connect was in progress
+// switchToNextVpn check if VPN protocol was changed when connect was in progress
 func (netw *Combined) switchToNextVpn() {
 	if netw.nextVPN != nil {
 		netw.vpnet = netw.nextVPN

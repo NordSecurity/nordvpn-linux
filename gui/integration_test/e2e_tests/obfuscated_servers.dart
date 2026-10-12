@@ -19,7 +19,7 @@ void runObfuscatedServersTests() async {
     });
 
     // the daemon reports the obfuscated servers only under NordWhisper, so on any other
-    // technology the tile has nothing to offer and stays disabled
+    // protocol the tile has nothing to offer and stays disabled
     testWidgets("obfuscated servers are offered only for NordWhisper", (
       tester,
     ) async {

@@ -128,7 +128,7 @@ def test_speed_thresholds(speedtest_results_path):
     Measure download speed, upload speed, and ping while connected to VPN using NordLynx protocol.
 
     Test steps:
-      1. Set technology to NordLynx.
+      1. Set protocol to NordLynx.
       2. Connect to VPN.
       3. Run speedtest measurement with VPN.
       4. Disconnect from VPN.
@@ -175,7 +175,7 @@ def test_speed_degradation(speedtest_results_path):
 
     Test steps:
       1. Run speedtest measurement without VPN.
-      2. Set technology to NordLynx.
+      2. Set protocol to NordLynx.
       3. Connect to VPN.
       4. Run speedtest measurement with VPN.
       5. Disconnect from VPN.

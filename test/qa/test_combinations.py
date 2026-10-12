@@ -96,7 +96,7 @@ def test_connect_country_and_city(vpn_protocol, country, city):
     id_pattern="{source_vpn_protocol}-"
               "{target_vpn_protocol}",
 )
-def test_status_change_technology_and_protocol(
+def test_status_change_protocol(
         source_vpn_protocol,
         target_vpn_protocol,
 ):

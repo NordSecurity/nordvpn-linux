@@ -42,11 +42,11 @@ def test_protocol_in_settings(vpn_protocol):
 
 
 @pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
-def test_technology_set_options(vpn_protocol):
+def test_protocol_set_options(vpn_protocol):
     """
     Manual TC: LVPN-601.
 
-    Every technology offers `nordvpn set protocol`.
+    Every VPN protocol offers `nordvpn set protocol`.
     """
     lib.set_vpn_protocol(vpn_protocol)
 

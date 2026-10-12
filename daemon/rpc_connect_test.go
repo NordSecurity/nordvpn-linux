@@ -947,32 +947,32 @@ func Test_determineServerGroup(t *testing.T) {
 	)
 
 	tests := []struct {
-		name   string
-		server core.Server
-		params serverpicker.ServerParameters
-		tech   config.VPNProtocol
-		want   config.ServerGroup
+		name        string
+		server      core.Server
+		params      serverpicker.ServerParameters
+		vpnProtocol config.VPNProtocol
+		want        config.ServerGroup
 	}{
 		{
-			name:   "NordWhisper with no requested group is attributed to Obfuscated",
-			server: standardOnly,
-			params: serverpicker.ServerParameters{},
-			tech:   config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
-			want:   config.ServerGroup_NW_OBFUSCATED,
+			name:        "NordWhisper with no requested group is attributed to Obfuscated",
+			server:      standardOnly,
+			params:      serverpicker.ServerParameters{},
+			vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
+			want:        config.ServerGroup_NW_OBFUSCATED,
 		},
 		{
-			name:   "NordWhisper with requested Obfuscated group the server does not carry",
-			server: standardOnly,
-			params: serverpicker.ServerParameters{Group: config.ServerGroup_NW_OBFUSCATED},
-			tech:   config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
-			want:   config.ServerGroup_NW_OBFUSCATED,
+			name:        "NordWhisper with requested Obfuscated group the server does not carry",
+			server:      standardOnly,
+			params:      serverpicker.ServerParameters{Group: config.ServerGroup_NW_OBFUSCATED},
+			vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
+			want:        config.ServerGroup_NW_OBFUSCATED,
 		},
 		{
-			name:   "NordWhisper with requested group the server does not carry",
-			server: standardOnly,
-			params: serverpicker.ServerParameters{Group: config.ServerGroup_DOUBLE_VPN},
-			tech:   config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
-			want:   config.ServerGroup_NW_OBFUSCATED,
+			name:        "NordWhisper with requested group the server does not carry",
+			server:      standardOnly,
+			params:      serverpicker.ServerParameters{Group: config.ServerGroup_DOUBLE_VPN},
+			vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
+			want:        config.ServerGroup_NW_OBFUSCATED,
 		},
 		{
 			name: "NordWhisper with requested specialty group the server carries keeps that group",
@@ -980,34 +980,34 @@ func Test_determineServerGroup(t *testing.T) {
 				core.Group{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 				core.Group{ID: config.ServerGroup_DOUBLE_VPN, Title: "Double VPN"},
 			),
-			params: serverpicker.ServerParameters{Group: config.ServerGroup_DOUBLE_VPN},
-			tech:   config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
-			want:   config.ServerGroup_DOUBLE_VPN,
+			params:      serverpicker.ServerParameters{Group: config.ServerGroup_DOUBLE_VPN},
+			vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
+			want:        config.ServerGroup_DOUBLE_VPN,
 		},
 		{
 			name: "NordWhisper with a non-standard server is not Obfuscated",
 			server: nordWhisperServer(
 				core.Group{ID: config.ServerGroup_DOUBLE_VPN, Title: "Double VPN"},
 			),
-			params: serverpicker.ServerParameters{},
-			tech:   config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
-			want:   config.ServerGroup_UNDEFINED,
+			params:      serverpicker.ServerParameters{},
+			vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
+			want:        config.ServerGroup_UNDEFINED,
 		},
 		{
-			name: "NordWhisper technology with a server not reachable over NordWhisper is not Obfuscated",
+			name: "NordWhisper protocol with a server not reachable over NordWhisper is not Obfuscated",
 			server: core.Server{Groups: []core.Group{
 				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 			}},
-			params: serverpicker.ServerParameters{},
-			tech:   config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
-			want:   config.ServerGroup_STANDARD_VPN_SERVERS,
+			params:      serverpicker.ServerParameters{},
+			vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
+			want:        config.ServerGroup_STANDARD_VPN_SERVERS,
 		},
 		{
-			name:   "NordLynx with no requested group falls back to standard group",
-			server: standardOnly,
-			params: serverpicker.ServerParameters{},
-			tech:   config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
-			want:   config.ServerGroup_STANDARD_VPN_SERVERS,
+			name:        "NordLynx with no requested group falls back to standard group",
+			server:      standardOnly,
+			params:      serverpicker.ServerParameters{},
+			vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+			want:        config.ServerGroup_STANDARD_VPN_SERVERS,
 		},
 		{
 			name: "OpenVPN XOR tag is ignored",
@@ -1015,9 +1015,9 @@ func Test_determineServerGroup(t *testing.T) {
 				{ID: config.ServerGroup_OVPN_OBFUSCATED, Title: "Obfuscated"},
 				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 			}},
-			params: serverpicker.ServerParameters{},
-			tech:   config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP,
-			want:   config.ServerGroup_STANDARD_VPN_SERVERS,
+			params:      serverpicker.ServerParameters{},
+			vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP,
+			want:        config.ServerGroup_STANDARD_VPN_SERVERS,
 		},
 		{
 			name: "Group is UNDEFINED falls back to standard group",
@@ -1043,9 +1043,9 @@ func Test_determineServerGroup(t *testing.T) {
 				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 				{ID: config.ServerGroup_OVPN_OBFUSCATED, Title: "Obfuscated"},
 			}},
-			params: serverpicker.ServerParameters{Group: config.ServerGroup_NW_OBFUSCATED},
-			tech:   config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP,
-			want:   config.ServerGroup_STANDARD_VPN_SERVERS,
+			params:      serverpicker.ServerParameters{Group: config.ServerGroup_NW_OBFUSCATED},
+			vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP,
+			want:        config.ServerGroup_STANDARD_VPN_SERVERS,
 		},
 		{
 			name: "Group is DEDICATED_IP returns matching group",
@@ -1067,9 +1067,9 @@ func Test_determineServerGroup(t *testing.T) {
 			server: core.Server{Groups: []core.Group{
 				{ID: config.ServerGroup_OVPN_OBFUSCATED, Title: "Double VPN"},
 			}},
-			params: serverpicker.ServerParameters{Group: config.ServerGroup_NW_OBFUSCATED},
-			tech:   config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP,
-			want:   config.ServerGroup_UNDEFINED,
+			params:      serverpicker.ServerParameters{Group: config.ServerGroup_NW_OBFUSCATED},
+			vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP,
+			want:        config.ServerGroup_UNDEFINED,
 		},
 		{
 			name: "Group is not set (zero value), server has multiple groups",
@@ -1089,7 +1089,7 @@ func Test_determineServerGroup(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := determineTargetServerGroup(serverpicker.EffectiveGroups(tt.server, tt.tech), tt.params); got != tt.want {
+			if got := determineTargetServerGroup(serverpicker.EffectiveGroups(tt.server, tt.vpnProtocol), tt.params); got != tt.want {
 				t.Errorf("determineServerGroup() = %v, want %v", got, tt.want)
 			}
 		})
@@ -1142,7 +1142,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 		postQuantum                bool
 		dedicatedServersResponse   core.DedicatedServers
 		connectResponse            core.DedicatedServerConnectResponse
-		technology                 config.VPNProtocol
+		vpnProtocol                config.VPNProtocol
 		serviceCheckErr            error
 		dedicatedServersFetchErr   error
 		connectErr                 error
@@ -1156,7 +1156,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 			isDedicatedServersExpired:  false,
 			dedicatedServersResponse:   dedicatedServers,
 			connectResponse:            connectResponse,
-			technology:                 config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+			vpnProtocol:                config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			expectedStatus:             internal.CodeConnected,
 			expectedConnectRequestUUID: serverUUID.String(),
 			expectedConnectRequest:     connectRequest,
@@ -1164,37 +1164,37 @@ func TestConnect_DedicatedServers(t *testing.T) {
 		{
 			name:                      "dedicated servers service has expired",
 			isDedicatedServersExpired: true,
-			technology:                config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+			vpnProtocol:               config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			expectedStatus:            internal.CodeDedicatedServersRenewError,
 		},
 		{
 			name:                     "empty dedicated servers list",
 			dedicatedServersResponse: core.DedicatedServers{},
-			technology:               config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+			vpnProtocol:              config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			expectedStatus:           internal.CodeDedicatedServersServiceButNoServers,
 		},
 		{
 			name:                     "dedicated server not ready",
 			dedicatedServersResponse: core.DedicatedServers{dedicatedServerNotReady},
-			technology:               config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+			vpnProtocol:              config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			expectedStatus:           internal.CodeDedicatedServersNotReady,
 		},
 		{
-			name:                     "technology is not nordlynx",
+			name:                     "protocol is not nordlynx",
 			dedicatedServersResponse: dedicatedServers,
 			connectResponse:          connectResponse,
-			technology:               config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP,
+			vpnProtocol:              config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP,
 			expectedStatus:           internal.CodeDedicatedServersNoNordlynx,
 		},
 		{
 			name:            "dedicated server service check fails",
-			technology:      config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+			vpnProtocol:     config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			serviceCheckErr: errors.New("error"),
 			expectedErr:     internal.ErrUnhandled,
 		},
 		{
 			name:                     "dedicated servers fetch fails",
-			technology:               config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+			vpnProtocol:              config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			dedicatedServersFetchErr: errors.New("error"),
 			expectedErr:              internal.ErrUnhandled,
 		},
@@ -1202,7 +1202,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 			name:                       "connect fails",
 			isDedicatedServersExpired:  false,
 			dedicatedServersResponse:   dedicatedServers,
-			technology:                 config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+			vpnProtocol:                config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			connectErr:                 errors.New("error"),
 			expectedErr:                internal.ErrUnhandled,
 			expectedConnectRequestUUID: serverUUID.String(),
@@ -1214,24 +1214,24 @@ func TestConnect_DedicatedServers(t *testing.T) {
 		{
 			name:                     "dedicated server is stopped",
 			dedicatedServersResponse: core.DedicatedServers{dedicatedServerStopped},
-			technology:               config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+			vpnProtocol:              config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			expectedStatus:           internal.CodeDedicatedServersCanNotConnect,
 		},
 		{
 			name:                     "dedicated server is stopping",
 			dedicatedServersResponse: core.DedicatedServers{dedicatedServerStopping},
-			technology:               config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+			vpnProtocol:              config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			expectedStatus:           internal.CodeDedicatedServersCanNotConnect,
 		},
 		{
 			name:                     "dedicated server status is case-insensitive",
 			dedicatedServersResponse: core.DedicatedServers{dedicatedServerUppercaseStopped},
-			technology:               config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+			vpnProtocol:              config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			expectedStatus:           internal.CodeDedicatedServersCanNotConnect,
 		},
 		{
 			name:                       "API returns 400 - session limit reached",
-			technology:                 config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+			vpnProtocol:                config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			dedicatedServersResponse:   dedicatedServers,
 			expectedConnectRequestUUID: serverUUID.String(),
 			expectedConnectRequest:     connectRequest,
@@ -1240,7 +1240,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 		},
 		{
 			name:                       "API returns 400 - device not found",
-			technology:                 config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+			vpnProtocol:                config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			dedicatedServersResponse:   dedicatedServers,
 			expectedConnectRequestUUID: serverUUID.String(),
 			expectedConnectRequest:     connectRequest,
@@ -1249,7 +1249,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 		},
 		{
 			name:                       "API returns 400 - device not registered",
-			technology:                 config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+			vpnProtocol:                config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			dedicatedServersResponse:   dedicatedServers,
 			expectedConnectRequestUUID: serverUUID.String(),
 			expectedConnectRequest:     connectRequest,
@@ -1258,7 +1258,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 		},
 		{
 			name:                       "API returns 400 - public key mismatch",
-			technology:                 config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+			vpnProtocol:                config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			dedicatedServersResponse:   dedicatedServers,
 			expectedConnectRequestUUID: serverUUID.String(),
 			expectedConnectRequest:     connectRequest,
@@ -1267,7 +1267,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 		},
 		{
 			name:                       "API returns 400 - server offline",
-			technology:                 config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+			vpnProtocol:                config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			dedicatedServersResponse:   dedicatedServers,
 			expectedConnectRequestUUID: serverUUID.String(),
 			expectedConnectRequest:     connectRequest,
@@ -1276,7 +1276,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 		},
 		{
 			name:                       "API returns 400 - server not found",
-			technology:                 config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+			vpnProtocol:                config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			dedicatedServersResponse:   dedicatedServers,
 			expectedConnectRequestUUID: serverUUID.String(),
 			expectedConnectRequest:     connectRequest,
@@ -1285,7 +1285,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 		},
 		{
 			name:                       "API returns 400 - invalid form data",
-			technology:                 config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+			vpnProtocol:                config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			dedicatedServersResponse:   dedicatedServers,
 			expectedConnectRequestUUID: serverUUID.String(),
 			expectedConnectRequest:     connectRequest,
@@ -1296,7 +1296,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 			name:                      "post quantum is on",
 			isDedicatedServersExpired: false,
 			postQuantum:               true,
-			technology:                config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+			vpnProtocol:               config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			expectedStatus:            internal.CodeDedicatedServersPq,
 		},
 	}
@@ -1323,7 +1323,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 			}
 
 			configManagerMock := rpc.cm.(*mockConfigManager)
-			configManagerMock.c.VPNProtocol = test.technology
+			configManagerMock.c.VPNProtocol = test.vpnProtocol
 			configManagerMock.c.AutoConnectData.PostquantumVpn = test.postQuantum
 
 			mockRPCServer := &mockRPCServer{}

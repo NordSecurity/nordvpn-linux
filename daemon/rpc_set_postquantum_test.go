@@ -60,12 +60,12 @@ func TestSetPostquantumVpn(t *testing.T) {
 		Type: internal.CodePqAndMeshnetSimultaneously,
 	}
 
-	conflictUnknownTechPayload := pb.Payload{
+	conflictUnknownProtocolPayload := pb.Payload{
 		Type: internal.CodePqWithoutNordlynx,
 		Data: []string{"VPN_PROTOCOL_UNSPECIFIED"},
 	}
 
-	conflictOpenVPNTechPayload := pb.Payload{
+	conflictOpenVPNProtocolPayload := pb.Payload{
 		Type: internal.CodePqWithoutNordlynx,
 		Data: []string{"OpenVPN (UDP)"},
 	}
@@ -84,45 +84,45 @@ func TestSetPostquantumVpn(t *testing.T) {
 		pq                     bool
 		meshnet                bool
 		vpnActive              bool
-		tech                   config.VPNProtocol
+		vpnProtocol            config.VPNProtocol
 		autoconnect            bool
 		autoconnectTargetGroup config.ServerGroup
 		payload                *pb.Payload
 		eventPublished         bool
 	}{
 		{
-			testName:       "pq off mesh is off tech unknown",
+			testName:       "pq off mesh is off protocol unknown",
 			pq:             false,
 			meshnet:        false,
 			vpnActive:      false,
-			tech:           config.VPNProtocol_VPN_PROTOCOL_UNSPECIFIED,
-			payload:        &conflictUnknownTechPayload,
+			vpnProtocol:    config.VPNProtocol_VPN_PROTOCOL_UNSPECIFIED,
+			payload:        &conflictUnknownProtocolPayload,
 			eventPublished: false,
 		},
 		{
-			testName:       "pq off mesh is off tech nlx",
+			testName:       "pq off mesh is off protocol nlx",
 			pq:             false,
 			meshnet:        false,
 			vpnActive:      false,
-			tech:           config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+			vpnProtocol:    config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			payload:        &successPayload,
 			eventPublished: true,
 		},
 		{
-			testName:       "pq on mesh is off tech unknown",
+			testName:       "pq on mesh is off protocol unknown",
 			pq:             true,
 			meshnet:        false,
 			vpnActive:      false,
-			tech:           config.VPNProtocol_VPN_PROTOCOL_UNSPECIFIED,
-			payload:        &conflictUnknownTechPayload,
+			vpnProtocol:    config.VPNProtocol_VPN_PROTOCOL_UNSPECIFIED,
+			payload:        &conflictUnknownProtocolPayload,
 			eventPublished: false,
 		},
 		{
-			testName:       "pq on mesh is off tech nlx",
+			testName:       "pq on mesh is off protocol nlx",
 			pq:             true,
 			meshnet:        false,
 			vpnActive:      false,
-			tech:           config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+			vpnProtocol:    config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			payload:        &successPayload,
 			eventPublished: true,
 		},
@@ -135,29 +135,29 @@ func TestSetPostquantumVpn(t *testing.T) {
 			eventPublished: false,
 		},
 		{
-			testName:       "pq off mesh is off tech nlx vpn on",
+			testName:       "pq off mesh is off protocol nlx vpn on",
 			pq:             false,
 			meshnet:        false,
 			vpnActive:      true,
-			tech:           config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+			vpnProtocol:    config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			payload:        &successWithVPNPayload,
 			eventPublished: true,
 		},
 		{
-			testName:       "pq on mesh is off tech openvpn",
+			testName:       "pq on mesh is off protocol openvpn",
 			pq:             true,
 			meshnet:        false,
 			vpnActive:      false,
-			tech:           config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP,
-			payload:        &conflictOpenVPNTechPayload,
+			vpnProtocol:    config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP,
+			payload:        &conflictOpenVPNProtocolPayload,
 			eventPublished: false,
 		},
 		{
-			testName:       "pq on mesh is off tech nordwhisper",
+			testName:       "pq on mesh is off protocol nordwhisper",
 			pq:             true,
 			meshnet:        false,
 			vpnActive:      false,
-			tech:           config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
+			vpnProtocol:    config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
 			payload:        &conflictNordWhisperPayload,
 			eventPublished: false,
 		},
@@ -168,7 +168,7 @@ func TestSetPostquantumVpn(t *testing.T) {
 			vpnActive:              false,
 			autoconnect:            true,
 			autoconnectTargetGroup: config.ServerGroup_DEDICATED_SERVER,
-			tech:                   config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+			vpnProtocol:            config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			payload:                &conflictDedicatedServerPayload,
 		},
 	}
@@ -176,7 +176,7 @@ func TestSetPostquantumVpn(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.testName, func(t *testing.T) {
 			mockConfigManager.c.Mesh = test.meshnet
-			mockConfigManager.c.VPNProtocol = test.tech
+			mockConfigManager.c.VPNProtocol = test.vpnProtocol
 			mockConfigManager.c.AutoConnect = test.autoconnect
 			mockConfigManager.c.AutoConnectData.Group = test.autoconnectTargetGroup
 			mockConfigManager.c.AutoConnectData.PostquantumVpn = !test.pq

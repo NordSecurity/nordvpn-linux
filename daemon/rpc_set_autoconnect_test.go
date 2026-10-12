@@ -125,7 +125,7 @@ func TestAutoconnect(t *testing.T) {
 			eventPublished:       false,
 		},
 		{
-			testName:                        "works for dedicated servers if subscription is available and tech is set to NordLynx",
+			testName:                        "works for dedicated servers if subscription is available and protocol is set to NordLynx",
 			server:                          "dedicated_server",
 			config:                          config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false}, VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX},
 			isDedicatedServerExpired:        false,
@@ -135,7 +135,7 @@ func TestAutoconnect(t *testing.T) {
 			eventPublished:                  true,
 		},
 		{
-			testName:                        "fails to connect to a dedicated server if tech is not set to NordLynx",
+			testName:                        "fails to connect to a dedicated server if protocol is not set to NordLynx",
 			server:                          "dedicated_server",
 			config:                          config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false}, VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP},
 			isDedicatedServerExpired:        false,

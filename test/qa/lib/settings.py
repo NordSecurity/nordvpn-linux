@@ -67,7 +67,7 @@ def get_set_subcommands() -> set:
     Returns the names of the subcommands `nordvpn set` currently offers (+aliases).
 
     Shell-completion list prints one command name per line and skips the hidden ones
-    for the active technology.
+    for the active protocol.
     """
     completions = sh.nordvpn.set("--generate-bash-completion", _tty_out=False)
 

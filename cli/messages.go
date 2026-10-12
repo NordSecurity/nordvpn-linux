@@ -120,7 +120,7 @@ Example: nordvpn set %s on`
 	NoPreferredDedicatedIPLocationSelected = "Please select the preferred server location for your dedicated IP in Nord Account."
 	NoSuchCommand                          = "Command '%s' doesn't exist."
 	MsgListIsEmpty                         = "We couldn’t load the list of %s. Please try again later."
-	TechnologyDisabledMessage              = "We couldn't connect with the selected protocol. Please try a different one using this command: nordvpn set protocol."
+	ProtocolDisabledMessage                = "We couldn't connect with the selected protocol. Please try a different one using this command: nordvpn set protocol."
 
 	// Meshnet
 	MsgSetMeshnetUsage       = "Enables or disables Meshnet on this device."
@@ -139,7 +139,7 @@ Example: nordvpn set meshnet on`
 	MsgMeshnetNotEnabled            = "Meshnet is not enabled. Use the \"nordvpn set meshnet on\" command to enable it."
 	MsgMeshnetVersionNotSupported   = "Current application version does not support the Meshnet feature."
 	MsgMeshnetUsage                 = "Meshnet is a way to safely access other devices, no matter where in the world they are. Once set up, Meshnet functions just like a secure local area network (LAN) — it connects devices directly. It also allows securely sending files to other devices. Use the \"nordvpn set meshnet on\" command to enable Meshnet. Learn more: https://meshnet.nordvpn.com/?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=meshnet-documentation&nm=app&ns=nordvpn-linux-cli&nc=meshnet-documentation"
-	MsgMeshnetNordlynxMustBeEnabled = "NordLynx technology must be set to use this feature."
+	MsgMeshnetNordlynxMustBeEnabled = "NordLynx protocol must be set to use this feature."
 
 	MsgMeshnetRefreshUsage = "Refreshes the Meshnet in case it was not updated automatically."
 	MsgMeshnetPeerUnknown  = "Peer '%s' is unknown."
@@ -401,7 +401,7 @@ Your browsing activities remain private, regardless of your choice.
 	DedicatedServersConnectionLimitReached     = "Too many connections or device limit reached"
 	DedicatedServersAutoconnectNordlynxMessage = "Auto-connect to Dedicated Server requires NordLynx protocol."
 	DedicatedServerPQMessage                   = "Post-quantum encryption is not compatible with Dedicated Server."
-	DedicatedServersNoNordlynxMessage          = "Connection to Dedicated Server requires NordLynx technology."
+	DedicatedServersNoNordlynxMessage          = "Connection to Dedicated Server requires NordLynx protocol."
 
 	PauseNoArgsText    = "Provide a <duration> argument to specify how long you want to pause your connection.\nAvailable durations are 5m, 15m, 30m, 1h, and 24h. For example: nordvpn pause 15m."
 	PauseArgsUsage     = "<duration>"

@@ -10,7 +10,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
-var ErrNordWhisperDisabled = errors.New("NordWhisper technology was disabled in compile time")
+var ErrNordWhisperDisabled = errors.New("NordWhisper protocol was disabled in compile time")
 
 func getVpnFactory(
 	eventsDbPath string,
@@ -56,7 +56,7 @@ func getVpnFactory(
 		case config.VPNProtocol_VPN_PROTOCOL_UNSPECIFIED:
 			fallthrough
 		default:
-			return nil, errors.New("no such technology")
+			return nil, errors.New("no such protocol")
 		}
 	}
 }

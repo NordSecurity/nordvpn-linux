@@ -67,7 +67,7 @@ ADDITIONAL_GROUPS = [
     "Standard_VPN_Servers",
 ]
 
-# Used for test parametrization with NordWhisper, since other additional groups are not supported with this technology.
+# Used for test parametrization with NordWhisper, since other additional groups are not supported with this protocol.
 ADDITIONAL_GROUPS_NORDWHISPER = [
     "Standard_VPN_Servers",
 ]

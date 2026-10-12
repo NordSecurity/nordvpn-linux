@@ -26,7 +26,7 @@ func (c *cmd) settings() (*pb.Settings, error) {
 	return c.settingsCache, nil
 }
 
-// Except returns true if technology in the app configuration is different than tech.
+// Except returns true if protocol in the app configuration is different than `protocol`.
 func (c *cmd) Except(protocol config.VPNProtocol) bool {
 	settings, err := c.settings()
 	if err != nil {

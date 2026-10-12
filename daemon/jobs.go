@@ -300,7 +300,7 @@ func isSystemShutdownSignal(sig *dbus.Signal) bool {
 }
 
 func (r *RPC) fallbackVPNProtocol(target config.VPNProtocol) error {
-	log.Debug("technology was configured to NordWhisper, but NordWhisper was disabled, switching to",
+	log.Debug("protocol was configured to NordWhisper, but NordWhisper was disabled, switching to",
 		target.String())
 	v, err := r.factory(target)
 	if err != nil {
@@ -399,11 +399,11 @@ func (r *RPC) doAutoConnect() error {
 	}
 
 	if cfg.VPNProtocol.IsNordWhisper() && !features.NordWhisperEnabled {
-		log.Debug("technology was configured to NordWhisper, but NordWhisper was disabled, switching to NordLynx")
+		log.Debug("protocol was configured to NordWhisper, but NordWhisper was disabled, switching to NordLynx")
 		if err := r.fallbackVPNProtocol(config.VPNProtocol_VPN_PROTOCOL_NORDLYNX); err != nil {
-			log.Error("failed to fall back to NordLynx technology, will try OpenVPN")
+			log.Error("failed to fall back to NordLynx protocol, will try OpenVPN")
 			if err := r.fallbackVPNProtocol(config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP); err != nil {
-				return fmt.Errorf("falling back to OpenVPN technology: %s", err)
+				return fmt.Errorf("falling back to OpenVPN protocol: %s", err)
 			}
 		}
 	}

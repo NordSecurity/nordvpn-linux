@@ -26,7 +26,7 @@ func (r *RPC) GetRecentConnections(
 	returnOnlyObfuscatedRecent := cfg.VPNProtocol.IsNordWhisper()
 
 	var rcValues []*pb.RecentConnectionModel
-	// filter by server technology used
+	// filter by server protocol used
 	for _, v := range values {
 		isObfuscated := v.Group == config.ServerGroup_NW_OBFUSCATED
 		if returnOnlyObfuscatedRecent != isObfuscated {

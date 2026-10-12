@@ -6,8 +6,7 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-// MatchesUserSettings reports whether the server can be connected to with the
-// technology and protocol from cfg.
+// MatchesUserSettings reports whether the server can be connected to with the protocol from cfg.
 func MatchesUserSettings(s core.Server, cfg config.Config) bool {
 	return core.IsConnectableWithProtocol(cfg.VPNProtocol)(s)
 }
@@ -38,10 +37,10 @@ func selectFilterForLocalServers(tag string, group config.ServerGroup) core.Pred
 	}
 }
 
-// TechToServerTech maps the user connection settings to the corresponding core
+// VPNProtocolToServerTech maps the user connection settings to the corresponding core
 // server technology. It is exported because it is also used directly by the
 // daemon (e.g. when filtering recent connections).
-func TechToServerTech(p config.VPNProtocol) core.ServerTechnology {
+func VPNProtocolToServerTech(p config.VPNProtocol) core.ServerTechnology {
 	//exhaustive:ignore
 	switch p {
 	case config.VPNProtocol_VPN_PROTOCOL_NORDLYNX:

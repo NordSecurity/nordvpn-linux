@@ -307,7 +307,7 @@ When enabled, your VPN connection uses state-of-the-art cryptography to secure y
 .fi
 .
 .IP \[bu] 2
-\fBOpenVPN Technology:\fR You must switch to NordLynx to use post-quantum encryption.
+\fBOpenVPN Protocol:\fR You must switch to NordLynx to use post-quantum encryption.
 .IP \[bu] 2
 \fBMeshnet:\fR Post-Quantum VPN cannot run simultaneously with Meshnet.
 
@@ -341,7 +341,7 @@ Similarly, Meshnet cannot be used simultaneously with post-quantum encryption. Y
 .RE
 
 .SH "ENCRYPTED CLIENT HELLO (ECH)"
-Encrypted Client Hello (ECH) is a privacy feature of the \fBNordWhisper\fR technology that encrypts the server name in the TLS handshake, preventing on-path observers from seeing which host you are connecting to. ECH is enabled by default and applies only to NordWhisper.
+Encrypted Client Hello (ECH) is a privacy feature of the \fBNordWhisper\fR protocol that encrypts the server name in the TLS handshake, preventing on-path observers from seeing which host you are connecting to. ECH is enabled by default and applies only to NordWhisper.
 
 .SS "Enabling or disabling ECH"
 To turn ECH on or off, run:
@@ -356,7 +356,7 @@ The change takes effect on your next connection. If you are already connected, r
 
 .SS "Requirements and limitations"
 .IP \[bu] 2
-\fBNordWhisper only:\fR ECH applies exclusively to the NordWhisper technology. Select it with \fBnordvpn set protocol nordwhisper\fR before configuring ECH.
+\fBNordWhisper only:\fR ECH applies exclusively to the NordWhisper protocol. Select it with \fBnordvpn set protocol nordwhisper\fR before configuring ECH.
 .IP \[bu] 2
 \fBRemote availability:\fR ECH can be disabled globally by NordVPN. When it is, the setting cannot be changed from the client.
 
@@ -505,7 +505,7 @@ $ \fBnordvpn meshnet peer <permission> deny <device>\fR
 
 .SH "MESHNET ROUTING"
 .P
-The traffic routing feature of Meshnet allows you to route all of your internet traffic via a compatible peer device. When you initiate a connection to the peer device, it is established using NordLynx technology, which ensures a fast, secure, and encrypted connection between devices.
+The traffic routing feature of Meshnet allows you to route all of your internet traffic via a compatible peer device. When you initiate a connection to the peer device, it is established using NordLynx protocol, which ensures a fast, secure, and encrypted connection between devices.
 .P
 When routing traffic, you get assigned the public IP address of the host device and connect to the internet using it instead of your standard IP address. The host device acts as a VPN server. Traffic routing is available even when the host device is connected to a VPN server. In such cases, instead of the IP address given by the internet service provider (ISP), you will be assigned the IP address of the VPN server to which the host is connected. Additionally, traffic routing can be chained between several devices. This means that you can route traffic through a peer device that is already routing traffic through another device. When routing traffic, the connection tunnel automatically uses the following NordVPN DNS addresses: \fI103.86.96.100\fR and \fI103.86.99.100\fR.
 .P

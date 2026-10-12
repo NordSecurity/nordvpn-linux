@@ -33,7 +33,7 @@ func TestVPNProtocol_DisplayName(t *testing.T) {
 	}
 }
 
-func TestVPNProtocol_TechnologyPredicates(t *testing.T) {
+func TestVPNProtocol_Predicates(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
