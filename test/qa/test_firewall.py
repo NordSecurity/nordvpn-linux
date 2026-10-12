@@ -14,6 +14,7 @@ from lib.dynamic_parametrize import dynamic_parametrize
 from lib import capture_utils
 from lib.firewall import tun_interface_names
 from test_routing import get_network_interface
+from scripts.is_host_alive import is_host_alive
 
 pytestmark = pytest.mark.usefixtures("nordvpnd_scope_module", "collect_logs")
 
@@ -545,3 +546,16 @@ def test_firewall_tcp_to_lan_host_goes_via_tunnel(vpn_protocol):
             f"but packets were only seen on: "
             f"{set(capture_utils.ifindex_to_name(p.sll.ifindex) for p in cap.packets)}"
         )
+
+
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS_BASIC1)
+def test_lan_discovery_off_after_set_defaults_with_lan_discovery_enabled(vpn_protocol):
+    lib.set_vpn_protocol(vpn_protocol)
+
+    sh.nordvpn.set("lan-discovery", "on")
+    assert is_host_alive(firewall.IP), "LAN peer should be reachable, while disconnected"
+    sh.nordvpn.set.defaults()
+
+    with lib.Defer(sh.nordvpn.disconnect):
+        sh.nordvpn.connect()
+        assert not is_host_alive(firewall.IP), "LAN peer should not be reachable, with LAN Discovery disabled and VPN on"
