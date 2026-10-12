@@ -285,22 +285,7 @@ final class MockApplicationSettings extends CancelableDelayed {
       return Payload(type: Int64(DaemonStatusCode.nothingToDo));
     }
 
-    final res = await setSettings(vpnProtocol: vpnProtocol);
-    if (res.type.toInt() != DaemonStatusCode.success) {
-      return res;
-    }
-
-    final isVpnActive =
-        vpnStatus.status.state == ConnectionState.CONNECTED ||
-        vpnStatus.status.state == ConnectionState.CONNECTING;
-
-    return Payload(
-      type: Int64(
-        isVpnActive
-            ? DaemonStatusCode.successReconnectRequired
-            : DaemonStatusCode.success,
-      ),
-    );
+    return await setSettings(vpnProtocol: vpnProtocol);
   }
 
   Future<SetRealTimeProtectionResponse> setRealTimeProtection(

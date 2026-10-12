@@ -17,7 +17,6 @@ part 'vpn_settings_controller.g.dart';
 
 // Don't show popups for those codes:
 // - success
-// - successReconnectRequired - saved, the caller handles the reconnect popup
 // - dnsListModified - error that happens when enabling Real time Protection
 //   and Custom DNS is set, if user allows resetting Custom DNS, this "error"
 //   will happen
@@ -26,7 +25,6 @@ part 'vpn_settings_controller.g.dart';
 //   this "error" will happen
 const _popupIgnoreCodes = [
   DaemonStatusCode.success,
-  DaemonStatusCode.successReconnectRequired,
   DaemonStatusCode.dnsListModified,
   DaemonStatusCode.realTimeProtectionDisabled,
   DaemonStatusCode.allowListModified,
@@ -81,9 +79,7 @@ class VpnSettingsController extends _$VpnSettingsController
     final status = await _setValue(
       (repository) => repository.setVpnProtocol(pendingVPNProtocol),
     );
-    // successReconnectRequired counts as success, the reconnect popup was already shown.
     if (status != DaemonStatusCode.success &&
-        status != DaemonStatusCode.successReconnectRequired &&
         status != DaemonStatusCode.nothingToDo) {
       logger.e('Failed to apply protocol change: $status');
       return false;

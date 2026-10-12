@@ -29,7 +29,6 @@ Future<bool> _applyPending(ProviderContainer container, VpnProtocol protocol) {
 void main() {
   for (final status in [
     DaemonStatusCode.success,
-    DaemonStatusCode.successReconnectRequired,
     DaemonStatusCode.nothingToDo,
   ]) {
     test(

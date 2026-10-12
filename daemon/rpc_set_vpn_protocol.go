@@ -3,6 +3,7 @@ package daemon
 import (
 	"context"
 	"slices"
+	"strconv"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
@@ -80,13 +81,8 @@ func (r *RPC) SetVPNProtocol(
 
 	r.events.Settings.VPNProtocol.Publish(req.GetVpnProtocol())
 
-	payload := &pb.Payload{
+	return &pb.Payload{
 		Type: internal.CodeSuccess,
-		Data: []string{req.GetVpnProtocol().DisplayName()},
-	}
-	if r.netw.IsVPNActive() {
-		payload.Type = internal.CodeSuccessReconnectRequired
-	}
-
-	return payload, nil
+		Data: []string{strconv.FormatBool(r.netw.IsVPNActive()), req.GetVpnProtocol().DisplayName()},
+	}, nil
 }

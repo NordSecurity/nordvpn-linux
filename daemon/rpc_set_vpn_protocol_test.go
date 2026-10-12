@@ -3,6 +3,7 @@ package daemon
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -135,14 +136,14 @@ func TestSetVPNProtocol_Success_SavesPublishesAndReportsReconnect(t *testing.T) 
 			current:      config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP,
 			target:       config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP,
 			vpnActive:    true,
-			expectedCode: internal.CodeSuccessReconnectRequired,
+			expectedCode: internal.CodeSuccess,
 		},
 		{
 			name:         "OpenVPN TCP to NordLynx, VPN on",
 			current:      config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP,
 			target:       config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			vpnActive:    true,
-			expectedCode: internal.CodeSuccessReconnectRequired,
+			expectedCode: internal.CodeSuccess,
 		},
 	}
 	if features.NordWhisperEnabled {
@@ -167,7 +168,7 @@ func TestSetVPNProtocol_Success_SavesPublishesAndReportsReconnect(t *testing.T) 
 		resp := env.setVPNProtocol(t, test.target)
 
 		assert.Equal(t, test.expectedCode, resp.Type, test.name)
-		assert.Equal(t, []string{test.target.DisplayName()}, resp.Data, test.name)
+		assert.Equal(t, []string{strconv.FormatBool(test.vpnActive), test.target.DisplayName()}, resp.Data, test.name)
 		assert.Equal(t, test.target, env.cm.Cfg.VPNProtocol, "%s: VPN protocol must be saved", test.name)
 		assert.True(t, env.published.EventPublished, "%s: event must be published", test.name)
 		assert.Equal(t, test.target, env.published.Event, "%s: published event must carry the target", test.name)

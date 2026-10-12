@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -55,11 +56,11 @@ func (c *cmd) SetVPNProtocol(ctx *cli.Context) error {
 		color.Yellow(fmt.Sprintf(MsgAlreadySet, "VPN Protocol", resp.Data[0]))
 	case internal.CodeConfigError:
 		return formatError(ErrConfig)
-	case internal.CodeSuccessReconnectRequired:
-		color.Green(fmt.Sprintf(MsgSetSuccess, "VPN Protocol", resp.Data[0]))
-		color.Yellow(SetReconnect)
 	case internal.CodeSuccess:
-		color.Green(fmt.Sprintf(MsgSetSuccess, "VPN Protocol", resp.Data[0]))
+		color.Green(fmt.Sprintf(MsgSetSuccess, "VPN Protocol", resp.Data[1]))
+		if active, _ := strconv.ParseBool(resp.Data[0]); active {
+			color.Yellow(SetReconnect)
+		}
 	case internal.CodeDedicatedServersNoNordlynx:
 		return errors.New(DedicatedServersAutoconnectNordlynxMessage)
 	case internal.CodeObfuscatedNeedsNordwhisper:

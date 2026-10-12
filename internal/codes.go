@@ -14,7 +14,6 @@ const (
 	CodeSuccessWithoutAC         int64 = 1007
 	CodeTokenStillValid          int64 = 1008
 	CodeTokenRevokedSuccessfully int64 = 1009
-	CodeSuccessReconnectRequired int64 = 1010
 
 	// Warning
 	CodeNothingToDo   int64 = 2000
