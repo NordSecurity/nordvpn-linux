@@ -1510,12 +1510,15 @@ func findOrder(p core.Payment, orders []core.Order) (core.Order, bool) {
 }
 
 func isPaymentValid(pr core.PaymentResponse) bool {
-	p := pr.Payment
-	return p.Status == "done" ||
-		p.Status == "chargeback" ||
-		p.Status == "refunded" ||
-		p.Status == "partially_refunded" ||
-		p.Status == "trial"
+	return isAcceptedPaymentStatus(pr.Payment.Status)
+}
+
+func isAcceptedPaymentStatus(status string) bool {
+	return status == "done" ||
+		status == "chargeback" ||
+		status == "refunded" ||
+		status == "partially_refunded" ||
+		status == "trial"
 }
 
 // countFunc returns a number of elements in slice matching criteria
@@ -1638,6 +1641,9 @@ func (s *Subscriber) clearSubscriptions() error {
 		},
 		func() uint32 {
 			return moose.NordvpnappUnsetContextUserNordvpnappSubscriptionCurrentStateServiceExpiresAt()
+		},
+		func() uint32 {
+			return moose.NordvpnappUnsetContextUserNordvpnappSubscriptionHistory()
 		},
 		s.mooseFuncs.unsetDSIsActive,
 		s.mooseFuncs.unsetDSEnabled,

@@ -635,6 +635,7 @@ func main() {
 		clientAPI,
 		clientAPI,
 		clientAPI,
+		clientAPI,
 		cdnAPI,
 		repoAPI,
 		core.NewOAuth2(httpClientWithRotator, daemon.BaseURL, validator),
@@ -778,8 +779,11 @@ func main() {
 		}
 	}()
 
+	purchasesSubject := &subs.Subject[[]core.Purchase]{}
+	purchasesSubject.Subscribe(analytics.NotifyPurchases)
+
 	rpc.StartKillSwitch()
-	rpc.StartJobs(statePublisher, heartBeatSubject)
+	rpc.StartJobs(statePublisher, heartBeatSubject, purchasesSubject)
 	rpc.StartRemoteConfigLoaderJob(rcConfig)
 	meshService.StartJobs()
 	if internal.IsSystemd() {

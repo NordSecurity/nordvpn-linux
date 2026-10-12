@@ -488,6 +488,10 @@ func (m *mockRawClientAPI) Payments(token string) ([]core.PaymentResponse, error
 	return []core.PaymentResponse{}, nil
 }
 
+func (m *mockRawClientAPI) Purchases(token string) (core.PurchasesResult, error) {
+	return core.PurchasesResult{}, nil
+}
+
 // Mesh interface methods
 func (m *mockRawClientAPI) Register(token string, peer mesh.Machine) (*mesh.Machine, error) {
 	return &mesh.Machine{}, nil

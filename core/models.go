@@ -582,3 +582,65 @@ func NewCountryCode(code string) CountryCode {
 func (cc CountryCode) String() string {
 	return cc.cc
 }
+
+type PurchasesStatus int
+
+const (
+	PurchaseStatusUnknown PurchasesStatus = iota
+	PurchaseStatusReady
+	PurchaseStatusPending
+)
+
+type PurchaseOrder struct {
+	ID       int64  `json:"id"`
+	RemoteID int64  `json:"remote_id"`
+	Status   string `json:"status"`
+	Source   string `json:"source"`
+}
+
+type PurchasePlan struct {
+	ID         int64             `json:"id"`
+	Identifier string            `json:"identifier"`
+	Type       string            `json:"type"`
+	Services   []PurchaseService `json:"services"`
+}
+
+type PurchaseService struct {
+	Merchant   string `json:"merchant"`
+	Identifier string `json:"identifier"`
+}
+
+type PurchasePayment struct {
+	ID             int64  `json:"id"`
+	CreatedAt      string `json:"created_at"`
+	Status         string `json:"status"`
+	Amount         string `json:"amount"`
+	Currency       string `json:"currency"`
+	Provider       string `json:"provider"`
+	SubscriptionID int64  `json:"subscription_id"`
+}
+
+type PurchaseSubscription struct {
+	ID                int64  `json:"id"`
+	FrequencyInterval int64  `json:"frequency_interval"`
+	FrequencyUnit     string `json:"frequency_unit"`
+	MerchantID        string `json:"merchant_id"`
+	Status            string `json:"status"`
+}
+
+type Purchase struct {
+	Order         PurchaseOrder          `json:"order"`
+	Plans         []PurchasePlan         `json:"plans"`
+	Payments      []PurchasePayment      `json:"payments"`
+	Subscriptions []PurchaseSubscription `json:"subscriptions"`
+}
+
+type PurchasesSuccessBody struct {
+	Status string     `json:"status"`
+	Data   []Purchase `json:"data"`
+}
+type PurchasesResult struct {
+	Status     PurchasesStatus
+	Data       []Purchase
+	RetryAfter time.Duration
+}

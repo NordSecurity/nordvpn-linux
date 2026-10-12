@@ -140,6 +140,9 @@ func (m *mockRawClientAPI) Orders(token string) ([]core.Order, error) {
 func (m *mockRawClientAPI) Payments(token string) ([]core.PaymentResponse, error) {
 	return []core.PaymentResponse{}, nil
 }
+func (m *mockRawClientAPI) Purchases(token string) (core.PurchasesResult, error) {
+	return core.PurchasesResult{}, nil
+}
 
 func (m *mockRawClientAPI) Register(token string, peer mesh.Machine) (*mesh.Machine, error) {
 	return &mesh.Machine{}, nil
@@ -214,6 +217,9 @@ func (m *mockClientAPI) Orders() ([]core.Order, error) {
 }
 func (m *mockClientAPI) Payments() ([]core.PaymentResponse, error) {
 	return m.mockRawClientAPI.Payments("")
+}
+func (m *mockClientAPI) Purchases() (core.PurchasesResult, error) {
+	return m.mockRawClientAPI.Purchases("")
 }
 func (m *mockClientAPI) RegisterDevice(core.DevicesRequest) (core.DevicesResponse, error) {
 	return m.mockRawClientAPI.RegisterDevice("", core.DevicesRequest{})

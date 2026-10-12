@@ -37,6 +37,7 @@ const (
 func (r *RPC) StartJobs(
 	statePublisher *state.StatePublisher,
 	heartBeatPublisher events.Publisher[time.Duration],
+	purchasesPublisher events.Publisher[[]core.Purchase],
 ) {
 	// emit allowlist snapshot event on startup in a goroutine
 	// to avoid blocking other critical startup tasks
@@ -106,6 +107,15 @@ func (r *RPC) StartJobs(
 		r.events.Service.AccountCheck.Publish(nil)
 	})); err != nil {
 		log.Warn("job account check schedule error:", err)
+	}
+
+	runner := NewPurchasesRunner(context.Background(), JobPurchases(r.subscriptionAPI, purchasesPublisher, network.ExponentialBackoff, PurchasesJobSleepFunction), r.ac)
+	r.events.User.Subscribe(runner)
+	if _, err := r.scheduler.NewJob(gocron.DurationJob(24*time.Hour),
+		gocron.NewTask(runner.Run),
+		gocron.WithName("job purchases"),
+		gocron.WithEventListeners(gocron.AfterJobRunsWithError(gocronErrorLogger))); err != nil {
+		log.Warn("job purchases schedule error:", err)
 	}
 
 	r.scheduler.Start()
