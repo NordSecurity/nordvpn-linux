@@ -13,6 +13,7 @@ from lib import IS_NIGHTLY, allowlist, daemon, firewall, network, settings
 from lib.dynamic_parametrize import dynamic_parametrize
 from lib import capture_utils
 from lib.firewall import tun_interface_names
+from test_routing import get_network_interface
 
 pytestmark = pytest.mark.usefixtures("nordvpnd_scope_module", "collect_logs")
 
@@ -245,6 +246,31 @@ def test_firewall_active_with_killswitch_after_set_defaults_with_firewall_disabl
         lib.set_killswitch("on")
         assert firewall.is_active(), "Firewall should be active when killswitch is enabled"
     assert not firewall.is_active(), "Firewall should be inactive after killswitch is disabled"
+
+
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
+def test_firewall_active_with_vpn_on_after_set_defaults_with_firewall_disabled(vpn_protocol):
+    lib.set_vpn_protocol(vpn_protocol)
+
+    custom_fwmark = "0x5"
+    sh.nordvpn.set.fwmark(custom_fwmark)
+    lib.set_firewall("off")
+    assert not settings.is_firewall_enabled(), "Firewall should be disabled before setting defaults"
+
+    sh.nordvpn.set.defaults()
+    assert settings.is_firewall_enabled(), "Firewall should be enabled after setting defaults"
+    assert not firewall.is_active(), "Firewall should not be active before VPN connection"
+
+    with lib.Defer(sh.nordvpn.disconnect):
+        sh.nordvpn.connect()
+        assert firewall.is_active(), "Firewall should be active when connected to VPN"
+        routes = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
+        rules = sh.ip.rule()
+        assert f"default dev {get_network_interface('nordlynx')}" in routes, "Default route should include network interface when connected"
+        assert "fwmark" in rules, "fwmark should be in rules when routing is enabled"
+        assert custom_fwmark not in sh.ip.rule()
+
+    assert not firewall.is_active(), "Firewall should be inactive after disconnecting from VPN"
 
 
 @pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
