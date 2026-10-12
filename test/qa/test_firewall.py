@@ -1,4 +1,5 @@
 import contextlib
+import os
 import random
 
 import pytest
@@ -547,3 +548,25 @@ def test_firewall_tcp_to_lan_host_goes_via_tunnel(tech, proto):
             f"but packets were only seen on: "
             f"{set(capture_utils.ifindex_to_name(p.sll.ifindex) for p in cap.packets)}"
         )
+
+
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES_BASIC1)
+def test_lan_discovery_off_after_set_defaults_with_lan_discovery_enabled(tech, proto):
+    def is_host_reachable(host: str, retry: int = 1, delay: int = 1):
+        work_dir = os.environ.get("WORKDIR")
+        result = subprocess.run(
+            ["python3", f"{work_dir}/test/qa/scripts/is_host_alive.py", host, str(retry), str(delay)],
+            capture_output=True,
+            text=True
+        )
+        return "True" in result.stdout
+
+    lib.set_technology_and_protocol(tech, proto)
+
+    sh.nordvpn.set("lan-discovery", "on")
+    assert is_host_reachable(firewall.IP), "LAN peer should be reachable, while disconnected"
+    sh.nordvpn.set.defaults()
+
+    with lib.Defer(sh.nordvpn.disconnect):
+        sh.nordvpn.connect()
+        assert not is_host_reachable(firewall.IP), "LAN peer should not be reachable, with LAN Discovery disabled and VPN on"
