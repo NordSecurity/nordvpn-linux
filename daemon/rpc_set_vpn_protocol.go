@@ -66,13 +66,11 @@ func (r *RPC) SetVPNProtocol(
 		return &pb.Payload{Type: internal.CodeConfigError}, nil
 	}
 
-	updateConfigFn := func(c config.Config) config.Config {
+	if err := r.cm.SaveWith(func(c config.Config) config.Config {
 		c.VPNProtocol = req.GetVpnProtocol()
 		c.AutoConnectData.ECH = ech
 		return c
-	}
-
-	if err := r.cm.SaveWith(updateConfigFn); err != nil {
+	}); err != nil {
 		log.Error(err)
 		return &pb.Payload{Type: internal.CodeConfigError}, nil
 	}

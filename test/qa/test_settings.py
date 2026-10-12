@@ -305,7 +305,8 @@ def test_set_post_quantum_on_open_vpn(vpn_protocol):
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.set(settings.get_pq_alias(), "on")
 
-    assert "Post-quantum encryption is not compatible with OpenVPN. Switch to NordLynx to use this encryption." in ex.value.stdout.decode("utf-8")
+    name = lib.vpn_protocol_display_name(vpn_protocol)
+    assert f"Post-quantum encryption is not compatible with {name}. Switch to NordLynx to use this encryption." in ex.value.stdout.decode("utf-8")
 
 @pytest.mark.parametrize("vpn_protocol", lib.NORDWHISPER_VPN_PROTOCOL)
 def test_set_post_quantum_on_nordwhisper(vpn_protocol):

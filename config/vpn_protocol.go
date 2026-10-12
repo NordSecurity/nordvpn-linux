@@ -22,20 +22,6 @@ func (p VPNProtocol) DisplayName() string {
 	return VPNProtocol_VPN_PROTOCOL_UNSPECIFIED.String()
 }
 
-// TechNameToUpperCamelCase returns the technology name of the vpn protocol as an UpperCamelCase string
-func TechNameToUpperCamelCase(p VPNProtocol) string {
-	//exhaustive:ignore
-	switch p {
-	case VPNProtocol_VPN_PROTOCOL_NORDLYNX:
-		return "NordLynx"
-	case VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP, VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP:
-		return "OpenVPN"
-	case VPNProtocol_VPN_PROTOCOL_NORDWHISPER:
-		return "NordWhisper"
-	}
-	return ""
-}
-
 // IsNordLynx reports whether p uses the NordLynx protocol.
 func (p VPNProtocol) IsNordLynx() bool {
 	return p == VPNProtocol_VPN_PROTOCOL_NORDLYNX

@@ -62,12 +62,12 @@ func TestSetPostquantumVpn(t *testing.T) {
 
 	conflictUnknownTechPayload := pb.Payload{
 		Type: internal.CodePqWithoutNordlynx,
-		Data: []string{""},
+		Data: []string{"VPN_PROTOCOL_UNSPECIFIED"},
 	}
 
 	conflictOpenVPNTechPayload := pb.Payload{
 		Type: internal.CodePqWithoutNordlynx,
-		Data: []string{"OpenVPN"},
+		Data: []string{"OpenVPN (UDP)"},
 	}
 
 	conflictNordWhisperPayload := pb.Payload{
