@@ -1,7 +1,5 @@
 syntax = "proto3";
 
-// buf:lint:ignore PACKAGE_DIRECTORY_MATCH
-// buf:lint:ignore PACKAGE_VERSION_SUFFIX
 package config;
 
 option go_package = "github.com/NordSecurity/nordvpn-linux/config";
