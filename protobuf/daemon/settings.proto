@@ -14,11 +14,6 @@ message SettingsResponse {
   Settings data = 2;
 }
 
-// SettingsVPNProtocolsResponse lists VPN protocols available on this build.
-message SettingsVPNProtocolsResponse {
-  repeated config.VPNProtocol vpn_protocols = 1;
-}
-
 message AutoconnectData {
   bool               enabled      = 1;
   string             country      = 2;

@@ -17,12 +17,6 @@ class SettingsResponse(_message.Message):
     data: Settings
     def __init__(self, type: _Optional[int] = ..., data: _Optional[_Union[Settings, _Mapping]] = ...) -> None: ...
 
-class SettingsVPNProtocolsResponse(_message.Message):
-    __slots__ = ("vpn_protocols",)
-    VPN_PROTOCOLS_FIELD_NUMBER: _ClassVar[int]
-    vpn_protocols: _containers.RepeatedScalarFieldContainer[_vpn_protocol_pb2.VPNProtocol]
-    def __init__(self, vpn_protocols: _Optional[_Iterable[_Union[_vpn_protocol_pb2.VPNProtocol, str]]] = ...) -> None: ...
-
 class AutoconnectData(_message.Message):
     __slots__ = ("enabled", "country", "city", "server_group", "country_code")
     ENABLED_FIELD_NUMBER: _ClassVar[int]

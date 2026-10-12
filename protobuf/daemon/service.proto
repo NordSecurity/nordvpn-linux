@@ -78,7 +78,6 @@ service Daemon {
   rpc SetTray(SetTrayRequest) returns (Payload);
 
   // ==================== Configuration Info ====================
-  rpc SettingsVPNProtocols(Empty) returns (SettingsVPNProtocolsResponse);
   rpc GetFeatureToggles(Empty) returns (FeatureToggles);
 
   // ==================== Allowlist Management ====================

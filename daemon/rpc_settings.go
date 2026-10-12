@@ -72,10 +72,3 @@ func (r *RPC) Settings(ctx context.Context, in *pb.Empty) (*pb.SettingsResponse,
 		Data: settings,
 	}, nil
 }
-
-func (r *RPC) SettingsVPNProtocols(
-	context.Context,
-	*pb.Empty,
-) (*pb.SettingsVPNProtocolsResponse, error) {
-	return &pb.SettingsVPNProtocolsResponse{VpnProtocols: config.AvailableVPNProtocols()}, nil
-}

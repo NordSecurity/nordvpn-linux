@@ -309,16 +309,6 @@ final class MockDaemon extends DaemonServiceBase {
   }
 
   @override
-  Future<SettingsVPNProtocolsResponse> settingsVPNProtocols(
-    ServiceCall call,
-    Empty request,
-  ) async {
-    return SettingsVPNProtocolsResponse(
-      vpnProtocols: appSettings.availableVpnProtocols,
-    );
-  }
-
-  @override
   Future<StatusResponse> status(ServiceCall call, Empty request) async {
     if (vpnStatus.error != null) {
       throw vpnStatus.error!;

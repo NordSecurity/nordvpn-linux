@@ -29,27 +29,6 @@ final $typed_data.Uint8List settingsResponseDescriptor = $convert.base64Decode(
     'ChBTZXR0aW5nc1Jlc3BvbnNlEhIKBHR5cGUYASABKANSBHR5cGUSIAoEZGF0YRgCIAEoCzIMLn'
     'BiLlNldHRpbmdzUgRkYXRh');
 
-@$core.Deprecated('Use settingsVPNProtocolsResponseDescriptor instead')
-const SettingsVPNProtocolsResponse$json = {
-  '1': 'SettingsVPNProtocolsResponse',
-  '2': [
-    {
-      '1': 'vpn_protocols',
-      '3': 1,
-      '4': 3,
-      '5': 14,
-      '6': '.config.VPNProtocol',
-      '10': 'vpnProtocols'
-    },
-  ],
-};
-
-/// Descriptor for `SettingsVPNProtocolsResponse`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List settingsVPNProtocolsResponseDescriptor =
-    $convert.base64Decode(
-        'ChxTZXR0aW5nc1ZQTlByb3RvY29sc1Jlc3BvbnNlEjgKDXZwbl9wcm90b2NvbHMYASADKA4yEy'
-        '5jb25maWcuVlBOUHJvdG9jb2xSDHZwblByb3RvY29scw==');
-
 @$core.Deprecated('Use autoconnectDataDescriptor instead')
 const AutoconnectData$json = {
   '1': 'AutoconnectData',

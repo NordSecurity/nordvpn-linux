@@ -224,11 +224,6 @@ class DaemonStub(object):
                 request_serializer=set__pb2.SetTrayRequest.SerializeToString,
                 response_deserializer=common__pb2.Payload.FromString,
                 _registered_method=True)
-        self.SettingsVPNProtocols = channel.unary_unary(
-                '/pb.Daemon/SettingsVPNProtocols',
-                request_serializer=common__pb2.Empty.SerializeToString,
-                response_deserializer=settings__pb2.SettingsVPNProtocolsResponse.FromString,
-                _registered_method=True)
         self.GetFeatureToggles = channel.unary_unary(
                 '/pb.Daemon/GetFeatureToggles',
                 request_serializer=common__pb2.Empty.SerializeToString,
@@ -506,15 +501,9 @@ class DaemonServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def SettingsVPNProtocols(self, request, context):
+    def GetFeatureToggles(self, request, context):
         """==================== Configuration Info ====================
         """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def GetFeatureToggles(self, request, context):
-        """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -762,11 +751,6 @@ def add_DaemonServicer_to_server(servicer, server):
                     servicer.SetTray,
                     request_deserializer=set__pb2.SetTrayRequest.FromString,
                     response_serializer=common__pb2.Payload.SerializeToString,
-            ),
-            'SettingsVPNProtocols': grpc.unary_unary_rpc_method_handler(
-                    servicer.SettingsVPNProtocols,
-                    request_deserializer=common__pb2.Empty.FromString,
-                    response_serializer=settings__pb2.SettingsVPNProtocolsResponse.SerializeToString,
             ),
             'GetFeatureToggles': grpc.unary_unary_rpc_method_handler(
                     servicer.GetFeatureToggles,
@@ -1747,33 +1731,6 @@ class Daemon(object):
             '/pb.Daemon/SetTray',
             set__pb2.SetTrayRequest.SerializeToString,
             common__pb2.Payload.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def SettingsVPNProtocols(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/pb.Daemon/SettingsVPNProtocols',
-            common__pb2.Empty.SerializeToString,
-            settings__pb2.SettingsVPNProtocolsResponse.FromString,
             options,
             channel_credentials,
             insecure,

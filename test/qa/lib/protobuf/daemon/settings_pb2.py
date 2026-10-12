@@ -28,7 +28,7 @@ from config import group_pb2 as config_dot_group__pb2
 from config import vpn_protocol_pb2 as config_dot_vpn__protocol__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0esettings.proto\x12\x02pb\x1a\x0c\x63ommon.proto\x1a\x1e\x63onfig/analytics_consent.proto\x1a\x12\x63onfig/group.proto\x1a\x19\x63onfig/vpn_protocol.proto\"<\n\x10SettingsResponse\x12\x0c\n\x04type\x18\x01 \x01(\x03\x12\x1a\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\x0c.pb.Settings\"J\n\x1cSettingsVPNProtocolsResponse\x12*\n\rvpn_protocols\x18\x01 \x03(\x0e\x32\x13.config.VPNProtocol\"\x82\x01\n\x0f\x41utoconnectData\x12\x0f\n\x07\x65nabled\x18\x01 \x01(\x08\x12\x0f\n\x07\x63ountry\x18\x02 \x01(\t\x12\x0c\n\x04\x63ity\x18\x03 \x01(\t\x12)\n\x0cserver_group\x18\x04 \x01(\x0e\x32\x13.config.ServerGroup\x12\x14\n\x0c\x63ountry_code\x18\x05 \x01(\t\"\xf7\x03\n\x08Settings\x12\x10\n\x08\x66irewall\x18\x02 \x01(\x08\x12\x13\n\x0bkill_switch\x18\x03 \x01(\x08\x12.\n\x11\x61uto_connect_data\x18\x04 \x01(\x0b\x32\x13.pb.AutoconnectData\x12\x0f\n\x07meshnet\x18\x06 \x01(\x08\x12\x0f\n\x07routing\x18\x07 \x01(\x08\x12\x0e\n\x06\x66wmark\x18\x08 \x01(\r\x12/\n\x11\x61nalytics_consent\x18\t \x01(\x0e\x32\x14.consent.ConsentMode\x12\x0b\n\x03\x64ns\x18\n \x03(\t\x12\x1c\n\x14real_time_protection\x18\x0b \x01(\x08\x12\x15\n\rlan_discovery\x18\r \x01(\x08\x12 \n\tallowlist\x18\x0e \x01(\x0b\x32\r.pb.Allowlist\x12\x17\n\x0fpostquantum_vpn\x18\x11 \x01(\x08\x12/\n\ruser_settings\x18\x12 \x01(\x0b\x32\x18.pb.UserSpecificSettings\x12\x12\n\narp_ignore\x18\x13 \x01(\x08\x12\x0b\n\x03\x65\x63h\x18\x14 \x01(\x08\x12)\n\x0cvpn_protocol\x18\x15 \x01(\x0e\x32\x13.config.VPNProtocolJ\x04\x08\x01\x10\x02J\x04\x08\x0c\x10\rJ\x04\x08\x0f\x10\x10J\x04\x08\x10\x10\x11R\ntechnologyR\x08protocolR\tobfuscate\"A\n\x14UserSpecificSettings\x12\x0b\n\x03uid\x18\x01 \x01(\x03\x12\x0e\n\x06notify\x18\x02 \x01(\x08\x12\x0c\n\x04tray\x18\x03 \x01(\x08\x42\x31Z/github.com/NordSecurity/nordvpn-linux/daemon/pbb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0esettings.proto\x12\x02pb\x1a\x0c\x63ommon.proto\x1a\x1e\x63onfig/analytics_consent.proto\x1a\x12\x63onfig/group.proto\x1a\x19\x63onfig/vpn_protocol.proto\"<\n\x10SettingsResponse\x12\x0c\n\x04type\x18\x01 \x01(\x03\x12\x1a\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\x0c.pb.Settings\"\x82\x01\n\x0f\x41utoconnectData\x12\x0f\n\x07\x65nabled\x18\x01 \x01(\x08\x12\x0f\n\x07\x63ountry\x18\x02 \x01(\t\x12\x0c\n\x04\x63ity\x18\x03 \x01(\t\x12)\n\x0cserver_group\x18\x04 \x01(\x0e\x32\x13.config.ServerGroup\x12\x14\n\x0c\x63ountry_code\x18\x05 \x01(\t\"\xf7\x03\n\x08Settings\x12\x10\n\x08\x66irewall\x18\x02 \x01(\x08\x12\x13\n\x0bkill_switch\x18\x03 \x01(\x08\x12.\n\x11\x61uto_connect_data\x18\x04 \x01(\x0b\x32\x13.pb.AutoconnectData\x12\x0f\n\x07meshnet\x18\x06 \x01(\x08\x12\x0f\n\x07routing\x18\x07 \x01(\x08\x12\x0e\n\x06\x66wmark\x18\x08 \x01(\r\x12/\n\x11\x61nalytics_consent\x18\t \x01(\x0e\x32\x14.consent.ConsentMode\x12\x0b\n\x03\x64ns\x18\n \x03(\t\x12\x1c\n\x14real_time_protection\x18\x0b \x01(\x08\x12\x15\n\rlan_discovery\x18\r \x01(\x08\x12 \n\tallowlist\x18\x0e \x01(\x0b\x32\r.pb.Allowlist\x12\x17\n\x0fpostquantum_vpn\x18\x11 \x01(\x08\x12/\n\ruser_settings\x18\x12 \x01(\x0b\x32\x18.pb.UserSpecificSettings\x12\x12\n\narp_ignore\x18\x13 \x01(\x08\x12\x0b\n\x03\x65\x63h\x18\x14 \x01(\x08\x12)\n\x0cvpn_protocol\x18\x15 \x01(\x0e\x32\x13.config.VPNProtocolJ\x04\x08\x01\x10\x02J\x04\x08\x0c\x10\rJ\x04\x08\x0f\x10\x10J\x04\x08\x10\x10\x11R\ntechnologyR\x08protocolR\tobfuscate\"A\n\x14UserSpecificSettings\x12\x0b\n\x03uid\x18\x01 \x01(\x03\x12\x0e\n\x06notify\x18\x02 \x01(\x08\x12\x0c\n\x04tray\x18\x03 \x01(\x08\x42\x31Z/github.com/NordSecurity/nordvpn-linux/daemon/pbb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -38,12 +38,10 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._serialized_options = b'Z/github.com/NordSecurity/nordvpn-linux/daemon/pb'
   _globals['_SETTINGSRESPONSE']._serialized_start=115
   _globals['_SETTINGSRESPONSE']._serialized_end=175
-  _globals['_SETTINGSVPNPROTOCOLSRESPONSE']._serialized_start=177
-  _globals['_SETTINGSVPNPROTOCOLSRESPONSE']._serialized_end=251
-  _globals['_AUTOCONNECTDATA']._serialized_start=254
-  _globals['_AUTOCONNECTDATA']._serialized_end=384
-  _globals['_SETTINGS']._serialized_start=387
-  _globals['_SETTINGS']._serialized_end=890
-  _globals['_USERSPECIFICSETTINGS']._serialized_start=892
-  _globals['_USERSPECIFICSETTINGS']._serialized_end=957
+  _globals['_AUTOCONNECTDATA']._serialized_start=178
+  _globals['_AUTOCONNECTDATA']._serialized_end=308
+  _globals['_SETTINGS']._serialized_start=311
+  _globals['_SETTINGS']._serialized_end=814
+  _globals['_USERSPECIFICSETTINGS']._serialized_start=816
+  _globals['_USERSPECIFICSETTINGS']._serialized_end=881
 # @@protoc_insertion_point(module_scope)

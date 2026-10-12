@@ -53,7 +53,6 @@ const (
 	Daemon_SetLANDiscovery_FullMethodName          = "/pb.Daemon/SetLANDiscovery"
 	Daemon_SetNotify_FullMethodName                = "/pb.Daemon/SetNotify"
 	Daemon_SetTray_FullMethodName                  = "/pb.Daemon/SetTray"
-	Daemon_SettingsVPNProtocols_FullMethodName     = "/pb.Daemon/SettingsVPNProtocols"
 	Daemon_GetFeatureToggles_FullMethodName        = "/pb.Daemon/GetFeatureToggles"
 	Daemon_SetAllowlist_FullMethodName             = "/pb.Daemon/SetAllowlist"
 	Daemon_SetARPIgnore_FullMethodName             = "/pb.Daemon/SetARPIgnore"
@@ -115,7 +114,6 @@ type DaemonClient interface {
 	SetNotify(ctx context.Context, in *SetNotifyRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetTray(ctx context.Context, in *SetTrayRequest, opts ...grpc.CallOption) (*Payload, error)
 	// ==================== Configuration Info ====================
-	SettingsVPNProtocols(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*SettingsVPNProtocolsResponse, error)
 	GetFeatureToggles(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*FeatureToggles, error)
 	// ==================== Allowlist Management ====================
 	SetAllowlist(ctx context.Context, in *SetAllowlistRequest, opts ...grpc.CallOption) (*Payload, error)
@@ -501,16 +499,6 @@ func (c *daemonClient) SetTray(ctx context.Context, in *SetTrayRequest, opts ...
 	return out, nil
 }
 
-func (c *daemonClient) SettingsVPNProtocols(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*SettingsVPNProtocolsResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SettingsVPNProtocolsResponse)
-	err := c.cc.Invoke(ctx, Daemon_SettingsVPNProtocols_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *daemonClient) GetFeatureToggles(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*FeatureToggles, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(FeatureToggles)
@@ -696,7 +684,6 @@ type DaemonServer interface {
 	SetNotify(context.Context, *SetNotifyRequest) (*Payload, error)
 	SetTray(context.Context, *SetTrayRequest) (*Payload, error)
 	// ==================== Configuration Info ====================
-	SettingsVPNProtocols(context.Context, *Empty) (*SettingsVPNProtocolsResponse, error)
 	GetFeatureToggles(context.Context, *Empty) (*FeatureToggles, error)
 	// ==================== Allowlist Management ====================
 	SetAllowlist(context.Context, *SetAllowlistRequest) (*Payload, error)
@@ -825,9 +812,6 @@ func (UnimplementedDaemonServer) SetNotify(context.Context, *SetNotifyRequest) (
 }
 func (UnimplementedDaemonServer) SetTray(context.Context, *SetTrayRequest) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetTray not implemented")
-}
-func (UnimplementedDaemonServer) SettingsVPNProtocols(context.Context, *Empty) (*SettingsVPNProtocolsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SettingsVPNProtocols not implemented")
 }
 func (UnimplementedDaemonServer) GetFeatureToggles(context.Context, *Empty) (*FeatureToggles, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFeatureToggles not implemented")
@@ -1484,24 +1468,6 @@ func _Daemon_SetTray_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Daemon_SettingsVPNProtocols_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DaemonServer).SettingsVPNProtocols(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Daemon_SettingsVPNProtocols_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).SettingsVPNProtocols(ctx, req.(*Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _Daemon_GetFeatureToggles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
@@ -1838,10 +1804,6 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetTray",
 			Handler:    _Daemon_SetTray_Handler,
-		},
-		{
-			MethodName: "SettingsVPNProtocols",
-			Handler:    _Daemon_SettingsVPNProtocols_Handler,
 		},
 		{
 			MethodName: "GetFeatureToggles",

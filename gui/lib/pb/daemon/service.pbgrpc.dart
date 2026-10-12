@@ -303,13 +303,6 @@ class DaemonClient extends $grpc.Client {
   }
 
   /// ==================== Configuration Info ====================
-  $grpc.ResponseFuture<$13.SettingsVPNProtocolsResponse> settingsVPNProtocols(
-    $0.Empty request, {
-    $grpc.CallOptions? options,
-  }) {
-    return $createUnaryCall(_$settingsVPNProtocols, request, options: options);
-  }
-
   $grpc.ResponseFuture<$17.FeatureToggles> getFeatureToggles(
     $0.Empty request, {
     $grpc.CallOptions? options,
@@ -564,11 +557,6 @@ class DaemonClient extends $grpc.Client {
       '/pb.Daemon/SetTray',
       ($15.SetTrayRequest value) => value.writeToBuffer(),
       $0.Payload.fromBuffer);
-  static final _$settingsVPNProtocols =
-      $grpc.ClientMethod<$0.Empty, $13.SettingsVPNProtocolsResponse>(
-          '/pb.Daemon/SettingsVPNProtocols',
-          ($0.Empty value) => value.writeToBuffer(),
-          $13.SettingsVPNProtocolsResponse.fromBuffer);
   static final _$getFeatureToggles =
       $grpc.ClientMethod<$0.Empty, $17.FeatureToggles>(
           '/pb.Daemon/GetFeatureToggles',
@@ -888,13 +876,6 @@ abstract class DaemonServiceBase extends $grpc.Service {
         false,
         ($core.List<$core.int> value) => $15.SetTrayRequest.fromBuffer(value),
         ($0.Payload value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$0.Empty, $13.SettingsVPNProtocolsResponse>(
-        'SettingsVPNProtocols',
-        settingsVPNProtocols_Pre,
-        false,
-        false,
-        ($core.List<$core.int> value) => $0.Empty.fromBuffer(value),
-        ($13.SettingsVPNProtocolsResponse value) => value.writeToBuffer()));
     $addMethod($grpc.ServiceMethod<$0.Empty, $17.FeatureToggles>(
         'GetFeatureToggles',
         getFeatureToggles_Pre,
@@ -1263,14 +1244,6 @@ abstract class DaemonServiceBase extends $grpc.Service {
 
   $async.Future<$0.Payload> setTray(
       $grpc.ServiceCall call, $15.SetTrayRequest request);
-
-  $async.Future<$13.SettingsVPNProtocolsResponse> settingsVPNProtocols_Pre(
-      $grpc.ServiceCall $call, $async.Future<$0.Empty> $request) async {
-    return settingsVPNProtocols($call, await $request);
-  }
-
-  $async.Future<$13.SettingsVPNProtocolsResponse> settingsVPNProtocols(
-      $grpc.ServiceCall call, $0.Empty request);
 
   $async.Future<$17.FeatureToggles> getFeatureToggles_Pre(
       $grpc.ServiceCall $call, $async.Future<$0.Empty> $request) async {

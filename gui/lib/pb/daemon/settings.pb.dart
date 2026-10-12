@@ -16,9 +16,9 @@ import 'package:fixnum/fixnum.dart' as $fixnum;
 import 'package:protobuf/protobuf.dart' as $pb;
 
 import 'common.pb.dart' as $0;
-import 'config/analytics_consent.pbenum.dart' as $3;
-import 'config/group.pbenum.dart' as $2;
-import 'config/vpn_protocol.pbenum.dart' as $1;
+import 'config/analytics_consent.pbenum.dart' as $2;
+import 'config/group.pbenum.dart' as $1;
+import 'config/vpn_protocol.pbenum.dart' as $3;
 
 export 'package:protobuf/protobuf.dart' show GeneratedMessageGenericExtensions;
 
@@ -91,68 +91,12 @@ class SettingsResponse extends $pb.GeneratedMessage {
   Settings ensureData() => $_ensure(1);
 }
 
-/// SettingsVPNProtocolsResponse lists VPN protocols available on this build.
-class SettingsVPNProtocolsResponse extends $pb.GeneratedMessage {
-  factory SettingsVPNProtocolsResponse({
-    $core.Iterable<$1.VPNProtocol>? vpnProtocols,
-  }) {
-    final result = create();
-    if (vpnProtocols != null) result.vpnProtocols.addAll(vpnProtocols);
-    return result;
-  }
-
-  SettingsVPNProtocolsResponse._();
-
-  factory SettingsVPNProtocolsResponse.fromBuffer($core.List<$core.int> data,
-          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromBuffer(data, registry);
-  factory SettingsVPNProtocolsResponse.fromJson($core.String json,
-          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromJson(json, registry);
-
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
-      _omitMessageNames ? '' : 'SettingsVPNProtocolsResponse',
-      package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
-      createEmptyInstance: create)
-    ..pc<$1.VPNProtocol>(
-        1, _omitFieldNames ? '' : 'vpnProtocols', $pb.PbFieldType.KE,
-        valueOf: $1.VPNProtocol.valueOf,
-        enumValues: $1.VPNProtocol.values,
-        defaultEnumValue: $1.VPNProtocol.VPN_PROTOCOL_UNSPECIFIED)
-    ..hasRequiredFields = false;
-
-  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SettingsVPNProtocolsResponse clone() => deepCopy();
-  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SettingsVPNProtocolsResponse copyWith(
-          void Function(SettingsVPNProtocolsResponse) updates) =>
-      super.copyWith(
-              (message) => updates(message as SettingsVPNProtocolsResponse))
-          as SettingsVPNProtocolsResponse;
-
-  @$core.override
-  $pb.BuilderInfo get info_ => _i;
-
-  @$core.pragma('dart2js:noInline')
-  static SettingsVPNProtocolsResponse create() =>
-      SettingsVPNProtocolsResponse._();
-  @$core.override
-  SettingsVPNProtocolsResponse createEmptyInstance() => create();
-  @$core.pragma('dart2js:noInline')
-  static SettingsVPNProtocolsResponse getDefault() => _defaultInstance ??=
-      $pb.GeneratedMessage.$_defaultFor<SettingsVPNProtocolsResponse>(create);
-  static SettingsVPNProtocolsResponse? _defaultInstance;
-
-  @$pb.TagNumber(1)
-  $pb.PbList<$1.VPNProtocol> get vpnProtocols => $_getList(0);
-}
-
 class AutoconnectData extends $pb.GeneratedMessage {
   factory AutoconnectData({
     $core.bool? enabled,
     $core.String? country,
     $core.String? city,
-    $2.ServerGroup? serverGroup,
+    $1.ServerGroup? serverGroup,
     $core.String? countryCode,
   }) {
     final result = create();
@@ -180,8 +124,8 @@ class AutoconnectData extends $pb.GeneratedMessage {
     ..aOB(1, _omitFieldNames ? '' : 'enabled')
     ..aOS(2, _omitFieldNames ? '' : 'country')
     ..aOS(3, _omitFieldNames ? '' : 'city')
-    ..aE<$2.ServerGroup>(4, _omitFieldNames ? '' : 'serverGroup',
-        enumValues: $2.ServerGroup.values)
+    ..aE<$1.ServerGroup>(4, _omitFieldNames ? '' : 'serverGroup',
+        enumValues: $1.ServerGroup.values)
     ..aOS(5, _omitFieldNames ? '' : 'countryCode')
     ..hasRequiredFields = false;
 
@@ -232,9 +176,9 @@ class AutoconnectData extends $pb.GeneratedMessage {
   void clearCity() => $_clearField(3);
 
   @$pb.TagNumber(4)
-  $2.ServerGroup get serverGroup => $_getN(3);
+  $1.ServerGroup get serverGroup => $_getN(3);
   @$pb.TagNumber(4)
-  set serverGroup($2.ServerGroup value) => $_setField(4, value);
+  set serverGroup($1.ServerGroup value) => $_setField(4, value);
   @$pb.TagNumber(4)
   $core.bool hasServerGroup() => $_has(3);
   @$pb.TagNumber(4)
@@ -258,7 +202,7 @@ class Settings extends $pb.GeneratedMessage {
     $core.bool? meshnet,
     $core.bool? routing,
     $core.int? fwmark,
-    $3.ConsentMode? analyticsConsent,
+    $2.ConsentMode? analyticsConsent,
     $core.Iterable<$core.String>? dns,
     $core.bool? realTimeProtection,
     $core.bool? lanDiscovery,
@@ -267,7 +211,7 @@ class Settings extends $pb.GeneratedMessage {
     UserSpecificSettings? userSettings,
     $core.bool? arpIgnore,
     $core.bool? ech,
-    $1.VPNProtocol? vpnProtocol,
+    $3.VPNProtocol? vpnProtocol,
   }) {
     final result = create();
     if (firewall != null) result.firewall = firewall;
@@ -310,8 +254,8 @@ class Settings extends $pb.GeneratedMessage {
     ..aOB(6, _omitFieldNames ? '' : 'meshnet')
     ..aOB(7, _omitFieldNames ? '' : 'routing')
     ..aI(8, _omitFieldNames ? '' : 'fwmark', fieldType: $pb.PbFieldType.OU3)
-    ..aE<$3.ConsentMode>(9, _omitFieldNames ? '' : 'analyticsConsent',
-        enumValues: $3.ConsentMode.values)
+    ..aE<$2.ConsentMode>(9, _omitFieldNames ? '' : 'analyticsConsent',
+        enumValues: $2.ConsentMode.values)
     ..pPS(10, _omitFieldNames ? '' : 'dns')
     ..aOB(11, _omitFieldNames ? '' : 'realTimeProtection')
     ..aOB(13, _omitFieldNames ? '' : 'lanDiscovery')
@@ -322,8 +266,8 @@ class Settings extends $pb.GeneratedMessage {
         subBuilder: UserSpecificSettings.create)
     ..aOB(19, _omitFieldNames ? '' : 'arpIgnore')
     ..aOB(20, _omitFieldNames ? '' : 'ech')
-    ..aE<$1.VPNProtocol>(21, _omitFieldNames ? '' : 'vpnProtocol',
-        enumValues: $1.VPNProtocol.values)
+    ..aE<$3.VPNProtocol>(21, _omitFieldNames ? '' : 'vpnProtocol',
+        enumValues: $3.VPNProtocol.values)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -401,9 +345,9 @@ class Settings extends $pb.GeneratedMessage {
   void clearFwmark() => $_clearField(8);
 
   @$pb.TagNumber(9)
-  $3.ConsentMode get analyticsConsent => $_getN(6);
+  $2.ConsentMode get analyticsConsent => $_getN(6);
   @$pb.TagNumber(9)
-  set analyticsConsent($3.ConsentMode value) => $_setField(9, value);
+  set analyticsConsent($2.ConsentMode value) => $_setField(9, value);
   @$pb.TagNumber(9)
   $core.bool hasAnalyticsConsent() => $_has(6);
   @$pb.TagNumber(9)
@@ -480,9 +424,9 @@ class Settings extends $pb.GeneratedMessage {
   void clearEch() => $_clearField(20);
 
   @$pb.TagNumber(21)
-  $1.VPNProtocol get vpnProtocol => $_getN(15);
+  $3.VPNProtocol get vpnProtocol => $_getN(15);
   @$pb.TagNumber(21)
-  set vpnProtocol($1.VPNProtocol value) => $_setField(21, value);
+  set vpnProtocol($3.VPNProtocol value) => $_setField(21, value);
   @$pb.TagNumber(21)
   $core.bool hasVpnProtocol() => $_has(15);
   @$pb.TagNumber(21)

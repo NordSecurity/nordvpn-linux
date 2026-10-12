@@ -96,12 +96,7 @@ func vpnProtocolFromArg(arg string) (config.VPNProtocol, bool) {
 }
 
 func (c *cmd) SetVPNProtocolAutoComplete(ctx *cli.Context) {
-	resp, err := c.client.SettingsVPNProtocols(context.Background(), &pb.Empty{})
-	if err != nil {
-		return
-	}
-
-	for _, p := range resp.VpnProtocols {
-		fmt.Println(vpnProtocolToArg(p))
+	for _, arg := range vpnProtocolArgs() {
+		fmt.Println(arg)
 	}
 }

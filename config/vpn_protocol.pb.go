@@ -4,9 +4,6 @@
 // 	protoc        v3.21.6
 // source: protobuf/daemon/config/vpn_protocol.proto
 
-// buf:lint:ignore PACKAGE_DIRECTORY_MATCH
-// buf:lint:ignore PACKAGE_VERSION_SUFFIX
-
 package config
 
 import (
