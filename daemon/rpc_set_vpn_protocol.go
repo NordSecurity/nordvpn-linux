@@ -39,12 +39,6 @@ func (r *RPC) SetVPNProtocol(
 		return &pb.Payload{Type: internal.CodeDedicatedServersNoNordlynx}, nil
 	}
 
-	v, err := r.factory(req.GetVpnProtocol())
-	if err != nil {
-		log.Error(err)
-		return &pb.Payload{Type: internal.CodeConfigError}, nil
-	}
-
 	if cfg.AutoConnect && cfg.AutoConnectData.Group == config.ServerGroup_NW_OBFUSCATED &&
 		!req.GetVpnProtocol().IsNordWhisper() {
 		return &pb.Payload{
@@ -64,6 +58,12 @@ func (r *RPC) SetVPNProtocol(
 			Type: internal.CodePqWithoutNordlynx,
 			Data: []string{req.GetVpnProtocol().DisplayName()},
 		}, nil
+	}
+
+	v, err := r.factory(req.GetVpnProtocol())
+	if err != nil {
+		log.Error(err)
+		return &pb.Payload{Type: internal.CodeConfigError}, nil
 	}
 
 	updateConfigFn := func(c config.Config) config.Config {
