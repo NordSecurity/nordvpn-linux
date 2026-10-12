@@ -778,12 +778,8 @@ func main() {
 		}
 	}()
 
-	if err := daemon.MigrateDeprecatedAutoconnectToSpecificServer(fsystem, dm); err != nil {
-		log.Warn("failed to migrate autoconnect to a specific server:", err)
-	}
-
-	if err := daemon.MigrateAutoConnectDataServerTag(fsystem, dm); err != nil {
-		log.Warn("failed to migrate autoconnect's serverTag parameter'", err)
+	if err := daemon.MigrateAutoconnectTarget(fsystem, dm); err != nil {
+		log.Warn("failed to migrate autoconnect target:", err)
 	}
 
 	rpc.StartKillSwitch()

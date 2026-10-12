@@ -70,11 +70,15 @@ func strToServerTag(tag string) string {
 	return strings.ReplaceAll(strings.ToLower(tag), " ", "_")
 }
 
-// MigrateDeprecatedAutoconnectToSpecificServer checks if autoconnect target is a specific server. If it is, it sets the
-// target to its country/city.
+// MigrateAutoconnectTarget normalizes the deprecated autoconnect ServerTag into a
+// country or city target and clears the ServerTag.
 //
-// Autoconnect to a specific server was deprecated in version 6.0.0.
-func MigrateDeprecatedAutoconnectToSpecificServer(configManager config.Manager, dataManager *DataManager) error {
+// It runs in two stages:
+//  1. If the target is a specific server (deprecated in 6.0.0), it falls back to
+//     that server's country/city, or to the country code embedded in the tag when
+//     the server is no longer known
+//  2. Any remaining country/city tag is resolved into the Country/City fields
+func MigrateAutoconnectTarget(configManager config.Manager, dataManager *DataManager) error {
 	var cfg config.Config
 	if err := configManager.Load(&cfg); err != nil {
 		return fmt.Errorf("loading config: %w", err)
@@ -84,83 +88,58 @@ func MigrateDeprecatedAutoconnectToSpecificServer(configManager config.Manager, 
 		return nil
 	}
 
+	// Stage 1: resolve a specific-server target to its country/city
 	serverTag := serverpicker.UnitedKingdomServerTagFix(cfg.AutoConnectData.ServerTag)
+	if serverpicker.IsServerTag(serverTag) {
+		serversData := dataManager.GetServersData()
+		serverIndex := slices.IndexFunc(serversData.Servers, func(server core.Server) bool {
+			return serverpicker.MatchTagToHostname(serverTag, server)
+		})
 
-	if !serverpicker.IsServerTag(serverTag) {
-		return nil
-	}
+		if serverIndex != -1 {
+			log.Info("autoconnection target set to a specific server tag, falling back to server's country/city")
 
-	serversData := dataManager.GetServersData()
-	serverIndex := slices.IndexFunc(serversData.Servers, func(server core.Server) bool {
-		return serverpicker.MatchTagToHostname(serverTag, server)
-	})
+			server := serversData.Servers[serverIndex]
+			serversCountry := server.Country()
 
-	if serverIndex != -1 {
-		log.Info("autoconnection target set to a specific server tag, falling back to server's country/city")
-
-		server := serversData.Servers[serverIndex]
-		serversCountry := server.Country()
-
-		cfg.AutoConnectData.City = serversCountry.City.Name
-		cfg.AutoConnectData.Country = serversCountry.Name
-		cfg.AutoConnectData.CountryCode = serversCountry.Code
-		cfg.AutoConnectData.ServerTag = strToServerTag(serversCountry.City.Name)
-	} else {
-		serverNameRegEx := regexp.MustCompile(`^([a-zA-Z]{2}(?:-[a-zA-Z]{2})?)(\d+)$`)
-		match := serverNameRegEx.FindStringSubmatch(serverTag)
-		// it has 3 elements, [0] - full, [1] - country code, [2] - server number
-		if len(match) == 3 {
-			countryCode := match[1]
-			log.Warn(
-				"autoconnection target set to a specific server tag, server not found, falling back to server's country code:",
-				countryCode,
-			)
-
-			cfg.AutoConnectData.ServerTag = countryCode
-			cfg.AutoConnectData.CountryCode = strings.ToUpper(countryCode)
-
-			if dataManager.CountryDataExists() {
-				countries := dataManager.GetCountryData().Countries
-				countryIndex := slices.IndexFunc(countries, func(c core.Country) bool {
-					return c.Code == countryCode
-				})
-				if countryIndex != -1 {
-					cfg.AutoConnectData.Country = strToServerTag(countries[countryIndex].Name)
-				}
-			}
+			cfg.AutoConnectData.City = serversCountry.City.Name
+			cfg.AutoConnectData.Country = serversCountry.Name
+			cfg.AutoConnectData.CountryCode = serversCountry.Code
+			cfg.AutoConnectData.ServerTag = strToServerTag(serversCountry.City.Name)
 		} else {
-			cfg.AutoConnectData.ServerTag = ""
-			log.Warn("failed to extract country code out of the server name, will fall back to fastest server")
+			serverNameRegEx := regexp.MustCompile(`^([a-zA-Z]{2}(?:-[a-zA-Z]{2})?)(\d+)$`)
+			match := serverNameRegEx.FindStringSubmatch(serverTag)
+			// it has 3 elements, [0] - full, [1] - country code, [2] - server number
+			if len(match) == 3 {
+				countryCode := match[1]
+				log.Warn(
+					"autoconnection target set to a specific server tag, server not found, falling back to server's country code:",
+					countryCode,
+				)
+
+				cfg.AutoConnectData.ServerTag = countryCode
+				cfg.AutoConnectData.CountryCode = strings.ToUpper(countryCode)
+
+				if dataManager.CountryDataExists() {
+					countries := dataManager.GetCountryData().Countries
+					countryIndex := slices.IndexFunc(countries, func(c core.Country) bool {
+						return c.Code == countryCode
+					})
+					if countryIndex != -1 {
+						cfg.AutoConnectData.Country = strToServerTag(countries[countryIndex].Name)
+					}
+				}
+			} else {
+				cfg.AutoConnectData.ServerTag = ""
+				log.Warn("failed to extract country code out of the server name, will fall back to fastest server")
+			}
 		}
 	}
 
-	if err := configManager.SaveWith(func(c config.Config) config.Config {
-		c.AutoConnectData = cfg.AutoConnectData
-		return c
-	}); err != nil {
-		return fmt.Errorf("saving migrated config: %w", err)
-	}
-
-	return nil
-}
-
-func MigrateAutoConnectDataServerTag(configManager config.Manager, dataManager *DataManager) error {
-	// everything that's left in cfg.AutoConnectData.Server tag must be properly transfered into server, county or city if applicable
-	// the serverTag must be left out empty after the migration
-	var cfg config.Config
-	if err := configManager.Load(&cfg); err != nil {
-		return fmt.Errorf("loading config: %w", err)
-	}
-
-	if cfg.AutoConnectData.ServerTag == "" {
-		//already empty, nothing to migrate
-		return nil
-	}
-	// invariant: migration from a specific server is handled by MigrateDeprecatedAutoconnectToSpecificServer
-	// invariant: here only country/city is leftout
-	// invariant: invalid tag entry is simply discarded
+	// Stage 2: resolve a country/city tag into the Country/City fields.
+	//          Anything that's left unresolved is discarded and connect to fastest as fallback.
 	tag := cfg.AutoConnectData.ServerTag
-	if dataManager.CountryDataExists() {
+	if tag != "" && dataManager.CountryDataExists() {
 		countries := dataManager.GetCountryData().Countries
 		country, city := serverpicker.FindCountryAndCity(tag, countries)
 		if country != nil {
@@ -172,14 +151,15 @@ func MigrateAutoConnectDataServerTag(configManager config.Manager, dataManager *
 		if country == nil && city == nil {
 			log.Warn("Failed to migrate Country/City property for ServerTag:", tag, " - migrating to empty")
 		}
-
 	}
 	cfg.AutoConnectData.ServerTag = ""
+
 	if err := configManager.SaveWith(func(c config.Config) config.Config {
 		c.AutoConnectData = cfg.AutoConnectData
 		return c
 	}); err != nil {
 		return fmt.Errorf("saving migrated config: %w", err)
 	}
+
 	return nil
 }
