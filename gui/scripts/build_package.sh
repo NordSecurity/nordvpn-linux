@@ -40,7 +40,7 @@ declare -A FLUTTER_FOLDER_NAME=(
 ARCH_FOLDER_NAME=${FLUTTER_FOLDER_NAME[$ARCH]}
 
 export PKG_HOMEPAGE="https://nordvpn.com/"
-export PKG_DESCRIPTION="The NordVPN app for Linux now offers a visual interface for effortless online security. NordVPN protects your internet traffic with top-grade encryption and changes your IP address, so whatever you do online stays private and secure. Connect to over 7,100 high-speed servers covering 118 countries.\n\nYou can secure up to 10 devices with a single account. Enjoy a safer internet experience on all your devices."
+export PKG_DESCRIPTION="Protect your connection with NordVPN"
 export PKG_VERSION=${VERSION}
 
 # variables used into the package installation scripts
