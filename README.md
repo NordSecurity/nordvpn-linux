@@ -161,37 +161,23 @@ userspace using
 It is attempted automatically and falls back to the userspace tunnel
 when not available.
 
-The bundled OpenVPN is 2.6, which needs the out-of-tree `ovpn-dco-v2`
-module.
+The bundled OpenVPN is 2.7, for this OpenVPN version DCO only works 
+if the `ovpn` module is in the tree  (Linux 6.16+)
 
-- Debian, Ubuntu: `sudo apt install openvpn-dco-dkms`
-- RHEL, Rocky, AlmaLinux 8/9: `sudo dnf install kmod-ovpn-dco`
-- openSUSE Leap: `sudo zypper install ovpn-dco-kmp-<flavor>`
-  (`-default` for the default kernel)
-- Fedora and others: build from
-  [OpenVPN/ovpn-dco](https://github.com/OpenVPN/ovpn-dco)
-
-With Secure Boot enabled the module won't load until you enroll its
-signing key.
-
-Then just connect:
+To confirm it's active, first connect:
 
 ```bash
 nordvpn connect
 ```
 
-To confirm it's active, check the interface kind while connected
-(`ovpn-dco` when offloaded, `tun` when not):
+And then check the interface kind while connected
+(`ovpn` when offloaded, `tun` when not):
 
 ```bash
 ip -d link show nordtun
 ```
 
-DCO is skipped if the module isn't installed, or obfuscation is on. The
-in-tree `ovpn` driver (Linux 6.16+) requires OpenVPN 2.7 and is not used
-yet, so it won't be picked up instead.
-
-To go back to the userspace tunnel, remove the module package.
+The old openvpn-dco-dkms module is not supported for OpenVPN 2.7+
 
 ---
 
