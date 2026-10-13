@@ -319,6 +319,11 @@ def test_login_mesh_on_set_defaults_mesh_on_sequence():
 
     assert "Account information" in sh_no_tty.nordvpn.account(), "Should show account information"
 
+    with pytest.raises(sh.ErrorReturnCode_1):
+        sh.nordvpn.mesh.peer.list()
+
+    assert "nordlynx" not in sh.ip.a()
+
     assert "Meshnet is set to 'enabled' successfully." in sh_no_tty.nordvpn.set.meshnet.on(), "Should show meshnet enabled message"
 
     assert settings.is_meshnet_enabled(), "Meshnet should be enabled after setting on"
