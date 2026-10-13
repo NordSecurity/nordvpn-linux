@@ -13,7 +13,7 @@ MULTI_LINE_PARAM_SEP = "#"
 
 class Settings:
     def __init__(self):
-        output = sh.nordvpn("settings")
+        output = sh.nordvpn("settings", _tty_out=False)
 
         self.settings = {}
         prev_key = ""
