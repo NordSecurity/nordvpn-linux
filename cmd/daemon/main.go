@@ -8,6 +8,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	_ "net/http/pprof" // #nosec G108 -- http server is not run in production builds
@@ -135,11 +136,7 @@ func main() {
 	if *ksMode {
 		log.Info("Daemon running in killswitch mode")
 	}
-	stopLevelWatcher := log.SetupLogger(
-		os.Stdout,
-		internal.LogLevelFile,
-		log.DefaultLevel(),
-	)
+	stopLevelWatcher := log.SetupLogger(logWriter(), internal.LogLevelFile, log.DefaultLevel())
 	defer stopLevelWatcher()
 
 	// pprof
@@ -838,6 +835,16 @@ func main() {
 		log.Error("stopping analytics:", err)
 	}
 	log.Info("Daemon stopped")
+}
+
+func logWriter() io.Writer {
+	if !snapconf.IsUnderSnap() {
+		return os.Stdout
+	}
+	return io.MultiWriter(os.Stdout, internal.FileLogOutput(
+		filepath.Join(snapconf.LogsDir(), internal.NordvpndLogFileName),
+		internal.MaxUserLogSizeMB,
+	))
 }
 
 // assignMooseDBPermissions updates moose DB permissions.
