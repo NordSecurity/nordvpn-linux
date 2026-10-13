@@ -494,3 +494,15 @@ def test_dns_after_set_defaults_with_custom_dns(vpn_protocol):
         sh.nordvpn.connect()
         assert custom_dns not in dns.get_dns_servers(), "Custom DNS should not be set, after resetting to defaults"
         assert all(server in dns.get_dns_servers() for server in dns.DNS_NORD)
+
+
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS_BASIC1)
+def test_dns_after_set_defaults_with_rtp(vpn_protocol):
+    lib.set_vpn_protocol(vpn_protocol)
+
+    sh.nordvpn.set.protect.on()
+    sh.nordvpn.set.defaults()
+
+    with lib.Defer(sh.nordvpn.disconnect):
+        sh.nordvpn.connect()
+        assert not any(item in dns.DNS_RTP for item in dns.get_dns_servers()), "RTP DNS should not be set after setting defaults"
