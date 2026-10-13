@@ -13,7 +13,7 @@ func migrateTPL(c *Config, data []byte) {
 		} `json:"auto_connect_data"`
 	}
 	if err := json.Unmarshal(data, &legacy); err != nil {
-		log.Warn("failed to unmarshal legacy threat protection lite value: ", err)
+		log.Warn("failed to unmarshal legacy threat protection lite value:", err)
 		return
 	}
 
