@@ -34,7 +34,6 @@ require (
 	github.com/moby/moby/client v0.5.1
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/quic-go/quic-go v0.60.0
-	github.com/snapcore/snapd v0.0.0-20260902114111-b33d1af92954
 	github.com/stretchr/testify v1.12.1
 	github.com/urfave/cli/v2 v2.27.7
 	github.com/vishvananda/netlink v1.3.1
@@ -61,15 +60,7 @@ require (
 
 require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
-	github.com/canonical/cpuid v0.0.0-20220614022739-219e067757cb // indirect
-	github.com/canonical/go-efilib v1.8.0 // indirect
-	github.com/canonical/go-kbkdf v0.0.0-20250104172618-3b1308f9acf9 // indirect
-	github.com/canonical/go-password-validator v0.0.0-20250617132709-1b205303ca54 // indirect
-	github.com/canonical/go-sp800.90a-drbg v0.0.0-20210314144037-6eeb1040d6c3 // indirect
-	github.com/canonical/go-tpm2 v1.16.2 // indirect
-	github.com/canonical/tcglog-parser v0.0.0-20240924110432-d15eaf652981 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/chai2010/gettext-go v1.0.3 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
@@ -88,11 +79,9 @@ require (
 	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
-	github.com/pilebones/go-udev v0.9.0 // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	github.com/snapcore/secboot v0.0.0-20260814094831-dd95d855ad64 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xrash/smetrics v0.0.0-20250705151800-55b8f293f342 // indirect
@@ -104,10 +93,5 @@ require (
 	go.opentelemetry.io/otel/trace v1.46.0 // indirect
 	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/tools v0.48.0 // indirect
-	golang.org/x/xerrors v0.0.0-20220609144429-65e65417b02f // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260819154853-08b0e4226688 // indirect
-	gopkg.in/retry.v1 v1.0.3 // indirect
-	gopkg.in/tomb.v2 v2.0.0-20161208151619-d5d1b5820637 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
-	maze.io/x/crypto v0.0.0-20190131090603-9b94c9afe066 // indirect
 )
