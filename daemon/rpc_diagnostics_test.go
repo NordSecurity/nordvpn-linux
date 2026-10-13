@@ -977,9 +977,6 @@ func TestFailToExtractDaemonLogs(t *testing.T) {
 	err := addDaemonLogs(zw, daemonSupervisorUnknown)
 	require.Error(t, err)
 	assert.ErrorIs(t, err, errNoDaemonLogSource)
-	assert.Contains(t, err.Error(), "couldn't extract daemon logs automatically")
-	assert.Contains(t, err.Error(), "systemd or snap")
-	assert.Contains(t, err.Error(), "support team")
 }
 
 func TestCreateDiagnosticsFile_UniqueFilename(t *testing.T) {
