@@ -669,6 +669,16 @@ func killStaleProcess(binaryName string, pid int) {
 	log.Warnf("sent SIGKILL to stale %s (pid %d) after SIGTERM timeout", binaryName, pid)
 }
 
+func FileLogOutput(logFilePath string, maxSizeMb int) io.Writer {
+	return &lumberjack.Logger{
+		Filename:   logFilePath,
+		MaxSize:    maxSizeMb,
+		MaxBackups: 1,
+		MaxAge:     28,
+		Compress:   true,
+	}
+}
+
 // UserLogOutput opens logFileName in the user's cache directory and returns it.
 // Falls back to os.Stdout if the file cannot be opened.
 func UserLogOutput(logFileName string, maxSizeMb int) io.Writer {
@@ -676,16 +686,5 @@ func UserLogOutput(logFileName string, maxSizeMb int) io.Writer {
 	if err != nil {
 		return os.Stdout
 	}
-
-	// Setup logging
-	logFile := filepath.Join(cacheDirPath, logFileName)
-	fileLogger := &lumberjack.Logger{
-		Filename:   logFile,
-		MaxSize:    maxSizeMb,
-		MaxBackups: 1,
-		MaxAge:     28,
-		Compress:   true,
-	}
-
-	return fileLogger
+	return FileLogOutput(filepath.Join(cacheDirPath, logFileName), maxSizeMb)
 }
