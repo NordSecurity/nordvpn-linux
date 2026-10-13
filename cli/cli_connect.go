@@ -166,8 +166,8 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 			rpcErr = errors.New(internal.ServerUnavailableErrorMessage)
 		case internal.CodeDoubleGroupError:
 			rpcErr = errors.New(internal.DoubleGroupErrorMessage)
-		case internal.CodeTechnologyDisabled:
-			rpcErr = errors.New(TechnologyDisabledMessage)
+		case internal.CodeProtocolDisabled:
+			rpcErr = errors.New(ProtocolDisabledMessage)
 		case internal.CodeDedicatedServersRenewError:
 			rpcErr = errors.New(c.injectLinkIntoMessage(client.DedicatedServersUpselURL, client.DedicatedServersUpselURLLogin, DedicatedServersNoServiceMessage))
 		case internal.CodeDedicatedServersServiceButNoServers:

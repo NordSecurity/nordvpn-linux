@@ -42,11 +42,10 @@ func newMockConfigManager() *mockConfigManager {
 			},
 		},
 		AutoConnectData: config.AutoConnectData{
-			ID:       1337,
-			Protocol: config.Protocol_UDP,
+			ID: 1337,
 		},
-		Technology: config.Technology_OPENVPN,
-		Mesh:       true,
+		VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP,
+		Mesh:        true,
 		MeshDevice: &mesh.Machine{
 			ID: uuid.New(),
 		},
@@ -59,7 +58,7 @@ func (m *mockConfigManager) SaveWith(f config.SaveFunc) error {
 }
 
 func (m *mockConfigManager) Load(c *config.Config) error {
-	c.Technology = m.c.Technology
+	c.VPNProtocol = m.c.VPNProtocol
 	c.Firewall = m.c.Firewall
 	c.Routing = m.c.Routing
 	c.KillSwitch = m.c.KillSwitch

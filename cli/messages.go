@@ -46,7 +46,6 @@ Example: nordvpn set %s on`
 
 	AutoConnectOnNonObfuscatedServerObfuscateOn = "Your selected server doesn’t support obfuscation. Choose a different server or turn off obfuscation."
 	AutoConnectOnObfuscatedServerObfuscateOff   = "Turn on obfuscation to connect to obfuscated servers."
-	SetAutoConnectForceOff                      = "Auto-connect was turned off because the setting change is incompatible with your current auto-connect preferences. Please turn on auto-connect again if you wish to continue using it."
 	AutoConnectToSpecificServer                 = "Auto-connect to a specific server is no longer supported. Use a country, city, or server group instead."
 
 	SetRealTimeProtectionDisableDNS = "Disabling DNS."
@@ -63,11 +62,6 @@ Example: nordvpn set %s on`
 
 	SetTraySuccess      = "Tray set to '%s' successfully."
 	SetTrayNothingToSet = "Tray is already set to '%s'."
-
-	SetProtocolUnavailable = "This setting is only available when the selected protocol is OpenVPN."
-	SetProtocolAlreadySet  = "Protocol is already set to %s"
-
-	SetTechnologyDepsError = "%s kernel module or configuration utility is missing."
 
 	SetDNSDisableRealTimeProtection = "Turning off Real-time protection"
 	SetDNSInvalidAddress            = "The provided IP address is invalid."
@@ -126,7 +120,7 @@ Example: nordvpn set %s on`
 	NoPreferredDedicatedIPLocationSelected = "Please select the preferred server location for your dedicated IP in Nord Account."
 	NoSuchCommand                          = "Command '%s' doesn't exist."
 	MsgListIsEmpty                         = "We couldn’t load the list of %s. Please try again later."
-	TechnologyDisabledMessage              = "We couldn't connect with the selected protocol. Please try a different one using this command: nordvpn set technology."
+	ProtocolDisabledMessage                = "We couldn't connect with the selected protocol. Please try a different one using this command: nordvpn set protocol."
 
 	// Meshnet
 	MsgSetMeshnetUsage       = "Enables or disables Meshnet on this device."
@@ -145,7 +139,7 @@ Example: nordvpn set meshnet on`
 	MsgMeshnetNotEnabled            = "Meshnet is not enabled. Use the \"nordvpn set meshnet on\" command to enable it."
 	MsgMeshnetVersionNotSupported   = "Current application version does not support the Meshnet feature."
 	MsgMeshnetUsage                 = "Meshnet is a way to safely access other devices, no matter where in the world they are. Once set up, Meshnet functions just like a secure local area network (LAN) — it connects devices directly. It also allows securely sending files to other devices. Use the \"nordvpn set meshnet on\" command to enable Meshnet. Learn more: https://meshnet.nordvpn.com/?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=meshnet-documentation&nm=app&ns=nordvpn-linux-cli&nc=meshnet-documentation"
-	MsgMeshnetNordlynxMustBeEnabled = "NordLynx technology must be set to use this feature."
+	MsgMeshnetNordlynxMustBeEnabled = "NordLynx protocol must be set to use this feature."
 
 	MsgMeshnetRefreshUsage = "Refreshes the Meshnet in case it was not updated automatically."
 	MsgMeshnetPeerUnknown  = "Peer '%s' is unknown."
@@ -363,11 +357,11 @@ Provide a [transfer_id] argument to list files in the specified transfer.`
 
 	MsgShowListOfServers = "Shows a list of %s where servers are available."
 
-	SetPqUnavailable       = "Post-quantum encryption is not compatible with %s. Switch to NordLynx to use this encryption."
-	SetTechnologyDisablePQ = "This setting is not compatible with post-quantum encryption. To use %s, turn off post-quantum encryption first."
-	SetPqAndMeshnet        = "The post-quantum VPN and Meshnet can't run at the same time. Please turn off one feature to use the other."
-	SetPqAndMeshnetServer  = "Meshnet isn’t compatible with post-quantum encryption. Reconnect to the VPN to fully disable post-quantum protection and try again."
-	SetPqUsageText         = "Enables or disables post-quantum encryption. When enabled, the encryption protects your VPN connection against potential quantum computer attacks.\nNote: Currently, post-quantum encryption works only with standard NordLynx servers, so it won’t activate when you use a dedicated IP, OpenVPN or NordWhisper.\nThe feature is not compatible with Meshnet."
+	SetPqUnavailable      = "Post-quantum encryption is not compatible with %s. Switch to NordLynx to use this encryption."
+	SetProtocolDisablePQ  = "This setting is not compatible with post-quantum encryption. To use %s, turn off post-quantum encryption first."
+	SetPqAndMeshnet       = "The post-quantum VPN and Meshnet can't run at the same time. Please turn off one feature to use the other."
+	SetPqAndMeshnetServer = "Meshnet isn’t compatible with post-quantum encryption. Reconnect to the VPN to fully disable post-quantum protection and try again."
+	SetPqUsageText        = "Enables or disables post-quantum encryption. When enabled, the encryption protects your VPN connection against potential quantum computer attacks.\nNote: Currently, post-quantum encryption works only with standard NordLynx servers, so it won’t activate when you use a dedicated IP, OpenVPN or NordWhisper.\nThe feature is not compatible with Meshnet."
 
 	SetDefaultsLogoutFlagText        = "Log out after restoring settings to their default values. Example: nordvpn set defaults --logout"
 	SetDefaultsOffKillswitchFlagText = "Turn off Kill Switch when restoring settings to their default values. Example: nordvpn set defaults --off-killswitch"
@@ -407,7 +401,7 @@ Your browsing activities remain private, regardless of your choice.
 	DedicatedServersConnectionLimitReached     = "Too many connections or device limit reached"
 	DedicatedServersAutoconnectNordlynxMessage = "Auto-connect to Dedicated Server requires NordLynx protocol."
 	DedicatedServerPQMessage                   = "Post-quantum encryption is not compatible with Dedicated Server."
-	DedicatedServersNoNordlynxMessage          = "Connection to Dedicated Server requires NordLynx technology."
+	DedicatedServersNoNordlynxMessage          = "Connection to Dedicated Server requires NordLynx protocol."
 
 	PauseNoArgsText    = "Provide a <duration> argument to specify how long you want to pause your connection.\nAvailable durations are 5m, 15m, 30m, 1h, and 24h. For example: nordvpn pause 15m."
 	PauseArgsUsage     = "<duration>"

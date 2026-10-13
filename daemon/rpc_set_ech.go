@@ -14,7 +14,7 @@ import (
 // SetECH toggles the NordWhisper Encrypted Client Hello (ECH) user setting.
 //
 // Two guards reject the change instead of persisting: ECH only applies to the NordWhisper
-// technology, and remote config can disable ECH globally. Both run before the no-op check so a
+// protocol, and remote config can disable ECH globally. Both run before the no-op check so a
 // blocked user always gets the explanatory message.
 //
 // On success this is a pure config write: Quench.Start() re-reads the ECH setting on every
@@ -30,11 +30,11 @@ func (r *RPC) SetECH(ctx context.Context, in *pb.SetGenericRequest) (*pb.Payload
 		}, nil
 	}
 
-	// Guard 1: ECH only applies to NordWhisper. Checked against the configured technology,
+	// Guard 1: ECH only applies to NordWhisper. Checked against the configured protocol,
 	// like post-quantum's CodePqWithoutNordlynx.
-	if cfg.Technology != config.Technology_NORDWHISPER {
+	if !cfg.VPNProtocol.IsNordWhisper() {
 		return &pb.Payload{
-			Type: internal.CodeECHTechUnsupported,
+			Type: internal.CodeECHProtocolUnsupported,
 		}, nil
 	}
 

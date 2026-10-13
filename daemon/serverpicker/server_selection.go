@@ -1,12 +1,13 @@
 // Package serverpicker contains the logic for selecting a VPN server that
-// matches a set of user criteria (technology, protocol, location, group and
-// tags). It resolves the requested target into a concrete server,
+// matches a set of user criteria (protocol, location, group and tags).
+// It resolves the requested target into a concrete server,
 // preferring the recommendations API and falling back to the locally cached
 // server list.
 package serverpicker
 
 import (
 	"errors"
+	"fmt"
 	"math/rand"
 	"strings"
 	"time"
@@ -60,13 +61,12 @@ func PickServer(
 
 	selectedServers := []core.Server{}
 
-	tech := cfg.Technology
-	protocol := cfg.AutoConnectData.Protocol
-	log.ServerSel.Debug("search server", tech, protocol, "with input", input)
+	vpnProtocol := cfg.VPNProtocol
+	log.ServerSel.Debug("search server", vpnProtocol, "with input", input)
 
-	serverTech := TechToServerTech(tech, protocol)
+	serverTech := VPNProtocolToServerTech(vpnProtocol)
 	if serverTech == core.Unknown {
-		return ServerSelection{}, errors.New("unknown technology")
+		return ServerSelection{}, fmt.Errorf("no server technology for vpn protocol %s", vpnProtocol)
 	}
 
 	// detect the group from the input params (fix tag arg if needed)
@@ -76,8 +76,8 @@ func PickServer(
 	}
 
 	// the group the servers are actually looked up by can differ from the requested ones
-	// on specific technology (edge case)
-	serverGroup := searchGroup(requestedGroup, tech)
+	// on specific protocol (edge case)
+	serverGroup := searchGroup(requestedGroup, vpnProtocol)
 	log.ServerSel.Debug("resolved server group", requestedGroup, "search group", serverGroup)
 
 	if serverGroup == config.ServerGroup_DEDICATED_IP {

@@ -6,7 +6,6 @@ import (
 
 	"github.com/vishvananda/netlink"
 
-	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/internal/analytics"
@@ -75,7 +74,7 @@ func NewDCOAnalytics(publisher events.Publisher[events.DebuggerEvent]) *DCOAnaly
 
 // NotifyConnect emits the DCO status event once per successful OpenVPN connection
 func (a *DCOAnalytics) NotifyConnect(e events.DataConnect) error {
-	if e.EventStatus == events.StatusSuccess && e.Technology == config.Technology_OPENVPN {
+	if e.EventStatus == events.StatusSuccess && e.VPNProtocol.IsOpenVPN() {
 		a.publisher.Publish(*newDCOStatusEvent().ToDebuggerEvent())
 	}
 	return nil

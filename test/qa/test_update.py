@@ -153,13 +153,13 @@ def test_fileshare_available_after_update():
     fileshare.files_from_transfer_exist_in_filesystem(remote_transfer_id, [wdir], ssh_client)
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_quick_connect_after_update(tech, proto):
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
+def test_quick_connect_after_update(vpn_protocol):
     """Manual TC: LVPN-8506"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
-    connect_base_test((tech, proto))
+    connect_base_test(vpn_protocol)
     disconnect_base_test()
 
 

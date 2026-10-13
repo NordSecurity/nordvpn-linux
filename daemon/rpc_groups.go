@@ -20,10 +20,7 @@ func (r *RPC) Groups(ctx context.Context, in *pb.Empty) (*pb.ServerGroupsList, e
 		}, nil
 	}
 
-	groups, err := r.dm.Groups(
-		cfg.Technology,
-		cfg.AutoConnectData.Protocol,
-	)
+	groups, err := r.dm.Groups(cfg.VPNProtocol)
 	if err != nil {
 		log.Error("failed to get group names", err)
 		return &pb.ServerGroupsList{

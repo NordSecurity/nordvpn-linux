@@ -71,7 +71,7 @@ func TestDCOAnalytics_NotifyConnect(t *testing.T) {
 			name: "successful openvpn connect publishes DCO status",
 			event: events.DataConnect{
 				EventStatus: events.StatusSuccess,
-				Technology:  config.Technology_OPENVPN,
+				VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP,
 			},
 			wantPublished: true,
 		},
@@ -79,7 +79,7 @@ func TestDCOAnalytics_NotifyConnect(t *testing.T) {
 			name: "successful nordlynx connect publishes nothing",
 			event: events.DataConnect{
 				EventStatus: events.StatusSuccess,
-				Technology:  config.Technology_NORDLYNX,
+				VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			},
 			wantPublished: false,
 		},
@@ -87,7 +87,7 @@ func TestDCOAnalytics_NotifyConnect(t *testing.T) {
 			name: "openvpn connect attempt publishes nothing",
 			event: events.DataConnect{
 				EventStatus: events.StatusAttempt,
-				Technology:  config.Technology_OPENVPN,
+				VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP,
 			},
 			wantPublished: false,
 		},

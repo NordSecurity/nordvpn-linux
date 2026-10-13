@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"golang.org/x/exp/slices"
@@ -49,9 +48,9 @@ func (c *cmd) AllowlistRemovePort(ctx *cli.Context) error {
 		isTCP = true
 	} else {
 		switch args.Get(2) {
-		case config.Protocol_UDP.String():
+		case stringUDP:
 			isUDP = true
-		case config.Protocol_TCP.String():
+		case stringTCP:
 			isTCP = true
 		default:
 			return formatError(argsParseError(ctx))
@@ -129,10 +128,10 @@ func (c *cmd) AllowlistRemovePortAutoComplete(ctx *cli.Context) {
 	case 2:
 		port, _ := strconv.ParseInt(ctx.Args().First(), 10, 64)
 		if slices.Contains(allowlist.Ports.Udp, port) {
-			fmt.Println(config.Protocol_UDP.String())
+			fmt.Println(stringUDP)
 		}
 		if slices.Contains(allowlist.Ports.Tcp, port) {
-			fmt.Println(config.Protocol_TCP.String())
+			fmt.Println(stringTCP)
 		}
 	default:
 		return

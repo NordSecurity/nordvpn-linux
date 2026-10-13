@@ -225,15 +225,20 @@ func (f *FilesystemConfigManager) load(c *Config, copy *Config) error {
 		decryptedData = data[4:]
 	}
 
+	// UNSPECIFIED marks a file without vpn_protocol for migration
+	c.VPNProtocol = VPNProtocol_VPN_PROTOCOL_UNSPECIFIED
 	if err := json.Unmarshal(decryptedData, c); err != nil {
 		return err
 	}
+	migrateVPNProtocol(c, decryptedData)
 
 	if copy != nil {
 		*copy = *newConfig(f.machineIDGetter)
+		copy.VPNProtocol = VPNProtocol_VPN_PROTOCOL_UNSPECIFIED
 		if err := json.Unmarshal(decryptedData, copy); err != nil {
 			return err
 		}
+		migrateVPNProtocol(copy, decryptedData)
 	}
 
 	return nil

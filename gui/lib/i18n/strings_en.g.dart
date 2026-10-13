@@ -1330,8 +1330,20 @@ class Translations$daemon$en {
 	/// en: 'Disabled technology'
 	String get code_3051_title => 'Disabled technology';
 
-	/// en: 'Unable to connect with the current technology. Please try a different one using the command: nordvpn set technology.'
-	String get code_3051_msg => 'Unable to connect with the current technology. Please try a different one using the command: nordvpn set technology.';
+	/// en: 'Unable to connect with the current protocol. Please try a different one using the command: nordvpn set protocol.'
+	String get code_3051_msg => 'Unable to connect with the current protocol. Please try a different one using the command: nordvpn set protocol.';
+
+	/// en: 'Here's what to know'
+	String get code_3068_title => 'Here\'s what to know';
+
+	/// en: 'Auto-connect is set to a dedicated server, which only works with NordLynx. To use a different protocol, choose another auto-connect location or turn off auto-connect first.'
+	String get code_3068_msg => 'Auto-connect is set to a dedicated server, which only works with NordLynx. To use a different protocol, choose another auto-connect location or turn off auto-connect first.';
+
+	/// en: 'Here's what to know'
+	String get code_3080_title => 'Here\'s what to know';
+
+	/// en: 'Auto-connect is set to obfuscated servers, which only work with NordWhisper. To use a different protocol, choose another auto-connect location or turn off auto-connect first.'
+	String get code_3080_msg => 'Auto-connect is set to obfuscated servers, which only work with NordWhisper. To use a different protocol, choose another auto-connect location or turn off auto-connect first.';
 
 	/// en: 'Restart daemon to apply setting'
 	String get code_5007_title => 'Restart daemon to apply setting';
@@ -2631,7 +2643,11 @@ extension on Translations {
 			'daemon.code_3049_title' => 'Here\'s what to know',
 			'daemon.code_3049_msg' => 'This setting is not compatible with post-quantum encryption. To use it, turn off post-quantum encryption first.',
 			'daemon.code_3051_title' => 'Disabled technology',
-			'daemon.code_3051_msg' => 'Unable to connect with the current technology. Please try a different one using the command: nordvpn set technology.',
+			'daemon.code_3051_msg' => 'Unable to connect with the current protocol. Please try a different one using the command: nordvpn set protocol.',
+			'daemon.code_3068_title' => 'Here\'s what to know',
+			'daemon.code_3068_msg' => 'Auto-connect is set to a dedicated server, which only works with NordLynx. To use a different protocol, choose another auto-connect location or turn off auto-connect first.',
+			'daemon.code_3080_title' => 'Here\'s what to know',
+			'daemon.code_3080_msg' => 'Auto-connect is set to obfuscated servers, which only work with NordWhisper. To use a different protocol, choose another auto-connect location or turn off auto-connect first.',
 			'daemon.code_5007_title' => 'Restart daemon to apply setting',
 			'daemon.code_5007_msg' => 'Restart the daemon to apply this setting. For example, use the command `sudo systemctl restart nordvpnd` on systemd distributions.',
 			'daemon.code_5008_title' => 'gRPC timeout error',
@@ -2723,12 +2739,12 @@ extension on Translations {
 			'ui.connecting' => 'Connecting',
 			'ui.findingServer' => 'Finding server...',
 			'ui.noResultsFound' => 'No results found. Try another keyword.',
+			_ => null,
+		} ?? switch (path) {
 			'ui.searchServersHint' => 'Search countries, cities, or servers',
 			'ui.citiesAvailable' => ({required Object n}) => '${n} cities available',
 			'ui.dedicatedIp' => 'Dedicated IP',
 			'ui.dedicatedServer' => 'Dedicated Server',
-			_ => null,
-		} ?? switch (path) {
 			'ui.doubleVpn' => 'Double VPN',
 			'ui.onionOverVpn' => 'Onion Over VPN',
 			'ui.obfuscated' => 'Obfuscated',

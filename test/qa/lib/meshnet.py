@@ -382,12 +382,12 @@ MESHNET_ALIAS = [
 MSG_PEER_UNKNOWN = "Peer '%s' is unknown."
 MSG_PEER_OFFLINE = "Connect to other mesh peer failed - check if peer '%s' is online."
 MSG_ROUTING_FAIL = "Meshnet peer '%s' does not allow traffic routing."
-MSG_ROUTING_NEED_NORDLYNX = "NordLynx technology must be set to use this feature."
+MSG_ROUTING_NEED_NORDLYNX = "NordLynx protocol must be set to use this feature."
 MSG_ROUTING_SUCCESS = "You are connected to Meshnet exit node '%s'."
 
 MSG_PEER_ROUTING_ALLOW_SUCCESS = "Traffic routing for '%s' has been allowed."
 MSG_PEER_ROUTING_ALLOW_ERROR = "Traffic routing for '%s' is already allowed."
-MSG_PEER_ROUTING_DENY_SUCCESS =  "Traffic routing for '%s' has been denied."
+MSG_PEER_ROUTING_DENY_SUCCESS = "Traffic routing for '%s' has been denied."
 MSG_PEER_ROUTING_DENY_ERROR = "Traffic routing for '%s' is already denied."
 
 MSG_PEER_INCOMING_ALLOW_SUCCESS = "Incoming traffic for '%s' has been allowed."

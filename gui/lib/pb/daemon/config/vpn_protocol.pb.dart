@@ -1,6 +1,6 @@
 // This is a generated file - do not edit.
 //
-// Generated from protocol.proto.
+// Generated from vpn_protocol.proto.
 
 // @dart = 3.3
 
@@ -14,4 +14,4 @@ import 'dart:core' as $core;
 
 export 'package:protobuf/protobuf.dart' show GeneratedMessageGenericExtensions;
 
-export 'protocol.pbenum.dart';
+export 'vpn_protocol.pbenum.dart';

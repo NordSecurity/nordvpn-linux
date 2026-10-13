@@ -105,7 +105,7 @@ func testRPC() *RPC {
 		&core_test.AuthenticationAPImock{},
 		"1.0.0",
 		daemonEvents.NewEventsEmpty(),
-		func(config.Technology) (vpn.VPN, error) {
+		func(config.VPNProtocol) (vpn.VPN, error) {
 			return &mock.WorkingVPN{}, nil
 		},
 		&testnetworker.Mock{},

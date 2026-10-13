@@ -420,10 +420,10 @@ func main() {
 		rcConfig.IsFeatureEnabled(remote.FeatureENS),
 	)
 
-	vpn, err := vpnFactory(cfg.Technology)
+	vpn, err := vpnFactory(cfg.VPNProtocol)
 	if err != nil {
 		// if NordWhisper was disabled we'll fall back automatically to NordLynx if autoconnect is enabled or tell user
-		// to switch to a different tech
+		// to switch to a different protocol
 		if !errors.Is(err, ErrNordWhisperDisabled) {
 			log.Fatal(err)
 		} else {

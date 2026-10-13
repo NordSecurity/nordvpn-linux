@@ -85,7 +85,7 @@ func (r *RecentConnectionsStore) Add(model Model) error {
 		connections = []Model{}
 	}
 
-	// Find matches that have the same connection model with technologies and connection type
+	// Find matches that have the same connection model with protocol and connection type
 	// considered
 	matches := newFilter(model, connections).
 		withSpecificServerOnlyFor([]config.ServerSelectionRule{
