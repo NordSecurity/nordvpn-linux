@@ -842,7 +842,7 @@ func logWriter() io.Writer {
 		return os.Stdout
 	}
 	return io.MultiWriter(os.Stdout, internal.FileLogOutput(
-		filepath.Join(snapconf.LogsDir(), internal.NordvpndLogFileName),
+		snapconf.DaemonLogPath(),
 		internal.MaxUserLogSizeMB,
 	))
 }

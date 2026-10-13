@@ -533,7 +533,7 @@ func streamCommandToWriter(
 }
 
 func streamSnapLogs(writer io.Writer) error {
-	logPath := filepath.Join(snapconf.LogsDir(), internal.NordvpndLogFileName)
+	logPath := snapconf.DaemonLogPath()
 	if _, err := os.Stat(logPath); err != nil {
 		return errNoDaemonLogSource
 	}
