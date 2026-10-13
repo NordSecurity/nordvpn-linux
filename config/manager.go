@@ -230,7 +230,6 @@ func (f *FilesystemConfigManager) load(c *Config, copy *Config) error {
 	if err := json.Unmarshal(decryptedData, c); err != nil {
 		return err
 	}
-	migrateVPNProtocol(c, decryptedData)
 
 	if copy != nil {
 		*copy = *newConfig(f.machineIDGetter)
@@ -239,7 +238,10 @@ func (f *FilesystemConfigManager) load(c *Config, copy *Config) error {
 			return err
 		}
 		migrateVPNProtocol(copy, decryptedData)
+		migrateTPL(copy, decryptedData)
 	}
+	migrateVPNProtocol(c, decryptedData)
+	migrateTPL(c, decryptedData)
 
 	return nil
 }
