@@ -480,3 +480,28 @@ def test_custom_dns_removed_when_rtp_enabled_connected(tech, proto, nameserver):
         assert dns.is_set_for(dns.DNS_RTP), "DNS should be set for RTP after enabling RTP while connected"
 
     assert dns.is_unset(), "DNS should be unset after disconnecting from VPN server"
+
+
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES_BASIC1)
+def test_dns_after_set_defaults_with_custom_dns(tech, proto):
+    lib.set_technology_and_protocol(tech, proto)
+    custom_dns = "1.1.1.1"
+
+    sh.nordvpn.set.dns(custom_dns)
+    sh.nordvpn.set.defaults()
+
+    with lib.Defer(sh.nordvpn.disconnect):
+        sh.nordvpn.connect()
+        assert custom_dns not in dns.get_dns_servers(), "Custom DNS should not be set, after resetting to defaults"
+
+
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES_BASIC1)
+def test_dns_after_set_defaults_with_rtp(tech, proto):
+    lib.set_technology_and_protocol(tech, proto)
+
+    sh.nordvpn.set.protect.on()
+    sh.nordvpn.set.defaults()
+
+    with lib.Defer(sh.nordvpn.disconnect):
+        sh.nordvpn.connect()
+        assert not any(item in dns.DNS_RTP for item in dns.get_dns_servers()), "RTP DNS should not be set after setting defaults"

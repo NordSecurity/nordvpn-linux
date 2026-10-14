@@ -1,3 +1,5 @@
+import time
+
 import pytest
 import sh
 
@@ -182,3 +184,13 @@ def test_prevent_autoconnect_enable_to_non_obfuscated_servers_when_obfuscation_i
         assert "Auto-connect: disabled" in sh.nordvpn.settings(), "Auto-connect should be disabled"
         daemon.restart()
         assert network.is_disconnected(), "Network should be disconnected"
+
+
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES_BASIC1)
+def test_autoconnect_off_after_set_defaults_with_autoconnect_enabled(tech, proto):
+    lib.set_technology_and_protocol(tech, proto)
+    sh.nordvpn.set.autoconnect.on()
+    sh.nordvpn.set.defaults()
+    daemon.restart()
+    time.sleep(10)
+    assert not daemon.is_connected(), "Autoconnect should not work, after setting defaults"
