@@ -62,6 +62,8 @@ type SubscriptionAPI interface {
 	Orders() ([]Order, error)
 	// Payments returns a list of payments done by the user
 	Payments() ([]PaymentResponse, error)
+	// Purchases returns the cached purchase information (orders, plans, payments, subscriptions) for the authenticated user
+	Purchases() (PurchasesResult, error)
 }
 
 type DedicatedServersAPI interface {

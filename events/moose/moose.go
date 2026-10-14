@@ -1890,3 +1890,78 @@ func deviceTypeToInternalType(deviceType sysinfo.SystemDeviceType) moose.Nordvpn
 func durationToConnectionFunnel(duration time.Duration) string {
 	return fmt.Sprintf("pause:%d", int(duration.Minutes()))
 }
+
+const (
+	purchaseDateInputLayout  = "2006-01-02 15:04:05"
+	purchaseDateOutputLayout = "2006-01"
+)
+
+// allowedPurchaseStatuses are the only payment statuses included in the output
+var allowedPurchaseStatuses = map[string]bool{
+	"done":               true,
+	"chargeback":         true,
+	"refunded":           true,
+	"partially_refunded": true,
+	"trial":              true,
+}
+
+// formats the purchases according to NordvpnappSetContextUserNordvpnappSubscriptionHistory documentation
+func formatPurchases(purchases []core.Purchase) string {
+	var elements []string
+
+	for _, p := range purchases {
+		var plan core.PurchasePlan
+		if len(p.Plans) == 0 {
+			log.Warn("formatting purchases: no plan in purchases")
+			continue
+		}
+		plan = p.Plans[0]
+
+		subsById := make(map[int64]core.PurchaseSubscription, len(p.Subscriptions))
+		for _, s := range p.Subscriptions {
+			subsById[s.ID] = s
+		}
+
+		for _, pay := range p.Payments {
+			if !allowedPurchaseStatuses[pay.Status] {
+				continue
+			}
+
+			sub, ok := subsById[pay.SubscriptionID]
+			if !ok {
+				log.Warn("formatting purchases: no subscription for payment:", pay.ID, "subscription_id:", pay.SubscriptionID)
+				continue
+			}
+
+			t, err := time.Parse(purchaseDateInputLayout, pay.CreatedAt)
+			if err != nil {
+				log.Warn("formatting purchases: bad created_at for payment:", pay.ID, "value:", pay.CreatedAt, "error:", err)
+				continue
+			}
+
+			element := strings.Join([]string{
+				t.Format(purchaseDateOutputLayout),
+				strconv.FormatInt(plan.ID, 10),
+				strconv.FormatInt(sub.FrequencyInterval, 10),
+				sub.FrequencyUnit,
+				plan.Type,
+				pay.Status,
+				pay.Amount,
+				pay.Currency,
+				pay.Provider,
+			}, ":")
+
+			elements = append(elements, element)
+		}
+	}
+
+	return strings.Join(elements, ",")
+}
+
+func (s *Subscriber) NotifyPurchases(purchases []core.Purchase) error {
+	formattedData := formatPurchases(purchases)
+	if err := s.response(moose.NordvpnappSetContextUserNordvpnappSubscriptionHistory(formattedData)); err != nil {
+		return fmt.Errorf("setting subscription history %v: %w", formattedData, err)
+	}
+	return nil
+}
