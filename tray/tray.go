@@ -12,7 +12,6 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/alert"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/norduser"
 	"github.com/NordSecurity/nordvpn-linux/sysinfo"
@@ -390,9 +389,6 @@ func (ti *Instance) OnExit() {
 }
 
 func (ti *Instance) OnReady(ctx context.Context) {
-	systray.SetTitle(internal.AppName)
-	systray.SetTooltip(internal.AppName)
-
 	ti.stateListener.Start()
 
 	go ti.renderLoop(ctx)
