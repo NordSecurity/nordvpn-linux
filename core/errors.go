@@ -17,13 +17,16 @@ var (
 	// ErrMaximumDeviceCount is returned for some of the 400 HTTP responses.
 	ErrMaximumDeviceCount = errors.New("maximum device count reached")
 	// error codes returned for meshnet nicknames, when 400 HTTP responses
-	ErrRateLimitReach            = errors.New("reach max allowed nickname changes for a week")
-	ErrNicknameTooLong           = errors.New("nickname is too long")
-	ErrDuplicateNickname         = errors.New("nickname already exist")
-	ErrContainsForbiddenWord     = errors.New("nickname contains forbidden word")
-	ErrInvalidPrefixOrSuffix     = errors.New("nickname contains invalid prefix or suffix")
-	ErrNicknameWithDoubleHyphens = errors.New("nickname contains double hyphens")
-	ErrContainsInvalidChars      = errors.New("nickname contains invalid characters")
+	ErrRateLimitReach             = errors.New("reach max allowed nickname changes for a week")
+	ErrNicknameTooLong            = errors.New("nickname is too long")
+	ErrDuplicateNickname          = errors.New("nickname already exist")
+	ErrContainsForbiddenWord      = errors.New("nickname contains forbidden word")
+	ErrInvalidPrefixOrSuffix      = errors.New("nickname contains invalid prefix or suffix")
+	ErrNicknameWithDoubleHyphens  = errors.New("nickname contains double hyphens")
+	ErrContainsInvalidChars       = errors.New("nickname contains invalid characters")
+	ErrInvalidFormData            = errors.New("invalid form data")
+	ErrInvitationReceivedSameUser = errors.New("invitation sent to the inviting user")
+	ErrMeshMachineNotFound        = errors.New("machine not found")
 
 	ErrDedicatedServersDeviceNotFound         = errors.New("device not found")
 	ErrDedicatedServersDeviceNotRegistered    = errors.New("device not registered")
@@ -53,6 +56,8 @@ const (
 	// Login error codes
 	InvalidAuthorizationHeader = 100106
 	// Meshnet error codes
+	MeshnetInvalidFormData               = 101101 // meshnet invite was send to an invalid email address
+	InvitationReceivedSameUser           = 101108 // meshnet invite was sent to the email address of the user sending the invite
 	RateLimitReachCode                   = 101126 // rate limit reached (max allowed nickname changes per user per week)
 	NicknameTooLongCode                  = 101127 // nickname too long
 	DuplicateNicknameCode                = 101128 // duplicate nickname (nickname already exist)
@@ -63,14 +68,15 @@ const (
 	MaxMachineCountReached               = 101120 // maximum machine count reached
 	MaxMachinePerPeerCountReached        = 101121 // maximum machine per peer count reached
 	MaxPeerCountReachedOnExternalMachine = 101122 // maximum peer count reach on external machine
+	MachineNotFound                      = 101102 // meshnet machine was not found when fetching a server map
 	// Dedicated server error codes
-	DeviceNotFound      = 910001
-	DeviceNotRegistered = 910007
-	InvalidFormData     = 100101
-	PublicKeyMismatch   = 910002
-	SessionLimitHit     = 910005
-	ServerOffline       = 910004
-	ServerNotFound      = 910003
+	DeviceNotFound                  = 910001
+	DeviceNotRegistered             = 910007
+	DedicatedServersInvalidFormData = 100101
+	PublicKeyMismatch               = 910002
+	SessionLimitHit                 = 910005
+	ServerOffline                   = 910004
+	ServerNotFound                  = 910003
 )
 
 type apiError struct {
@@ -146,6 +152,9 @@ func extractError(resp *http.Response, acceptedCode int) error {
 		return internal.NewCodedError(info.Errors.Code, info.Errors.Message, ErrForbidden)
 
 	case http.StatusNotFound:
+		if info.Errors.Code == MachineNotFound {
+			return ErrMeshMachineNotFound
+		}
 		return internal.NewCodedError(info.Errors.Code, info.Errors.Message, ErrNotFound)
 
 	case http.StatusConflict:
@@ -183,6 +192,10 @@ func extractErrorForMeshnet(info apiError) error {
 		return ErrContainsInvalidChars
 	case MaxMachineCountReached, MaxMachinePerPeerCountReached, MaxPeerCountReachedOnExternalMachine:
 		return ErrMaximumDeviceCount
+	case MeshnetInvalidFormData:
+		return ErrInvalidFormData
+	case InvitationReceivedSameUser:
+		return ErrInvitationReceivedSameUser
 	}
 	return nil
 }
@@ -193,7 +206,7 @@ func extractErrorForDedicatedServer(info apiError) error {
 		return ErrDedicatedServersDeviceNotFound
 	case DeviceNotRegistered:
 		return ErrDedicatedServersDeviceNotRegistered
-	case InvalidFormData:
+	case DedicatedServersInvalidFormData:
 		return ErrDedicatedServersInvalidFormData
 	case PublicKeyMismatch:
 		return ErrDedicatedServersPublicKeyMismatch
