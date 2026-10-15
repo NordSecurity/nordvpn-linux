@@ -67,7 +67,7 @@ func (r *RPC) CollectDiagnostics(
 	}
 	defer outputRoot.Close()
 
-	zipFile, err := createDiagnosticsFile(outputRoot)
+	zipFile, err := createDiagnosticsFile(outputRoot, snapconf.IsUnderSnap())
 	if err != nil {
 		log.Diagnostics.Error("failed to create diagnostics zip:", err)
 		return srv.Send(&pb.DiagnosticsProgress{
@@ -1075,8 +1075,12 @@ func resolvectlStatus(logf logFunc) string {
 }
 
 // createDiagnosticsFile - creates a unique file inside the `rootDir` directory
-func createDiagnosticsFile(rootDir *os.Root) (*os.File, error) {
-	prefix := fmt.Sprintf("nordvpn-diagnostics-%s", time.Now().Format("20060102-150405"))
+func createDiagnosticsFile(rootDir *os.Root, underSnap bool) (*os.File, error) {
+	snapPostfix := ""
+	if underSnap {
+		snapPostfix = "-snap"
+	}
+	prefix := fmt.Sprintf("nordvpn-diagnostics-%s%s", time.Now().Format("20060102-150405"), snapPostfix)
 
 	name := prefix + ".zip"
 	f, err := rootDir.OpenFile(name, os.O_RDWR|os.O_CREATE|os.O_EXCL, internal.PermUserRW)

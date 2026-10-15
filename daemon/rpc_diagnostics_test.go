@@ -990,7 +990,7 @@ func TestCreateDiagnosticsFile_UniqueFilename(t *testing.T) {
 	const N = 5
 	seen := make(map[string]bool, N)
 	for i := range N {
-		f, err := createDiagnosticsFile(root)
+		f, err := createDiagnosticsFile(root, false)
 		require.NoError(t, err)
 		require.NoError(t, f.Close())
 
@@ -1002,6 +1002,40 @@ func TestCreateDiagnosticsFile_UniqueFilename(t *testing.T) {
 		assert.True(t, strings.HasSuffix(name, ".zip"), "unexpected suffix: %q", name)
 	}
 	assert.Len(t, seen, N, "expected %d unique filenames", N)
+}
+
+func TestCreateDiagnosticsFile_SnapPostfix(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name      string
+		underSnap bool
+	}{
+		{name: "non-snap filename has no snap postfix", underSnap: false},
+		{name: "snap filename has snap postfix", underSnap: true},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			root, err := os.OpenRoot(dir)
+			require.NoError(t, err)
+			defer func() { _ = root.Close() }()
+
+			f, err := createDiagnosticsFile(root, tc.underSnap)
+			require.NoError(t, err)
+			require.NoError(t, f.Close())
+
+			name := filepath.Base(f.Name())
+			assert.True(t, strings.HasPrefix(name, "nordvpn-diagnostics-"))
+			assert.True(t, strings.HasSuffix(name, ".zip"))
+			if tc.underSnap {
+				assert.Contains(t, name, "-snap")
+			} else {
+				assert.NotContains(t, name, "-snap")
+			}
+		})
+	}
 }
 
 func TestDiagnosticsFailsWhenGRPCPeerIsInvalid(t *testing.T) {
