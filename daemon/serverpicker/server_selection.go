@@ -122,25 +122,29 @@ func PickServer(
 
 	if len(selectedServers) == 0 {
 		// if no servers were received from the API, try from locally cached servers
-		log.ServerSel.Error("failed to select server from remote", err)
+		log.ServerSel.Debug("no server found via API, trying locally cached list")
 		remote = false
 		selectedServers, err = findServersLocally(servers, serverTag, filterServersFn)
 	}
 
 	if err != nil {
+		log.ServerSel.Error("failed to select server (from remote or locally cached)", err)
 		return ServerSelection{}, err
 	}
 
 	if len(selectedServers) == 0 {
 		log.ServerSel.Debug("no server found")
-		// We were not guarded against this case before
-		// So I assume it should not happen, but better be safe
 		return ServerSelection{}, internal.ErrServerIsUnavailable
 	}
 
-	// #nosec G404 -- not used for cryptographic purposes
-	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
-	selectedServer = &selectedServers[rng.Int63n(int64(len(selectedServers)))]
+	if remote {
+		// servers from the API are ordered by recommendation, take the best one
+		selectedServer = &selectedServers[0]
+	} else {
+		// #nosec G404 -- not used for cryptographic purposes
+		rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+		selectedServer = &selectedServers[rng.Int63n(int64(len(selectedServers)))]
+	}
 
 	return ServerSelection{
 		Server:             selectedServer,

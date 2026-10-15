@@ -1168,3 +1168,73 @@ func TestNewSearchParams(t *testing.T) {
 		})
 	}
 }
+
+func TestPickServer_ServerSelectionOrder(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name                       string
+		apiServers                 core.Servers
+		excludedServer             string
+		expectedServerName         string
+		expectedRemoteServer       bool
+		expectedRecommendationUUID RecommendationUUID
+	}{
+		{
+			name:                       "first server from the API is selected",
+			apiServers:                 core_test.ServersList("fr1.nordvpn.com", "de3.nordvpn.com", "lt15.nordvpn.com"),
+			expectedServerName:         "France #1",
+			expectedRemoteServer:       true,
+			expectedRecommendationUUID: RecommendationUUID(core_test.TestRecommendedUUID),
+		},
+		{
+			name:                       "API order is respected",
+			apiServers:                 core_test.ServersList("lt15.nordvpn.com", "de3.nordvpn.com", "fr1.nordvpn.com"),
+			expectedServerName:         "Lithuania #15",
+			expectedRemoteServer:       true,
+			expectedRecommendationUUID: RecommendationUUID(core_test.TestRecommendedUUID),
+		},
+		{
+			name:                       "next server from the API is selected when the first one is excluded",
+			apiServers:                 core_test.ServersList("fr1.nordvpn.com", "de3.nordvpn.com", "lt15.nordvpn.com"),
+			excludedServer:             "fr1.nordvpn.com",
+			expectedServerName:         "Germany #3",
+			expectedRemoteServer:       true,
+			expectedRecommendationUUID: RecommendationUUID(core_test.TestRecommendedUUID),
+		},
+		{
+			name:                       "local servers are used when no API server matches the user settings",
+			apiServers:                 core_test.ServersList("de4.nordvpn.com"),
+			expectedRemoteServer:       false,
+			expectedRecommendationUUID: emptyUUID,
+		},
+	}
+
+	// selection used to be random, repeat to make sure the result is deterministic
+	const iterations = 20
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			api := &core_test.MockServersAPI{ServersList: test.apiServers}
+			cfg := config.Config{Technology: config.Technology_NORDLYNX}
+
+			for range iterations {
+				serverSelection, err := PickServer(
+					api,
+					core_test.ServersList(),
+					core_test.CountriesList(),
+					core.Insights{},
+					cfg,
+					NewSearchParams("", "", test.excludedServer),
+				)
+
+				assert.NoError(t, err)
+				assert.Equal(t, test.expectedRemoteServer, serverSelection.Remote)
+				assert.Equal(t, test.expectedRecommendationUUID, serverSelection.RecommendationUUID)
+				if len(test.expectedServerName) > 0 {
+					assert.Equal(t, test.expectedServerName, serverSelection.Server.Name)
+				}
+			}
+		})
+	}
+}
