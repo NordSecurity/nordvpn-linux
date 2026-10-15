@@ -18,7 +18,7 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-const apiServersLimit = 20
+const apiServersLimit = 10
 
 // RecommendationUUID identifies a server recommendation returned by the API.
 type RecommendationUUID string
