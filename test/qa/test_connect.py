@@ -8,7 +8,7 @@ import grpc
 
 from constants import NORDVPND_SOCKET
 import lib
-from lib import daemon, info, logging, network, server, IS_NIGHTLY
+from lib import daemon, info, logging, network, server, IS_NIGHTLY, log_reader
 from lib.protobuf.daemon import (common_pb2, service_pb2_grpc)
 from lib.dynamic_parametrize import dynamic_parametrize
 from test_grpc import pause_connection
@@ -540,16 +540,28 @@ def test_check_routing_table_for_lan():
 @pytest.mark.parametrize(("tech", "proto"), lib.STANDARD_TECHNOLOGIES_NO_NORDWHISPER)
 def test_connect_to_dedicated_ip(tech, proto):
     """Manual TC: LVPN-8847"""
+    daemon_log_reader = log_reader.LogReader(logging.FILE)
+    log_cursor = daemon_log_reader.get_cursor()
 
     lib.set_technology_and_protocol(tech, proto)
 
     server_info = server.get_dedicated_ip()
 
     connect_base_test((tech, proto), server_info.hostname.split(".")[0], server_info.name, server_info.hostname)
+
     disconnect_base_test()
 
     assert network.is_disconnected(), "Network should be disconnected after disconnect"
     assert "nordlynx" not in sh.ip.a() and "nordtun" not in sh.ip.a(), "VPN interfaces should be removed"
+
+    # logs are sanitized only in production, so dev version is not checked
+    version = sh.nordvpn.version()
+    if "- dev" not in version:
+        log = daemon_log_reader.get_partial_log(log_cursor)
+        for log_line in log.splitlines():
+            assert server_info.ip not in log_line
+            assert server_info.hostname not in log_line
+            assert server_info.nordlynx_public_key not in log_line
 
 
 @pytest.mark.parametrize(("reconnect", "pause"), [(True, True), (True, False), (False, False)])

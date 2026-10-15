@@ -62,6 +62,12 @@ type CancelFunc func()
 
 var level atomic.Uint32
 
+var doSanitize atomic.Bool
+
+// doSanitizeDefault stores the default value of doSanitize. It is set at init in SetupLogger and shouldn't be updated
+// afterwards.
+var doSanitizeDefault bool
+
 func DefaultLevel() logLevel {
 	return levelDebug
 }
@@ -69,10 +75,14 @@ func DefaultLevel() logLevel {
 // SetupLogger configures the log output and initial level, then starts watching
 // levelFilePath for runtime level changes. The returned CancelFunc must be
 // called on shutdown to stop the watcher.
-func SetupLogger(out io.Writer, levelFilePath string, initialLevel logLevel) CancelFunc {
+func SetupLogger(out io.Writer, levelFilePath string, initialLevel logLevel, isDevEnv bool) CancelFunc {
 	SetOutput(out)
 	SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Lshortfile)
 	SetLevel(initialLevel)
+
+	doSanitize.Store(!isDevEnv)
+	doSanitizeDefault = !isDevEnv
+
 	cancel, err := WatchLevelFile(levelFilePath)
 	if err != nil {
 		Error("failed to start log level watcher:", err)
@@ -92,6 +102,16 @@ func SetOutput(w io.Writer) {
 
 func SetFlags(flag int) {
 	log.SetFlags(flag)
+}
+
+// SetSanitization enables or disables log sanitization and returns its previous state.
+func SetSanitization(enabled bool) bool {
+	return doSanitize.Swap(enabled)
+}
+
+// ResetSanitization sets sanitization to its default state(on for prod, off for dev).
+func ResetSanitization() {
+	doSanitize.Store(doSanitizeDefault)
 }
 
 // Logger is a logger with a fixed prefix prepended to every message.
@@ -153,6 +173,12 @@ func Fatalf(format string, v ...any) {
 
 func logAt(l logLevel, prefix string, v []any) {
 	if level.Load() <= uint32(l) {
+		if doSanitize.Load() {
+			v = sanitize(v...)
+		} else {
+			v = unwrapLogSafe(v...)
+		}
+
 		msg := strings.TrimRight(fmt.Sprintln(v...), "\n")
 		output(showCallerAsSource, prefix+" "+msg)
 	}
@@ -166,6 +192,12 @@ func output(calldepth int, msg string) {
 
 func logAtf(l logLevel, prefix, format string, v []any) {
 	if level.Load() <= uint32(l) {
+		if doSanitize.Load() {
+			v = sanitize(v...)
+		} else {
+			v = unwrapLogSafe(v...)
+		}
+
 		output(showCallerAsSource, fmt.Sprintf(prefix+" "+format, v...))
 	}
 }

@@ -163,6 +163,8 @@ func Logout(input LogoutInput) (logoutResult LogoutResult) {
 		return LogoutResult{Status: internal.CodeTokenRevokedSuccessfully, Err: nil}
 	}
 
+	log.ResetSanitization()
+
 	return LogoutResult{Status: internal.CodeSuccess, Err: nil}
 }
 

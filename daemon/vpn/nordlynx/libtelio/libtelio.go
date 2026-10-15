@@ -363,7 +363,7 @@ func (cb *telioLoggerCb) Log(logLevel teliogo.TelioLogLevel, payload string) err
 	case teliogo.TelioLogLevelDebug, teliogo.TelioLogLevelTrace:
 		log.Debug(msg)
 	default:
-		log.Info(msg)
+		log.Info(log.DoNotSanitize(msg))
 	}
 	return nil
 }
