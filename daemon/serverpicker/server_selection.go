@@ -19,7 +19,10 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-const apiServersLimit = 10
+const (
+	apiServersLimit      = 10
+	localServersMinCount = 20
+)
 
 // RecommendationUUID identifies a server recommendation returned by the API.
 type RecommendationUUID string
@@ -192,6 +195,18 @@ func findServersLocally(
 		log.ServerSel.Debug("removing DIP servers")
 		selectedServers = slices.DeleteFunc(selectedServers, func(s core.Server) bool { return core.IsDedicatedIP(s) })
 	}
+
+	// prefer physical servers, fill the list up to localServersMinCount with virtual ones only if needed
+	var physicalServers, virtualServers []core.Server
+	for _, s := range selectedServers {
+		if s.IsVirtualLocation() {
+			virtualServers = append(virtualServers, s)
+		} else {
+			physicalServers = append(physicalServers, s)
+		}
+	}
+	missingCount := max(localServersMinCount-len(physicalServers), 0)
+	selectedServers = append(physicalServers, virtualServers[:min(missingCount, len(virtualServers))]...)
 
 	return selectedServers, nil
 }
