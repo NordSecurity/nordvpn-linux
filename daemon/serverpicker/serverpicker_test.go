@@ -2,6 +2,7 @@ package serverpicker
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"slices"
 	"testing"
@@ -1237,4 +1238,84 @@ func TestPickServer_ServerSelectionOrder(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestFindServersLocally_VirtualServers(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name             string
+		physicalCount    int
+		virtualCount     int
+		expectedPhysical int
+		expectedVirtual  int
+	}{
+		{
+			name:             "only physical servers",
+			physicalCount:    5,
+			expectedPhysical: 5,
+		},
+		{
+			name:             "enough physical servers, virtual ones are removed",
+			physicalCount:    25,
+			virtualCount:     5,
+			expectedPhysical: 25,
+		},
+		{
+			name:             "exactly enough physical servers, virtual ones are removed",
+			physicalCount:    20,
+			virtualCount:     5,
+			expectedPhysical: 20,
+		},
+		{
+			name:             "not enough physical servers, filled with virtual ones",
+			physicalCount:    15,
+			virtualCount:     10,
+			expectedPhysical: 15,
+			expectedVirtual:  5,
+		},
+		{
+			name:             "not enough physical and virtual servers, all are used",
+			physicalCount:    5,
+			virtualCount:     3,
+			expectedPhysical: 5,
+			expectedVirtual:  3,
+		},
+		{
+			name:            "no physical servers, virtual ones are used",
+			virtualCount:    3,
+			expectedVirtual: 3,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			servers := append(newServers(test.physicalCount, false), newServers(test.virtualCount, true)...)
+
+			selected, err := findServersLocally(servers, core.ServerTag{}, func(core.Server) bool { return true })
+
+			assert.NoError(t, err)
+			virtualCount := len(internal.Filter(selected, func(s core.Server) bool { return s.IsVirtualLocation() }))
+			assert.Equal(t, test.expectedVirtual, virtualCount)
+			assert.Equal(t, test.expectedPhysical, len(selected)-virtualCount)
+		})
+	}
+}
+
+func newServers(count int, virtual bool) core.Servers {
+	servers := make(core.Servers, 0, count)
+	for i := range count {
+		server := core.Server{ID: int64(i), Hostname: fmt.Sprintf("physical%d", i)}
+		if virtual {
+			server.Hostname = fmt.Sprintf("virtual%d", i)
+			server.Specifications = []core.Specification{{
+				Identifier: core.VirtualLocation,
+				Values: []struct {
+					Value string `json:"value"`
+				}{{Value: "true"}},
+			}}
+		}
+		servers = append(servers, server)
+	}
+	return servers
 }
