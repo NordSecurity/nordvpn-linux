@@ -1327,8 +1327,8 @@ class Translations$daemon$en {
 	/// en: 'This setting is not compatible with post-quantum encryption. To use it, turn off post-quantum encryption first.'
 	String get code_3049_msg => 'This setting is not compatible with post-quantum encryption. To use it, turn off post-quantum encryption first.';
 
-	/// en: 'Disabled technology'
-	String get code_3051_title => 'Disabled technology';
+	/// en: 'Disabled protocol'
+	String get code_3051_title => 'Disabled protocol';
 
 	/// en: 'Unable to connect with the current protocol. Please try a different one using the command: nordvpn set protocol.'
 	String get code_3051_msg => 'Unable to connect with the current protocol. Please try a different one using the command: nordvpn set protocol.';
@@ -2217,6 +2217,12 @@ class Translations$ui$en {
 
 	/// en: 'Wait a while before trying again. Retrying now can make the waiting period longer. If the issue persists, check our help guide for other possible causes. [Open help guide](https://support.nordvpn.com/hc/en-us/articles/47181405478417-I-get-the-Session-Limit-Reached-error-on-NordVPN?utm_medium=app&utm_source=nordvpn-linux-gui&utm_campaign=ens_error-session_limit&nm=app&ns=nordvpn-linux-gui&nc=ens_error-session_limit)'
 	String get connectionLimitReachedBody => 'Wait a while before trying again. Retrying now can make the waiting period longer. If the issue persists, check our help guide for other possible causes.\n[Open help guide](https://support.nordvpn.com/hc/en-us/articles/47181405478417-I-get-the-Session-Limit-Reached-error-on-NordVPN?utm_medium=app&utm_source=nordvpn-linux-gui&utm_campaign=ens_error-session_limit&nm=app&ns=nordvpn-linux-gui&nc=ens_error-session_limit)';
+
+	/// en: '${technology: String} incompatible with auto-connect'
+	String incompatibleProtocolWithAutoConnectTitle({required String technology}) => '${technology} incompatible with auto-connect';
+
+	/// en: 'To apply this change, turn off auto-connect first and try again.'
+	String get incompatibleProtocolWithAutoConnectDesc => 'To apply this change, turn off auto-connect first and try again.';
 }
 
 /// The flat map containing all translations for locale <en>.
@@ -2642,7 +2648,7 @@ extension on Translations {
 			'daemon.code_3048_msg' => 'The post-quantum VPN and Meshnet can\'t run at the same time. Please turn off one feature to use the other.',
 			'daemon.code_3049_title' => 'Here\'s what to know',
 			'daemon.code_3049_msg' => 'This setting is not compatible with post-quantum encryption. To use it, turn off post-quantum encryption first.',
-			'daemon.code_3051_title' => 'Disabled technology',
+			'daemon.code_3051_title' => 'Disabled protocol',
 			'daemon.code_3051_msg' => 'Unable to connect with the current protocol. Please try a different one using the command: nordvpn set protocol.',
 			'daemon.code_3068_title' => 'Here\'s what to know',
 			'daemon.code_3068_msg' => 'Auto-connect is set to a dedicated server, which only works with NordLynx. To use a different protocol, choose another auto-connect location or turn off auto-connect first.',
@@ -2937,6 +2943,8 @@ extension on Translations {
 			'ui.cannotStopFWWhileKSOnDesc' => 'Firewall is needed for Kill Switch to work. Turn off Kill Switch first in VPN connection settings.',
 			'ui.connectionLimitReachedTitle' => 'Too many connection attempts',
 			'ui.connectionLimitReachedBody' => 'Wait a while before trying again. Retrying now can make the waiting period longer. If the issue persists, check our help guide for other possible causes.\n[Open help guide](https://support.nordvpn.com/hc/en-us/articles/47181405478417-I-get-the-Session-Limit-Reached-error-on-NordVPN?utm_medium=app&utm_source=nordvpn-linux-gui&utm_campaign=ens_error-session_limit&nm=app&ns=nordvpn-linux-gui&nc=ens_error-session_limit)',
+			'ui.incompatibleProtocolWithAutoConnectTitle' => ({required String technology}) => '${technology} incompatible with auto-connect',
+			'ui.incompatibleProtocolWithAutoConnectDesc' => 'To apply this change, turn off auto-connect first and try again.',
 			_ => null,
 		};
 	}

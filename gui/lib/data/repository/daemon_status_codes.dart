@@ -32,7 +32,7 @@ final class DaemonStatusCode {
   static const dedicatedServersNoNordlynx = 3068;
   static const connectionLimitReached = 3076;
   static const setDefaultsNotApplied = 3078;
-  static const obfuscatedNeedsNordWhisper = 3080;
+  static const protocolIsIncompatibleWithAutoconnect = 3081;
 
   // custom GUI defined error codes
   static const allowListModified = 5001;
