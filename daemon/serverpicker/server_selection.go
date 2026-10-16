@@ -7,7 +7,6 @@ package serverpicker
 
 import (
 	"errors"
-	"fmt"
 	"math/rand"
 	"strings"
 	"time"
@@ -23,6 +22,8 @@ const (
 	apiServersLimit      = 10
 	localServersMinCount = 20
 )
+
+var ErrUnknownTechnology = errors.New("no server technology for specified vpn protocol")
 
 // RecommendationUUID identifies a server recommendation returned by the API.
 type RecommendationUUID string
@@ -69,7 +70,7 @@ func PickServer(
 
 	serverTech := VPNProtocolToServerTech(vpnProtocol)
 	if serverTech == core.Unknown {
-		return ServerSelection{}, fmt.Errorf("no server technology for vpn protocol %s", vpnProtocol)
+		return ServerSelection{}, ErrUnknownTechnology
 	}
 
 	// detect the group from the input params (fix tag arg if needed)
