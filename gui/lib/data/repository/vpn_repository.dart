@@ -85,6 +85,9 @@ class VpnRepository {
         switch (status) {
           case DaemonStatusCode.connecting:
             continue;
+            
+          case DaemonStatusCode.disconnectedWithFeedback:
+            return DaemonStatusCode.disconnected;
 
           default:
             return status;

@@ -15,7 +15,6 @@ import logout_pb2 as logout__pb2
 import pause_pb2 as pause__pb2
 import ping_pb2 as ping__pb2
 import purchase_pb2 as purchase__pb2
-import rate_pb2 as rate__pb2
 import recent_connections_pb2 as recent__connections__pb2
 import servers_pb2 as servers__pb2
 import set_pb2 as set__pb2
@@ -113,11 +112,6 @@ class DaemonStub(object):
                 '/pb.Daemon/Status',
                 request_serializer=common__pb2.Empty.SerializeToString,
                 response_deserializer=status__pb2.StatusResponse.FromString,
-                _registered_method=True)
-        self.RateConnection = channel.unary_unary(
-                '/pb.Daemon/RateConnection',
-                request_serializer=rate__pb2.RateRequest.SerializeToString,
-                response_deserializer=common__pb2.Payload.FromString,
                 _registered_method=True)
         self.PauseConnection = channel.unary_unary(
                 '/pb.Daemon/PauseConnection',
@@ -374,12 +368,6 @@ class DaemonServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def Status(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def RateConnection(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -674,11 +662,6 @@ def add_DaemonServicer_to_server(servicer, server):
                     servicer.Status,
                     request_deserializer=common__pb2.Empty.FromString,
                     response_serializer=status__pb2.StatusResponse.SerializeToString,
-            ),
-            'RateConnection': grpc.unary_unary_rpc_method_handler(
-                    servicer.RateConnection,
-                    request_deserializer=rate__pb2.RateRequest.FromString,
-                    response_serializer=common__pb2.Payload.SerializeToString,
             ),
             'PauseConnection': grpc.unary_unary_rpc_method_handler(
                     servicer.PauseConnection,
@@ -1185,33 +1168,6 @@ class Daemon(object):
             '/pb.Daemon/Status',
             common__pb2.Empty.SerializeToString,
             status__pb2.StatusResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def RateConnection(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/pb.Daemon/RateConnection',
-            rate__pb2.RateRequest.SerializeToString,
-            common__pb2.Payload.FromString,
             options,
             channel_credentials,
             insecure,

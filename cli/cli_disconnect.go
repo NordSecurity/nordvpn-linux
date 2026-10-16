@@ -43,6 +43,8 @@ func (c *cmd) Disconnect(ctx *cli.Context) error {
 			color.Yellow(PauseInterrupted)
 		case internal.CodeDisconnected:
 			color.Green(internal.DisconnectSuccess)
+		case internal.CodeDisconnectedWithFeedbackRequest:
+			color.Green(internal.DisconnectSuccess)
 			color.Yellow(DisconnectConnectionRating, ctx.App.Name)
 		}
 	}

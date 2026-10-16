@@ -33,6 +33,8 @@ class UIEvent_FormReference extends $pb.ProtobufEnum {
   static const UIEvent_FormReference SESSION_LIMIT_NOTIFICATION =
       UIEvent_FormReference._(
           6, _omitEnumNames ? '' : 'SESSION_LIMIT_NOTIFICATION');
+  static const UIEvent_FormReference REF_DISCONNECT =
+      UIEvent_FormReference._(7, _omitEnumNames ? '' : 'REF_DISCONNECT');
 
   static const $core.List<UIEvent_FormReference> values =
       <UIEvent_FormReference>[
@@ -43,10 +45,11 @@ class UIEvent_FormReference extends $pb.ProtobufEnum {
     GUI,
     CONNECTION_INFO,
     SESSION_LIMIT_NOTIFICATION,
+    REF_DISCONNECT,
   ];
 
   static final $core.List<UIEvent_FormReference?> _byValue =
-      $pb.ProtobufEnum.$_initByValueList(values, 6);
+      $pb.ProtobufEnum.$_initByValueList(values, 7);
   static UIEvent_FormReference? valueOf($core.int value) =>
       value < 0 || value >= _byValue.length ? null : _byValue[value];
 
@@ -126,15 +129,18 @@ class UIEvent_ItemType extends $pb.ProtobufEnum {
       UIEvent_ItemType._(1, _omitEnumNames ? '' : 'CLICK');
   static const UIEvent_ItemType SHOW =
       UIEvent_ItemType._(2, _omitEnumNames ? '' : 'SHOW');
+  static const UIEvent_ItemType BUTTON =
+      UIEvent_ItemType._(3, _omitEnumNames ? '' : 'BUTTON');
 
   static const $core.List<UIEvent_ItemType> values = <UIEvent_ItemType>[
     ITEM_TYPE_UNSPECIFIED,
     CLICK,
     SHOW,
+    BUTTON,
   ];
 
   static final $core.List<UIEvent_ItemType?> _byValue =
-      $pb.ProtobufEnum.$_initByValueList(values, 2);
+      $pb.ProtobufEnum.$_initByValueList(values, 3);
   static UIEvent_ItemType? valueOf($core.int value) =>
       value < 0 || value >= _byValue.length ? null : _byValue[value];
 
@@ -177,6 +183,16 @@ class UIEvent_ItemValue extends $pb.ProtobufEnum {
       UIEvent_ItemValue._(15, _omitEnumNames ? '' : 'DEDICATED_SERVER');
   static const UIEvent_ItemValue ITEM_VALUE_LEARN_MORE =
       UIEvent_ItemValue._(16, _omitEnumNames ? '' : 'ITEM_VALUE_LEARN_MORE');
+  static const UIEvent_ItemValue CSAT_SCORE_1 =
+      UIEvent_ItemValue._(17, _omitEnumNames ? '' : 'CSAT_SCORE_1');
+  static const UIEvent_ItemValue CSAT_SCORE_2 =
+      UIEvent_ItemValue._(18, _omitEnumNames ? '' : 'CSAT_SCORE_2');
+  static const UIEvent_ItemValue CSAT_SCORE_3 =
+      UIEvent_ItemValue._(19, _omitEnumNames ? '' : 'CSAT_SCORE_3');
+  static const UIEvent_ItemValue CSAT_SCORE_4 =
+      UIEvent_ItemValue._(20, _omitEnumNames ? '' : 'CSAT_SCORE_4');
+  static const UIEvent_ItemValue CSAT_SCORE_5 =
+      UIEvent_ItemValue._(21, _omitEnumNames ? '' : 'CSAT_SCORE_5');
 
   static const $core.List<UIEvent_ItemValue> values = <UIEvent_ItemValue>[
     ITEM_VALUE_UNSPECIFIED,
@@ -195,10 +211,15 @@ class UIEvent_ItemValue extends $pb.ProtobufEnum {
     PAUSE_DISCONNECT,
     DEDICATED_SERVER,
     ITEM_VALUE_LEARN_MORE,
+    CSAT_SCORE_1,
+    CSAT_SCORE_2,
+    CSAT_SCORE_3,
+    CSAT_SCORE_4,
+    CSAT_SCORE_5,
   ];
 
   static final $core.List<UIEvent_ItemValue?> _byValue =
-      $pb.ProtobufEnum.$_initByValueList(values, 16);
+      $pb.ProtobufEnum.$_initByValueList(values, 21);
   static UIEvent_ItemValue? valueOf($core.int value) =>
       value < 0 || value >= _byValue.length ? null : _byValue[value];
 
