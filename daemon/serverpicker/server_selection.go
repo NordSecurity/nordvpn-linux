@@ -23,6 +23,8 @@ const (
 	localServersMinCount = 20
 )
 
+var ErrUnknownTechnology = errors.New("unknown technology")
+
 // RecommendationUUID identifies a server recommendation returned by the API.
 type RecommendationUUID string
 
@@ -69,7 +71,7 @@ func PickServer(
 
 	serverTech := TechToServerTech(tech, protocol)
 	if serverTech == core.Unknown {
-		return ServerSelection{}, errors.New("unknown technology")
+		return ServerSelection{}, ErrUnknownTechnology
 	}
 
 	// detect the group from the input params (fix tag arg if needed)
