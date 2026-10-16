@@ -14,7 +14,6 @@ import "logout.proto";
 import "pause.proto";
 import "ping.proto";
 import "purchase.proto";
-import "rate.proto";
 import "recent_connections.proto";
 import "servers.proto";
 import "set.proto";
@@ -44,7 +43,6 @@ service Daemon {
   rpc ConnectCancel(Empty) returns (Payload);
   rpc Disconnect(Empty) returns (stream Payload);
   rpc Status(Empty) returns (StatusResponse);
-  rpc RateConnection(RateRequest) returns (Payload);
   rpc PauseConnection(PauseRequest) returns (Payload);
 
   // ==================== Server Discovery ====================

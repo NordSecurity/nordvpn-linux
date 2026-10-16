@@ -16,6 +16,7 @@ message UIEvent {
     GUI                        = 4; // temporary, to be replaced with more specific references
     CONNECTION_INFO            = 5;
     SESSION_LIMIT_NOTIFICATION = 6;
+    REF_DISCONNECT             = 7;
   }
 
   // ItemName represents a user interface event item name
@@ -44,6 +45,7 @@ message UIEvent {
     ITEM_TYPE_UNSPECIFIED = 0;
     CLICK                 = 1;
     SHOW                  = 2;
+    BUTTON                = 3;
   }
 
   // ItemValue represents the value associated with a user interface event
@@ -68,6 +70,12 @@ message UIEvent {
     DEDICATED_SERVER = 15;
 
     ITEM_VALUE_LEARN_MORE = 16;
+
+    CSAT_SCORE_1     = 17;
+    CSAT_SCORE_2     = 18;
+    CSAT_SCORE_3     = 19;
+    CSAT_SCORE_4     = 20;
+    CSAT_SCORE_5     = 21;
   }
 
   FormReference form_reference = 1;

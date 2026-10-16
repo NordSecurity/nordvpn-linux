@@ -10,7 +10,6 @@ import logout_pb2 as _logout_pb2
 import pause_pb2 as _pause_pb2
 import ping_pb2 as _ping_pb2
 import purchase_pb2 as _purchase_pb2
-import rate_pb2 as _rate_pb2
 import recent_connections_pb2 as _recent_connections_pb2
 import servers_pb2 as _servers_pb2
 import set_pb2 as _set_pb2

@@ -31,7 +31,6 @@ const (
 	Daemon_ConnectCancel_FullMethodName            = "/pb.Daemon/ConnectCancel"
 	Daemon_Disconnect_FullMethodName               = "/pb.Daemon/Disconnect"
 	Daemon_Status_FullMethodName                   = "/pb.Daemon/Status"
-	Daemon_RateConnection_FullMethodName           = "/pb.Daemon/RateConnection"
 	Daemon_PauseConnection_FullMethodName          = "/pb.Daemon/PauseConnection"
 	Daemon_GetServers_FullMethodName               = "/pb.Daemon/GetServers"
 	Daemon_Countries_FullMethodName                = "/pb.Daemon/Countries"
@@ -89,7 +88,6 @@ type DaemonClient interface {
 	ConnectCancel(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
 	Disconnect(ctx context.Context, in *Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Payload], error)
 	Status(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*StatusResponse, error)
-	RateConnection(ctx context.Context, in *RateRequest, opts ...grpc.CallOption) (*Payload, error)
 	PauseConnection(ctx context.Context, in *PauseRequest, opts ...grpc.CallOption) (*Payload, error)
 	// ==================== Server Discovery ====================
 	GetServers(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServersResponse, error)
@@ -279,16 +277,6 @@ func (c *daemonClient) Status(ctx context.Context, in *Empty, opts ...grpc.CallO
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(StatusResponse)
 	err := c.cc.Invoke(ctx, Daemon_Status_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *daemonClient) RateConnection(ctx context.Context, in *RateRequest, opts ...grpc.CallOption) (*Payload, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Payload)
-	err := c.cc.Invoke(ctx, Daemon_RateConnection_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -692,7 +680,6 @@ type DaemonServer interface {
 	ConnectCancel(context.Context, *Empty) (*Payload, error)
 	Disconnect(*Empty, grpc.ServerStreamingServer[Payload]) error
 	Status(context.Context, *Empty) (*StatusResponse, error)
-	RateConnection(context.Context, *RateRequest) (*Payload, error)
 	PauseConnection(context.Context, *PauseRequest) (*Payload, error)
 	// ==================== Server Discovery ====================
 	GetServers(context.Context, *Empty) (*ServersResponse, error)
@@ -785,9 +772,6 @@ func (UnimplementedDaemonServer) Disconnect(*Empty, grpc.ServerStreamingServer[P
 }
 func (UnimplementedDaemonServer) Status(context.Context, *Empty) (*StatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Status not implemented")
-}
-func (UnimplementedDaemonServer) RateConnection(context.Context, *RateRequest) (*Payload, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RateConnection not implemented")
 }
 func (UnimplementedDaemonServer) PauseConnection(context.Context, *PauseRequest) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PauseConnection not implemented")
@@ -1116,24 +1100,6 @@ func _Daemon_Status_Handler(srv interface{}, ctx context.Context, dec func(inter
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DaemonServer).Status(ctx, req.(*Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Daemon_RateConnection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RateRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DaemonServer).RateConnection(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Daemon_RateConnection_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).RateConnection(ctx, req.(*RateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1818,10 +1784,6 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Status",
 			Handler:    _Daemon_Status_Handler,
-		},
-		{
-			MethodName: "RateConnection",
-			Handler:    _Daemon_RateConnection_Handler,
 		},
 		{
 			MethodName: "PauseConnection",

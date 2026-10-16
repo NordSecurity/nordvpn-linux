@@ -66,6 +66,7 @@ type RPC struct {
 	initialLoginType          *atomicLoginType // memorize what action started: Login or Signup (Register) - thread-safe
 	pauseManager              ReconnectScheduler
 	dedicatedServerKeyManager devicekey.DedicatedServersKeyManager
+	disconnectCounter         atomic.Uint64
 	pb.UnimplementedDaemonServer
 }
 

@@ -17,26 +17,25 @@ import 'package:grpc/service_api.dart' as $grpc;
 import 'package:protobuf/protobuf.dart' as $pb;
 
 import 'account.pb.dart' as $4;
-import 'cities.pb.dart' as $12;
+import 'cities.pb.dart' as $11;
 import 'common.pb.dart' as $0;
 import 'connect.pb.dart' as $7;
-import 'defaults.pb.dart' as $14;
-import 'features.pb.dart' as $17;
+import 'defaults.pb.dart' as $13;
+import 'features.pb.dart' as $16;
 import 'login.pb.dart' as $1;
 import 'login_with_token.pb.dart' as $2;
 import 'logout.pb.dart' as $3;
-import 'pause.pb.dart' as $10;
-import 'ping.pb.dart' as $18;
+import 'pause.pb.dart' as $9;
+import 'ping.pb.dart' as $17;
 import 'purchase.pb.dart' as $6;
-import 'rate.pb.dart' as $9;
-import 'recent_connections.pb.dart' as $16;
-import 'servers.pb.dart' as $11;
-import 'set.pb.dart' as $15;
-import 'settings.pb.dart' as $13;
-import 'state.pb.dart' as $20;
+import 'recent_connections.pb.dart' as $15;
+import 'servers.pb.dart' as $10;
+import 'set.pb.dart' as $14;
+import 'settings.pb.dart' as $12;
+import 'state.pb.dart' as $19;
 import 'status.pb.dart' as $8;
 import 'token.pb.dart' as $5;
-import 'uievent.pb.dart' as $19;
+import 'uievent.pb.dart' as $18;
 
 export 'service.pb.dart';
 
@@ -143,22 +142,15 @@ class DaemonClient extends $grpc.Client {
     return $createUnaryCall(_$status, request, options: options);
   }
 
-  $grpc.ResponseFuture<$0.Payload> rateConnection(
-    $9.RateRequest request, {
-    $grpc.CallOptions? options,
-  }) {
-    return $createUnaryCall(_$rateConnection, request, options: options);
-  }
-
   $grpc.ResponseFuture<$0.Payload> pauseConnection(
-    $10.PauseRequest request, {
+    $9.PauseRequest request, {
     $grpc.CallOptions? options,
   }) {
     return $createUnaryCall(_$pauseConnection, request, options: options);
   }
 
   /// ==================== Server Discovery ====================
-  $grpc.ResponseFuture<$11.ServersResponse> getServers(
+  $grpc.ResponseFuture<$10.ServersResponse> getServers(
     $0.Empty request, {
     $grpc.CallOptions? options,
   }) {
@@ -173,7 +165,7 @@ class DaemonClient extends $grpc.Client {
   }
 
   $grpc.ResponseFuture<$0.ServerGroupsList> cities(
-    $12.CitiesRequest request, {
+    $11.CitiesRequest request, {
     $grpc.CallOptions? options,
   }) {
     return $createUnaryCall(_$cities, request, options: options);
@@ -186,7 +178,7 @@ class DaemonClient extends $grpc.Client {
     return $createUnaryCall(_$groups, request, options: options);
   }
 
-  $grpc.ResponseFuture<$11.RecommendedServerLocation> recommendedServer(
+  $grpc.ResponseFuture<$10.RecommendedServerLocation> recommendedServer(
     $0.Empty request, {
     $grpc.CallOptions? options,
   }) {
@@ -194,7 +186,7 @@ class DaemonClient extends $grpc.Client {
   }
 
   /// ==================== General Settings ====================
-  $grpc.ResponseFuture<$13.SettingsResponse> settings(
+  $grpc.ResponseFuture<$12.SettingsResponse> settings(
     $0.Empty request, {
     $grpc.CallOptions? options,
   }) {
@@ -202,7 +194,7 @@ class DaemonClient extends $grpc.Client {
   }
 
   $grpc.ResponseFuture<$0.Payload> setDefaults(
-    $14.SetDefaultsRequest request, {
+    $13.SetDefaultsRequest request, {
     $grpc.CallOptions? options,
   }) {
     return $createUnaryCall(_$setDefaults, request, options: options);
@@ -210,85 +202,85 @@ class DaemonClient extends $grpc.Client {
 
   /// ==================== Connection Settings ====================
   $grpc.ResponseFuture<$0.Payload> setAutoConnect(
-    $15.SetAutoconnectRequest request, {
+    $14.SetAutoconnectRequest request, {
     $grpc.CallOptions? options,
   }) {
     return $createUnaryCall(_$setAutoConnect, request, options: options);
   }
 
-  $grpc.ResponseFuture<$15.SetProtocolResponse> setProtocol(
-    $15.SetProtocolRequest request, {
+  $grpc.ResponseFuture<$14.SetProtocolResponse> setProtocol(
+    $14.SetProtocolRequest request, {
     $grpc.CallOptions? options,
   }) {
     return $createUnaryCall(_$setProtocol, request, options: options);
   }
 
   $grpc.ResponseFuture<$0.Payload> setTechnology(
-    $15.SetTechnologyRequest request, {
+    $14.SetTechnologyRequest request, {
     $grpc.CallOptions? options,
   }) {
     return $createUnaryCall(_$setTechnology, request, options: options);
   }
 
   $grpc.ResponseFuture<$0.Payload> setPostQuantum(
-    $15.SetGenericRequest request, {
+    $14.SetGenericRequest request, {
     $grpc.CallOptions? options,
   }) {
     return $createUnaryCall(_$setPostQuantum, request, options: options);
   }
 
   $grpc.ResponseFuture<$0.Payload> setECH(
-    $15.SetGenericRequest request, {
+    $14.SetGenericRequest request, {
     $grpc.CallOptions? options,
   }) {
     return $createUnaryCall(_$setECH, request, options: options);
   }
 
-  $grpc.ResponseFuture<$16.RecentConnectionsResponse> getRecentConnections(
-    $16.RecentConnectionsRequest request, {
+  $grpc.ResponseFuture<$15.RecentConnectionsResponse> getRecentConnections(
+    $15.RecentConnectionsRequest request, {
     $grpc.CallOptions? options,
   }) {
     return $createUnaryCall(_$getRecentConnections, request, options: options);
   }
 
   /// ==================== Network Settings ====================
-  $grpc.ResponseFuture<$15.SetDNSResponse> setDNS(
-    $15.SetDNSRequest request, {
+  $grpc.ResponseFuture<$14.SetDNSResponse> setDNS(
+    $14.SetDNSRequest request, {
     $grpc.CallOptions? options,
   }) {
     return $createUnaryCall(_$setDNS, request, options: options);
   }
 
   $grpc.ResponseFuture<$0.Payload> setFirewall(
-    $15.SetGenericRequest request, {
+    $14.SetGenericRequest request, {
     $grpc.CallOptions? options,
   }) {
     return $createUnaryCall(_$setFirewall, request, options: options);
   }
 
   $grpc.ResponseFuture<$0.Payload> setFirewallMark(
-    $15.SetUint32Request request, {
+    $14.SetUint32Request request, {
     $grpc.CallOptions? options,
   }) {
     return $createUnaryCall(_$setFirewallMark, request, options: options);
   }
 
   $grpc.ResponseFuture<$0.Payload> setRouting(
-    $15.SetGenericRequest request, {
+    $14.SetGenericRequest request, {
     $grpc.CallOptions? options,
   }) {
     return $createUnaryCall(_$setRouting, request, options: options);
   }
 
   $grpc.ResponseFuture<$0.Payload> setKillSwitch(
-    $15.SetKillSwitchRequest request, {
+    $14.SetKillSwitchRequest request, {
     $grpc.CallOptions? options,
   }) {
     return $createUnaryCall(_$setKillSwitch, request, options: options);
   }
 
-  $grpc.ResponseFuture<$15.SetLANDiscoveryResponse> setLANDiscovery(
-    $15.SetLANDiscoveryRequest request, {
+  $grpc.ResponseFuture<$14.SetLANDiscoveryResponse> setLANDiscovery(
+    $14.SetLANDiscoveryRequest request, {
     $grpc.CallOptions? options,
   }) {
     return $createUnaryCall(_$setLANDiscovery, request, options: options);
@@ -296,14 +288,14 @@ class DaemonClient extends $grpc.Client {
 
   /// ==================== UI Settings ====================
   $grpc.ResponseFuture<$0.Payload> setNotify(
-    $15.SetNotifyRequest request, {
+    $14.SetNotifyRequest request, {
     $grpc.CallOptions? options,
   }) {
     return $createUnaryCall(_$setNotify, request, options: options);
   }
 
   $grpc.ResponseFuture<$0.Payload> setTray(
-    $15.SetTrayRequest request, {
+    $14.SetTrayRequest request, {
     $grpc.CallOptions? options,
   }) {
     return $createUnaryCall(_$setTray, request, options: options);
@@ -324,7 +316,7 @@ class DaemonClient extends $grpc.Client {
     return $createUnaryCall(_$settingsTechnologies, request, options: options);
   }
 
-  $grpc.ResponseFuture<$17.FeatureToggles> getFeatureToggles(
+  $grpc.ResponseFuture<$16.FeatureToggles> getFeatureToggles(
     $0.Empty request, {
     $grpc.CallOptions? options,
   }) {
@@ -333,21 +325,21 @@ class DaemonClient extends $grpc.Client {
 
   /// ==================== Allowlist Management ====================
   $grpc.ResponseFuture<$0.Payload> setAllowlist(
-    $15.SetAllowlistRequest request, {
+    $14.SetAllowlistRequest request, {
     $grpc.CallOptions? options,
   }) {
     return $createUnaryCall(_$setAllowlist, request, options: options);
   }
 
   $grpc.ResponseFuture<$0.Payload> setARPIgnore(
-    $15.SetGenericRequest request, {
+    $14.SetGenericRequest request, {
     $grpc.CallOptions? options,
   }) {
     return $createUnaryCall(_$setARPIgnore, request, options: options);
   }
 
   $grpc.ResponseFuture<$0.Payload> unsetAllowlist(
-    $15.SetAllowlistRequest request, {
+    $14.SetAllowlistRequest request, {
     $grpc.CallOptions? options,
   }) {
     return $createUnaryCall(_$unsetAllowlist, request, options: options);
@@ -362,21 +354,21 @@ class DaemonClient extends $grpc.Client {
 
   /// ==================== Privacy & Security ====================
   $grpc.ResponseFuture<$0.Payload> setAnalytics(
-    $15.SetGenericRequest request, {
+    $14.SetGenericRequest request, {
     $grpc.CallOptions? options,
   }) {
     return $createUnaryCall(_$setAnalytics, request, options: options);
   }
 
-  $grpc.ResponseFuture<$15.SetRealTimeProtectionResponse> setRealTimeProtection(
-    $15.SetRealTimeProtectionRequest request, {
+  $grpc.ResponseFuture<$14.SetRealTimeProtectionResponse> setRealTimeProtection(
+    $14.SetRealTimeProtectionRequest request, {
     $grpc.CallOptions? options,
   }) {
     return $createUnaryCall(_$setRealTimeProtection, request, options: options);
   }
 
   /// ==================== System & Monitoring ====================
-  $grpc.ResponseFuture<$18.PingResponse> ping(
+  $grpc.ResponseFuture<$17.PingResponse> ping(
     $0.Empty request, {
     $grpc.CallOptions? options,
   }) {
@@ -384,13 +376,13 @@ class DaemonClient extends $grpc.Client {
   }
 
   $grpc.ResponseFuture<$0.Payload> reportUIEvent(
-    $19.UIEvent request, {
+    $18.UIEvent request, {
     $grpc.CallOptions? options,
   }) {
     return $createUnaryCall(_$reportUIEvent, request, options: options);
   }
 
-  $grpc.ResponseStream<$20.AppState> subscribeToStateChanges(
+  $grpc.ResponseStream<$19.AppState> subscribeToStateChanges(
     $0.Empty request, {
     $grpc.CallOptions? options,
   }) {
@@ -474,114 +466,109 @@ class DaemonClient extends $grpc.Client {
       '/pb.Daemon/Status',
       ($0.Empty value) => value.writeToBuffer(),
       $8.StatusResponse.fromBuffer);
-  static final _$rateConnection =
-      $grpc.ClientMethod<$9.RateRequest, $0.Payload>(
-          '/pb.Daemon/RateConnection',
-          ($9.RateRequest value) => value.writeToBuffer(),
-          $0.Payload.fromBuffer);
   static final _$pauseConnection =
-      $grpc.ClientMethod<$10.PauseRequest, $0.Payload>(
+      $grpc.ClientMethod<$9.PauseRequest, $0.Payload>(
           '/pb.Daemon/PauseConnection',
-          ($10.PauseRequest value) => value.writeToBuffer(),
+          ($9.PauseRequest value) => value.writeToBuffer(),
           $0.Payload.fromBuffer);
-  static final _$getServers = $grpc.ClientMethod<$0.Empty, $11.ServersResponse>(
+  static final _$getServers = $grpc.ClientMethod<$0.Empty, $10.ServersResponse>(
       '/pb.Daemon/GetServers',
       ($0.Empty value) => value.writeToBuffer(),
-      $11.ServersResponse.fromBuffer);
+      $10.ServersResponse.fromBuffer);
   static final _$countries = $grpc.ClientMethod<$0.Empty, $0.ServerGroupsList>(
       '/pb.Daemon/Countries',
       ($0.Empty value) => value.writeToBuffer(),
       $0.ServerGroupsList.fromBuffer);
   static final _$cities =
-      $grpc.ClientMethod<$12.CitiesRequest, $0.ServerGroupsList>(
+      $grpc.ClientMethod<$11.CitiesRequest, $0.ServerGroupsList>(
           '/pb.Daemon/Cities',
-          ($12.CitiesRequest value) => value.writeToBuffer(),
+          ($11.CitiesRequest value) => value.writeToBuffer(),
           $0.ServerGroupsList.fromBuffer);
   static final _$groups = $grpc.ClientMethod<$0.Empty, $0.ServerGroupsList>(
       '/pb.Daemon/Groups',
       ($0.Empty value) => value.writeToBuffer(),
       $0.ServerGroupsList.fromBuffer);
   static final _$recommendedServer =
-      $grpc.ClientMethod<$0.Empty, $11.RecommendedServerLocation>(
+      $grpc.ClientMethod<$0.Empty, $10.RecommendedServerLocation>(
           '/pb.Daemon/RecommendedServer',
           ($0.Empty value) => value.writeToBuffer(),
-          $11.RecommendedServerLocation.fromBuffer);
-  static final _$settings = $grpc.ClientMethod<$0.Empty, $13.SettingsResponse>(
+          $10.RecommendedServerLocation.fromBuffer);
+  static final _$settings = $grpc.ClientMethod<$0.Empty, $12.SettingsResponse>(
       '/pb.Daemon/Settings',
       ($0.Empty value) => value.writeToBuffer(),
-      $13.SettingsResponse.fromBuffer);
+      $12.SettingsResponse.fromBuffer);
   static final _$setDefaults =
-      $grpc.ClientMethod<$14.SetDefaultsRequest, $0.Payload>(
+      $grpc.ClientMethod<$13.SetDefaultsRequest, $0.Payload>(
           '/pb.Daemon/SetDefaults',
-          ($14.SetDefaultsRequest value) => value.writeToBuffer(),
+          ($13.SetDefaultsRequest value) => value.writeToBuffer(),
           $0.Payload.fromBuffer);
   static final _$setAutoConnect =
-      $grpc.ClientMethod<$15.SetAutoconnectRequest, $0.Payload>(
+      $grpc.ClientMethod<$14.SetAutoconnectRequest, $0.Payload>(
           '/pb.Daemon/SetAutoConnect',
-          ($15.SetAutoconnectRequest value) => value.writeToBuffer(),
+          ($14.SetAutoconnectRequest value) => value.writeToBuffer(),
           $0.Payload.fromBuffer);
   static final _$setProtocol =
-      $grpc.ClientMethod<$15.SetProtocolRequest, $15.SetProtocolResponse>(
+      $grpc.ClientMethod<$14.SetProtocolRequest, $14.SetProtocolResponse>(
           '/pb.Daemon/SetProtocol',
-          ($15.SetProtocolRequest value) => value.writeToBuffer(),
-          $15.SetProtocolResponse.fromBuffer);
+          ($14.SetProtocolRequest value) => value.writeToBuffer(),
+          $14.SetProtocolResponse.fromBuffer);
   static final _$setTechnology =
-      $grpc.ClientMethod<$15.SetTechnologyRequest, $0.Payload>(
+      $grpc.ClientMethod<$14.SetTechnologyRequest, $0.Payload>(
           '/pb.Daemon/SetTechnology',
-          ($15.SetTechnologyRequest value) => value.writeToBuffer(),
+          ($14.SetTechnologyRequest value) => value.writeToBuffer(),
           $0.Payload.fromBuffer);
   static final _$setPostQuantum =
-      $grpc.ClientMethod<$15.SetGenericRequest, $0.Payload>(
+      $grpc.ClientMethod<$14.SetGenericRequest, $0.Payload>(
           '/pb.Daemon/SetPostQuantum',
-          ($15.SetGenericRequest value) => value.writeToBuffer(),
+          ($14.SetGenericRequest value) => value.writeToBuffer(),
           $0.Payload.fromBuffer);
-  static final _$setECH = $grpc.ClientMethod<$15.SetGenericRequest, $0.Payload>(
+  static final _$setECH = $grpc.ClientMethod<$14.SetGenericRequest, $0.Payload>(
       '/pb.Daemon/SetECH',
-      ($15.SetGenericRequest value) => value.writeToBuffer(),
+      ($14.SetGenericRequest value) => value.writeToBuffer(),
       $0.Payload.fromBuffer);
   static final _$getRecentConnections = $grpc.ClientMethod<
-          $16.RecentConnectionsRequest, $16.RecentConnectionsResponse>(
+          $15.RecentConnectionsRequest, $15.RecentConnectionsResponse>(
       '/pb.Daemon/GetRecentConnections',
-      ($16.RecentConnectionsRequest value) => value.writeToBuffer(),
-      $16.RecentConnectionsResponse.fromBuffer);
+      ($15.RecentConnectionsRequest value) => value.writeToBuffer(),
+      $15.RecentConnectionsResponse.fromBuffer);
   static final _$setDNS =
-      $grpc.ClientMethod<$15.SetDNSRequest, $15.SetDNSResponse>(
+      $grpc.ClientMethod<$14.SetDNSRequest, $14.SetDNSResponse>(
           '/pb.Daemon/SetDNS',
-          ($15.SetDNSRequest value) => value.writeToBuffer(),
-          $15.SetDNSResponse.fromBuffer);
+          ($14.SetDNSRequest value) => value.writeToBuffer(),
+          $14.SetDNSResponse.fromBuffer);
   static final _$setFirewall =
-      $grpc.ClientMethod<$15.SetGenericRequest, $0.Payload>(
+      $grpc.ClientMethod<$14.SetGenericRequest, $0.Payload>(
           '/pb.Daemon/SetFirewall',
-          ($15.SetGenericRequest value) => value.writeToBuffer(),
+          ($14.SetGenericRequest value) => value.writeToBuffer(),
           $0.Payload.fromBuffer);
   static final _$setFirewallMark =
-      $grpc.ClientMethod<$15.SetUint32Request, $0.Payload>(
+      $grpc.ClientMethod<$14.SetUint32Request, $0.Payload>(
           '/pb.Daemon/SetFirewallMark',
-          ($15.SetUint32Request value) => value.writeToBuffer(),
+          ($14.SetUint32Request value) => value.writeToBuffer(),
           $0.Payload.fromBuffer);
   static final _$setRouting =
-      $grpc.ClientMethod<$15.SetGenericRequest, $0.Payload>(
+      $grpc.ClientMethod<$14.SetGenericRequest, $0.Payload>(
           '/pb.Daemon/SetRouting',
-          ($15.SetGenericRequest value) => value.writeToBuffer(),
+          ($14.SetGenericRequest value) => value.writeToBuffer(),
           $0.Payload.fromBuffer);
   static final _$setKillSwitch =
-      $grpc.ClientMethod<$15.SetKillSwitchRequest, $0.Payload>(
+      $grpc.ClientMethod<$14.SetKillSwitchRequest, $0.Payload>(
           '/pb.Daemon/SetKillSwitch',
-          ($15.SetKillSwitchRequest value) => value.writeToBuffer(),
+          ($14.SetKillSwitchRequest value) => value.writeToBuffer(),
           $0.Payload.fromBuffer);
   static final _$setLANDiscovery = $grpc.ClientMethod<
-          $15.SetLANDiscoveryRequest, $15.SetLANDiscoveryResponse>(
+          $14.SetLANDiscoveryRequest, $14.SetLANDiscoveryResponse>(
       '/pb.Daemon/SetLANDiscovery',
-      ($15.SetLANDiscoveryRequest value) => value.writeToBuffer(),
-      $15.SetLANDiscoveryResponse.fromBuffer);
+      ($14.SetLANDiscoveryRequest value) => value.writeToBuffer(),
+      $14.SetLANDiscoveryResponse.fromBuffer);
   static final _$setNotify =
-      $grpc.ClientMethod<$15.SetNotifyRequest, $0.Payload>(
+      $grpc.ClientMethod<$14.SetNotifyRequest, $0.Payload>(
           '/pb.Daemon/SetNotify',
-          ($15.SetNotifyRequest value) => value.writeToBuffer(),
+          ($14.SetNotifyRequest value) => value.writeToBuffer(),
           $0.Payload.fromBuffer);
-  static final _$setTray = $grpc.ClientMethod<$15.SetTrayRequest, $0.Payload>(
+  static final _$setTray = $grpc.ClientMethod<$14.SetTrayRequest, $0.Payload>(
       '/pb.Daemon/SetTray',
-      ($15.SetTrayRequest value) => value.writeToBuffer(),
+      ($14.SetTrayRequest value) => value.writeToBuffer(),
       $0.Payload.fromBuffer);
   static final _$settingsProtocols = $grpc.ClientMethod<$0.Empty, $0.Payload>(
       '/pb.Daemon/SettingsProtocols',
@@ -593,52 +580,52 @@ class DaemonClient extends $grpc.Client {
           ($0.Empty value) => value.writeToBuffer(),
           $0.Payload.fromBuffer);
   static final _$getFeatureToggles =
-      $grpc.ClientMethod<$0.Empty, $17.FeatureToggles>(
+      $grpc.ClientMethod<$0.Empty, $16.FeatureToggles>(
           '/pb.Daemon/GetFeatureToggles',
           ($0.Empty value) => value.writeToBuffer(),
-          $17.FeatureToggles.fromBuffer);
+          $16.FeatureToggles.fromBuffer);
   static final _$setAllowlist =
-      $grpc.ClientMethod<$15.SetAllowlistRequest, $0.Payload>(
+      $grpc.ClientMethod<$14.SetAllowlistRequest, $0.Payload>(
           '/pb.Daemon/SetAllowlist',
-          ($15.SetAllowlistRequest value) => value.writeToBuffer(),
+          ($14.SetAllowlistRequest value) => value.writeToBuffer(),
           $0.Payload.fromBuffer);
   static final _$setARPIgnore =
-      $grpc.ClientMethod<$15.SetGenericRequest, $0.Payload>(
+      $grpc.ClientMethod<$14.SetGenericRequest, $0.Payload>(
           '/pb.Daemon/SetARPIgnore',
-          ($15.SetGenericRequest value) => value.writeToBuffer(),
+          ($14.SetGenericRequest value) => value.writeToBuffer(),
           $0.Payload.fromBuffer);
   static final _$unsetAllowlist =
-      $grpc.ClientMethod<$15.SetAllowlistRequest, $0.Payload>(
+      $grpc.ClientMethod<$14.SetAllowlistRequest, $0.Payload>(
           '/pb.Daemon/UnsetAllowlist',
-          ($15.SetAllowlistRequest value) => value.writeToBuffer(),
+          ($14.SetAllowlistRequest value) => value.writeToBuffer(),
           $0.Payload.fromBuffer);
   static final _$unsetAllAllowlist = $grpc.ClientMethod<$0.Empty, $0.Payload>(
       '/pb.Daemon/UnsetAllAllowlist',
       ($0.Empty value) => value.writeToBuffer(),
       $0.Payload.fromBuffer);
   static final _$setAnalytics =
-      $grpc.ClientMethod<$15.SetGenericRequest, $0.Payload>(
+      $grpc.ClientMethod<$14.SetGenericRequest, $0.Payload>(
           '/pb.Daemon/SetAnalytics',
-          ($15.SetGenericRequest value) => value.writeToBuffer(),
+          ($14.SetGenericRequest value) => value.writeToBuffer(),
           $0.Payload.fromBuffer);
   static final _$setRealTimeProtection = $grpc.ClientMethod<
-          $15.SetRealTimeProtectionRequest, $15.SetRealTimeProtectionResponse>(
+          $14.SetRealTimeProtectionRequest, $14.SetRealTimeProtectionResponse>(
       '/pb.Daemon/SetRealTimeProtection',
-      ($15.SetRealTimeProtectionRequest value) => value.writeToBuffer(),
-      $15.SetRealTimeProtectionResponse.fromBuffer);
-  static final _$ping = $grpc.ClientMethod<$0.Empty, $18.PingResponse>(
+      ($14.SetRealTimeProtectionRequest value) => value.writeToBuffer(),
+      $14.SetRealTimeProtectionResponse.fromBuffer);
+  static final _$ping = $grpc.ClientMethod<$0.Empty, $17.PingResponse>(
       '/pb.Daemon/Ping',
       ($0.Empty value) => value.writeToBuffer(),
-      $18.PingResponse.fromBuffer);
-  static final _$reportUIEvent = $grpc.ClientMethod<$19.UIEvent, $0.Payload>(
+      $17.PingResponse.fromBuffer);
+  static final _$reportUIEvent = $grpc.ClientMethod<$18.UIEvent, $0.Payload>(
       '/pb.Daemon/ReportUIEvent',
-      ($19.UIEvent value) => value.writeToBuffer(),
+      ($18.UIEvent value) => value.writeToBuffer(),
       $0.Payload.fromBuffer);
   static final _$subscribeToStateChanges =
-      $grpc.ClientMethod<$0.Empty, $20.AppState>(
+      $grpc.ClientMethod<$0.Empty, $19.AppState>(
           '/pb.Daemon/SubscribeToStateChanges',
           ($0.Empty value) => value.writeToBuffer(),
-          $20.AppState.fromBuffer);
+          $19.AppState.fromBuffer);
   static final _$injectVpnConnectionError =
       $grpc.ClientMethod<$0.InjectVpnConnectionErrorRequest, $0.Payload>(
           '/pb.Daemon/InjectVpnConnectionError',
@@ -745,27 +732,20 @@ abstract class DaemonServiceBase extends $grpc.Service {
         false,
         ($core.List<$core.int> value) => $0.Empty.fromBuffer(value),
         ($8.StatusResponse value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$9.RateRequest, $0.Payload>(
-        'RateConnection',
-        rateConnection_Pre,
-        false,
-        false,
-        ($core.List<$core.int> value) => $9.RateRequest.fromBuffer(value),
-        ($0.Payload value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$10.PauseRequest, $0.Payload>(
+    $addMethod($grpc.ServiceMethod<$9.PauseRequest, $0.Payload>(
         'PauseConnection',
         pauseConnection_Pre,
         false,
         false,
-        ($core.List<$core.int> value) => $10.PauseRequest.fromBuffer(value),
+        ($core.List<$core.int> value) => $9.PauseRequest.fromBuffer(value),
         ($0.Payload value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$0.Empty, $11.ServersResponse>(
+    $addMethod($grpc.ServiceMethod<$0.Empty, $10.ServersResponse>(
         'GetServers',
         getServers_Pre,
         false,
         false,
         ($core.List<$core.int> value) => $0.Empty.fromBuffer(value),
-        ($11.ServersResponse value) => value.writeToBuffer()));
+        ($10.ServersResponse value) => value.writeToBuffer()));
     $addMethod($grpc.ServiceMethod<$0.Empty, $0.ServerGroupsList>(
         'Countries',
         countries_Pre,
@@ -773,12 +753,12 @@ abstract class DaemonServiceBase extends $grpc.Service {
         false,
         ($core.List<$core.int> value) => $0.Empty.fromBuffer(value),
         ($0.ServerGroupsList value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$12.CitiesRequest, $0.ServerGroupsList>(
+    $addMethod($grpc.ServiceMethod<$11.CitiesRequest, $0.ServerGroupsList>(
         'Cities',
         cities_Pre,
         false,
         false,
-        ($core.List<$core.int> value) => $12.CitiesRequest.fromBuffer(value),
+        ($core.List<$core.int> value) => $11.CitiesRequest.fromBuffer(value),
         ($0.ServerGroupsList value) => value.writeToBuffer()));
     $addMethod($grpc.ServiceMethod<$0.Empty, $0.ServerGroupsList>(
         'Groups',
@@ -787,138 +767,138 @@ abstract class DaemonServiceBase extends $grpc.Service {
         false,
         ($core.List<$core.int> value) => $0.Empty.fromBuffer(value),
         ($0.ServerGroupsList value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$0.Empty, $11.RecommendedServerLocation>(
+    $addMethod($grpc.ServiceMethod<$0.Empty, $10.RecommendedServerLocation>(
         'RecommendedServer',
         recommendedServer_Pre,
         false,
         false,
         ($core.List<$core.int> value) => $0.Empty.fromBuffer(value),
-        ($11.RecommendedServerLocation value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$0.Empty, $13.SettingsResponse>(
+        ($10.RecommendedServerLocation value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$0.Empty, $12.SettingsResponse>(
         'Settings',
         settings_Pre,
         false,
         false,
         ($core.List<$core.int> value) => $0.Empty.fromBuffer(value),
-        ($13.SettingsResponse value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$14.SetDefaultsRequest, $0.Payload>(
+        ($12.SettingsResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$13.SetDefaultsRequest, $0.Payload>(
         'SetDefaults',
         setDefaults_Pre,
         false,
         false,
         ($core.List<$core.int> value) =>
-            $14.SetDefaultsRequest.fromBuffer(value),
+            $13.SetDefaultsRequest.fromBuffer(value),
         ($0.Payload value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$15.SetAutoconnectRequest, $0.Payload>(
+    $addMethod($grpc.ServiceMethod<$14.SetAutoconnectRequest, $0.Payload>(
         'SetAutoConnect',
         setAutoConnect_Pre,
         false,
         false,
         ($core.List<$core.int> value) =>
-            $15.SetAutoconnectRequest.fromBuffer(value),
+            $14.SetAutoconnectRequest.fromBuffer(value),
         ($0.Payload value) => value.writeToBuffer()));
     $addMethod(
-        $grpc.ServiceMethod<$15.SetProtocolRequest, $15.SetProtocolResponse>(
+        $grpc.ServiceMethod<$14.SetProtocolRequest, $14.SetProtocolResponse>(
             'SetProtocol',
             setProtocol_Pre,
             false,
             false,
             ($core.List<$core.int> value) =>
-                $15.SetProtocolRequest.fromBuffer(value),
-            ($15.SetProtocolResponse value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$15.SetTechnologyRequest, $0.Payload>(
+                $14.SetProtocolRequest.fromBuffer(value),
+            ($14.SetProtocolResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$14.SetTechnologyRequest, $0.Payload>(
         'SetTechnology',
         setTechnology_Pre,
         false,
         false,
         ($core.List<$core.int> value) =>
-            $15.SetTechnologyRequest.fromBuffer(value),
+            $14.SetTechnologyRequest.fromBuffer(value),
         ($0.Payload value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$15.SetGenericRequest, $0.Payload>(
+    $addMethod($grpc.ServiceMethod<$14.SetGenericRequest, $0.Payload>(
         'SetPostQuantum',
         setPostQuantum_Pre,
         false,
         false,
         ($core.List<$core.int> value) =>
-            $15.SetGenericRequest.fromBuffer(value),
+            $14.SetGenericRequest.fromBuffer(value),
         ($0.Payload value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$15.SetGenericRequest, $0.Payload>(
+    $addMethod($grpc.ServiceMethod<$14.SetGenericRequest, $0.Payload>(
         'SetECH',
         setECH_Pre,
         false,
         false,
         ($core.List<$core.int> value) =>
-            $15.SetGenericRequest.fromBuffer(value),
+            $14.SetGenericRequest.fromBuffer(value),
         ($0.Payload value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$16.RecentConnectionsRequest,
-            $16.RecentConnectionsResponse>(
+    $addMethod($grpc.ServiceMethod<$15.RecentConnectionsRequest,
+            $15.RecentConnectionsResponse>(
         'GetRecentConnections',
         getRecentConnections_Pre,
         false,
         false,
         ($core.List<$core.int> value) =>
-            $16.RecentConnectionsRequest.fromBuffer(value),
-        ($16.RecentConnectionsResponse value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$15.SetDNSRequest, $15.SetDNSResponse>(
+            $15.RecentConnectionsRequest.fromBuffer(value),
+        ($15.RecentConnectionsResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$14.SetDNSRequest, $14.SetDNSResponse>(
         'SetDNS',
         setDNS_Pre,
         false,
         false,
-        ($core.List<$core.int> value) => $15.SetDNSRequest.fromBuffer(value),
-        ($15.SetDNSResponse value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$15.SetGenericRequest, $0.Payload>(
+        ($core.List<$core.int> value) => $14.SetDNSRequest.fromBuffer(value),
+        ($14.SetDNSResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$14.SetGenericRequest, $0.Payload>(
         'SetFirewall',
         setFirewall_Pre,
         false,
         false,
         ($core.List<$core.int> value) =>
-            $15.SetGenericRequest.fromBuffer(value),
+            $14.SetGenericRequest.fromBuffer(value),
         ($0.Payload value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$15.SetUint32Request, $0.Payload>(
+    $addMethod($grpc.ServiceMethod<$14.SetUint32Request, $0.Payload>(
         'SetFirewallMark',
         setFirewallMark_Pre,
         false,
         false,
-        ($core.List<$core.int> value) => $15.SetUint32Request.fromBuffer(value),
+        ($core.List<$core.int> value) => $14.SetUint32Request.fromBuffer(value),
         ($0.Payload value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$15.SetGenericRequest, $0.Payload>(
+    $addMethod($grpc.ServiceMethod<$14.SetGenericRequest, $0.Payload>(
         'SetRouting',
         setRouting_Pre,
         false,
         false,
         ($core.List<$core.int> value) =>
-            $15.SetGenericRequest.fromBuffer(value),
+            $14.SetGenericRequest.fromBuffer(value),
         ($0.Payload value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$15.SetKillSwitchRequest, $0.Payload>(
+    $addMethod($grpc.ServiceMethod<$14.SetKillSwitchRequest, $0.Payload>(
         'SetKillSwitch',
         setKillSwitch_Pre,
         false,
         false,
         ($core.List<$core.int> value) =>
-            $15.SetKillSwitchRequest.fromBuffer(value),
+            $14.SetKillSwitchRequest.fromBuffer(value),
         ($0.Payload value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$15.SetLANDiscoveryRequest,
-            $15.SetLANDiscoveryResponse>(
+    $addMethod($grpc.ServiceMethod<$14.SetLANDiscoveryRequest,
+            $14.SetLANDiscoveryResponse>(
         'SetLANDiscovery',
         setLANDiscovery_Pre,
         false,
         false,
         ($core.List<$core.int> value) =>
-            $15.SetLANDiscoveryRequest.fromBuffer(value),
-        ($15.SetLANDiscoveryResponse value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$15.SetNotifyRequest, $0.Payload>(
+            $14.SetLANDiscoveryRequest.fromBuffer(value),
+        ($14.SetLANDiscoveryResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$14.SetNotifyRequest, $0.Payload>(
         'SetNotify',
         setNotify_Pre,
         false,
         false,
-        ($core.List<$core.int> value) => $15.SetNotifyRequest.fromBuffer(value),
+        ($core.List<$core.int> value) => $14.SetNotifyRequest.fromBuffer(value),
         ($0.Payload value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$15.SetTrayRequest, $0.Payload>(
+    $addMethod($grpc.ServiceMethod<$14.SetTrayRequest, $0.Payload>(
         'SetTray',
         setTray_Pre,
         false,
         false,
-        ($core.List<$core.int> value) => $15.SetTrayRequest.fromBuffer(value),
+        ($core.List<$core.int> value) => $14.SetTrayRequest.fromBuffer(value),
         ($0.Payload value) => value.writeToBuffer()));
     $addMethod($grpc.ServiceMethod<$0.Empty, $0.Payload>(
         'SettingsProtocols',
@@ -934,36 +914,36 @@ abstract class DaemonServiceBase extends $grpc.Service {
         false,
         ($core.List<$core.int> value) => $0.Empty.fromBuffer(value),
         ($0.Payload value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$0.Empty, $17.FeatureToggles>(
+    $addMethod($grpc.ServiceMethod<$0.Empty, $16.FeatureToggles>(
         'GetFeatureToggles',
         getFeatureToggles_Pre,
         false,
         false,
         ($core.List<$core.int> value) => $0.Empty.fromBuffer(value),
-        ($17.FeatureToggles value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$15.SetAllowlistRequest, $0.Payload>(
+        ($16.FeatureToggles value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$14.SetAllowlistRequest, $0.Payload>(
         'SetAllowlist',
         setAllowlist_Pre,
         false,
         false,
         ($core.List<$core.int> value) =>
-            $15.SetAllowlistRequest.fromBuffer(value),
+            $14.SetAllowlistRequest.fromBuffer(value),
         ($0.Payload value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$15.SetGenericRequest, $0.Payload>(
+    $addMethod($grpc.ServiceMethod<$14.SetGenericRequest, $0.Payload>(
         'SetARPIgnore',
         setARPIgnore_Pre,
         false,
         false,
         ($core.List<$core.int> value) =>
-            $15.SetGenericRequest.fromBuffer(value),
+            $14.SetGenericRequest.fromBuffer(value),
         ($0.Payload value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$15.SetAllowlistRequest, $0.Payload>(
+    $addMethod($grpc.ServiceMethod<$14.SetAllowlistRequest, $0.Payload>(
         'UnsetAllowlist',
         unsetAllowlist_Pre,
         false,
         false,
         ($core.List<$core.int> value) =>
-            $15.SetAllowlistRequest.fromBuffer(value),
+            $14.SetAllowlistRequest.fromBuffer(value),
         ($0.Payload value) => value.writeToBuffer()));
     $addMethod($grpc.ServiceMethod<$0.Empty, $0.Payload>(
         'UnsetAllAllowlist',
@@ -972,44 +952,44 @@ abstract class DaemonServiceBase extends $grpc.Service {
         false,
         ($core.List<$core.int> value) => $0.Empty.fromBuffer(value),
         ($0.Payload value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$15.SetGenericRequest, $0.Payload>(
+    $addMethod($grpc.ServiceMethod<$14.SetGenericRequest, $0.Payload>(
         'SetAnalytics',
         setAnalytics_Pre,
         false,
         false,
         ($core.List<$core.int> value) =>
-            $15.SetGenericRequest.fromBuffer(value),
+            $14.SetGenericRequest.fromBuffer(value),
         ($0.Payload value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$15.SetRealTimeProtectionRequest,
-            $15.SetRealTimeProtectionResponse>(
+    $addMethod($grpc.ServiceMethod<$14.SetRealTimeProtectionRequest,
+            $14.SetRealTimeProtectionResponse>(
         'SetRealTimeProtection',
         setRealTimeProtection_Pre,
         false,
         false,
         ($core.List<$core.int> value) =>
-            $15.SetRealTimeProtectionRequest.fromBuffer(value),
-        ($15.SetRealTimeProtectionResponse value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$0.Empty, $18.PingResponse>(
+            $14.SetRealTimeProtectionRequest.fromBuffer(value),
+        ($14.SetRealTimeProtectionResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$0.Empty, $17.PingResponse>(
         'Ping',
         ping_Pre,
         false,
         false,
         ($core.List<$core.int> value) => $0.Empty.fromBuffer(value),
-        ($18.PingResponse value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$19.UIEvent, $0.Payload>(
+        ($17.PingResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$18.UIEvent, $0.Payload>(
         'ReportUIEvent',
         reportUIEvent_Pre,
         false,
         false,
-        ($core.List<$core.int> value) => $19.UIEvent.fromBuffer(value),
+        ($core.List<$core.int> value) => $18.UIEvent.fromBuffer(value),
         ($0.Payload value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$0.Empty, $20.AppState>(
+    $addMethod($grpc.ServiceMethod<$0.Empty, $19.AppState>(
         'SubscribeToStateChanges',
         subscribeToStateChanges_Pre,
         false,
         true,
         ($core.List<$core.int> value) => $0.Empty.fromBuffer(value),
-        ($20.AppState value) => value.writeToBuffer()));
+        ($19.AppState value) => value.writeToBuffer()));
     $addMethod(
         $grpc.ServiceMethod<$0.InjectVpnConnectionErrorRequest, $0.Payload>(
             'InjectVpnConnectionError',
@@ -1125,28 +1105,20 @@ abstract class DaemonServiceBase extends $grpc.Service {
   $async.Future<$8.StatusResponse> status(
       $grpc.ServiceCall call, $0.Empty request);
 
-  $async.Future<$0.Payload> rateConnection_Pre(
-      $grpc.ServiceCall $call, $async.Future<$9.RateRequest> $request) async {
-    return rateConnection($call, await $request);
-  }
-
-  $async.Future<$0.Payload> rateConnection(
-      $grpc.ServiceCall call, $9.RateRequest request);
-
   $async.Future<$0.Payload> pauseConnection_Pre(
-      $grpc.ServiceCall $call, $async.Future<$10.PauseRequest> $request) async {
+      $grpc.ServiceCall $call, $async.Future<$9.PauseRequest> $request) async {
     return pauseConnection($call, await $request);
   }
 
   $async.Future<$0.Payload> pauseConnection(
-      $grpc.ServiceCall call, $10.PauseRequest request);
+      $grpc.ServiceCall call, $9.PauseRequest request);
 
-  $async.Future<$11.ServersResponse> getServers_Pre(
+  $async.Future<$10.ServersResponse> getServers_Pre(
       $grpc.ServiceCall $call, $async.Future<$0.Empty> $request) async {
     return getServers($call, await $request);
   }
 
-  $async.Future<$11.ServersResponse> getServers(
+  $async.Future<$10.ServersResponse> getServers(
       $grpc.ServiceCall call, $0.Empty request);
 
   $async.Future<$0.ServerGroupsList> countries_Pre(
@@ -1158,12 +1130,12 @@ abstract class DaemonServiceBase extends $grpc.Service {
       $grpc.ServiceCall call, $0.Empty request);
 
   $async.Future<$0.ServerGroupsList> cities_Pre($grpc.ServiceCall $call,
-      $async.Future<$12.CitiesRequest> $request) async {
+      $async.Future<$11.CitiesRequest> $request) async {
     return cities($call, await $request);
   }
 
   $async.Future<$0.ServerGroupsList> cities(
-      $grpc.ServiceCall call, $12.CitiesRequest request);
+      $grpc.ServiceCall call, $11.CitiesRequest request);
 
   $async.Future<$0.ServerGroupsList> groups_Pre(
       $grpc.ServiceCall $call, $async.Future<$0.Empty> $request) async {
@@ -1173,144 +1145,144 @@ abstract class DaemonServiceBase extends $grpc.Service {
   $async.Future<$0.ServerGroupsList> groups(
       $grpc.ServiceCall call, $0.Empty request);
 
-  $async.Future<$11.RecommendedServerLocation> recommendedServer_Pre(
+  $async.Future<$10.RecommendedServerLocation> recommendedServer_Pre(
       $grpc.ServiceCall $call, $async.Future<$0.Empty> $request) async {
     return recommendedServer($call, await $request);
   }
 
-  $async.Future<$11.RecommendedServerLocation> recommendedServer(
+  $async.Future<$10.RecommendedServerLocation> recommendedServer(
       $grpc.ServiceCall call, $0.Empty request);
 
-  $async.Future<$13.SettingsResponse> settings_Pre(
+  $async.Future<$12.SettingsResponse> settings_Pre(
       $grpc.ServiceCall $call, $async.Future<$0.Empty> $request) async {
     return settings($call, await $request);
   }
 
-  $async.Future<$13.SettingsResponse> settings(
+  $async.Future<$12.SettingsResponse> settings(
       $grpc.ServiceCall call, $0.Empty request);
 
   $async.Future<$0.Payload> setDefaults_Pre($grpc.ServiceCall $call,
-      $async.Future<$14.SetDefaultsRequest> $request) async {
+      $async.Future<$13.SetDefaultsRequest> $request) async {
     return setDefaults($call, await $request);
   }
 
   $async.Future<$0.Payload> setDefaults(
-      $grpc.ServiceCall call, $14.SetDefaultsRequest request);
+      $grpc.ServiceCall call, $13.SetDefaultsRequest request);
 
   $async.Future<$0.Payload> setAutoConnect_Pre($grpc.ServiceCall $call,
-      $async.Future<$15.SetAutoconnectRequest> $request) async {
+      $async.Future<$14.SetAutoconnectRequest> $request) async {
     return setAutoConnect($call, await $request);
   }
 
   $async.Future<$0.Payload> setAutoConnect(
-      $grpc.ServiceCall call, $15.SetAutoconnectRequest request);
+      $grpc.ServiceCall call, $14.SetAutoconnectRequest request);
 
-  $async.Future<$15.SetProtocolResponse> setProtocol_Pre(
+  $async.Future<$14.SetProtocolResponse> setProtocol_Pre(
       $grpc.ServiceCall $call,
-      $async.Future<$15.SetProtocolRequest> $request) async {
+      $async.Future<$14.SetProtocolRequest> $request) async {
     return setProtocol($call, await $request);
   }
 
-  $async.Future<$15.SetProtocolResponse> setProtocol(
-      $grpc.ServiceCall call, $15.SetProtocolRequest request);
+  $async.Future<$14.SetProtocolResponse> setProtocol(
+      $grpc.ServiceCall call, $14.SetProtocolRequest request);
 
   $async.Future<$0.Payload> setTechnology_Pre($grpc.ServiceCall $call,
-      $async.Future<$15.SetTechnologyRequest> $request) async {
+      $async.Future<$14.SetTechnologyRequest> $request) async {
     return setTechnology($call, await $request);
   }
 
   $async.Future<$0.Payload> setTechnology(
-      $grpc.ServiceCall call, $15.SetTechnologyRequest request);
+      $grpc.ServiceCall call, $14.SetTechnologyRequest request);
 
   $async.Future<$0.Payload> setPostQuantum_Pre($grpc.ServiceCall $call,
-      $async.Future<$15.SetGenericRequest> $request) async {
+      $async.Future<$14.SetGenericRequest> $request) async {
     return setPostQuantum($call, await $request);
   }
 
   $async.Future<$0.Payload> setPostQuantum(
-      $grpc.ServiceCall call, $15.SetGenericRequest request);
+      $grpc.ServiceCall call, $14.SetGenericRequest request);
 
   $async.Future<$0.Payload> setECH_Pre($grpc.ServiceCall $call,
-      $async.Future<$15.SetGenericRequest> $request) async {
+      $async.Future<$14.SetGenericRequest> $request) async {
     return setECH($call, await $request);
   }
 
   $async.Future<$0.Payload> setECH(
-      $grpc.ServiceCall call, $15.SetGenericRequest request);
+      $grpc.ServiceCall call, $14.SetGenericRequest request);
 
-  $async.Future<$16.RecentConnectionsResponse> getRecentConnections_Pre(
+  $async.Future<$15.RecentConnectionsResponse> getRecentConnections_Pre(
       $grpc.ServiceCall $call,
-      $async.Future<$16.RecentConnectionsRequest> $request) async {
+      $async.Future<$15.RecentConnectionsRequest> $request) async {
     return getRecentConnections($call, await $request);
   }
 
-  $async.Future<$16.RecentConnectionsResponse> getRecentConnections(
-      $grpc.ServiceCall call, $16.RecentConnectionsRequest request);
+  $async.Future<$15.RecentConnectionsResponse> getRecentConnections(
+      $grpc.ServiceCall call, $15.RecentConnectionsRequest request);
 
-  $async.Future<$15.SetDNSResponse> setDNS_Pre($grpc.ServiceCall $call,
-      $async.Future<$15.SetDNSRequest> $request) async {
+  $async.Future<$14.SetDNSResponse> setDNS_Pre($grpc.ServiceCall $call,
+      $async.Future<$14.SetDNSRequest> $request) async {
     return setDNS($call, await $request);
   }
 
-  $async.Future<$15.SetDNSResponse> setDNS(
-      $grpc.ServiceCall call, $15.SetDNSRequest request);
+  $async.Future<$14.SetDNSResponse> setDNS(
+      $grpc.ServiceCall call, $14.SetDNSRequest request);
 
   $async.Future<$0.Payload> setFirewall_Pre($grpc.ServiceCall $call,
-      $async.Future<$15.SetGenericRequest> $request) async {
+      $async.Future<$14.SetGenericRequest> $request) async {
     return setFirewall($call, await $request);
   }
 
   $async.Future<$0.Payload> setFirewall(
-      $grpc.ServiceCall call, $15.SetGenericRequest request);
+      $grpc.ServiceCall call, $14.SetGenericRequest request);
 
   $async.Future<$0.Payload> setFirewallMark_Pre($grpc.ServiceCall $call,
-      $async.Future<$15.SetUint32Request> $request) async {
+      $async.Future<$14.SetUint32Request> $request) async {
     return setFirewallMark($call, await $request);
   }
 
   $async.Future<$0.Payload> setFirewallMark(
-      $grpc.ServiceCall call, $15.SetUint32Request request);
+      $grpc.ServiceCall call, $14.SetUint32Request request);
 
   $async.Future<$0.Payload> setRouting_Pre($grpc.ServiceCall $call,
-      $async.Future<$15.SetGenericRequest> $request) async {
+      $async.Future<$14.SetGenericRequest> $request) async {
     return setRouting($call, await $request);
   }
 
   $async.Future<$0.Payload> setRouting(
-      $grpc.ServiceCall call, $15.SetGenericRequest request);
+      $grpc.ServiceCall call, $14.SetGenericRequest request);
 
   $async.Future<$0.Payload> setKillSwitch_Pre($grpc.ServiceCall $call,
-      $async.Future<$15.SetKillSwitchRequest> $request) async {
+      $async.Future<$14.SetKillSwitchRequest> $request) async {
     return setKillSwitch($call, await $request);
   }
 
   $async.Future<$0.Payload> setKillSwitch(
-      $grpc.ServiceCall call, $15.SetKillSwitchRequest request);
+      $grpc.ServiceCall call, $14.SetKillSwitchRequest request);
 
-  $async.Future<$15.SetLANDiscoveryResponse> setLANDiscovery_Pre(
+  $async.Future<$14.SetLANDiscoveryResponse> setLANDiscovery_Pre(
       $grpc.ServiceCall $call,
-      $async.Future<$15.SetLANDiscoveryRequest> $request) async {
+      $async.Future<$14.SetLANDiscoveryRequest> $request) async {
     return setLANDiscovery($call, await $request);
   }
 
-  $async.Future<$15.SetLANDiscoveryResponse> setLANDiscovery(
-      $grpc.ServiceCall call, $15.SetLANDiscoveryRequest request);
+  $async.Future<$14.SetLANDiscoveryResponse> setLANDiscovery(
+      $grpc.ServiceCall call, $14.SetLANDiscoveryRequest request);
 
   $async.Future<$0.Payload> setNotify_Pre($grpc.ServiceCall $call,
-      $async.Future<$15.SetNotifyRequest> $request) async {
+      $async.Future<$14.SetNotifyRequest> $request) async {
     return setNotify($call, await $request);
   }
 
   $async.Future<$0.Payload> setNotify(
-      $grpc.ServiceCall call, $15.SetNotifyRequest request);
+      $grpc.ServiceCall call, $14.SetNotifyRequest request);
 
   $async.Future<$0.Payload> setTray_Pre($grpc.ServiceCall $call,
-      $async.Future<$15.SetTrayRequest> $request) async {
+      $async.Future<$14.SetTrayRequest> $request) async {
     return setTray($call, await $request);
   }
 
   $async.Future<$0.Payload> setTray(
-      $grpc.ServiceCall call, $15.SetTrayRequest request);
+      $grpc.ServiceCall call, $14.SetTrayRequest request);
 
   $async.Future<$0.Payload> settingsProtocols_Pre(
       $grpc.ServiceCall $call, $async.Future<$0.Empty> $request) async {
@@ -1328,37 +1300,37 @@ abstract class DaemonServiceBase extends $grpc.Service {
   $async.Future<$0.Payload> settingsTechnologies(
       $grpc.ServiceCall call, $0.Empty request);
 
-  $async.Future<$17.FeatureToggles> getFeatureToggles_Pre(
+  $async.Future<$16.FeatureToggles> getFeatureToggles_Pre(
       $grpc.ServiceCall $call, $async.Future<$0.Empty> $request) async {
     return getFeatureToggles($call, await $request);
   }
 
-  $async.Future<$17.FeatureToggles> getFeatureToggles(
+  $async.Future<$16.FeatureToggles> getFeatureToggles(
       $grpc.ServiceCall call, $0.Empty request);
 
   $async.Future<$0.Payload> setAllowlist_Pre($grpc.ServiceCall $call,
-      $async.Future<$15.SetAllowlistRequest> $request) async {
+      $async.Future<$14.SetAllowlistRequest> $request) async {
     return setAllowlist($call, await $request);
   }
 
   $async.Future<$0.Payload> setAllowlist(
-      $grpc.ServiceCall call, $15.SetAllowlistRequest request);
+      $grpc.ServiceCall call, $14.SetAllowlistRequest request);
 
   $async.Future<$0.Payload> setARPIgnore_Pre($grpc.ServiceCall $call,
-      $async.Future<$15.SetGenericRequest> $request) async {
+      $async.Future<$14.SetGenericRequest> $request) async {
     return setARPIgnore($call, await $request);
   }
 
   $async.Future<$0.Payload> setARPIgnore(
-      $grpc.ServiceCall call, $15.SetGenericRequest request);
+      $grpc.ServiceCall call, $14.SetGenericRequest request);
 
   $async.Future<$0.Payload> unsetAllowlist_Pre($grpc.ServiceCall $call,
-      $async.Future<$15.SetAllowlistRequest> $request) async {
+      $async.Future<$14.SetAllowlistRequest> $request) async {
     return unsetAllowlist($call, await $request);
   }
 
   $async.Future<$0.Payload> unsetAllowlist(
-      $grpc.ServiceCall call, $15.SetAllowlistRequest request);
+      $grpc.ServiceCall call, $14.SetAllowlistRequest request);
 
   $async.Future<$0.Payload> unsetAllAllowlist_Pre(
       $grpc.ServiceCall $call, $async.Future<$0.Empty> $request) async {
@@ -1369,44 +1341,44 @@ abstract class DaemonServiceBase extends $grpc.Service {
       $grpc.ServiceCall call, $0.Empty request);
 
   $async.Future<$0.Payload> setAnalytics_Pre($grpc.ServiceCall $call,
-      $async.Future<$15.SetGenericRequest> $request) async {
+      $async.Future<$14.SetGenericRequest> $request) async {
     return setAnalytics($call, await $request);
   }
 
   $async.Future<$0.Payload> setAnalytics(
-      $grpc.ServiceCall call, $15.SetGenericRequest request);
+      $grpc.ServiceCall call, $14.SetGenericRequest request);
 
-  $async.Future<$15.SetRealTimeProtectionResponse> setRealTimeProtection_Pre(
+  $async.Future<$14.SetRealTimeProtectionResponse> setRealTimeProtection_Pre(
       $grpc.ServiceCall $call,
-      $async.Future<$15.SetRealTimeProtectionRequest> $request) async {
+      $async.Future<$14.SetRealTimeProtectionRequest> $request) async {
     return setRealTimeProtection($call, await $request);
   }
 
-  $async.Future<$15.SetRealTimeProtectionResponse> setRealTimeProtection(
-      $grpc.ServiceCall call, $15.SetRealTimeProtectionRequest request);
+  $async.Future<$14.SetRealTimeProtectionResponse> setRealTimeProtection(
+      $grpc.ServiceCall call, $14.SetRealTimeProtectionRequest request);
 
-  $async.Future<$18.PingResponse> ping_Pre(
+  $async.Future<$17.PingResponse> ping_Pre(
       $grpc.ServiceCall $call, $async.Future<$0.Empty> $request) async {
     return ping($call, await $request);
   }
 
-  $async.Future<$18.PingResponse> ping(
+  $async.Future<$17.PingResponse> ping(
       $grpc.ServiceCall call, $0.Empty request);
 
   $async.Future<$0.Payload> reportUIEvent_Pre(
-      $grpc.ServiceCall $call, $async.Future<$19.UIEvent> $request) async {
+      $grpc.ServiceCall $call, $async.Future<$18.UIEvent> $request) async {
     return reportUIEvent($call, await $request);
   }
 
   $async.Future<$0.Payload> reportUIEvent(
-      $grpc.ServiceCall call, $19.UIEvent request);
+      $grpc.ServiceCall call, $18.UIEvent request);
 
-  $async.Stream<$20.AppState> subscribeToStateChanges_Pre(
+  $async.Stream<$19.AppState> subscribeToStateChanges_Pre(
       $grpc.ServiceCall $call, $async.Future<$0.Empty> $request) async* {
     yield* subscribeToStateChanges($call, await $request);
   }
 
-  $async.Stream<$20.AppState> subscribeToStateChanges(
+  $async.Stream<$19.AppState> subscribeToStateChanges(
       $grpc.ServiceCall call, $0.Empty request);
 
   $async.Future<$0.Payload> injectVpnConnectionError_Pre(
