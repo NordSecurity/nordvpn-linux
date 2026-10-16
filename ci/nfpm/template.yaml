@@ -56,6 +56,7 @@ depends:
 recommends:
   - iptables
   - nordvpn-gui
+  - wtmpdb
 
 # Basic file that applies to all packagers
 contents:
