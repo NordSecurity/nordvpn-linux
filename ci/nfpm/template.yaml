@@ -56,6 +56,7 @@ depends:
 recommends:
   - iptables
   - nordvpn-gui
+  - wtmpdb
 
 # Basic file that applies to all packagers
 contents:
@@ -181,6 +182,7 @@ overrides:
     # data channel offload.
     suggests:
       - (kmod-ovpn-dco or ovpn-dco-kmp-default)
+      - wtmpdb
     recommends:
       - iptables
       - nordvpn-gui
