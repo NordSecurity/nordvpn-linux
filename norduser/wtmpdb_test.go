@@ -2,25 +2,12 @@ package norduser
 
 import (
 	"context"
-	"errors"
 	"testing"
+
+	dbusutil_mock "github.com/NordSecurity/nordvpn-linux/test/mock/sysinfo/dbusutil"
 
 	"github.com/godbus/dbus/v5"
 )
-
-// mockDBusConn implements dbusConn
-type mockDBusConn struct {
-	objects map[dbus.ObjectPath]dbus.BusObject
-}
-
-func (m *mockDBusConn) object(_ string, path dbus.ObjectPath) dbus.BusObject {
-	if obj, ok := m.objects[path]; ok {
-		return obj
-	}
-	return m.objects["*"] // fallback for any path
-}
-
-func (m *mockDBusConn) close() error { return nil }
 
 // mockBusObject implements dbus.BusObject
 type mockBusObject struct {
@@ -76,39 +63,31 @@ func sessionTuple(id, uid, user, seat string, path dbus.ObjectPath) []interface{
 }
 
 func TestHasGUISession(t *testing.T) {
-	x11Path := dbus.ObjectPath("/org/freedesktop/login1/session/_31")
-	waylandPath := dbus.ObjectPath("/org/freedesktop/login1/session/_32")
-	otherPath := dbus.ObjectPath("/org/freedesktop/login1/session/_33")
+	x11Path := "/org/freedesktop/login1/session/_31"
+	waylandPath := "/org/freedesktop/login1/session/_32"
+	otherPath := "/org/freedesktop/login1/session/_33"
 
-	x11Obj := &mockBusObject{getPropFn: func(string) (dbus.Variant, error) {
-		return dbus.MakeVariant("x11"), nil
-	}}
-	waylandObj := &mockBusObject{getPropFn: func(string) (dbus.Variant, error) {
-		return dbus.MakeVariant("wayland"), nil
-	}}
-	ttyObj := &mockBusObject{getPropFn: func(string) (dbus.Variant, error) {
-		return dbus.MakeVariant("tty"), nil
-	}}
-	failObj := &mockBusObject{getPropFn: func(string) (dbus.Variant, error) {
-		return dbus.Variant{}, errors.New("no such property")
-	}}
+	x11Prop := dbus.MakeVariant("x11")
+	waylandProp := dbus.MakeVariant("wayland")
+	ttyProp := dbus.MakeVariant("tty")
+	failProp := dbus.Variant{}
 
 	tests := []struct {
 		name           string
 		sessions       [][]interface{}
-		objects        map[dbus.ObjectPath]dbus.BusObject
+		properties     map[string]dbus.Variant
 		expectedResult bool
 	}{
 		{
 			name:           "x11 session",
-			sessions:       [][]interface{}{sessionTuple("1", "1000", "alice", "seat0", x11Path)},
-			objects:        map[dbus.ObjectPath]dbus.BusObject{x11Path: x11Obj},
+			sessions:       [][]interface{}{sessionTuple("1", "1000", "alice", "seat0", dbus.ObjectPath(x11Path))},
+			properties:     map[string]dbus.Variant{x11Path: x11Prop},
 			expectedResult: true,
 		},
 		{
 			name:           "wayland session",
-			sessions:       [][]interface{}{sessionTuple("1", "1000", "alice", "seat0", waylandPath)},
-			objects:        map[dbus.ObjectPath]dbus.BusObject{waylandPath: waylandObj},
+			sessions:       [][]interface{}{sessionTuple("1", "1000", "alice", "seat0", dbus.ObjectPath(waylandPath))},
+			properties:     map[string]dbus.Variant{waylandPath: waylandProp},
 			expectedResult: true,
 		},
 		{
@@ -118,14 +97,14 @@ func TestHasGUISession(t *testing.T) {
 		},
 		{
 			name:           "tty session only",
-			sessions:       [][]interface{}{sessionTuple("1", "1000", "alice", "seat0", otherPath)},
-			objects:        map[dbus.ObjectPath]dbus.BusObject{otherPath: ttyObj},
+			sessions:       [][]interface{}{sessionTuple("1", "1000", "alice", "seat0", dbus.ObjectPath(otherPath))},
+			properties:     map[string]dbus.Variant{otherPath: ttyProp},
 			expectedResult: false,
 		},
 		{
 			name:           "different user",
-			sessions:       [][]interface{}{sessionTuple("1", "1000", "bob", "seat0", x11Path)},
-			objects:        map[dbus.ObjectPath]dbus.BusObject{x11Path: x11Obj},
+			sessions:       [][]interface{}{sessionTuple("1", "1000", "bob", "seat0", dbus.ObjectPath(x11Path))},
+			properties:     map[string]dbus.Variant{x11Path: x11Prop},
 			expectedResult: false,
 		},
 		{
@@ -135,7 +114,7 @@ func TestHasGUISession(t *testing.T) {
 		},
 		{
 			name:           "malformed username",
-			sessions:       [][]interface{}{{"1", "1000", 42, "seat0", x11Path}},
+			sessions:       [][]interface{}{{"1", "1000", 42, "seat0", dbus.ObjectPath(x11Path)}},
 			expectedResult: false,
 		},
 		{
@@ -145,17 +124,17 @@ func TestHasGUISession(t *testing.T) {
 		},
 		{
 			name:           "get property fails",
-			sessions:       [][]interface{}{sessionTuple("1", "1000", "alice", "seat0", x11Path)},
-			objects:        map[dbus.ObjectPath]dbus.BusObject{x11Path: failObj},
+			sessions:       [][]interface{}{sessionTuple("1", "1000", "alice", "seat0", dbus.ObjectPath(x11Path))},
+			properties:     map[string]dbus.Variant{x11Path: failProp},
 			expectedResult: false,
 		},
 		{
 			name: "second session is gui",
 			sessions: [][]interface{}{
-				sessionTuple("1", "1000", "alice", "seat0", otherPath),
-				sessionTuple("2", "1000", "alice", "seat0", x11Path),
+				sessionTuple("1", "1000", "alice", "seat0", dbus.ObjectPath(otherPath)),
+				sessionTuple("2", "1000", "alice", "seat0", dbus.ObjectPath(x11Path)),
 			},
-			objects:        map[dbus.ObjectPath]dbus.BusObject{otherPath: ttyObj, x11Path: x11Obj},
+			properties:     map[string]dbus.Variant{otherPath: ttyProp, x11Path: x11Prop},
 			expectedResult: true,
 		},
 	}
@@ -166,10 +145,10 @@ func TestHasGUISession(t *testing.T) {
 				return &dbus.Call{Body: []interface{}{test.sessions}}
 			}}
 			objects := map[dbus.ObjectPath]dbus.BusObject{"/org/freedesktop/login1": manager}
-			for path, object := range test.objects {
-				objects[path] = object
-			}
-			getter := &wtmpdbSessionGetter{dbusConn: &mockDBusConn{objects: objects}}
+
+			dbusMock := dbusutil_mock.NewMockDbusObjectClient(objects, test.properties, nil)
+			dbusMock.Objects = objects
+			getter := &wtmpdbSessionGetter{dbusLoginClient: dbusMock}
 
 			got, err := getter.hasGUISession("alice")
 			if err != nil {
