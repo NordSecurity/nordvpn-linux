@@ -277,7 +277,7 @@ func TestItemNameToString(t *testing.T) {
 		{pb.UIEvent_LOGIN, "login"},
 		{pb.UIEvent_LOGIN_TOKEN, "login_token"},
 		{pb.UIEvent_LOGOUT, "logout"},
-		{pb.UIEvent_RATE_CONNECTION, "rate_connection"},
+		{pb.UIEvent_RATE_CONNECTION, "vpn_csat_score"},
 		{pb.UIEvent_MESHNET_INVITE_SEND, "meshnet_invite_send"},
 		{pb.UIEvent_PAUSE, "pause"},
 		{pb.UIEvent_RECONNECT, "reconnect"},
@@ -335,6 +335,11 @@ func TestItemValueToString(t *testing.T) {
 		{pb.UIEvent_PAUSE_24_HOURS, "24_hours"},
 		{pb.UIEvent_PAUSE_DISCONNECT, "disconnect"},
 		{pb.UIEvent_DEDICATED_SERVER, "dedicated_server"},
+		{pb.UIEvent_CSAT_SCORE_1, "1"},
+		{pb.UIEvent_CSAT_SCORE_2, "2"},
+		{pb.UIEvent_CSAT_SCORE_3, "3"},
+		{pb.UIEvent_CSAT_SCORE_4, "4"},
+		{pb.UIEvent_CSAT_SCORE_5, "5"},
 	}
 
 	for _, tt := range tests {
