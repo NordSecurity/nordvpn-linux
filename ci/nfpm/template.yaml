@@ -182,10 +182,10 @@ overrides:
     # data channel offload.
     suggests:
       - (kmod-ovpn-dco or ovpn-dco-kmp-default)
-      - wtmpdb
     recommends:
       - iptables
       - nordvpn-gui
+      - wtmpdb
     # RPM specific scripts.
     scripts:
       preinstall: ${WORKDIR}/contrib/scriptlets/rpm/preinst
