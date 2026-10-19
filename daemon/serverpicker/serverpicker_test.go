@@ -44,7 +44,9 @@ func TestFilterServers(t *testing.T) {
 			name: "NordLynx 0 servers",
 			servers: core.Servers{
 				core.Server{
-					Status: core.Online,
+					Hostname: "lt1.nordvpn.com",
+					Keys:     []string{"lt"},
+					Status:   core.Online,
 					Technologies: core.Technologies{
 						core.Technology{
 							ID:    core.OpenVPNUDP,
@@ -65,7 +67,9 @@ func TestFilterServers(t *testing.T) {
 			name: "NordLynx several online servers",
 			servers: core.Servers{
 				core.Server{
-					Status: core.Online,
+					Hostname: "lt2.nordvpn.com",
+					Keys:     []string{"lt"},
+					Status:   core.Online,
 					Technologies: core.Technologies{
 						core.Technology{
 							ID:    core.WireguardTech,
@@ -77,7 +81,9 @@ func TestFilterServers(t *testing.T) {
 					},
 				},
 				core.Server{
-					Status: core.Online,
+					Hostname: "lt3.nordvpn.com",
+					Keys:     []string{"lt"},
+					Status:   core.Online,
 					Technologies: core.Technologies{
 						core.Technology{
 							ID:    core.WireguardTech,
@@ -95,7 +101,9 @@ func TestFilterServers(t *testing.T) {
 			name: "NordLynx several mixed status servers",
 			servers: core.Servers{
 				core.Server{
-					Status: core.Online,
+					Hostname: "lt4.nordvpn.com",
+					Keys:     []string{"lt"},
+					Status:   core.Online,
 					Technologies: core.Technologies{
 						core.Technology{
 							ID:    core.WireguardTech,
@@ -107,7 +115,9 @@ func TestFilterServers(t *testing.T) {
 					},
 				},
 				core.Server{
-					Status: core.Offline,
+					Hostname: "lt5.nordvpn.com",
+					Keys:     []string{"lt"},
+					Status:   core.Offline,
 					Technologies: core.Technologies{
 						core.Technology{
 							ID:    core.WireguardTech,
@@ -119,7 +129,9 @@ func TestFilterServers(t *testing.T) {
 					},
 				},
 				core.Server{
-					Status: core.Maintenance,
+					Hostname: "lt6.nordvpn.com",
+					Keys:     []string{"lt"},
+					Status:   core.Maintenance,
 					Technologies: core.Technologies{
 						core.Technology{
 							ID:    core.WireguardTech,
@@ -140,12 +152,8 @@ func TestFilterServers(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			localSelFn := selectFilterForLocalServers("", test.group)
-			filterFn := func(s core.Server) bool {
-				return core.IsConnectableWithProtocol(test.tech, test.proto)(s) &&
-					localSelFn(s)
-			}
-			servers, err := findServersLocally(test.servers, core.ServerTag{Action: core.ServerByUnknown}, filterFn)
+			search := newTestServerSearch(test.tech, test.proto, core.ServerTag{Action: core.ServerByUnknown}, test.group)
+			servers, err := search.findLocally(test.servers)
 			assert.Equal(t, test.hasError, err != nil)
 			assert.Equal(t, test.expectedCount, len(servers))
 		})
@@ -1342,7 +1350,8 @@ func TestFindServersLocally_VirtualServers(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			servers := append(newServers(test.physicalCount, false), newServers(test.virtualCount, true)...)
 
-			selected, err := findServersLocally(servers, core.ServerTag{}, func(core.Server) bool { return true })
+			search := newTestServerSearch(config.Technology_NORDLYNX, config.Protocol_UDP, core.ServerTag{}, config.ServerGroup_UNDEFINED)
+			selected, err := search.findLocally(servers)
 
 			assert.NoError(t, err)
 			virtualCount := len(internal.Filter(selected, func(s core.Server) bool { return s.IsVirtualLocation() }))
@@ -1355,7 +1364,14 @@ func TestFindServersLocally_VirtualServers(t *testing.T) {
 func newServers(count int, virtual bool) core.Servers {
 	servers := make(core.Servers, 0, count)
 	for i := range count {
-		server := core.Server{ID: int64(i), Hostname: fmt.Sprintf("physical%d", i)}
+		server := core.Server{
+			ID:       int64(i),
+			Hostname: fmt.Sprintf("physical%d", i),
+			Status:   core.Online,
+			Technologies: core.Technologies{
+				core.Technology{ID: core.WireguardTech, Pivot: core.Pivot{Status: core.Online}},
+			},
+		}
 		if virtual {
 			server.Hostname = fmt.Sprintf("virtual%d", i)
 			server = withVirtualLocation(server)
@@ -1412,7 +1428,8 @@ func TestFindServersLocally_DedicatedIPServers(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			selected, err := findServersLocally(test.servers, test.serverTag, func(core.Server) bool { return true })
+			search := newTestServerSearch(config.Technology_NORDLYNX, config.Protocol_UDP, test.serverTag, config.ServerGroup_UNDEFINED)
+			selected, err := search.findLocally(test.servers)
 
 			assert.NoError(t, err)
 			hostnames := []string{}
@@ -1517,5 +1534,21 @@ func TestPickServer_Fallback(t *testing.T) {
 				assert.Equal(t, test.expectedServerName, serverSelection.Server.Name)
 			}
 		})
+	}
+}
+
+func newTestServerSearch(
+	tech config.Technology,
+	proto config.Protocol,
+	tag core.ServerTag,
+	group config.ServerGroup,
+) *serverSearch {
+	return &serverSearch{
+		cfg: config.Config{
+			Technology:      tech,
+			AutoConnectData: config.AutoConnectData{Protocol: proto},
+		},
+		tag:        tag,
+		localSelFn: selectFilterForLocalServers("", group),
 	}
 }
