@@ -8,7 +8,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
-func (r *RPC) SetSanitization(ctx context.Context, req *pb.SetGenericRequest) (*pb.Payload, error) {
+func (r *RPC) SetLogSanitization(ctx context.Context, req *pb.SetGenericRequest) (*pb.Payload, error) {
 	cred, err := internal.UcredFromContext(ctx)
 	if err != nil {
 		log.Error("Getting ucred to disable log sanitization:", err)

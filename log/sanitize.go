@@ -2,6 +2,7 @@ package log
 
 import (
 	"fmt"
+	"net/netip"
 	"regexp"
 	"strings"
 )
@@ -13,29 +14,16 @@ var sanitizeRegex = regexp.MustCompile(
 		`\b[a-zA-Z0-9]+\.nordvpn\.com\b`,
 )
 
-var ipv6Regex = regexp.MustCompile(
-	`(?:(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|` + // 1:2:3:4:5:6:7:8
-		`fe80:(?::[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]+|` + // fe80::7:8%eth0 (link-local with zone index)
-		`::(?:ffff(?::0{1,4})?:)?` + // ::255.255.255.255  ::ffff:255.255.255.255 (IPv4-mapped/translated)
-		`(?:(?:25[0-5]|(?:2[0-4]|1?[0-9])?[0-9])\.){3}` +
-		`(?:25[0-5]|(?:2[0-4]|1?[0-9])?[0-9])|` +
-		`(?:[0-9a-fA-F]{1,4}:){1,4}:` + // 2001:db8:3:4::192.0.2.33 (IPv4-embedded)
-		`(?:(?:25[0-5]|(?:2[0-4]|1?[0-9])?[0-9])\.){3}` +
-		`(?:25[0-5]|(?:2[0-4]|1?[0-9])?[0-9])|` +
-		`[0-9a-fA-F]{1,4}:(?::[0-9a-fA-F]{1,4}){1,6}|` + // 1::3:4:5:6:7:8
-		`(?:[0-9a-fA-F]{1,4}:){1,2}(?::[0-9a-fA-F]{1,4}){1,5}|` + // 1:2::4:5:6:7:8
-		`(?:[0-9a-fA-F]{1,4}:){1,3}(?::[0-9a-fA-F]{1,4}){1,4}|` + // 1:2:3::5:6:7:8
-		`(?:[0-9a-fA-F]{1,4}:){1,4}(?::[0-9a-fA-F]{1,4}){1,3}|` + // 1:2:3:4::6:7:8
-		`(?:[0-9a-fA-F]{1,4}:){1,5}(?::[0-9a-fA-F]{1,4}){1,2}|` + // 1:2:3:4:5::7:8
-		`(?:[0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|` + // 1:2:3:4:5:6::8
-		`(?:[0-9a-fA-F]{1,4}:){1,7}:|` + // 1::  1:2:3:4:5:6:7::
-		`:(?::[0-9a-fA-F]{1,4}){1,7}|` + // ::2:3:4:5:6:7:8  ::8
-		`::)`, // ::
-)
+var ipv6Regex = regexp.MustCompile(`[0-9a-fA-F:.%a-zA-Z]+`)
 
 func maskString(s string) string {
 	if strings.ContainsRune(s, ':') {
-		s = ipv6Regex.ReplaceAllString(s, "***")
+		s = ipv6Regex.ReplaceAllStringFunc(s, func(s string) string {
+			if addr, err := netip.ParseAddr(s); err == nil && addr.Is6() {
+				return "***"
+			}
+			return s
+		})
 	}
 	if strings.ContainsRune(s, '.') { // cheap bail-out
 		s = sanitizeRegex.ReplaceAllString(s, "***")

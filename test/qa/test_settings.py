@@ -521,9 +521,9 @@ def test_only_root_can_change_sanitization_setting():
     if "- dev" in version:
         setting = "on"
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.set.sanitization(setting)
+        sh.nordvpn.set.log_sanitization(setting)
 
     assert ex.exit_code == 1
     assert "You need root privileges in order to disable sanitization." in ex.stderr
 
-    sh.sudo.nordvpn.set.sanitization(setting)
+    sh.sudo.nordvpn.set.log_sanitization(setting)

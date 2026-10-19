@@ -156,6 +156,21 @@ func Test_sanitize(t *testing.T) {
 				"\"PublicKey\":\"***\",\"Nickname\":null,\"State\":1,\"LinkState\":1,\"IsExit\":true,\"IsVpn\":true,\"IpAddresses\":[\"***\",\"***\"]",
 			},
 		},
+		{
+			name:           "IPv6 wrapped in non IPv6",
+			input:          []any{"nota::bipv6"},
+			expectedOutput: []any{"nota::bipv6"},
+		},
+		{
+			name:           "IPv6 wrapped in non IPv6",
+			input:          []any{"nota:bipv6"},
+			expectedOutput: []any{"nota:bipv6"},
+		},
+		{
+			name:           "short IPv6",
+			input:          []any{"a::b"},
+			expectedOutput: []any{"***"},
+		},
 	}
 
 	for _, test := range tests {
