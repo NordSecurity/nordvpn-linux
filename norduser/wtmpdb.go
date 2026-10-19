@@ -79,10 +79,6 @@ func (w *wtmpdbSessionGetter) getActiveUsers() (userData, error) {
 	users := make(userData)
 
 	for rows.Next() {
-		if err := rows.Err(); err != nil {
-			return userData{}, fmt.Errorf("reading wtmpdb row: %w", err)
-		}
-
 		var user string
 		if err := rows.Scan(&user); err != nil {
 			return userData{}, fmt.Errorf("scanning wtmpdb row: %w", err)
@@ -94,6 +90,10 @@ func (w *wtmpdbSessionGetter) getActiveUsers() (userData, error) {
 		} else if hasGUISession {
 			users[user] = loginGUI
 		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return userData{}, fmt.Errorf("reading wtmpdb row: %w", err)
 	}
 
 	return users, nil
