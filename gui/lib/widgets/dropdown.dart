@@ -3,8 +3,6 @@ import 'package:nordvpn/theme/app_theme.dart';
 import 'package:nordvpn/theme/dropdown_theme.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 
-import 'package:nordvpn/logger.dart';
-
 final class Dropdown<T> extends StatefulWidget {
   final T value;
   final List<DropdownItem<T>> items;
@@ -36,9 +34,6 @@ class _DropdownState<T> extends State<Dropdown<T>> {
     super.initState();
 
     _focusNode.addListener(() {
-      logger.i(
-        "[DROPDOWN FOCUS LISTENER] Has focus: ${_focusNode.hasFocus} _isFocused: $_isFocused",
-      );
       if (_isFocused != _focusNode.hasFocus) {
         setState(() {
           _isFocused = _focusNode.hasFocus;
@@ -152,7 +147,6 @@ class _DropdownState<T> extends State<Dropdown<T>> {
   }
 
   void _onChanged(T? value) {
-    logger.i("dropdown value changed from ${widget.value} to $value");
     assert(value != null, "dropdown values cannot be null");
     if (value != null) {
       widget.onChanged(value);
