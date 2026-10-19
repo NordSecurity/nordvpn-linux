@@ -1,8 +1,9 @@
 package norduser
 
 import (
-	"fmt"
 	"os"
+
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 // sessionGetter provides access to users sessions
@@ -16,19 +17,19 @@ type sessionGetter interface {
 }
 
 // newSessionGetter returns wtmpdbSessionGetter if wtmpdb database file is found and utmpSessionGetter if it isn't.
-func newSessionGetter() (sessionGetter, error) {
+func newSessionGetter() sessionGetter {
 	_, err := os.Stat(wtmpdbPath)
 	if err == nil {
 		wtmpdb := newWtmpdb()
 		if err := wtmpdb.init(); err != nil {
-			return nil, fmt.Errorf("failed to init wtmpdb: %w", err)
+			log.ProcessMonitor.Warn("failed to init wtmpdb:", err)
+		} else {
+			return wtmpdb
 		}
-
-		return wtmpdb, nil
 	}
 	if !os.IsNotExist(err) {
-		return nil, fmt.Errorf("failed to stat wtmpdb file: %w", err)
+		log.Warn("failed to stat wtmpdb file: %w", err)
 	}
 
-	return &utmpSessionGetter{}, nil
+	return &utmpSessionGetter{}
 }
