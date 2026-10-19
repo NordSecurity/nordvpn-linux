@@ -5,38 +5,17 @@ import (
 	"fmt"
 
 	"github.com/NordSecurity/nordvpn-linux/log"
+	"github.com/NordSecurity/nordvpn-linux/sysinfo/dbusutil"
 	"github.com/godbus/dbus/v5"
 	_ "github.com/mattn/go-sqlite3"
 )
 
 const wtmpdbPath = "/var/lib/wtmpdb/wtmp.db"
 
-type dbusConn interface {
-	object(string, dbus.ObjectPath) dbus.BusObject
-	close() error
-}
-
-type godbusDbusConn struct {
-	dbus *dbus.Conn
-}
-
-func newGodbusDbusConn(dbus *dbus.Conn) *godbusDbusConn {
-	return &godbusDbusConn{
-		dbus: dbus,
-	}
-}
-
-func (d *godbusDbusConn) object(dest string, path dbus.ObjectPath) dbus.BusObject {
-	return d.dbus.Object(dest, path)
-}
-
-func (d *godbusDbusConn) close() error {
-	return d.dbus.Close()
-}
-
 type wtmpdbSessionGetter struct {
-	database *sql.DB
-	dbusConn dbusConn
+	database        *sql.DB
+	dbusConn        *dbus.Conn
+	dbusLoginClient dbusutil.DBusObjectClient
 }
 
 func newWtmpdb() *wtmpdbSessionGetter {
@@ -54,8 +33,10 @@ func (w *wtmpdbSessionGetter) init() error {
 	if err != nil {
 		log.ProcessMonitor.Warn("failed to create dbus connection for wtmpdb monitor:", err)
 		w.dbusConn = nil
+		w.dbusLoginClient = nil
 	} else {
-		w.dbusConn = newGodbusDbusConn(dbusConn)
+		w.dbusConn = dbusConn
+		w.dbusLoginClient = dbusutil.NewObjectClient(dbusConn, "/org/freedesktop/login1", "")
 	}
 
 	return nil
@@ -99,26 +80,12 @@ func (w *wtmpdbSessionGetter) getActiveUsers() (userData, error) {
 	return users, nil
 }
 
-func getDbusProperty(obj dbus.BusObject, property string) (string, error) {
-	p, err := obj.GetProperty(property)
-	if err != nil {
-		return "", fmt.Errorf("failed to get dbus property: %w", err)
-	}
-
-	propertyString, ok := p.Value().(string)
-	if !ok {
-		return "", fmt.Errorf("invalid type of a property")
-	}
-
-	return propertyString, nil
-}
-
 func (w *wtmpdbSessionGetter) hasGUISession(username string) (bool, error) {
-	if w.dbusConn == nil {
+	if w.dbusLoginClient == nil {
 		return false, nil
 	}
 
-	loginManager := w.dbusConn.object("org.freedesktop.login1", "/org/freedesktop/login1")
+	loginManager := w.dbusLoginClient.GetObject("/org/freedesktop/login1")
 
 	var sessions [][]interface{}
 	if err := loginManager.Call("org.freedesktop.login1.Manager.ListSessions", 0).Store(&sessions); err != nil {
@@ -147,9 +114,7 @@ func (w *wtmpdbSessionGetter) hasGUISession(username string) (bool, error) {
 			continue
 		}
 
-		obj := w.dbusConn.object("org.freedesktop.login1", path)
-
-		sessionType, err := getDbusProperty(obj, "org.freedesktop.login1.Session.Type")
+		sessionType, err := dbusutil.GetStringProperty(w.dbusLoginClient, string(path))
 		if err != nil {
 			log.ProcessMonitor.Warn("failed to get session type:", err)
 			continue
@@ -175,7 +140,7 @@ func (w *wtmpdbSessionGetter) close() {
 	}
 
 	if w.dbusConn != nil {
-		if err := w.dbusConn.close(); err != nil {
+		if err := w.dbusConn.Close(); err != nil {
 			log.ProcessMonitor.Warn("failed to close dbus connection:", err)
 		}
 	}
