@@ -103,5 +103,5 @@ service Daemon {
 
   // ==================== Diagnostics ====================
   rpc CollectDiagnostics(Empty) returns (stream DiagnosticsProgress);
-  rpc SetSanitization(SetGenericRequest) returns (Payload);
+  rpc SetLogSanitization(SetGenericRequest) returns (Payload);
 }

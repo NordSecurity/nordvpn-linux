@@ -422,10 +422,10 @@ Your browsing activities remain private, regardless of your choice.
 	MsgDiagnosticsDisclaimer = "WARNING: This file contains sensitive information about your system and configuration. Share it only with our support team through a secure channel."
 
 	// Log sanitization
-	SetSanitizationUsageText = "Controls whether sensitive values are logged or not. The setting does not persist between reboots."
+	SetLogSanitizationUsageText = "Log sanitization masks sensitive data in app logs. Turned on by default. Turning off requires root access and resets at the next reboot. Turn it off only when requested by NordVPN support for debugging."
 
-	MsgDisableSanitizationNothingToDo = "Sanitization is already %s."
-	MsgDisableSanitizationNonRoot     = "You need root privileges in order to disable sanitization."
-	MsgDisableSanitizationWarning     = "Sanitization disabled, all sensitive data will be logged unitll reboot."
-	MsgDisableSanitizationSuccess     = "Sanitization %s."
+	MsgDisableLogSanitizationNothingToDo = "Log sanitization is already %s."
+	MsgDisableLogSanitizationNonRoot     = "Log sanitization changes require admin access. Run this command as root."
+	MsgDisableLogSanitizationWarning     = "Log sanitization is off. Your logs may now show sensitive data. This lasts until you reboot. To turn it back on now, run: \"nordvpn set log-sanitization on\"."
+	MsgDisableLogSanitizationSuccess     = "Log sanitization is  %s."
 )

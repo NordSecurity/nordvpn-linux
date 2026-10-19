@@ -40,10 +40,11 @@ message Settings {
   reserved 15;
   reserved "obfuscate";
   reserved 16;
-  bool                 postquantum_vpn = 17;
-  UserSpecificSettings user_settings   = 18;
-  bool                 arp_ignore      = 19;
-  bool                 ech             = 20;
+  bool                 postquantum_vpn  = 17;
+  UserSpecificSettings user_settings    = 18;
+  bool                 arp_ignore       = 19;
+  bool                 ech              = 20;
+  bool                 log_sanitization = 21;
 }
 
 message UserSpecificSettings {

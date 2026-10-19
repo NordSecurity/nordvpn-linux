@@ -114,6 +114,11 @@ func ResetSanitization() {
 	doSanitize.Store(doSanitizeDefault)
 }
 
+// GetSanitization returns current sanitization state
+func GetSanitization() bool {
+	return doSanitize.Load()
+}
+
 // Logger is a logger with a fixed prefix prepended to every message.
 type Logger struct {
 	prefix string

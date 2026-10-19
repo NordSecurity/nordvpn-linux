@@ -12,7 +12,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-func (c *cmd) SetSanitization(ctx *cli.Context) error {
+func (c *cmd) SetLogSanitization(ctx *cli.Context) error {
 	if ctx.NArg() != 1 {
 		return formatError(argsCountError(ctx))
 	}
@@ -22,7 +22,7 @@ func (c *cmd) SetSanitization(ctx *cli.Context) error {
 		return formatError(argsParseError(ctx))
 	}
 
-	resp, err := c.client.SetSanitization(context.Background(), &pb.SetGenericRequest{
+	resp, err := c.client.SetLogSanitization(context.Background(), &pb.SetGenericRequest{
 		Enabled: flag,
 	})
 	if err != nil {
@@ -37,13 +37,13 @@ func (c *cmd) SetSanitization(ctx *cli.Context) error {
 	switch resp.Type {
 	case internal.CodeSuccess:
 		if !flag {
-			color.Yellow(MsgDisableSanitizationWarning)
+			color.Yellow(MsgDisableLogSanitizationWarning)
 		}
-		color.Green(MsgDisableSanitizationSuccess, sanitizationState)
+		color.Green(MsgDisableLogSanitizationSuccess, sanitizationState)
 	case internal.CodeNothingToDo:
-		return fmt.Errorf(MsgDisableSanitizationNothingToDo, sanitizationState)
+		return fmt.Errorf(MsgDisableLogSanitizationNothingToDo, sanitizationState)
 	case internal.CodeDisableSanitizationNonRoot:
-		return errors.New(MsgDisableSanitizationNonRoot)
+		return errors.New(MsgDisableLogSanitizationNonRoot)
 	case internal.CodeInternalError:
 		return errors.New(internal.UnhandledMessage)
 	}

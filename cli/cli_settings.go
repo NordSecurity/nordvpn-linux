@@ -69,6 +69,7 @@ func (c *cmd) Settings(ctx *cli.Context) error {
 		fmt.Printf("ECH: %+v\n", nstrings.GetBoolLabel(settings.Ech))
 	}
 	fmt.Printf("ARP Ignore: %+v\n", nstrings.GetBoolLabel(settings.ArpIgnore))
+	fmt.Printf("Log Sanitization: %+v\n", nstrings.GetBoolLabel(settings.LogSanitization))
 
 	displayAllowlist(settings.Allowlist)
 	return nil

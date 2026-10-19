@@ -925,12 +925,12 @@ func getSetSubcommands(cmd *cmd, isMeshnetEnabled bool) []*cli.Command {
 			),
 		},
 		{
-			Name:         "sanitization",
-			Usage:        SetSanitizationUsageText,
-			Action:       cmd.SetSanitization,
+			Name:         "log-sanitization",
+			Usage:        SetLogSanitizationUsageText,
+			Action:       cmd.SetLogSanitization,
 			BashComplete: cmd.SetBoolAutocomplete,
 			ArgsUsage:    MsgSetBoolArgsUsage,
-			Description:  fmt.Sprintf(MsgSetBoolDescription, SetSanitizationUsageText, "sanitization", "sanitization"),
+			Description:  fmt.Sprintf(MsgSetBoolDescription, SetLogSanitizationUsageText, "sanitization", "sanitization"),
 		},
 	}
 
