@@ -39,7 +39,7 @@ func getVpnFactory(
 
 	nordWhisperVPN, nordWhisperErr := getNordWhisperVPN(fwmark, envIsDev, eventsPublisher, libquenchCfg)
 	if nordWhisperErr != nil {
-		log.Error("getting NordWhisper vpn:", nordWhisperErr)
+		log.Info("getting NordWhisper vpn:", nordWhisperErr)
 	}
 
 	return func(tech config.Technology) (vpn.VPN, error) {
