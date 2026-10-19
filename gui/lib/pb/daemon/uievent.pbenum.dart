@@ -177,6 +177,16 @@ class UIEvent_ItemValue extends $pb.ProtobufEnum {
       UIEvent_ItemValue._(15, _omitEnumNames ? '' : 'DEDICATED_SERVER');
   static const UIEvent_ItemValue ITEM_VALUE_LEARN_MORE =
       UIEvent_ItemValue._(16, _omitEnumNames ? '' : 'ITEM_VALUE_LEARN_MORE');
+  static const UIEvent_ItemValue CSAT_SCORE_1 =
+      UIEvent_ItemValue._(17, _omitEnumNames ? '' : 'CSAT_SCORE_1');
+  static const UIEvent_ItemValue CSAT_SCORE_2 =
+      UIEvent_ItemValue._(18, _omitEnumNames ? '' : 'CSAT_SCORE_2');
+  static const UIEvent_ItemValue CSAT_SCORE_3 =
+      UIEvent_ItemValue._(19, _omitEnumNames ? '' : 'CSAT_SCORE_3');
+  static const UIEvent_ItemValue CSAT_SCORE_4 =
+      UIEvent_ItemValue._(20, _omitEnumNames ? '' : 'CSAT_SCORE_4');
+  static const UIEvent_ItemValue CSAT_SCORE_5 =
+      UIEvent_ItemValue._(21, _omitEnumNames ? '' : 'CSAT_SCORE_5');
 
   static const $core.List<UIEvent_ItemValue> values = <UIEvent_ItemValue>[
     ITEM_VALUE_UNSPECIFIED,
@@ -195,10 +205,15 @@ class UIEvent_ItemValue extends $pb.ProtobufEnum {
     PAUSE_DISCONNECT,
     DEDICATED_SERVER,
     ITEM_VALUE_LEARN_MORE,
+    CSAT_SCORE_1,
+    CSAT_SCORE_2,
+    CSAT_SCORE_3,
+    CSAT_SCORE_4,
+    CSAT_SCORE_5,
   ];
 
   static final $core.List<UIEvent_ItemValue?> _byValue =
-      $pb.ProtobufEnum.$_initByValueList(values, 16);
+      $pb.ProtobufEnum.$_initByValueList(values, 21);
   static UIEvent_ItemValue? valueOf($core.int value) =>
       value < 0 || value >= _byValue.length ? null : _byValue[value];
 

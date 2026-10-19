@@ -5,6 +5,7 @@ final class DaemonStatusCode {
   static const connecting = 1001;
   static const connected = 1002;
   static const disconnected = 1003;
+  static const disconnectedWithFeedback = 1010;
 
   static const nothingToDo = 2000;
   static const vpnIsRunning = 2002;

@@ -4,16 +4,17 @@ import "fmt"
 
 const (
 	// Success
-	CodeSuccess                  int64 = 1000
-	CodeConnecting               int64 = 1001
-	CodeConnected                int64 = 1002
-	CodeDisconnected             int64 = 1003
-	CodeInteraction              int64 = 1004
-	CodeProxyNone                int64 = 1005
-	CodeSuccessWithArg           int64 = 1006
-	CodeSuccessWithoutAC         int64 = 1007
-	CodeTokenStillValid          int64 = 1008
-	CodeTokenRevokedSuccessfully int64 = 1009
+	CodeSuccess                         int64 = 1000
+	CodeConnecting                      int64 = 1001
+	CodeConnected                       int64 = 1002
+	CodeDisconnected                    int64 = 1003
+	CodeInteraction                     int64 = 1004
+	CodeProxyNone                       int64 = 1005
+	CodeSuccessWithArg                  int64 = 1006
+	CodeSuccessWithoutAC                int64 = 1007
+	CodeTokenStillValid                 int64 = 1008
+	CodeTokenRevokedSuccessfully        int64 = 1009
+	CodeDisconnectedWithFeedbackRequest int64 = 1010
 
 	// Warning
 	CodeNothingToDo   int64 = 2000

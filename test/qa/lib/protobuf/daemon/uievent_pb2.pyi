@@ -85,6 +85,11 @@ class UIEvent(_message.Message):
         PAUSE_DISCONNECT: _ClassVar[UIEvent.ItemValue]
         DEDICATED_SERVER: _ClassVar[UIEvent.ItemValue]
         ITEM_VALUE_LEARN_MORE: _ClassVar[UIEvent.ItemValue]
+        CSAT_SCORE_1: _ClassVar[UIEvent.ItemValue]
+        CSAT_SCORE_2: _ClassVar[UIEvent.ItemValue]
+        CSAT_SCORE_3: _ClassVar[UIEvent.ItemValue]
+        CSAT_SCORE_4: _ClassVar[UIEvent.ItemValue]
+        CSAT_SCORE_5: _ClassVar[UIEvent.ItemValue]
     ITEM_VALUE_UNSPECIFIED: UIEvent.ItemValue
     COUNTRY: UIEvent.ItemValue
     CITY: UIEvent.ItemValue
@@ -101,6 +106,11 @@ class UIEvent(_message.Message):
     PAUSE_DISCONNECT: UIEvent.ItemValue
     DEDICATED_SERVER: UIEvent.ItemValue
     ITEM_VALUE_LEARN_MORE: UIEvent.ItemValue
+    CSAT_SCORE_1: UIEvent.ItemValue
+    CSAT_SCORE_2: UIEvent.ItemValue
+    CSAT_SCORE_3: UIEvent.ItemValue
+    CSAT_SCORE_4: UIEvent.ItemValue
+    CSAT_SCORE_5: UIEvent.ItemValue
     FORM_REFERENCE_FIELD_NUMBER: _ClassVar[int]
     ITEM_NAME_FIELD_NUMBER: _ClassVar[int]
     ITEM_TYPE_FIELD_NUMBER: _ClassVar[int]
