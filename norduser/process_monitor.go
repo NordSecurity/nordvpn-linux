@@ -183,10 +183,7 @@ func (n *NorduserProcessMonitor) handleUTMPFileUpdate(currentGroupMembers userSe
 
 // Start blocks the thread and starts monitoring for changes in the nordvpn group.
 func (n *NorduserProcessMonitor) Start(ctx context.Context) error {
-	sessionGetter, err := newSessionGetter()
-	if err != nil {
-		return fmt.Errorf("creating session getter: %w", err)
-	}
+	sessionGetter := newSessionGetter()
 	defer sessionGetter.close()
 	n.sessionGetter = sessionGetter
 
