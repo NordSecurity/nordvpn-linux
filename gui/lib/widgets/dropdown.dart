@@ -4,7 +4,7 @@ import 'package:nordvpn/theme/dropdown_theme.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 
 final class Dropdown<T> extends StatefulWidget {
-  final T value;
+  final T initialValue;
   final List<DropdownItem<T>> items;
   final void Function(T value) onChanged;
   final bool enabled;
@@ -12,7 +12,7 @@ final class Dropdown<T> extends StatefulWidget {
 
   const Dropdown({
     super.key,
-    required this.value,
+    required this.initialValue,
     required this.items,
     required this.onChanged,
     this.enabled = true,
@@ -24,6 +24,8 @@ final class Dropdown<T> extends StatefulWidget {
 }
 
 class _DropdownState<T> extends State<Dropdown<T>> {
+  // current selected value
+  late T _value;
   // FocusNode to track focus state for dropdown
   final FocusNode _focusNode = FocusNode();
   final MenuController _menuController = MenuController();
@@ -33,6 +35,7 @@ class _DropdownState<T> extends State<Dropdown<T>> {
   void initState() {
     super.initState();
 
+    _value = widget.initialValue;
     _focusNode.addListener(() {
       if (_isFocused != _focusNode.hasFocus) {
         setState(() {
@@ -57,9 +60,7 @@ class _DropdownState<T> extends State<Dropdown<T>> {
     final padding = EdgeInsets.symmetric(
       horizontal: dropdownTheme.horizontalPadding,
     );
-    final selected = widget.items
-        .where((e) => e.value == widget.value)
-        .firstOrNull;
+    final selected = widget.items.where((e) => e.value == _value).firstOrNull;
 
     return LayoutBuilder(
       builder: (context, constraints) => MenuAnchor(
@@ -79,7 +80,7 @@ class _DropdownState<T> extends State<Dropdown<T>> {
         ),
         menuChildren: widget.items.map((e) {
           return MenuItemButton(
-            autofocus: e.value == widget.value,
+            autofocus: e.value == _value,
             onPressed: () => _onChanged(e.value),
             style: MenuItemButton.styleFrom(
               minimumSize: const Size(0, kMinInteractiveDimension),
@@ -150,6 +151,9 @@ class _DropdownState<T> extends State<Dropdown<T>> {
     assert(value != null, "dropdown values cannot be null");
     if (value != null) {
       widget.onChanged(value);
+      setState(() {
+        _value = value;
+      });
     }
   }
 }

@@ -139,12 +139,14 @@ class _AddPortState extends State<AddPort> {
                     children: [
                       Expanded(
                         child: Dropdown(
+                          // set to unique to recreate it when _portType changes programmatically
+                          key: UniqueKey(),
                           items: [
                             DropdownItem(value: PortType.both, label: t.ui.all),
                             DropdownItem(value: PortType.tcp, label: "TCP"),
                             DropdownItem(value: PortType.udp, label: "UDP"),
                           ],
-                          value: _portType,
+                          initialValue: _portType,
                           showError: (error == _ErrorType.duplicate),
                           onChanged: (value) => setState(() {
                             _portType = value;

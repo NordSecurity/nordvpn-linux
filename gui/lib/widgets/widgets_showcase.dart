@@ -248,7 +248,7 @@ class _WidgetsShowcaseState extends ConsumerState<WidgetsShowcase> {
               SizedBox(
                 width: 200,
                 child: Dropdown<String>(
-                  value: _dropdownValue,
+                  initialValue: _dropdownValue,
                   items: [
                     DropdownItem(value: 'nordlynx', label: t.ui.nordLynx),
                     DropdownItem(value: 'openvpn_tcp', label: t.ui.openVpnTcp),
@@ -264,7 +264,7 @@ class _WidgetsShowcaseState extends ConsumerState<WidgetsShowcase> {
               SizedBox(
                 width: 200,
                 child: Dropdown<String>(
-                  value: _dropdownValue,
+                  initialValue: _dropdownValue,
                   enabled: false,
                   items: [
                     DropdownItem(value: 'nordlynx', label: t.ui.nordLynx),
@@ -278,7 +278,7 @@ class _WidgetsShowcaseState extends ConsumerState<WidgetsShowcase> {
               SizedBox(
                 width: 200,
                 child: Dropdown<String>(
-                  value: _dropdownValue,
+                  initialValue: _dropdownValue,
                   showError: true,
                   items: [
                     DropdownItem(value: 'nordlynx', label: t.ui.nordLynx),
