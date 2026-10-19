@@ -397,11 +397,11 @@ class DaemonClient extends $grpc.Client {
         options: options);
   }
 
-  $grpc.ResponseFuture<$0.Payload> setSanitization(
+  $grpc.ResponseFuture<$0.Payload> setLogSanitization(
     $15.SetGenericRequest request, {
     $grpc.CallOptions? options,
   }) {
-    return $createUnaryCall(_$setSanitization, request, options: options);
+    return $createUnaryCall(_$setLogSanitization, request, options: options);
   }
 
   // method descriptors
@@ -621,9 +621,9 @@ class DaemonClient extends $grpc.Client {
           '/pb.Daemon/CollectDiagnostics',
           ($0.Empty value) => value.writeToBuffer(),
           $0.DiagnosticsProgress.fromBuffer);
-  static final _$setSanitization =
+  static final _$setLogSanitization =
       $grpc.ClientMethod<$15.SetGenericRequest, $0.Payload>(
-          '/pb.Daemon/SetSanitization',
+          '/pb.Daemon/SetLogSanitization',
           ($15.SetGenericRequest value) => value.writeToBuffer(),
           $0.Payload.fromBuffer);
 }
@@ -981,8 +981,8 @@ abstract class DaemonServiceBase extends $grpc.Service {
         ($core.List<$core.int> value) => $0.Empty.fromBuffer(value),
         ($0.DiagnosticsProgress value) => value.writeToBuffer()));
     $addMethod($grpc.ServiceMethod<$15.SetGenericRequest, $0.Payload>(
-        'SetSanitization',
-        setSanitization_Pre,
+        'SetLogSanitization',
+        setLogSanitization_Pre,
         false,
         false,
         ($core.List<$core.int> value) =>
@@ -1363,11 +1363,11 @@ abstract class DaemonServiceBase extends $grpc.Service {
   $async.Stream<$0.DiagnosticsProgress> collectDiagnostics(
       $grpc.ServiceCall call, $0.Empty request);
 
-  $async.Future<$0.Payload> setSanitization_Pre($grpc.ServiceCall $call,
+  $async.Future<$0.Payload> setLogSanitization_Pre($grpc.ServiceCall $call,
       $async.Future<$15.SetGenericRequest> $request) async {
-    return setSanitization($call, await $request);
+    return setLogSanitization($call, await $request);
   }
 
-  $async.Future<$0.Payload> setSanitization(
+  $async.Future<$0.Payload> setLogSanitization(
       $grpc.ServiceCall call, $15.SetGenericRequest request);
 }
