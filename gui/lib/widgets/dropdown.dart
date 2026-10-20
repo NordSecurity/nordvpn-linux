@@ -66,7 +66,6 @@ class _DropdownState<T> extends State<Dropdown<T>> {
       builder: (context, constraints) => MenuAnchor(
         controller: _menuController,
         childFocusNode: _focusNode,
-        crossAxisUnconstrained: false,
         onOpen: () => setState(() {}),
         onClose: () => setState(() {}),
         style: MenuStyle(
@@ -82,10 +81,7 @@ class _DropdownState<T> extends State<Dropdown<T>> {
           return MenuItemButton(
             autofocus: e.value == _value,
             onPressed: () => _onChanged(e.value),
-            style: MenuItemButton.styleFrom(
-              minimumSize: const Size(0, kMinInteractiveDimension),
-              padding: padding,
-            ),
+            style: MenuItemButton.styleFrom(padding: padding),
             child: Text(e.label, style: appTheme.body, maxLines: 1),
           );
         }).toList(),
@@ -104,11 +100,9 @@ class _DropdownState<T> extends State<Dropdown<T>> {
           ),
           child: Semantics(
             button: true,
-            enabled: widget.enabled,
             expanded: _menuController.isOpen,
             child: InkWell(
               focusNode: _focusNode,
-              canRequestFocus: widget.enabled,
               onTap: widget.enabled ? _toggleMenu : null,
               focusColor: dropdownTheme.focusBorderColor,
               borderRadius: borderRadius,
@@ -147,14 +141,9 @@ class _DropdownState<T> extends State<Dropdown<T>> {
     }
   }
 
-  void _onChanged(T? value) {
-    assert(value != null, "dropdown values cannot be null");
-    if (value != null) {
-      widget.onChanged(value);
-      setState(() {
-        _value = value;
-      });
-    }
+  void _onChanged(T value) {
+    widget.onChanged(value);
+    setState(() => _value = value);
   }
 }
 
