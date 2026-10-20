@@ -10,10 +10,10 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
+	"github.com/NordSecurity/nordvpn-linux/mapset"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	firewallmock "github.com/NordSecurity/nordvpn-linux/test/mock/firewall"
-	mapset "github.com/deckarep/golang-set/v2"
 
 	"github.com/stretchr/testify/assert"
 )

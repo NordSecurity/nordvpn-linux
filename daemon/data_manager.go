@@ -16,9 +16,9 @@ import (
 	event "github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
+	"github.com/NordSecurity/nordvpn-linux/mapset"
 
 	"github.com/coreos/go-semver/semver"
-	mapset "github.com/deckarep/golang-set/v2"
 )
 
 // dedicatedServersGroupTitle is the group title used for the "Dedicated Server" specialty group.
