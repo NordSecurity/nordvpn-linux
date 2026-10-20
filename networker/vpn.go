@@ -9,7 +9,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/log"
-	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/NordSecurity/nordvpn-linux/mapset"
 )
 
 // IsVPNActive returns true when connection to VPN server is established.
