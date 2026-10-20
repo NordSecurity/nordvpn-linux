@@ -7,6 +7,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/sysinfo"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 
 	moose "moose/events"
@@ -22,7 +23,7 @@ type techContextRecorder struct {
 }
 
 func newTechTestSubscriber() (*Subscriber, *techContextRecorder) {
-	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
+	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, sysinfo.HostInfo{}, "", "", "")
 	noopDisconnectAmbientMooseFuncs(sub)
 	sub.mooseFuncs.setRTPCurrentState = func(_ bool) uint32 { return 0 }
 	sub.mooseFuncs.sendConnect = func(

@@ -9,11 +9,6 @@ import (
 
 const etcOSReleaseFile = "/etc/os-release"
 
-// GetHostOSName retrieves the standard name of the currently running operating system.
-func GetHostOSName() (string, error) {
-	return readOSReleaseTag("NAME")
-}
-
 // readOSReleaseTag opens the 'etcOSReleaseFile' file and retrieves the specified tag.
 func readOSReleaseTag(tag string) (string, error) {
 	file, err := os.Open(etcOSReleaseFile)

@@ -259,11 +259,9 @@ func main() {
 		}
 	}
 
-	userAgent, err := request.GetUserAgentValue(Version, sysinfo.GetHostOSPrettyName)
-	if err != nil {
-		userAgent = fmt.Sprintf("%s/%s (unknown)", request.AppName, Version)
-		log.Errorf("Error while constructing UA value: %s. Falls back to default: %s\n", err, userAgent)
-	}
+	hostInfo := sysinfo.NewHostInfo()
+
+	userAgent := request.GetUserAgentValue(Version, hostInfo.OSPrettyName)
 
 	httpGlobalCtx, httpCancel := context.WithCancel(context.Background())
 
@@ -358,8 +356,10 @@ func main() {
 		Environment:  Environment,
 		Architecture: Arch,
 	}
-	if archVariant, err := machineIdGenerator.GetArchitectureVariantName(sysinfo.GetHostArchitecture()); err == nil {
-		buildTarget.Architecture = archVariant
+	if hostInfo.Architecture != "" {
+		if archVariant, err := machineIdGenerator.GetArchitectureVariantName(hostInfo.Architecture); err == nil {
+			buildTarget.Architecture = archVariant
+		}
 	}
 
 	analytics := newAnalytics(
@@ -368,7 +368,9 @@ func main() {
 		clientAPI,
 		httpClientSimple,
 		buildTarget,
-		deviceID)
+		hostInfo,
+		deviceID,
+	)
 
 	heartBeatSubject.Subscribe(analytics.NotifyHeartBeat)
 	httpCallsSubject.Subscribe(analytics.NotifyRequestAPI)
@@ -518,6 +520,7 @@ func main() {
 		keygen,
 		meshRegistry,
 		clientAPI,
+		hostInfo,
 	)
 
 	meshMapper := mapper.NewNotifyingMapper(
