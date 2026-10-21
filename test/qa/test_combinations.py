@@ -10,6 +10,7 @@ from lib import (
     IS_NIGHTLY
 )
 from lib.dynamic_parametrize import dynamic_parametrize
+from test_routing import get_network_interface
 from test_connect import disconnect_base_test, get_alias
 
 def connect_base_test(group: str = (), name: str = "", hostname: str = ""):
@@ -51,9 +52,11 @@ def test_reconnect_matrix(
     """Manual TC: LVPN-8674, LVPN-8694, LVPN-676"""
     lib.set_vpn_protocol(source_vpn_protocol)
     connect_base_test()
+    assert get_network_interface(source_vpn_protocol) in sh.ip.a(), f"{get_network_interface(source_vpn_protocol)} should be present in `ip a` output"
 
     lib.set_vpn_protocol(target_vpn_protocol)
     connect_base_test()
+    assert get_network_interface(target_vpn_protocol) in sh.ip.a(), f"{get_network_interface(target_vpn_protocol)} should be present in `ip a` output"
 
     status_info = daemon.get_status_data()
 
