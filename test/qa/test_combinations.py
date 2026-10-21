@@ -79,8 +79,13 @@ def test_connect_country_and_city(vpn_protocol, country, city):
     lib.set_vpn_protocol(vpn_protocol)
 
     connect_base_test(country)
+    assert country.replace("_", " ") in sh.nordvpn.status(), "We should be connected to country, that was specified during connect"
     connect_base_test(city)
+    assert city.replace("_", " ") in sh.nordvpn.status(), "We should be connected to city, that was specified during connect"
     connect_base_test(f"{country} {city}")
+    status = sh.nordvpn.status()
+    assert city.replace("_", " ") in status, "We should be connected to city, that was specified during connect"
+    assert country.replace("_", " ") in status, "We should be connected to country, that was specified during connect"
 
     disconnect_base_test()
 
@@ -141,9 +146,16 @@ def test_reconnect_to_additional_group(
 
     connect_base_test(source_group)
 
+    # Standard_VPN_Servers does not show in status output
+    if "Standard_VPN_Servers" not in source_group:
+        assert str(source_group).replace("_", " ") in sh.nordvpn.status(), "We should be connected to group, that was specified during connect"
+
     lib.set_vpn_protocol(target_vpn_protocol)
 
     connect_base_test(target_group)
+
+    if "Standard_VPN_Servers" not in target_group:
+        assert str(target_group).replace("_", " ") in sh.nordvpn.status(), "We should be connected to group, that was specified during connect"
 
     disconnect_base_test()
 
@@ -172,8 +184,12 @@ def test_reconnect_to_server_by_country_name(
 
     connect_base_test(source_country)
 
+    assert source_country.replace("_", " ") in sh.nordvpn.status(), "We should be connected to country, that was specified during connect"
+
     lib.set_vpn_protocol(target_vpn_protocol)
 
     connect_base_test(target_country)
+
+    assert target_country.replace("_", " ") in sh.nordvpn.status(), "We should be connected to country, that was specified during connect"
 
     disconnect_base_test()
