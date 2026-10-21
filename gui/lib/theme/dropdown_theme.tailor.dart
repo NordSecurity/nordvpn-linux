@@ -14,6 +14,7 @@ mixin _$DropdownThemeTailorMixin on ThemeExtension<DropdownTheme> {
   double get borderRadius;
   Color get borderColor;
   Color get focusBorderColor;
+  Color get itemHoverColor;
   Color get errorBorderColor;
   double get borderWidth;
   double get horizontalPadding;
@@ -24,6 +25,7 @@ mixin _$DropdownThemeTailorMixin on ThemeExtension<DropdownTheme> {
     double? borderRadius,
     Color? borderColor,
     Color? focusBorderColor,
+    Color? itemHoverColor,
     Color? errorBorderColor,
     double? borderWidth,
     double? horizontalPadding,
@@ -33,6 +35,7 @@ mixin _$DropdownThemeTailorMixin on ThemeExtension<DropdownTheme> {
       borderRadius: borderRadius ?? this.borderRadius,
       borderColor: borderColor ?? this.borderColor,
       focusBorderColor: focusBorderColor ?? this.focusBorderColor,
+      itemHoverColor: itemHoverColor ?? this.itemHoverColor,
       errorBorderColor: errorBorderColor ?? this.errorBorderColor,
       borderWidth: borderWidth ?? this.borderWidth,
       horizontalPadding: horizontalPadding ?? this.horizontalPadding,
@@ -51,6 +54,7 @@ mixin _$DropdownThemeTailorMixin on ThemeExtension<DropdownTheme> {
         other.focusBorderColor,
         t,
       )!,
+      itemHoverColor: Color.lerp(itemHoverColor, other.itemHoverColor, t)!,
       errorBorderColor: Color.lerp(
         errorBorderColor,
         other.errorBorderColor,
@@ -80,6 +84,10 @@ mixin _$DropdownThemeTailorMixin on ThemeExtension<DropdownTheme> {
               other.focusBorderColor,
             ) &&
             const DeepCollectionEquality().equals(
+              itemHoverColor,
+              other.itemHoverColor,
+            ) &&
+            const DeepCollectionEquality().equals(
               errorBorderColor,
               other.errorBorderColor,
             ) &&
@@ -101,6 +109,7 @@ mixin _$DropdownThemeTailorMixin on ThemeExtension<DropdownTheme> {
       const DeepCollectionEquality().hash(borderRadius),
       const DeepCollectionEquality().hash(borderColor),
       const DeepCollectionEquality().hash(focusBorderColor),
+      const DeepCollectionEquality().hash(itemHoverColor),
       const DeepCollectionEquality().hash(errorBorderColor),
       const DeepCollectionEquality().hash(borderWidth),
       const DeepCollectionEquality().hash(horizontalPadding),
@@ -114,6 +123,7 @@ extension DropdownThemeBuildContextProps on BuildContext {
   double get borderRadius => dropdownTheme.borderRadius;
   Color get borderColor => dropdownTheme.borderColor;
   Color get focusBorderColor => dropdownTheme.focusBorderColor;
+  Color get itemHoverColor => dropdownTheme.itemHoverColor;
   Color get errorBorderColor => dropdownTheme.errorBorderColor;
   double get borderWidth => dropdownTheme.borderWidth;
   double get horizontalPadding => dropdownTheme.horizontalPadding;

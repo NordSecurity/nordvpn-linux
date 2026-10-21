@@ -761,6 +761,7 @@ final class NordVpnTheme {
       borderRadius: 4,
       borderColor: design.semanticColors.borderPrimary,
       focusBorderColor: design.semanticColors.borderAccent,
+      itemHoverColor: design.semanticColors.bgTertiary,
       errorBorderColor: design.semanticColors.borderCritical,
       borderWidth: 1,
       horizontalPadding: 8,
