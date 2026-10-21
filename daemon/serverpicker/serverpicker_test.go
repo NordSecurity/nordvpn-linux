@@ -14,6 +14,7 @@ import (
 	core_test "github.com/NordSecurity/nordvpn-linux/test/mock/core"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestFilterServers(t *testing.T) {
@@ -24,19 +25,22 @@ func TestFilterServers(t *testing.T) {
 		servers       core.Servers
 		tech          config.Technology
 		proto         config.Protocol
-		group         config.ServerGroup
 		expectedCount int
 		hasError      bool
 	}{
 		{
 			name:          "nil servers",
 			servers:       nil,
+			tech:          config.Technology_NORDLYNX,
+			proto:         config.Protocol_UDP,
 			expectedCount: 0,
 			hasError:      true,
 		},
 		{
 			name:          "0 servers",
 			servers:       core.Servers{},
+			tech:          config.Technology_NORDLYNX,
+			proto:         config.Protocol_UDP,
 			expectedCount: 0,
 			hasError:      true,
 		},
@@ -152,7 +156,7 @@ func TestFilterServers(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			search := newTestServerSearch(test.tech, test.proto, core.ServerTag{Action: core.ServerByUnknown}, test.group)
+			search := newTestServerSearch(t, test.tech, test.proto, SearchParams{}, nil, test.servers)
 			servers, err := search.findLocally(test.servers)
 			assert.Equal(t, test.hasError, err != nil)
 			assert.Equal(t, test.expectedCount, len(servers))
@@ -1350,7 +1354,7 @@ func TestFindServersLocally_VirtualServers(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			servers := append(newServers(test.physicalCount, false), newServers(test.virtualCount, true)...)
 
-			search := newTestServerSearch(config.Technology_NORDLYNX, config.Protocol_UDP, core.ServerTag{}, config.ServerGroup_UNDEFINED)
+			search := newTestServerSearch(t, config.Technology_NORDLYNX, config.Protocol_UDP, SearchParams{}, nil, servers)
 			selected, err := search.findLocally(servers)
 
 			assert.NoError(t, err)
@@ -1397,38 +1401,46 @@ func TestFindServersLocally_DedicatedIPServers(t *testing.T) {
 	tests := []struct {
 		name              string
 		servers           core.Servers
-		serverTag         core.ServerTag
+		tag               string
 		expectedHostnames []string
 	}{
 		{
 			name:              "dedicated IP servers are removed",
 			servers:           core_test.ServersList("lt15.nordvpn.com", "lt8.nordvpn.com"),
-			serverTag:         core.ServerTag{Action: core.ServerByCity},
+			tag:               "lt",
 			expectedHostnames: []string{"lt15.nordvpn.com"},
 		},
 		{
-			name:              "dedicated IP servers are kept when searching by server name",
-			servers:           core_test.ServersList("lt15.nordvpn.com", "lt8.nordvpn.com"),
-			serverTag:         core.ServerTag{Action: core.ServerByName},
+			name: "dedicated IP servers are kept when searching by server name",
+			// keys are cleared so the name tag doesn't narrow the list down to a single server
+			servers:           withoutKeys(core_test.ServersList("lt15.nordvpn.com", "lt8.nordvpn.com")),
+			tag:               "lt8",
 			expectedHostnames: []string{"lt15.nordvpn.com", "lt8.nordvpn.com"},
 		},
 		{
 			name:              "single dedicated IP server is kept",
 			servers:           core_test.ServersList("lt8.nordvpn.com"),
-			serverTag:         core.ServerTag{Action: core.ServerByCity},
+			tag:               "lt",
 			expectedHostnames: []string{"lt8.nordvpn.com"},
 		},
 		{
 			name:              "only dedicated IP servers results in an empty list",
 			servers:           core_test.ServersList("lt7.nordvpn.com", "lt8.nordvpn.com"),
-			serverTag:         core.ServerTag{Action: core.ServerByCity},
+			tag:               "lt",
 			expectedHostnames: []string{},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			search := newTestServerSearch(config.Technology_NORDLYNX, config.Protocol_UDP, test.serverTag, config.ServerGroup_UNDEFINED)
+			countries := core.Countries{{ID: 1, Name: "Lithuania", Code: "LT"}}
+			search := newTestServerSearch(
+				t,
+				config.Technology_NORDLYNX,
+				config.Protocol_UDP,
+				SearchParams{Tag: test.tag},
+				countries, test.servers,
+			)
 			selected, err := search.findLocally(test.servers)
 
 			assert.NoError(t, err)
@@ -1537,18 +1549,27 @@ func TestPickServer_Fallback(t *testing.T) {
 	}
 }
 
+func withoutKeys(servers core.Servers) core.Servers {
+	for i := range servers {
+		servers[i].Keys = nil
+	}
+	return servers
+}
+
 func newTestServerSearch(
+	t *testing.T,
 	tech config.Technology,
 	proto config.Protocol,
-	tag core.ServerTag,
-	group config.ServerGroup,
+	input SearchParams,
+	countries core.Countries,
+	servers core.Servers,
 ) *serverSearch {
-	return &serverSearch{
-		cfg: config.Config{
-			Technology:      tech,
-			AutoConnectData: config.AutoConnectData{Protocol: proto},
-		},
-		tag:        tag,
-		localSelFn: selectFilterForLocalServers("", group),
+	t.Helper()
+	cfg := config.Config{
+		Technology:      tech,
+		AutoConnectData: config.AutoConnectData{Protocol: proto},
 	}
+	search, err := newServerSearch(cfg, input, countries, servers)
+	require.NoError(t, err)
+	return search
 }
