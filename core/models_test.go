@@ -620,6 +620,56 @@ func TestServerVersion(t *testing.T) {
 	assert.Equal(t, "2.1.0", server.Version())
 }
 
+func TestServer_IsVirtualLocation(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name     string
+		specs    string
+		expected bool
+	}{
+		{
+			name:     "no specifications",
+			specs:    `[]`,
+			expected: false,
+		},
+		{
+			name:     "virtual location true",
+			specs:    `[{"identifier":"virtual_location","values":[{"value":"true"}]}]`,
+			expected: true,
+		},
+		{
+			name:     "virtual location false",
+			specs:    `[{"identifier":"virtual_location","values":[{"value":"false"}]}]`,
+			expected: false,
+		},
+		{
+			name:     "virtual location invalid value",
+			specs:    `[{"identifier":"virtual_location","values":[{"value":"invalid"}]}]`,
+			expected: false,
+		},
+		{
+			name:     "virtual location without values",
+			specs:    `[{"identifier":"virtual_location","values":[]}]`,
+			expected: false,
+		},
+		{
+			name:     "other specification only",
+			specs:    `[{"identifier":"version","values":[{"value":"2.1.0"}]}]`,
+			expected: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var server Server
+			err := json.Unmarshal([]byte(`{"specifications":`+test.specs+`}`), &server)
+			assert.NoError(t, err)
+			assert.Equal(t, test.expected, server.IsVirtualLocation())
+		})
+	}
+}
+
 func TestLocationsCountry(t *testing.T) {
 	category.Set(t, category.Unit)
 
