@@ -61,11 +61,25 @@ class _DropdownState<T> extends State<Dropdown<T>> {
       horizontal: dropdownTheme.horizontalPadding,
     );
     final selected = widget.items.where((e) => e.value == _value).firstOrNull;
+    final itemStyle =
+        MenuItemButton.styleFrom(
+          padding: padding,
+          overlayColor: Colors.transparent,
+        ).copyWith(
+          backgroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.hovered) ||
+                states.contains(WidgetState.focused)) {
+              return dropdownTheme.itemHoverColor;
+            }
+            return dropdownTheme.color;
+          }),
+        );
 
     return LayoutBuilder(
       builder: (context, constraints) => MenuAnchor(
         controller: _menuController,
         childFocusNode: _focusNode,
+        crossAxisUnconstrained: false,
         onOpen: () => setState(() {}),
         onClose: () => setState(() {}),
         style: MenuStyle(
@@ -81,7 +95,7 @@ class _DropdownState<T> extends State<Dropdown<T>> {
           return MenuItemButton(
             autofocus: e.value == _value,
             onPressed: () => _onChanged(e.value),
-            style: MenuItemButton.styleFrom(padding: padding),
+            style: itemStyle,
             child: Text(e.label, style: appTheme.body, maxLines: 1),
           );
         }).toList(),
