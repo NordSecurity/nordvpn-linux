@@ -56,6 +56,7 @@ depends:
 recommends:
   - iptables
   - nordvpn-gui
+  - wtmpdb
 
 # Basic file that applies to all packagers
 contents:
@@ -184,6 +185,7 @@ overrides:
     recommends:
       - iptables
       - nordvpn-gui
+      - wtmpdb
     # RPM specific scripts.
     scripts:
       preinstall: ${WORKDIR}/contrib/scriptlets/rpm/preinst
