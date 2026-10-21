@@ -6,8 +6,8 @@ FROM ubuntu:22.04
 LABEL org.opencontainers.image.source=https://github.com/NordSecurity/nordvpn-linux
 
 # Based on: https://github.com/docker-library/golang/blob/master/1.25/bookworm/Dockerfile
-ENV GOLANG_VERSION 1.26.3
-ENV GOLANG_SHA256 2b2cfc7148493da5e73981bffbf3353af381d5f93e789c82c79aff64962eb556
+ENV GOLANG_VERSION 1.26.10
+ENV GOLANG_SHA256 ccfe7ae822d2c2f41f4fe7c956199967a4dac22d0ee0d2b2bfdb440aab3b20c5
 
 RUN apt-get update && \
     apt-get -y --no-install-recommends upgrade && \
