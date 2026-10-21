@@ -94,6 +94,11 @@ func startTray(quitChan chan<- norduser.StopRequest) {
 		return
 	}
 
+	// systray derives the item Id from the title when it exports the item, so set
+	// the title before Run; onReady may run after the export.
+	systray.SetTitle(internal.AppName)
+	systray.SetTooltip(internal.AppName)
+
 	for {
 		if systray.IsAvailable() {
 			systray.Run(onReady, onExit)
