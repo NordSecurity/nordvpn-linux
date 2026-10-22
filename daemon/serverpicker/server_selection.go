@@ -60,7 +60,7 @@ func PickServer(
 	selectedServers, recommendationUUID, err := search.fetchFromAPI(api, insights)
 	remote := len(selectedServers) > 0
 	if !remote {
-		log.ServerSel.Debug("no server found via API, trying locally cached list")
+		log.ServerSel.Debug("falling back to locally cached servers, API error", err)
 		selectedServers, err = search.findLocally(servers)
 	}
 
