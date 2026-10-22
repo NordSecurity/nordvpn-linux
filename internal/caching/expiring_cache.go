@@ -124,7 +124,7 @@ func (c *Cache[T]) fetchLocked() (T, error) {
 		}
 
 		v := reflect.ValueOf(c.entry.data)
-		if v.Kind() == reflect.Ptr && v.IsNil() {
+		if v.Kind() == reflect.Pointer && v.IsNil() {
 			return zero, ErrNoCacheData
 		}
 
