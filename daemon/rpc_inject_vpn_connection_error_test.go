@@ -39,7 +39,7 @@ func TestInjectVpnConnectionError(t *testing.T) {
 		{
 			name:        "rejected in production",
 			environment: internal.Production,
-			factory: func(config.Technology) (vpn.VPN, error) {
+			factory: func(config.VPNProtocol) (vpn.VPN, error) {
 				return &injectorVPN{WorkingVPN: &mock.WorkingVPN{}}, nil
 			},
 			wantErr: true,
@@ -47,7 +47,7 @@ func TestInjectVpnConnectionError(t *testing.T) {
 		{
 			name:        "factory error is propagated",
 			environment: internal.Development,
-			factory: func(config.Technology) (vpn.VPN, error) {
+			factory: func(config.VPNProtocol) (vpn.VPN, error) {
 				return nil, errors.New("no factory")
 			},
 			wantErr: true,
@@ -55,7 +55,7 @@ func TestInjectVpnConnectionError(t *testing.T) {
 		{
 			name:        "backend does not support injection",
 			environment: internal.Development,
-			factory: func(config.Technology) (vpn.VPN, error) {
+			factory: func(config.VPNProtocol) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
 			wantErr: true,
@@ -63,7 +63,7 @@ func TestInjectVpnConnectionError(t *testing.T) {
 		{
 			name:        "injector error (no active connection) is propagated",
 			environment: internal.Development,
-			factory: func(config.Technology) (vpn.VPN, error) {
+			factory: func(config.VPNProtocol) (vpn.VPN, error) {
 				return &injectorVPN{WorkingVPN: &mock.WorkingVPN{}, err: errors.New("no monitor")}, nil
 			},
 			wantErr: true,
@@ -71,7 +71,7 @@ func TestInjectVpnConnectionError(t *testing.T) {
 		{
 			name:        "success in dev returns CodeSuccess",
 			environment: internal.Development,
-			factory: func(config.Technology) (vpn.VPN, error) {
+			factory: func(config.VPNProtocol) (vpn.VPN, error) {
 				return &injectorVPN{WorkingVPN: &mock.WorkingVPN{}}, nil
 			},
 			wantErr:  false,

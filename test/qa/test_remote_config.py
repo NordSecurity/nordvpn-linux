@@ -9,7 +9,7 @@ from typing import Any
 import pytest
 import sh
 
-from lib import daemon, set_technology_and_protocol, STANDARD_TECHNOLOGIES_NO_NORDWHISPER, Defer
+from lib import daemon, set_vpn_protocol, STANDARD_VPN_PROTOCOLS_NO_NORDWHISPER, Defer
 from lib.log_reader import LogReader
 from lib.remote_config_manager import LOCAL_CACHE_DIR, RemoteConfigManager
 from lib.daemon import (
@@ -879,29 +879,27 @@ def test_killswitch_enabled_does_not_affect_cdn_with_firewall_mark(
         assert res == "exists", f"File {os.path} should exist after kill-switch was enabled"
 
 
-@pytest.mark.parametrize(("tech", "proto"), STANDARD_TECHNOLOGIES_NO_NORDWHISPER)
-def test_ech_disabled_for_not_allowed_technology(
+@pytest.mark.parametrize("vpn_protocol", STANDARD_VPN_PROTOCOLS_NO_NORDWHISPER)
+def test_ech_disabled_for_not_allowed_protocol(
         clean_cache_files,  # noqa: ARG001
         daemon_log_cursor: int,
         nordvpnd_scope_function,  # noqa: ARG001
         daemon_log_reader: LogReader,
-        tech,
-        proto,
+        vpn_protocol,
 ):
     """
-    Test to verify ECH is disabled for technologies that are not allowed.
+    Test to verify ECH is disabled for protocols that are not allowed.
 
     Test steps:
       1. Apply connection configuration for the parametrized combination:
-         - technology
-         - protocol
+         - VPN protocol
       2. Connect to VPN.
       3. Verify that the ECH message ('RC_USE_ECH_MESSAGE') is NOT present in the daemon log.
       4. Disconnect from VPN.
 
     :raises AssertionError: If the expected log message 'RC_USE_ECH_MESSAGE' is found in the daemon log
    """
-    set_technology_and_protocol(tech, proto)
+    set_vpn_protocol(vpn_protocol)
 
     sh.nordvpn.connect()
 
@@ -912,24 +910,24 @@ def test_ech_disabled_for_not_allowed_technology(
     sh.nordvpn.disconnect()
 
 
-def test_ech_enabled_for_allowed_technology(
+def test_ech_enabled_for_allowed_protocol(
         clean_cache_files,  # noqa: ARG001
         daemon_log_cursor: int,
         nordvpnd_scope_function,  # noqa: ARG001
         daemon_log_reader: LogReader,
 ):
     """
-    Test to verify ECH is enabled for technologies that are allowed(NordWhisper).
+    Test to verify ECH is enabled for protocols that are allowed(NordWhisper).
 
     Test steps:
-      1. Apply connection configuration technology to NordWhisper.
+      1. Apply connection configuration protocol to NordWhisper.
       2. Connect to VPN.
       3. Verify that the ECH message ('RC_USE_ECH_MESSAGE') is present in the daemon log.
       4. Disconnect from VPN.
 
     :raises AssertionError: If the expected log message 'RC_USE_ECH_MESSAGE' is not found in the daemon log
    """
-    set_technology_and_protocol("nordwhisper", "")
+    set_vpn_protocol("nordwhisper")
 
     sh.nordvpn.connect()
 
@@ -966,7 +964,7 @@ def test_local_config_usage_ech_state(
          ('True' / 'False') and update the corresponding hash.
       2. Enable 'use local RC config' mode.
       3. Assert the daemon logs indicate local config usage ('RC_USE_LOCAL_CONFIG_MESSAGE').
-      4. Set technology to NordWhisper.
+      4. Set protocol to NordWhisper.
       5. Connect to VPN.
       6. Assert ECH usage is logged ('RC_USE_ECH_MESSAGE') when enabled, and is absent when disabled.
       7. Disconnect from VPN and disable 'use local RC config' mode.
@@ -991,7 +989,7 @@ def test_local_config_usage_ech_state(
             cursor=cursor,
         ), f"Expected {RC_USE_LOCAL_CONFIG_MESSAGE} message indicating local config usage not found in the logs."
 
-        set_technology_and_protocol("nordwhisper", "")
+        set_vpn_protocol("nordwhisper")
 
         sh.nordvpn.connect()
 
@@ -1024,7 +1022,7 @@ def test_ech_disabled_with_local_rc_usage_then_reenabled_after_revert(
       1. Set the local cached RC config to set 'enable_ech' to the 'False' and update the corresponding hash.
       2. Enable 'use local RC config' mode.
       3. Assert the daemon logs indicate local config usage ('RC_USE_LOCAL_CONFIG_MESSAGE').
-      4. Set technology to NordWhisper.
+      4. Set protocol to NordWhisper.
       5. Connect to VPN.
       6. Assert ECH usage is NOT logged ('RC_USE_ECH_MESSAGE' absent).
       7. Disconnect from VPN.
@@ -1055,7 +1053,7 @@ def test_ech_disabled_with_local_rc_usage_then_reenabled_after_revert(
             cursor=cursor,
         ), f"Expected {RC_USE_LOCAL_CONFIG_MESSAGE} message indicating local config usage not found in the logs."
 
-        set_technology_and_protocol("nordwhisper", "")
+        set_vpn_protocol("nordwhisper")
 
         sh.nordvpn.connect()
 
@@ -1114,7 +1112,7 @@ def test_local_config_usage_missing_enable_ech_field(
       2. Enable 'use local RC config' mode.
       3. Restart the daemon.
       4. Assert the daemon logs indicate local config usage ('RC_USE_LOCAL_CONFIG_MESSAGE').
-      5. Set technology to NordWhisper.
+      5. Set protocol to NordWhisper.
       6. Connect to VPN.
       7. Assert the daemon log contains the missing parameter warning:
          '[Warning] Failed to fetch NordWhisper features: feature [nordwhisper] param [enable_ech] not found'.
@@ -1142,7 +1140,7 @@ def test_local_config_usage_missing_enable_ech_field(
             cursor=cursor,
         ), f"Expected {RC_USE_LOCAL_CONFIG_MESSAGE} message indicating local config usage not found in the logs."
 
-        set_technology_and_protocol("nordwhisper", "")
+        set_vpn_protocol("nordwhisper")
 
         sh.nordvpn.connect()
 

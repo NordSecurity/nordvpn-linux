@@ -5,7 +5,7 @@ import 'package:nordvpn/data/mocks/daemon/connect_arguments_extension.dart';
 import 'package:nordvpn/pb/daemon/connect.pb.dart';
 import 'package:nordvpn/pb/daemon/servers.pb.dart';
 import 'package:nordvpn/pb/daemon/config/group.pb.dart' as config;
-import 'package:nordvpn/pb/daemon/config/technology.pbenum.dart' as settings;
+import 'package:nordvpn/pb/daemon/config/vpn_protocol.pbenum.dart' as settings;
 import 'package:nordvpn/pb/daemon/settings.pb.dart';
 import 'package:nordvpn/pb/daemon/state.pb.dart';
 import 'package:fixnum/fixnum.dart';
@@ -32,7 +32,9 @@ final class MockServersList {
   late final StreamSubscription<AppState> _appStateSub;
 
   MockServersList(this.stream) {
-    _serversList = _generateServersList(settings.Technology.NORDLYNX);
+    _serversList = _generateServersList(
+      settings.VPNProtocol.VPN_PROTOCOL_NORDLYNX,
+    );
     _appStateSub = stream.stream.listen((value) {
       if (value.hasSettingsChange()) {
         final newSettings = value.settingsChange;
@@ -40,7 +42,7 @@ final class MockServersList {
           return;
         }
         _settings = newSettings;
-        _serversList = _generateServersList(_settings!.technology);
+        _serversList = _generateServersList(_settings!.vpnProtocol);
       }
     });
   }
@@ -61,8 +63,8 @@ final class MockServersList {
     stream.add(AppState(updateEvent: UpdateEvent.SERVERS_LIST_UPDATE));
   }
 
-  ServersResponse _generateServersList(settings.Technology technology) {
-    debugPrint("Servers list changed technology=$technology");
+  ServersResponse _generateServersList(settings.VPNProtocol vpnProtocol) {
+    debugPrint("Servers list changed vpnProtocol=$vpnProtocol");
 
     _dipServers = [];
 
@@ -70,7 +72,7 @@ final class MockServersList {
     // servers as obfuscated ones as well
     final standardGroups = [
       config.ServerGroup.STANDARD_VPN_SERVERS,
-      if (technology == settings.Technology.NORDWHISPER)
+      if (vpnProtocol == settings.VPNProtocol.VPN_PROTOCOL_NORDWHISPER)
         config.ServerGroup.NW_OBFUSCATED,
     ];
 

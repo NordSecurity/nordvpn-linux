@@ -21,9 +21,8 @@ func NewEventsEmpty() *Events {
 		&subs.Subject[bool]{},
 		&subs.Subject[events.DataDNS]{},
 		&subs.Subject[bool]{},
-		&subs.Subject[config.Protocol]{},
+		&subs.Subject[config.VPNProtocol]{},
 		&subs.Subject[events.DataAllowlist]{},
-		&subs.Subject[config.Technology]{},
 		&subs.Subject[bool]{},
 		&subs.Subject[bool]{},
 		&subs.Subject[bool]{},
@@ -51,9 +50,8 @@ func NewEvents(
 	autoconnect events.PublishSubcriber[bool],
 	dns events.PublishSubcriber[events.DataDNS],
 	protection events.PublishSubcriber[bool],
-	protocol events.PublishSubcriber[config.Protocol],
+	vpnProtocol events.PublishSubcriber[config.VPNProtocol],
 	allowlist events.PublishSubcriber[events.DataAllowlist],
-	technology events.PublishSubcriber[config.Technology],
 	firewall events.PublishSubcriber[bool],
 	routing events.PublishSubcriber[bool],
 	notify events.PublishSubcriber[bool],
@@ -80,9 +78,8 @@ func NewEvents(
 			Autoconnect:        autoconnect,
 			DNS:                dns,
 			RealTimeProtection: protection,
-			Protocol:           protocol,
+			VPNProtocol:        vpnProtocol,
 			Allowlist:          allowlist,
-			Technology:         technology,
 			Firewall:           firewall,
 			Routing:            routing,
 			Notify:             notify,
@@ -131,9 +128,8 @@ type SettingsPublisher interface {
 	NotifyAutoconnect(bool) error
 	NotifyDNS(events.DataDNS) error
 	NotifyRealTimeProtection(bool) error
-	NotifyProtocol(config.Protocol) error
+	NotifyVPNProtocol(config.VPNProtocol) error
 	NotifyAllowlist(events.DataAllowlist) error
-	NotifyTechnology(config.Technology) error
 	NotifyFirewall(bool) error
 	NotifyRouting(bool) error
 	NotifyNotify(bool) error
@@ -148,9 +144,8 @@ type SettingsEvents struct {
 	Autoconnect        events.PublishSubcriber[bool]
 	DNS                events.PublishSubcriber[events.DataDNS]
 	RealTimeProtection events.PublishSubcriber[bool]
-	Protocol           events.PublishSubcriber[config.Protocol]
+	VPNProtocol        events.PublishSubcriber[config.VPNProtocol]
 	Allowlist          events.PublishSubcriber[events.DataAllowlist]
-	Technology         events.PublishSubcriber[config.Technology]
 	Obfuscate          events.PublishSubcriber[bool]
 	Firewall           events.PublishSubcriber[bool]
 	Routing            events.PublishSubcriber[bool]
@@ -166,9 +161,8 @@ func (s *SettingsEvents) Subscribe(to SettingsPublisher) {
 	s.Autoconnect.Subscribe(to.NotifyAutoconnect)
 	s.DNS.Subscribe(to.NotifyDNS)
 	s.RealTimeProtection.Subscribe(to.NotifyRealTimeProtection)
-	s.Protocol.Subscribe(to.NotifyProtocol)
+	s.VPNProtocol.Subscribe(to.NotifyVPNProtocol)
 	s.Allowlist.Subscribe(to.NotifyAllowlist)
-	s.Technology.Subscribe(to.NotifyTechnology)
 	s.Firewall.Subscribe(to.NotifyFirewall)
 	s.Routing.Subscribe(to.NotifyRouting)
 	s.Notify.Subscribe(to.NotifyNotify)
@@ -216,14 +210,13 @@ func (s *SettingsEvents) Publish(cfg config.Config) {
 	s.Autoconnect.Publish(cfg.AutoConnect)
 	s.DNS.Publish(events.DataDNS{Ips: cfg.AutoConnectData.DNS})
 	s.RealTimeProtection.Publish(cfg.AutoConnectData.RealTimeProtection)
-	s.Protocol.Publish(cfg.AutoConnectData.Protocol)
+	s.VPNProtocol.Publish(cfg.VPNProtocol)
 	s.Allowlist.Publish(events.DataAllowlist{
 		TCPPorts: cfg.AutoConnectData.Allowlist.Ports.TCP.ToSlice(),
 		UDPPorts: cfg.AutoConnectData.Allowlist.Ports.UDP.ToSlice(),
 		Subnets:  cfg.AutoConnectData.Allowlist.Subnets,
 	})
 	s.Meshnet.Publish(cfg.Mesh)
-	s.Technology.Publish(cfg.Technology)
 	s.Notify.Publish(len(cfg.UsersData.NotifyOff) <= 0)
 	s.LANDiscovery.Publish(cfg.LanDiscovery)
 	s.PostquantumVPN.Publish(cfg.AutoConnectData.PostquantumVpn)

@@ -93,7 +93,7 @@ func TestRPCGroups_DeprecatedGroupsFiltered(t *testing.T) {
 	}
 
 	cm := newMockConfigManager()
-	cm.c.Technology = config.Technology_NORDLYNX
+	cm.c.VPNProtocol = config.VPNProtocol_VPN_PROTOCOL_NORDLYNX
 
 	rpc := RPC{
 		cm: cm,
@@ -171,8 +171,7 @@ func TestRPCGroups_Successful(t *testing.T) {
 			rc.AddFeatureToggle(remote.FeatureDedicatedServer, !test.disableDedicatedServers)
 
 			if cm, ok := test.cm.(*mockConfigManager); ok {
-				cm.c.AutoConnectData.Protocol = config.Protocol_UDP
-				cm.c.Technology = config.Technology_NORDLYNX
+				cm.c.VPNProtocol = config.VPNProtocol_VPN_PROTOCOL_NORDLYNX
 			}
 
 			rpc := RPC{
@@ -209,36 +208,31 @@ func TestGroups_ObfuscatedIsListedOnlyUnderNordWhisper(t *testing.T) {
 		[]core.ServerTechnology{core.OpenVPNUDPObfuscated, core.OpenVPNTCPObfuscated})
 
 	tests := []struct {
-		name     string
-		servers  core.Servers
-		tech     config.Technology
-		proto    config.Protocol
-		expected bool
+		name        string
+		servers     core.Servers
+		vpnProtocol config.VPNProtocol
+		expected    bool
 	}{
 		{
-			name:     "listed over nordwhisper",
-			servers:  core.Servers{standard, legacyXOR},
-			tech:     config.Technology_NORDWHISPER,
-			proto:    config.Protocol_Webtunnel,
-			expected: true,
+			name:        "listed over nordwhisper",
+			servers:     core.Servers{standard, legacyXOR},
+			vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
+			expected:    true,
 		},
 		{
-			name:    "not listed over nordlynx",
-			servers: core.Servers{standard, legacyXOR},
-			tech:    config.Technology_NORDLYNX,
-			proto:   config.Protocol_UDP,
+			name:        "not listed over nordlynx",
+			servers:     core.Servers{standard, legacyXOR},
+			vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 		},
 		{
-			name:    "not listed over openvpn tcp",
-			servers: core.Servers{standard, legacyXOR},
-			tech:    config.Technology_OPENVPN,
-			proto:   config.Protocol_TCP,
+			name:        "not listed over openvpn tcp",
+			servers:     core.Servers{standard, legacyXOR},
+			vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP,
 		},
 		{
-			name:    "not listed over openvpn udp",
-			servers: core.Servers{standard, legacyXOR},
-			tech:    config.Technology_OPENVPN,
-			proto:   config.Protocol_UDP,
+			name:        "not listed over openvpn udp",
+			servers:     core.Servers{standard, legacyXOR},
+			vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP,
 		},
 	}
 
@@ -246,7 +240,7 @@ func TestGroups_ObfuscatedIsListedOnlyUnderNordWhisper(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			dm := DataManager{serversData: ServersData{Servers: test.servers}}
 
-			groups, err := dm.Groups(test.tech, test.proto)
+			groups, err := dm.Groups(test.vpnProtocol)
 			assert.NoError(t, err)
 
 			names := make([]string, 0, len(groups))

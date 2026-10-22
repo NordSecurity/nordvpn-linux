@@ -237,8 +237,7 @@ def test_route_to_peer_status_valid():
     assert peer_hostname in status_info["hostname"], "Status should show peer hostname"
     assert peer_nick in status_info["server"], "Status should show peer nickname as server"
     assert socket.gethostbyname(peer_nick) in status_info["ip"], "Status should show peer IP"
-    assert "NORDLYNX" in status_info["current technology"], "Current technology should be NORDLYNX"
-    assert "UDP" in status_info["current protocol"], "Current protocol should be UDP"
+    assert status_info["protocol"] == "NordLynx", "Current protocol should be NordLynx"
 
     transfer_data = status_info["transfer"].split(" ")
     transfer_received = float(transfer_data[0])
@@ -276,13 +275,13 @@ def test_route_to_peer_that_is_disconnected():
 
 
 @pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES_NO_MESHNET)
-def test_route_traffic_to_peer_wrong_tech(tech, proto):
-    lib.set_technology_and_protocol(tech, proto)
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS_NO_MESHNET)
+def test_route_traffic_to_peer_wrong_protocol(vpn_protocol):
+    lib.set_vpn_protocol(vpn_protocol)
 
     peer_hostname = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer().name()
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh_no_tty.nordvpn.mesh.peer.connect(peer_hostname)
 
-    assert meshnet.MSG_ROUTING_NEED_NORDLYNX in ex.value.stdout.decode("utf-8"), "Routing with non-Nordlynx technology should show error message"
+    assert meshnet.MSG_ROUTING_NEED_NORDLYNX in ex.value.stdout.decode("utf-8"), "Routing with non-Nordlynx protocol should show error message"

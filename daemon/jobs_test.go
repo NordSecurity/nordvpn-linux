@@ -188,8 +188,8 @@ func TestDoAutoConnect(t *testing.T) {
 func TestDoAutoConnect_ObfuscatedGroupNeedsNordWhisper(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	for _, tech := range []config.Technology{config.Technology_OPENVPN, config.Technology_NORDLYNX} {
-		t.Run(tech.String(), func(t *testing.T) {
+	for _, vpnProtocol := range []config.VPNProtocol{config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP, config.VPNProtocol_VPN_PROTOCOL_NORDLYNX} {
+		t.Run(vpnProtocol.String(), func(t *testing.T) {
 			rpc := testRPC()
 			rpc.serversAPI = core_test.NewMockServersAPI()
 			mockConfigManager := newMockConfigManager()
@@ -197,7 +197,7 @@ func TestDoAutoConnect_ObfuscatedGroupNeedsNordWhisper(t *testing.T) {
 				Group:     config.ServerGroup_OVPN_OBFUSCATED,
 				ServerTag: "obfuscated_servers",
 			})
-			mockConfigManager.c.Technology = tech
+			mockConfigManager.c.VPNProtocol = vpnProtocol
 			rpc.cm = mockConfigManager
 
 			assert.Error(t, rpc.doAutoConnect())

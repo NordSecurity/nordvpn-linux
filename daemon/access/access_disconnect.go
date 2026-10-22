@@ -41,9 +41,8 @@ func Disconnect(input DisconnectInput) (bool, error) {
 			status = events.StatusFailure
 		}
 		input.PublishDisconnectEventFunc(events.DataDisconnect{
-			Protocol:           cfg.AutoConnectData.Protocol,
+			VPNProtocol:        cfg.VPNProtocol,
 			EventStatus:        status,
-			Technology:         cfg.Technology,
 			RealTimeProtection: cfg.AutoConnectData.RealTimeProtection,
 			Duration:           time.Since(startTime),
 			Error:              err,

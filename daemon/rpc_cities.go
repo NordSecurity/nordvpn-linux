@@ -19,11 +19,7 @@ func (r *RPC) Cities(ctx context.Context, in *pb.CitiesRequest) (*pb.ServerGroup
 		}, nil
 	}
 
-	cities, err := r.dm.Cities(
-		in.GetCountry(),
-		cfg.Technology,
-		cfg.AutoConnectData.Protocol,
-	)
+	cities, err := r.dm.Cities(in.GetCountry(), cfg.VPNProtocol)
 	if err != nil {
 		log.Error("failed to get cities for", in.GetCountry(), err)
 
