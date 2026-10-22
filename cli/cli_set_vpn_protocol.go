@@ -53,20 +53,20 @@ func (c *cmd) SetVPNProtocol(ctx *cli.Context) error {
 	case internal.CodeFeatureHidden:
 		return formatError(argsParseError(ctx))
 	case internal.CodeNothingToDo:
-		color.Yellow(fmt.Sprintf(MsgAlreadySet, "VPN Protocol", resp.Data[0]))
+		color.Yellow(fmt.Sprintf(MsgAlreadySet, "VPN Protocol", vpnProto.DisplayName()))
 	case internal.CodeConfigError:
 		return formatError(ErrConfig)
+	case internal.CodeProtocolIncompatibleWithAutoconnect:
+		return formatError(fmt.Errorf(MsgIncompatibleTechWithAutoconnect, vpnProto.DisplayName()))
 	case internal.CodeSuccess:
-		color.Green(fmt.Sprintf(MsgSetSuccess, "VPN Protocol", resp.Data[1]))
+		color.Green(fmt.Sprintf(MsgSetSuccess, "VPN Protocol", vpnProto.DisplayName()))
 		if active, _ := strconv.ParseBool(resp.Data[0]); active {
 			color.Yellow(SetReconnect)
 		}
 	case internal.CodeDedicatedServersNoNordlynx:
 		return errors.New(DedicatedServersAutoconnectNordlynxMessage)
-	case internal.CodeObfuscatedNeedsNordwhisper:
-		return formatError(fmt.Errorf("To use %s protocol, update or disable auto-connect settings.", resp.Data[0]))
 	case internal.CodePqWithoutNordlynx:
-		return formatError(fmt.Errorf(SetProtocolDisablePQ, resp.Data[0]))
+		return formatError(fmt.Errorf(SetProtocolDisablePQ, vpnProto.DisplayName()))
 	}
 
 	return nil
