@@ -9,18 +9,11 @@ import (
 	"errors"
 	"math/rand"
 	"strings"
-	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
-	"golang.org/x/exp/slices"
-)
-
-const (
-	apiServersLimit      = 10
-	localServersMinCount = 20
 )
 
 var ErrUnknownTechnology = errors.New("unknown technology")
@@ -59,77 +52,16 @@ func PickServer(
 	cfg config.Config,
 	input SearchParams,
 ) (ServerSelection, error) {
-	remote := true
-	var recommendationUUID RecommendationUUID
-	var selectedServer *core.Server
-
-	selectedServers := []core.Server{}
-
-	tech := cfg.Technology
-	protocol := cfg.AutoConnectData.Protocol
-	log.ServerSel.Debug("search server", tech, protocol, "with input", input)
-
-	serverTech := TechToServerTech(tech, protocol)
-	if serverTech == core.Unknown {
-		return ServerSelection{}, ErrUnknownTechnology
-	}
-
-	// detect the group from the input params (fix tag arg if needed)
-	input, requestedGroup, err := resolveServerGroup(input)
+	search, err := newServerSearch(cfg, input, countries, servers)
 	if err != nil {
 		return ServerSelection{}, err
 	}
 
-	// the group the servers are actually looked up by can differ from the requested ones
-	// on specific technology (edge case)
-	serverGroup := searchGroup(requestedGroup, tech)
-	log.ServerSel.Debug("resolved server group", requestedGroup, "search group", serverGroup)
-
-	if serverGroup == config.ServerGroup_DEDICATED_IP {
-		// DIP servers are selected from the user subscription services
-		return ServerSelection{}, ErrDedicatedIPServer
-	}
-
-	if serverGroup == config.ServerGroup_DEDICATED_SERVER {
-		// DS servers are taken from another API endpoint
-		return ServerSelection{}, ErrDedicatedServer
-	}
-
-	// construct the servers list filters, for matching the current settings
-	localSelFn := selectFilterForLocalServers(input.Tag, serverGroup)
-	filterServersFn := func(s core.Server) bool {
-		return MatchesUserSettings(s, cfg) &&
-			s.Hostname != input.ExcludedServer &&
-			// for local servers only, take into account also the server.Keys
-			((len(s.Keys) == 0) || localSelFn(s))
-	}
-
-	// determine how the server search will be made
-	serverTag, err := serverTagFromString(input.Tag, serverGroup, countries, servers)
-
-	if err != nil {
-		log.ServerSel.Debug("unable to detect server tag:", err)
-		if errors.Is(err, internal.ErrTagDoesNotExist) {
-			return ServerSelection{}, err
-		}
-		// for other errors, local servers will be used, so set it to unknown to have a valid value
-		serverTag = core.ServerTag{Action: core.ServerByUnknown}
-	} else {
-		// fetch from the API only if serverTag is valid
-		apiFilter := core.ServersFilter{
-			Group: serverGroup,
-			Tech:  serverTech,
-			Tag:   serverTag,
-			Limit: apiServersLimit,
-		}
-		selectedServers, recommendationUUID, err = fetchServersFromAPI(api, insights, serverTag, apiFilter, filterServersFn)
-	}
-
-	if len(selectedServers) == 0 {
-		// if no servers were received from the API, try from locally cached servers
-		log.ServerSel.Debug("no server found via API, trying locally cached list")
-		remote = false
-		selectedServers, err = findServersLocally(servers, serverTag, filterServersFn)
+	selectedServers, recommendationUUID, err := search.fetchFromAPI(api, insights)
+	remote := len(selectedServers) > 0
+	if !remote {
+		log.ServerSel.Debug("falling back to locally cached servers, API error", err)
+		selectedServers, err = search.findLocally(servers)
 	}
 
 	if err != nil {
@@ -142,73 +74,18 @@ func PickServer(
 		return ServerSelection{}, internal.ErrServerIsUnavailable
 	}
 
-	if remote {
-		// servers from the API are ordered by recommendation, take the best one
-		selectedServer = &selectedServers[0]
-	} else {
-		// #nosec G404 -- not used for cryptographic purposes
-		rng := rand.New(rand.NewSource(time.Now().UnixNano()))
-		selectedServer = &selectedServers[rng.Int63n(int64(len(selectedServers)))]
-	}
-
 	return ServerSelection{
-		Server:             selectedServer,
+		Server:             chooseServer(selectedServers, remote),
 		RecommendationUUID: recommendationUUID,
 		Remote:             remote,
 	}, nil
 }
 
-// fetchServersFromAPI - selects servers from the remote API that match the given
-// serverTag and pass the filterServersFn.
-func fetchServersFromAPI(
-	api core.ServersAPI,
-	insights core.Insights,
-	serverTag core.ServerTag,
-	filter core.ServersFilter,
-	filterServersFn func(server core.Server) bool,
-) ([]core.Server, RecommendationUUID, error) {
-	if serverTag.Action == core.ServerByName {
-		// the search is made after a specific server name, e.g. lt1234
-		servers, err := getServerByNameFromRemote(api, serverTag, filterServersFn)
-		return servers, emptyUUID, err
+func chooseServer(servers []core.Server, remote bool) *core.Server {
+	if remote {
+		// servers from the API are ordered by recommendation, take the best one
+		return &servers[0]
 	}
-
-	return getRecommendedServers(api, insights.Longitude, insights.Latitude, filter, filterServersFn)
-}
-
-// findServersLocally selects servers from the locally cached list that pass
-// filterServersFn, used as a fallback when the API returns no servers.
-func findServersLocally(
-	servers core.Servers,
-	serverTag core.ServerTag,
-	filterServersFn func(server core.Server) bool,
-) ([]core.Server, error) {
-	log.ServerSel.Debug("search locally the server", serverTag)
-
-	selectedServers := internal.Filter(servers, filterServersFn)
-	if len(selectedServers) == 0 {
-		return nil, internal.ErrServerIsUnavailable
-	}
-
-	log.ServerSel.Debug("found local servers", selectedServers)
-
-	// remove all DIP servers from the list if the search wasn't made for a server name and there is more than 1 server found
-	if serverTag.Action != core.ServerByName && len(selectedServers) > 1 {
-		log.ServerSel.Debug("removing DIP servers")
-		selectedServers = slices.DeleteFunc(selectedServers, func(s core.Server) bool { return core.IsDedicatedIP(s) })
-	}
-
-	// prefer physical servers, fill the list up to localServersMinCount with virtual ones only if needed
-	var physicalServers, virtualServers []core.Server
-	for _, s := range selectedServers {
-		if s.IsVirtualLocation() {
-			virtualServers = append(virtualServers, s)
-		} else {
-			physicalServers = append(physicalServers, s)
-		}
-	}
-	missingCount := max(localServersMinCount-len(physicalServers), 0)
-	selectedServers = append(physicalServers, virtualServers[:min(missingCount, len(virtualServers))]...)
-
-	return selectedServers, nil
+	// #nosec G404 -- not used for cryptographic purposes
+	return &servers[rand.Intn(len(servers))]
 }
