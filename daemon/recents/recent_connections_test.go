@@ -283,6 +283,7 @@ func TestRecentConnectionsStore_Persistence(t *testing.T) {
 		assert.Equal(t, connections[len(connections)-1-i], loadedConnections[i])
 	}
 }
+
 func TestRecentConnectionsStore_ConcurrentAccess(t *testing.T) {
 	category.Set(t, category.Unit)
 

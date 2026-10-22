@@ -384,7 +384,6 @@ func TestTransferProgress(t *testing.T) {
 				},
 			},
 		)
-
 	})
 
 	progressEvent = <-progCh
