@@ -214,6 +214,7 @@ class Settings extends $pb.GeneratedMessage {
     UserSpecificSettings? userSettings,
     $core.bool? arpIgnore,
     $core.bool? ech,
+    $core.bool? logSanitization,
   }) {
     final result = create();
     if (technology != null) result.technology = technology;
@@ -234,6 +235,7 @@ class Settings extends $pb.GeneratedMessage {
     if (userSettings != null) result.userSettings = userSettings;
     if (arpIgnore != null) result.arpIgnore = arpIgnore;
     if (ech != null) result.ech = ech;
+    if (logSanitization != null) result.logSanitization = logSanitization;
     return result;
   }
 
@@ -273,6 +275,7 @@ class Settings extends $pb.GeneratedMessage {
         subBuilder: UserSpecificSettings.create)
     ..aOB(19, _omitFieldNames ? '' : 'arpIgnore')
     ..aOB(20, _omitFieldNames ? '' : 'ech')
+    ..aOB(21, _omitFieldNames ? '' : 'logSanitization')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -445,6 +448,15 @@ class Settings extends $pb.GeneratedMessage {
   $core.bool hasEch() => $_has(16);
   @$pb.TagNumber(20)
   void clearEch() => $_clearField(20);
+
+  @$pb.TagNumber(21)
+  $core.bool get logSanitization => $_getBF(17);
+  @$pb.TagNumber(21)
+  set logSanitization($core.bool value) => $_setBool(17, value);
+  @$pb.TagNumber(21)
+  $core.bool hasLogSanitization() => $_has(17);
+  @$pb.TagNumber(21)
+  void clearLogSanitization() => $_clearField(21);
 }
 
 class UserSpecificSettings extends $pb.GeneratedMessage {

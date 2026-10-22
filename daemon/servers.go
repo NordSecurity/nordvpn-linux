@@ -61,7 +61,15 @@ func selectServer(
 		}
 	}
 
-	log.Info("server", selection.Server.Hostname, "remote", selection.Remote)
+	var hostname any
+	isDIP := core.IsDedicatedIP(*selection.Server)
+	if isDIP || core.IsServerDedicated(*selection.Server) {
+		hostname = selection.Server.Hostname
+	} else {
+		hostname = log.DoNotSanitize(selection.Server.Hostname)
+	}
+
+	log.Info("server", hostname, "remote", selection.Remote)
 
 	if core.IsDedicatedIP(*selection.Server) {
 		if err := serverpicker.CheckDIPServerInSubscription(r.ac, *selection.Server, cfg); err != nil {

@@ -124,6 +124,7 @@ const Settings$json = {
     },
     {'1': 'arp_ignore', '3': 19, '4': 1, '5': 8, '10': 'arpIgnore'},
     {'1': 'ech', '3': 20, '4': 1, '5': 8, '10': 'ech'},
+    {'1': 'log_sanitization', '3': 21, '4': 1, '5': 8, '10': 'logSanitization'},
   ],
   '9': [
     {'1': 15, '2': 16},
@@ -146,7 +147,8 @@ final $typed_data.Uint8List settingsDescriptor = $convert.base64Decode(
     'gLMg0ucGIuQWxsb3dsaXN0UglhbGxvd2xpc3QSJwoPcG9zdHF1YW50dW1fdnBuGBEgASgIUg5w'
     'b3N0cXVhbnR1bVZwbhI9Cg11c2VyX3NldHRpbmdzGBIgASgLMhgucGIuVXNlclNwZWNpZmljU2'
     'V0dGluZ3NSDHVzZXJTZXR0aW5ncxIdCgphcnBfaWdub3JlGBMgASgIUglhcnBJZ25vcmUSEAoD'
-    'ZWNoGBQgASgIUgNlY2hKBAgPEBBKBAgQEBFSCW9iZnVzY2F0ZQ==');
+    'ZWNoGBQgASgIUgNlY2gSKQoQbG9nX3Nhbml0aXphdGlvbhgVIAEoCFIPbG9nU2FuaXRpemF0aW'
+    '9uSgQIDxAQSgQIEBARUglvYmZ1c2NhdGU=');
 
 @$core.Deprecated('Use userSpecificSettingsDescriptor instead')
 const UserSpecificSettings$json = {

@@ -139,6 +139,7 @@ func main() {
 		os.Stdout,
 		internal.LogLevelFile,
 		log.DefaultLevel(),
+		internal.IsDevEnv(Environment),
 	)
 	defer stopLevelWatcher()
 
