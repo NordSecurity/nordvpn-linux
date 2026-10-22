@@ -3,10 +3,14 @@ package request
 import (
 	"testing"
 
+	"github.com/NordSecurity/nordvpn-linux/sysinfo"
+	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetUserAgentValue(t *testing.T) {
+func TestClientIdentity_UserAgent(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	tests := []struct {
 		name       string
 		version    string
@@ -41,7 +45,8 @@ func TestGetUserAgentValue(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, GetUserAgentValue(tt.version, tt.distroName))
+			identity := NewClientIdentity(tt.version, sysinfo.HostInfo{OSPrettyName: tt.distroName})
+			assert.Equal(t, tt.want, identity.UserAgent())
 		})
 	}
 }

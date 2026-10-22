@@ -258,7 +258,8 @@ func main() {
 
 	hostInfo := sysinfo.NewHostInfo()
 
-	userAgent := request.GetUserAgentValue(Version, hostInfo.OSPrettyName)
+	identity := request.NewClientIdentity(Version, hostInfo)
+	userAgent := identity.UserAgent()
 
 	httpGlobalCtx, httpCancel := context.WithCancel(context.Background())
 
