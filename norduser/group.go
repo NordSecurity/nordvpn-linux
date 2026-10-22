@@ -75,7 +75,7 @@ func (osGetter) getUserID(username string) (userIDs, error) {
 		return userIDs{}, fmt.Errorf("looking up user: %w", err)
 	}
 
-	//both uid and gid are base-10 numbers
+	// both uid and gid are base-10 numbers
 	uid, err := strconv.ParseUint(user.Uid, 10, 32)
 	if err != nil {
 		return userIDs{}, fmt.Errorf("converting uid string to int: %w", err)

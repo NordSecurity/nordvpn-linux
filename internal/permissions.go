@@ -6,8 +6,10 @@ import (
 	"slices"
 )
 
-var allowedGroups []string = []string{"nordvpn"}
-var ErrNoPermission error = fmt.Errorf("requesting user does not have permissions")
+var (
+	allowedGroups   []string = []string{"nordvpn"}
+	ErrNoPermission error    = fmt.Errorf("requesting user does not have permissions")
+)
 
 // IsInAllowedGroup returns true if user with the given UID is in nordvpn privileged group
 func IsInAllowedGroup(uid uint32) (bool, error) {

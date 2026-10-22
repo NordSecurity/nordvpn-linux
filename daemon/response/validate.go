@@ -169,6 +169,7 @@ func getSignAlgoName(name string) string {
 	}
 	return ""
 }
+
 func getHashFunction(name string) func([]byte) []byte {
 	switch name {
 	case "sha256":
