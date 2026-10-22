@@ -7,9 +7,11 @@ import lib
 from lib import (
     daemon,
     network,
+    settings,
     IS_NIGHTLY
 )
 from lib.dynamic_parametrize import dynamic_parametrize
+from lib import capture_utils
 from test_routing import get_network_interface
 from test_connect import disconnect_base_test, get_alias
 
@@ -50,13 +52,32 @@ def test_reconnect_matrix(
         target_vpn_protocol,
 ):
     """Manual TC: LVPN-8674, LVPN-8694, LVPN-676"""
+    def verify_ovpn_traffic(vpn_protocol):
+        """Verify OpenVPN tunnel traffic uses the expected transport protocol."""
+        cap = capture_utils.BackgroundCapture("any", display_filter=f"ip.addr == {settings.get_server_ip()}")
+        cap.start()
+        network.generate_traffic()
+        cap.stop()
+
+        assert len(cap.packets) > 0, f"No packets captured for {vpn_protocol}"
+
+        for p in cap.packets:
+            if vpn_protocol == "openvpn_tcp":
+                assert p.ip.proto == capture_utils.IPProtocol.TCP, "TCP packets should travel to VPN server"
+            else:
+                assert p.ip.proto == capture_utils.IPProtocol.UDP, "UDP packets should travel to VPN server"
+
     lib.set_vpn_protocol(source_vpn_protocol)
     connect_base_test()
     assert get_network_interface(source_vpn_protocol) in sh.ip.a(), f"{get_network_interface(source_vpn_protocol)} should be present in `ip a` output"
+    if source_vpn_protocol in lib.OVPN_VPN_PROTOCOLS:
+        verify_ovpn_traffic(source_vpn_protocol)
 
     lib.set_vpn_protocol(target_vpn_protocol)
     connect_base_test()
     assert get_network_interface(target_vpn_protocol) in sh.ip.a(), f"{get_network_interface(target_vpn_protocol)} should be present in `ip a` output"
+    if target_vpn_protocol in lib.OVPN_VPN_PROTOCOLS:
+        verify_ovpn_traffic(target_vpn_protocol)
 
     status_info = daemon.get_status_data()
 
