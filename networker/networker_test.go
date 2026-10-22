@@ -16,11 +16,11 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
+	"github.com/NordSecurity/nordvpn-linux/mapset"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	firewallmock "github.com/NordSecurity/nordvpn-linux/test/mock/firewall"
 	"github.com/NordSecurity/nordvpn-linux/tunnel"
-	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/stretchr/testify/assert"
 )
 

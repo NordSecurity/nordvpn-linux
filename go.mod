@@ -15,7 +15,6 @@ require (
 	github.com/NordSecurity/gopenvpn v0.0.0-20230117114932-2252c52984b4
 	github.com/NordSecurity/systray v0.0.0-20260930132556-7e1998a257e1
 	github.com/coreos/go-semver v0.3.1
-	github.com/deckarep/golang-set/v2 v2.9.0
 	github.com/docker/go-units v0.5.0
 	github.com/eclipse/paho.mqtt.golang v1.5.1
 	github.com/esiqveland/notify v0.14.0
@@ -96,7 +95,6 @@ require (
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xrash/smetrics v0.0.0-20250705151800-55b8f293f342 // indirect
-	go.mongodb.org/mongo-driver v1.17.9 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.70.0 // indirect
 	go.opentelemetry.io/otel v1.46.0 // indirect
