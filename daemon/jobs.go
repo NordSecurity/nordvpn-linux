@@ -299,21 +299,20 @@ func isSystemShutdownSignal(sig *dbus.Signal) bool {
 	return false
 }
 
-func (r *RPC) fallbackTechnology(targetTechnology config.Technology) error {
-	log.Debug("technology was configured to NordWhisper, but NordWhisper was disabled, switching to",
-		targetTechnology.String())
-	v, err := r.factory(targetTechnology)
+func (r *RPC) fallbackVPNProtocol(target config.VPNProtocol) error {
+	log.Debug("protocol was configured to NordWhisper, but NordWhisper was disabled, switching to",
+		target.String())
+	v, err := r.factory(target)
 	if err != nil {
 		return fmt.Errorf("failed to build VPN instance: %s", err)
 	}
 
 	err = r.cm.SaveWith(func(c config.Config) config.Config {
-		c.Technology = targetTechnology
-		c.AutoConnectData.Protocol = config.Protocol_UDP
+		c.VPNProtocol = target
 		return c
 	})
 	if err != nil {
-		return fmt.Errorf("failed to fallback to %s tech: %s", targetTechnology.String(), err)
+		return fmt.Errorf("failed to fallback to %s: %s", target.String(), err)
 	}
 
 	r.netw.SetVPN(v)
@@ -399,12 +398,12 @@ func (r *RPC) doAutoConnect() error {
 		}
 	}
 
-	if cfg.Technology == config.Technology_NORDWHISPER && !features.NordWhisperEnabled {
-		log.Debug("technology was configured to NordWhisper, but NordWhisper was disabled, switching to NordLynx")
-		if err := r.fallbackTechnology(config.Technology_NORDLYNX); err != nil {
-			log.Error("failed to fall back to NordLynx technology, will try OpenVPN")
-			if err := r.fallbackTechnology(config.Technology_OPENVPN); err != nil {
-				return fmt.Errorf("falling back to OpenVPN technology: %s", err)
+	if cfg.VPNProtocol.IsNordWhisper() && !features.NordWhisperEnabled {
+		log.Debug("protocol was configured to NordWhisper, but NordWhisper was disabled, switching to NordLynx")
+		if err := r.fallbackVPNProtocol(config.VPNProtocol_VPN_PROTOCOL_NORDLYNX); err != nil {
+			log.Error("failed to fall back to NordLynx protocol, will try OpenVPN")
+			if err := r.fallbackVPNProtocol(config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP); err != nil {
+				return fmt.Errorf("falling back to OpenVPN protocol: %s", err)
 			}
 		}
 	}

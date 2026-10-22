@@ -10,7 +10,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
-var ErrNordWhisperDisabled = errors.New("NordWhisper technology was disabled in compile time")
+var ErrNordWhisperDisabled = errors.New("NordWhisper protocol was disabled in compile time")
 
 func getVpnFactory(
 	eventsDbPath string,
@@ -33,7 +33,7 @@ func getVpnFactory(
 
 	if nordLynxErr != nil {
 		// don't exit with `err` here in case the factory will be called with
-		// technology different than `config.Technology_NORDLYNX`
+		// vpn protocol different than `config.VPNProtocol_VPN_PROTOCOL_NORDLYNX`
 		log.Error("getting NordLynx vpn:", nordLynxErr)
 	}
 
@@ -42,18 +42,21 @@ func getVpnFactory(
 		log.Error("getting NordWhisper vpn:", nordWhisperErr)
 	}
 
-	return func(tech config.Technology) (vpn.VPN, error) {
-		switch tech {
-		case config.Technology_NORDLYNX:
+	return func(proto config.VPNProtocol) (vpn.VPN, error) {
+		switch proto {
+		case config.VPNProtocol_VPN_PROTOCOL_NORDLYNX:
 			return nordlynxVPN, nordLynxErr
-		case config.Technology_OPENVPN:
+
+		case config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP, config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP:
 			return openvpn.New(fwmark, eventsPublisher), nil
-		case config.Technology_NORDWHISPER:
+
+		case config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER:
 			return nordWhisperVPN, nordWhisperErr
-		case config.Technology_UNKNOWN_TECHNOLOGY:
+
+		case config.VPNProtocol_VPN_PROTOCOL_UNSPECIFIED:
 			fallthrough
 		default:
-			return nil, errors.New("no such technology")
+			return nil, errors.New("no such protocol")
 		}
 	}
 }

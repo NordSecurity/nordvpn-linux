@@ -30,7 +30,7 @@ abstract class VpnStatus with _$VpnStatus {
           ? Country.fromCodeOrName(status.country)
           : null,
       status: status.state,
-      protocol: convertToVpnProtocol(status.technology, status.protocol),
+      protocol: vpnProtocolFromPb(status.vpnProtocol),
       connectionParameters: status.parameters,
       isMeshnetRouting: status.isMeshPeer,
     );
@@ -60,11 +60,7 @@ abstract class VpnStatus with _$VpnStatus {
         country?.name == statusResponse.country &&
         city?.name == statusResponse.city &&
         hostname == statusResponse.hostname &&
-        protocol ==
-            convertToVpnProtocol(
-              statusResponse.technology,
-              statusResponse.protocol,
-            ) &&
+        protocol == vpnProtocolFromPb(statusResponse.vpnProtocol) &&
         connectionParameters.group == statusResponse.parameters.group;
   }
 }

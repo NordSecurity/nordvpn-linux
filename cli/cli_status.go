@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/client"
-	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/nstrings"
@@ -85,16 +84,15 @@ func Status(resp *pb.StatusResponse) string {
 
 	if resp.Uptime != -1 {
 		b.WriteString(
-			fmt.Sprintf("Current technology: %s\n", resp.Technology.String()),
+			fmt.Sprintf("Protocol: %s\n", resp.VpnProtocol.DisplayName()),
 		)
-		b.WriteString(
-			fmt.Sprintf("Current protocol: %s\n", resp.Protocol.String()),
-		)
+
 		b.WriteString(
 			fmt.Sprintf("Post-quantum VPN: %s\n",
 				internal.Title(nstrings.GetBoolLabel(resp.PostQuantum))),
 		)
-		if resp.Technology == config.Technology_NORDWHISPER {
+
+		if resp.VpnProtocol.IsNordWhisper() {
 			b.WriteString(
 				fmt.Sprintf("ECH: %s\n",
 					internal.Title(nstrings.GetBoolLabel(resp.Ech))),

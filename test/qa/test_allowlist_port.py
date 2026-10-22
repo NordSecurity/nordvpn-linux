@@ -37,18 +37,17 @@ def test_allowlist_add_multiple_port_ranges_cli_output():
 @dynamic_parametrize(
     [
         "port",
-        "tech",
-        "proto",
+        "vpn_protocol",
     ],
     ordered_source=[lib.PORTS + lib.PORTS_RANGE],
-    randomized_source=[lib.TECHNOLOGIES],
-    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}",
-    always_pair=lib.TECHNOLOGIES_BASIC1[0],
+    randomized_source=[lib.VPN_PROTOCOLS],
+    id_pattern="{port.protocol}-{port.value}-{vpn_protocol}",
+    always_pair=lib.VPN_PROTOCOLS_BASIC1[0],
 )
-def test_allowlist_does_not_create_new_routes_when_adding_deleting_port_disconnected(tech, proto, port):
+def test_allowlist_does_not_create_new_routes_when_adding_deleting_port_disconnected(vpn_protocol, port):
     """Manual TC: LVPN-8956"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
     output_before_add = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     allowlist.add_ports_to_allowlist([port])
     assert not firewall.is_active(), "Firewall is not configured"
@@ -64,17 +63,16 @@ def test_allowlist_does_not_create_new_routes_when_adding_deleting_port_disconne
 @dynamic_parametrize(
     [
         "port",
-        "tech",
-        "proto",
+        "vpn_protocol",
     ],
     ordered_source=[lib.PORTS + lib.PORTS_RANGE],
-    randomized_source=[lib.TECHNOLOGIES],
-    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}",
-    always_pair=lib.TECHNOLOGIES_BASIC1[0],
+    randomized_source=[lib.VPN_PROTOCOLS],
+    id_pattern="{port.protocol}-{port.value}-{vpn_protocol}",
+    always_pair=lib.VPN_PROTOCOLS_BASIC1[0],
 )
-def test_allowlist_does_not_create_new_routes_when_adding_deleting_port_connected(tech, proto, port):
+def test_allowlist_does_not_create_new_routes_when_adding_deleting_port_connected(vpn_protocol, port):
     """Manual TC: LVPN-8957"""
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     sh.nordvpn.connect()
 
@@ -94,18 +92,17 @@ def test_allowlist_does_not_create_new_routes_when_adding_deleting_port_connecte
 @dynamic_parametrize(
     [
         "port",
-        "tech",
-        "proto",
+        "vpn_protocol",
     ],
     ordered_source=[lib.PORTS],
-    randomized_source=[lib.TECHNOLOGIES],
-    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}",
-    always_pair=lib.TECHNOLOGIES_BASIC1[0],
+    randomized_source=[lib.VPN_PROTOCOLS],
+    id_pattern="{port.protocol}-{port.value}-{vpn_protocol}",
+    always_pair=lib.VPN_PROTOCOLS_BASIC1[0],
 )
-def test_allowlist_port_twice_disconnected(tech, proto, port):
+def test_allowlist_port_twice_disconnected(vpn_protocol, port):
     """Manual TC: LVPN-8958"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     allowlist.add_ports_to_allowlist([port])
 
@@ -124,18 +121,17 @@ def test_allowlist_port_twice_disconnected(tech, proto, port):
 @dynamic_parametrize(
     [
         "port",
-        "tech",
-        "proto",
+        "vpn_protocol",
     ],
     ordered_source=[lib.PORTS],
-    randomized_source=[lib.TECHNOLOGIES_BASIC2],
-    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}",
-    always_pair=lib.TECHNOLOGIES_BASIC1[0],
+    randomized_source=[lib.VPN_PROTOCOLS_BASIC2],
+    id_pattern="{port.protocol}-{port.value}-{vpn_protocol}",
+    always_pair=lib.VPN_PROTOCOLS_BASIC1[0],
 )
-def test_allowlist_port_twice_connected(tech, proto, port):
+def test_allowlist_port_twice_connected(vpn_protocol, port):
     """Manual TC: LVPN-8958"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     sh.nordvpn.connect()
     assert not firewall.is_source_port_reachable([port])
@@ -160,18 +156,17 @@ def test_allowlist_port_twice_connected(tech, proto, port):
 @dynamic_parametrize(
     [
         "port",
-        "tech",
-        "proto",
+        "vpn_protocol",
     ],
     ordered_source=[lib.PORTS + lib.PORTS_RANGE],
-    randomized_source=[lib.TECHNOLOGIES],
-    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}",
-    always_pair=lib.TECHNOLOGIES_BASIC1[0],
+    randomized_source=[lib.VPN_PROTOCOLS],
+    id_pattern="{port.protocol}-{port.value}-{vpn_protocol}",
+    always_pair=lib.VPN_PROTOCOLS_BASIC1[0],
 )
-def test_allowlist_port_and_remove_disconnected(tech, proto, port):
+def test_allowlist_port_and_remove_disconnected(vpn_protocol, port):
     """Manual TC: LVPN-8959"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     allowlist.add_ports_to_allowlist([port])
     assert not firewall.is_active() and firewall.is_source_port_reachable([port]), "Firewall is not configured and traffic from the port is reachable"
@@ -183,18 +178,17 @@ def test_allowlist_port_and_remove_disconnected(tech, proto, port):
 @dynamic_parametrize(
     [
         "port",
-        "tech",
-        "proto",
+        "vpn_protocol",
     ],
     ordered_source=[lib.PORTS + lib.PORTS_RANGE],
-    randomized_source=[lib.TECHNOLOGIES],
-    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}",
-    always_pair=lib.TECHNOLOGIES_BASIC1[0],
+    randomized_source=[lib.VPN_PROTOCOLS],
+    id_pattern="{port.protocol}-{port.value}-{vpn_protocol}",
+    always_pair=lib.VPN_PROTOCOLS_BASIC1[0],
 )
-def test_allowlist_port_and_remove_connected(tech, proto, port):
+def test_allowlist_port_and_remove_connected(vpn_protocol, port):
     """Manual TC: LVPN-8959"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     sh.nordvpn.connect()
     assert not firewall.is_source_port_reachable([port])
@@ -209,18 +203,17 @@ def test_allowlist_port_and_remove_connected(tech, proto, port):
 @dynamic_parametrize(
     [
         "port",
-        "tech",
-        "proto",
+        "vpn_protocol",
     ],
     ordered_source=[lib.PORTS],
-    randomized_source=[lib.TECHNOLOGIES],
-    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}",
-    always_pair=lib.TECHNOLOGIES_BASIC1[0],
+    randomized_source=[lib.VPN_PROTOCOLS],
+    id_pattern="{port.protocol}-{port.value}-{vpn_protocol}",
+    always_pair=lib.VPN_PROTOCOLS_BASIC1[0],
 )
-def test_allowlist_port_remove_nonexistent_disconnected(tech, proto, port):
+def test_allowlist_port_remove_nonexistent_disconnected(vpn_protocol, port):
     """Manual TC: LVPN-8960"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         if port.protocol == lib.Protocol.ALL:
@@ -235,18 +228,17 @@ def test_allowlist_port_remove_nonexistent_disconnected(tech, proto, port):
 @dynamic_parametrize(
     [
         "port",
-        "tech",
-        "proto",
+        "vpn_protocol",
     ],
     ordered_source=[lib.PORTS],
-    randomized_source=[lib.TECHNOLOGIES],
-    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}",
-    always_pair=lib.TECHNOLOGIES_BASIC1[0],
+    randomized_source=[lib.VPN_PROTOCOLS],
+    id_pattern="{port.protocol}-{port.value}-{vpn_protocol}",
+    always_pair=lib.VPN_PROTOCOLS_BASIC1[0],
 )
-def test_allowlist_port_remove_nonexistent_connected(tech, proto, port):
+def test_allowlist_port_remove_nonexistent_connected(vpn_protocol, port):
     """Manual TC: LVPN-8960"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     sh.nordvpn.connect()
 
@@ -263,20 +255,19 @@ def test_allowlist_port_remove_nonexistent_connected(tech, proto, port):
 @dynamic_parametrize(
     [
         "port",
-        "tech",
-        "proto",
+        "vpn_protocol",
     ],
     ordered_source=[lib.PORTS_RANGE],
-    randomized_source=[lib.TECHNOLOGIES],
-    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}",
-    always_pair=lib.TECHNOLOGIES_BASIC1[0],
+    randomized_source=[lib.VPN_PROTOCOLS],
+    id_pattern="{port.protocol}-{port.value}-{vpn_protocol}",
+    always_pair=lib.VPN_PROTOCOLS_BASIC1[0],
 )
-def test_allowlist_port_range_remove_nonexistent_disconnected(tech, proto, port):
+def test_allowlist_port_range_remove_nonexistent_disconnected(vpn_protocol, port):
     """Manual TC: LVPN-8961"""
 
     port_range = port.value.split(":")
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         if port.protocol == lib.Protocol.ALL:
@@ -291,20 +282,19 @@ def test_allowlist_port_range_remove_nonexistent_disconnected(tech, proto, port)
 @dynamic_parametrize(
     [
         "port",
-        "tech",
-        "proto",
+        "vpn_protocol",
     ],
     ordered_source=[lib.PORTS_RANGE],
-    randomized_source=[lib.TECHNOLOGIES],
-    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}",
-    always_pair=lib.TECHNOLOGIES_BASIC1[0],
+    randomized_source=[lib.VPN_PROTOCOLS],
+    id_pattern="{port.protocol}-{port.value}-{vpn_protocol}",
+    always_pair=lib.VPN_PROTOCOLS_BASIC1[0],
 )
-def test_allowlist_port_range_remove_nonexistent_connected(tech, proto, port):
+def test_allowlist_port_range_remove_nonexistent_connected(vpn_protocol, port):
     """Manual TC: LVPN-8961"""
 
     port_range = port.value.split(":")
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     sh.nordvpn.connect()
 
@@ -321,18 +311,17 @@ def test_allowlist_port_range_remove_nonexistent_connected(tech, proto, port):
 @dynamic_parametrize(
     [
         "port",
-        "tech",
-        "proto",
+        "vpn_protocol",
     ],
     ordered_source=[lib.PORTS_RANGE],
-    randomized_source=[lib.TECHNOLOGIES],
-    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}",
-    always_pair=lib.TECHNOLOGIES_BASIC1[0],
+    randomized_source=[lib.VPN_PROTOCOLS],
+    id_pattern="{port.protocol}-{port.value}-{vpn_protocol}",
+    always_pair=lib.VPN_PROTOCOLS_BASIC1[0],
 )
-def test_allowlist_port_range_twice_disconnected(tech, proto, port):
+def test_allowlist_port_range_twice_disconnected(vpn_protocol, port):
     """Manual TC: LVPN-8962"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     for _ in range(2):
         allowlist.add_ports_to_allowlist([port])
@@ -343,18 +332,17 @@ def test_allowlist_port_range_twice_disconnected(tech, proto, port):
 @dynamic_parametrize(
     [
         "port",
-        "tech",
-        "proto",
+        "vpn_protocol",
     ],
     ordered_source=[lib.PORTS_RANGE],
-    randomized_source=[lib.TECHNOLOGIES],
-    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}",
-    always_pair=lib.TECHNOLOGIES_BASIC1[0],
+    randomized_source=[lib.VPN_PROTOCOLS],
+    id_pattern="{port.protocol}-{port.value}-{vpn_protocol}",
+    always_pair=lib.VPN_PROTOCOLS_BASIC1[0],
 )
-def test_allowlist_port_range_twice_connected(tech, proto, port):
+def test_allowlist_port_range_twice_connected(vpn_protocol, port):
     """Manual TC: LVPN-8962"""
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     sh.nordvpn.connect()
 
@@ -367,21 +355,20 @@ def test_allowlist_port_range_twice_connected(tech, proto, port):
 @dynamic_parametrize(
     [
         "port",
-        "tech",
-        "proto",
+        "vpn_protocol",
     ],
     ordered_source=[lib.PORTS_RANGE],
-    randomized_source=[lib.TECHNOLOGIES],
-    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}",
-    always_pair=lib.TECHNOLOGIES_BASIC1[0],
+    randomized_source=[lib.VPN_PROTOCOLS],
+    id_pattern="{port.protocol}-{port.value}-{vpn_protocol}",
+    always_pair=lib.VPN_PROTOCOLS_BASIC1[0],
 )
-def test_allowlist_port_range_when_port_from_range_already_allowlisted_disconnected(tech, proto, port):
+def test_allowlist_port_range_when_port_from_range_already_allowlisted_disconnected(vpn_protocol, port):
     """Manual TC: LVPN-8963"""
 
     port_range = port.value.split(":")
     random_port_from_port_range = str(random.randint(int(port_range[0]), int(port_range[1])))
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     already_allowlisted_port = lib.Port(random_port_from_port_range, port.protocol)
     allowlist.add_ports_to_allowlist([already_allowlisted_port])
@@ -394,21 +381,20 @@ def test_allowlist_port_range_when_port_from_range_already_allowlisted_disconnec
 @dynamic_parametrize(
     [
         "port",
-        "tech",
-        "proto",
+        "vpn_protocol",
     ],
     ordered_source=[lib.PORTS_RANGE],
-    randomized_source=[lib.TECHNOLOGIES],
-    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}",
-    always_pair=lib.TECHNOLOGIES_BASIC1[0],
+    randomized_source=[lib.VPN_PROTOCOLS],
+    id_pattern="{port.protocol}-{port.value}-{vpn_protocol}",
+    always_pair=lib.VPN_PROTOCOLS_BASIC1[0],
 )
-def test_allowlist_port_range_when_port_from_range_already_allowlisted_connected(tech, proto, port):
+def test_allowlist_port_range_when_port_from_range_already_allowlisted_connected(vpn_protocol, port):
     """Manual TC: LVPN-8963"""
 
     port_range = port.value.split(":")
     random_port_from_port_range = str(random.randint(int(port_range[0]), int(port_range[1])))
 
-    lib.set_technology_and_protocol(tech, proto)
+    lib.set_vpn_protocol(vpn_protocol)
 
     sh.nordvpn.connect()
 

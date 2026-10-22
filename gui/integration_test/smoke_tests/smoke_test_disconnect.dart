@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
-import 'package:nordvpn/pb/daemon/config/protocol.pbenum.dart';
-import 'package:nordvpn/pb/daemon/config/technology.pbenum.dart';
+import 'package:nordvpn/pb/daemon/config/vpn_protocol.pbenum.dart';
 import 'package:nordvpn/pb/daemon/settings.pb.dart';
 import 'package:nordvpn/service_locator.dart';
 
@@ -10,12 +9,11 @@ import '../../test/utils/test_helpers.dart';
 
 void runDisconnectTest(
   String name,
-  Technology technology,
-  Protocol protocol, {
+  VPNProtocol vpnProtocol, {
   String? country,
 }) {
   testWidgets("- $name", (tester) async {
-    final settings = Settings(technology: technology, protocol: protocol);
+    final settings = Settings(vpnProtocol: vpnProtocol);
 
     final app = await tester.setupIntegrationTests(appSettings: settings);
 
@@ -87,51 +85,43 @@ void main() {
 void runDisconnectSmokeTests() {
   group("Disconnect Smoke Tests", () {
     // Manual TCID: LVPN-6375
-    runDisconnectTest('nordlynx', Technology.NORDLYNX, Protocol.UDP);
+    runDisconnectTest('nordlynx', VPNProtocol.VPN_PROTOCOL_NORDLYNX);
 
     // Manual TCID: LVPN-7527
-    runDisconnectTest(
-      'nordwhisper',
-      Technology.NORDWHISPER,
-      Protocol.Webtunnel,
-    );
+    runDisconnectTest('nordwhisper', VPNProtocol.VPN_PROTOCOL_NORDWHISPER);
 
     // Manual TCID: LVPN-6378
-    runDisconnectTest('openvpn tcp', Technology.OPENVPN, Protocol.TCP);
+    runDisconnectTest('openvpn tcp', VPNProtocol.VPN_PROTOCOL_OPENVPN_TCP);
 
     // Manual TCID: LVPN-6379
-    runDisconnectTest('openvpn udp', Technology.OPENVPN, Protocol.UDP);
+    runDisconnectTest('openvpn udp', VPNProtocol.VPN_PROTOCOL_OPENVPN_UDP);
   });
   group("Disconnect Smoke Tests", () {
     // Manual TCID: LVPN-6279
     runDisconnectTest(
       'nordlynx specific country',
-      Technology.NORDLYNX,
-      Protocol.UDP,
+      VPNProtocol.VPN_PROTOCOL_NORDLYNX,
       country: "France",
     );
 
     // Manual TCID: LVPN-6638
     runDisconnectTest(
       'nordwhisper specific country',
-      Technology.NORDWHISPER,
-      Protocol.Webtunnel,
+      VPNProtocol.VPN_PROTOCOL_NORDWHISPER,
       country: "France",
     );
 
     // Manual TCID: LVPN-6360
     runDisconnectTest(
       'openvpn tcp specific country',
-      Technology.OPENVPN,
-      Protocol.TCP,
+      VPNProtocol.VPN_PROTOCOL_OPENVPN_TCP,
       country: "France",
     );
 
     // Manual TCID: LVPN-6361
     runDisconnectTest(
       'openvpn udp specific country',
-      Technology.OPENVPN,
-      Protocol.UDP,
+      VPNProtocol.VPN_PROTOCOL_OPENVPN_UDP,
       country: "France",
     );
   });

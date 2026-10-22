@@ -11,7 +11,24 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
-var tagRegExp = regexp.MustCompile(`^[a-z]{2}[0-9]{2,4}$`)
+var tagRegExp = regexp.MustCompile(`^([a-zA-Z]{2})-?([a-zA-Z]*)(\d+)$`)
+
+// UnitedKingdomServerTagFix converts "uk" server tag to "gb". This is done for server picking purposes. Servers
+// returned by the core API use GB country code but we also want to allow the UK country code.
+func UnitedKingdomServerTagFix(tag string) string {
+	if strings.EqualFold(tag, "uk") {
+		return "gb"
+	}
+	return tag
+}
+
+func IsServerTag(tag string) bool {
+	return tagRegExp.MatchString(tag)
+}
+
+func MatchTagToHostname(tag string, server core.Server) bool {
+	return strings.EqualFold(tag, strings.Split(server.Hostname, ".")[0])
+}
 
 // resolveServerGroup returns the detected group and clears the tag from the request when the group
 // was provided via the tag instead of --group.
@@ -56,9 +73,7 @@ func serverTagFromString(
 		return core.ServerTag{Action: core.ServerByUnknown, ID: 0}, nil
 	}
 
-	if strings.EqualFold(tag, "uk") {
-		tag = "gb"
-	}
+	tag = UnitedKingdomServerTagFix(tag)
 
 	if country, city := findCountryAndCity(tag, countries); country != nil {
 		if city != nil {
@@ -68,7 +83,7 @@ func serverTagFromString(
 	}
 
 	for _, server := range servers {
-		if strings.EqualFold(tag, strings.Split(server.Hostname, ".")[0]) {
+		if MatchTagToHostname(tag, server) {
 			return core.ServerTag{Action: core.ServerByName, ID: server.ID}, nil
 		}
 		if serverTag := matchInputToServerLocation(server, tag); serverTag != nil {

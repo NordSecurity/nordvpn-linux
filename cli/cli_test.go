@@ -41,9 +41,6 @@ func TestCLICommands(t *testing.T) {
 					Name: "firewall",
 				},
 				{
-					Name: "technology",
-				},
-				{
 					Name: "autoconnect",
 					Subcommands: []*cli.Command{
 						{

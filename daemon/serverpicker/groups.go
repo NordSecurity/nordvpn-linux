@@ -5,10 +5,10 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core"
 )
 
-// EffectiveGroups returns the groups the server offers to a user of the given technology.
-func EffectiveGroups(s core.Server, tech config.Technology) core.Groups {
+// EffectiveGroups returns the groups the server offers to a user of the given protocol.
+func EffectiveGroups(s core.Server, protocol config.VPNProtocol) core.Groups {
 	groups := withoutRetiredGroups(s.Groups)
-	return withObfuscatedAlias(groups, s, tech)
+	return withObfuscatedAlias(groups, s, protocol)
 }
 
 // withoutRetiredGroups drops the OBFUSCATED tag the API puts on the retired OpenVPN XOR servers.

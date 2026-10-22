@@ -82,29 +82,6 @@ class SetDNSStatus extends $pb.ProtobufEnum {
   const SetDNSStatus._(super.value, super.name);
 }
 
-class SetProtocolStatus extends $pb.ProtobufEnum {
-  static const SetProtocolStatus PROTOCOL_CONFIGURED =
-      SetProtocolStatus._(0, _omitEnumNames ? '' : 'PROTOCOL_CONFIGURED');
-  static const SetProtocolStatus PROTOCOL_CONFIGURED_VPN_ON =
-      SetProtocolStatus._(
-          1, _omitEnumNames ? '' : 'PROTOCOL_CONFIGURED_VPN_ON');
-  static const SetProtocolStatus INVALID_TECHNOLOGY =
-      SetProtocolStatus._(2, _omitEnumNames ? '' : 'INVALID_TECHNOLOGY');
-
-  static const $core.List<SetProtocolStatus> values = <SetProtocolStatus>[
-    PROTOCOL_CONFIGURED,
-    PROTOCOL_CONFIGURED_VPN_ON,
-    INVALID_TECHNOLOGY,
-  ];
-
-  static final $core.List<SetProtocolStatus?> _byValue =
-      $pb.ProtobufEnum.$_initByValueList(values, 2);
-  static SetProtocolStatus? valueOf($core.int value) =>
-      value < 0 || value >= _byValue.length ? null : _byValue[value];
-
-  const SetProtocolStatus._(super.value, super.name);
-}
-
 class SetLANDiscoveryStatus extends $pb.ProtobufEnum {
   static const SetLANDiscoveryStatus DISCOVERY_CONFIGURED =
       SetLANDiscoveryStatus._(0, _omitEnumNames ? '' : 'DISCOVERY_CONFIGURED');

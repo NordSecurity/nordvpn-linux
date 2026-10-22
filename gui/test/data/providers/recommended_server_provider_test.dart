@@ -1,61 +1,12 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nordvpn/data/models/app_settings.dart';
-import 'package:nordvpn/data/providers/app_state_provider.dart';
 import 'package:nordvpn/data/providers/recommended_server_provider.dart';
-import 'package:nordvpn/data/repository/vpn_repository.dart';
-import 'package:nordvpn/data/repository/vpn_settings_repository.dart';
-import 'package:nordvpn/pb/daemon/config/protocol.pbenum.dart';
-import 'package:nordvpn/pb/daemon/config/technology.pbenum.dart';
+import 'package:nordvpn/pb/daemon/config/vpn_protocol.pbenum.dart';
 import 'package:nordvpn/pb/daemon/settings.pb.dart';
 // servers.pb.dart exports a different Technology (the per-server one), so hide it here
 import 'package:nordvpn/pb/daemon/servers.pb.dart' hide Technology;
 
-final class _FakeVpnRepository implements VpnRepository {
-  final List<RecommendedServerLocation> locations;
-  int fetchCount = 0;
-
-  _FakeVpnRepository(this.locations);
-
-  @override
-  Future<RecommendedServerLocation> fetchRecommendedServerLocation() async {
-    final location = locations[fetchCount.clamp(0, locations.length - 1)];
-    fetchCount++;
-    return location;
-  }
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
-
-final class _FakeVpnSettingsRepository implements VpnSettingsRepository {
-  final ApplicationSettings settings;
-
-  _FakeVpnSettingsRepository(this.settings);
-
-  @override
-  Future<ApplicationSettings> fetchSettings() async => settings;
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
-
-final class _FakeAppStateChange implements AppStateChange {
-  VpnSettingsObserver? observer;
-
-  @override
-  void addSettingsObserver(VpnSettingsObserver observer) {
-    this.observer = observer;
-  }
-
-  @override
-  void removeSettingsObserver(VpnSettingsObserver observer) {
-    this.observer = null;
-  }
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
+import '../../utils/provider_fakes.dart';
 
 void main() {
   final dallas = RecommendedServerLocation(
@@ -69,28 +20,23 @@ void main() {
     cityName: "Bucharest",
   );
 
-  ApplicationSettings settingsFor(Technology technology, Protocol protocol) {
-    return ApplicationSettings.fromSettings(
-      Settings(technology: technology, protocol: protocol),
-    );
+  ApplicationSettings settingsFor(VPNProtocol vpnProtocol) {
+    return ApplicationSettings.fromSettings(Settings(vpnProtocol: vpnProtocol));
   }
 
   // Builds the provider and returns it alongside the fakes it was given.
-  Future<(RecommendedServer, _FakeVpnRepository)> build({
+  Future<(RecommendedServer, FakeVpnRepository)> build({
     required ApplicationSettings initialSettings,
   }) async {
-    final vpnRepository = _FakeVpnRepository([dallas, bucharest]);
-    final appState = _FakeAppStateChange();
-    final container = ProviderContainer(
-      overrides: [
-        vpnRepositoryProvider.overrideWithValue(vpnRepository),
-        vpnSettingsProvider.overrideWithValue(
-          _FakeVpnSettingsRepository(initialSettings),
-        ),
-        appStateProvider.overrideWithValue(appState),
-      ],
+    final vpnRepository = FakeVpnRepository(locations: [dallas, bucharest]);
+    final appState = FakeAppStateChange();
+    final container = createContainer(
+      vpnRepository: vpnRepository,
+      vpnSettingsRepository: FakeVpnSettingsRepository(
+        settings: initialSettings,
+      ),
+      appState: appState,
     );
-    addTearDown(container.dispose);
 
     await container.read(recommendedServerProvider.future);
     final notifier = container.read(recommendedServerProvider.notifier);
@@ -106,7 +52,7 @@ void main() {
 
   test("the first settings change after startup refetches the location", () async {
     final (notifier, vpnRepository) = await build(
-      initialSettings: settingsFor(Technology.NORDLYNX, Protocol.UDP),
+      initialSettings: settingsFor(VPNProtocol.VPN_PROTOCOL_NORDLYNX),
     );
 
     expect(vpnRepository.fetchCount, 1, reason: "the initial fetch on build");
@@ -115,7 +61,7 @@ void main() {
     // The very first change the observer ever sees must still be acted on. Before the
     // baseline was seeded in build(), this change only filled it in and was swallowed.
     await notifier.onSettingsChanged(
-      settingsFor(Technology.NORDWHISPER, Protocol.Webtunnel),
+      settingsFor(VPNProtocol.VPN_PROTOCOL_NORDWHISPER),
     );
 
     expect(vpnRepository.fetchCount, 2, reason: "the protocol changed");
@@ -126,11 +72,11 @@ void main() {
     "a settings change that leaves the protocol alone does not refetch",
     () async {
       final (notifier, vpnRepository) = await build(
-        initialSettings: settingsFor(Technology.NORDLYNX, Protocol.UDP),
+        initialSettings: settingsFor(VPNProtocol.VPN_PROTOCOL_NORDLYNX),
       );
 
       await notifier.onSettingsChanged(
-        settingsFor(Technology.NORDLYNX, Protocol.UDP),
+        settingsFor(VPNProtocol.VPN_PROTOCOL_NORDLYNX),
       );
 
       expect(vpnRepository.fetchCount, 1);

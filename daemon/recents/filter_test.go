@@ -133,7 +133,7 @@ func TestMatches(t *testing.T) {
 			},
 		},
 		{
-			name: "connection technology match, not NordWisper",
+			name: "connection protocol match, not NordWhisper",
 			target: Model{
 				Country:        "Germany",
 				City:           "Berlin",
@@ -176,7 +176,7 @@ func TestMatches(t *testing.T) {
 			},
 		},
 		{
-			name: "NordWisper connection technology match",
+			name: "NordWhisper connection protocol match",
 			target: Model{
 				Country:        "Germany",
 				City:           "Berlin",

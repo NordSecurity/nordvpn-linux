@@ -67,8 +67,7 @@ func TestRPCCities(t *testing.T) {
 			dm.serversData.Servers = test.servers
 
 			if cm, ok := test.cm.(*mockConfigManager); ok {
-				cm.c.AutoConnectData.Protocol = config.Protocol_UDP
-				cm.c.Technology = config.Technology_NORDLYNX
+				cm.c.VPNProtocol = config.VPNProtocol_VPN_PROTOCOL_NORDLYNX
 			}
 
 			rpc := RPC{

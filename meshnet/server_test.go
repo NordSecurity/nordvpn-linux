@@ -154,7 +154,7 @@ func newMockedServer(
 
 	registryApi := mock.RegistryMock{}
 	configManager := mock.NewMockConfigManager()
-	configManager.Cfg.Technology = config.Technology_NORDLYNX
+	configManager.Cfg.VPNProtocol = config.VPNProtocol_VPN_PROTOCOL_NORDLYNX
 
 	server := NewServer(
 		meshRenewChecker{},
@@ -1467,11 +1467,11 @@ func TestServer_fetchCfg(t *testing.T) {
 				cfg.Mesh = false
 				cfg.MeshDevice = nil
 				cfg.DeviceKey = ""
-				cfg.Technology = config.Technology_UNKNOWN_TECHNOLOGY
+				cfg.VPNProtocol = config.VPNProtocol_VPN_PROTOCOL_UNSPECIFIED
 				expectedCfg.Mesh = false
 				expectedCfg.MeshDevice = nil
 				expectedCfg.DeviceKey = ""
-				expectedCfg.Technology = config.Technology_UNKNOWN_TECHNOLOGY
+				expectedCfg.VPNProtocol = config.VPNProtocol_VPN_PROTOCOL_UNSPECIFIED
 
 				assert.Equal(t, expectedCfg, cfg)
 			}

@@ -13,7 +13,7 @@ MULTI_LINE_PARAM_SEP = "#"
 
 class Settings:
     def __init__(self):
-        output = sh.nordvpn("settings")
+        output = sh.nordvpn("settings", _tty_out=False)
 
         self.settings = {}
         prev_key = ""
@@ -67,7 +67,7 @@ def get_set_subcommands() -> set:
     Returns the names of the subcommands `nordvpn set` currently offers (+aliases).
 
     Shell-completion list prints one command name per line and skips the hidden ones
-    for the active technology.
+    for the active protocol.
     """
     completions = sh.nordvpn.set("--generate-bash-completion", _tty_out=False)
 
@@ -85,13 +85,6 @@ def get_server_ip() -> str:
     return sh.nordvpn.status().split('\n')[3].replace('IP: ', '')
 
 
-def get_current_connection_protocol():
-    """Returns str current connection protocol from `nordvpn settings`."""
-    settings = Settings()
-    if settings.get("Technology") == "NORDLYNX":
-        return "nordlynx"
-
-    return settings.get("Protocol").lower()
 
 
 def is_meshnet_enabled():
@@ -174,7 +167,7 @@ def app_has_defaults_settings(expectedKillswitch = False):
     """Returns True, if application settings match the default settings."""
     settings = sh.nordvpn.settings()
     return (
-        "Technology: NORDLYNX" in settings and
+        "Protocol: NordLynx" in settings and
         "Firewall: enabled" in settings and
         "Firewall Mark: 0xe1f1" in settings and
         "Routing: enabled" in settings and
