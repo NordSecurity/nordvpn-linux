@@ -131,7 +131,7 @@ func populateMapFs(t *testing.T, mapfs *fstest.MapFS, directoryName string, file
 	t.Helper()
 
 	(*mapfs)[directoryName] = &fstest.MapFile{Mode: fs.ModeDir}
-	for filename := 0; filename < fileCount; filename++ {
+	for filename := range fileCount {
 		(*mapfs)[directoryName+"/"+strconv.Itoa(filename)] = &fstest.MapFile{}
 	}
 }
@@ -189,7 +189,7 @@ func getTransfers(t *testing.T, numberOfTransfers int) map[string]*pb.Transfer {
 	t.Helper()
 
 	transfersMap := make(map[string]*pb.Transfer, numberOfTransfers)
-	for transfer := 0; transfer < numberOfTransfers; transfer++ {
+	for transfer := range numberOfTransfers {
 		transferID := strconv.Itoa(transfer)
 		pbTransfer := &pb.Transfer{
 			Id: transferID,
@@ -394,7 +394,7 @@ func TestSendDirectoryFilesystemErrorHandling(t *testing.T) {
 
 	directoryTooDeepName := "directory_too_deep"
 	currentDir := directoryTooDeepName
-	for directory := 0; directory < 8; directory++ {
+	for directory := range 8 {
 		mockFs.MapFS[currentDir] = &fstest.MapFile{Mode: fs.ModeDir}
 		currentDir = currentDir + "/" + strconv.Itoa(directory)
 	}

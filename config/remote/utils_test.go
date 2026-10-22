@@ -31,7 +31,7 @@ func TestGroupDistribution(t *testing.T) {
 	defer uuid.DisableRandPool()
 
 	groups := make([]int, iterations)
-	for i := 0; i < iterations; i++ {
+	for i := range iterations {
 		id := uuid.New()
 		g := GenerateRolloutGroup(id)
 		groups[i] = g

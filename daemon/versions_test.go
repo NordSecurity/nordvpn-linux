@@ -225,7 +225,7 @@ func TestParseRpmVersions_EdgeCases(t *testing.T) {
 				// Create a large input with many versions
 				var builder strings.Builder
 				builder.WriteString(`<?xml version="1.0" encoding="UTF-8"?>`)
-				for i := 0; i < 100; i++ {
+				for i := range 100 {
 					builder.WriteString(fmt.Sprintf(`<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" rel="%d" ver="1.0.%d" /></package>`, i%100, i%100))
 				}
 				return []byte(builder.String())

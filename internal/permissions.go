@@ -3,6 +3,7 @@ package internal
 import (
 	"fmt"
 	"os/user"
+	"slices"
 )
 
 var allowedGroups []string = []string{"nordvpn"}
@@ -25,10 +26,8 @@ func IsInAllowedGroup(uid uint32) (bool, error) {
 		if err != nil {
 			return false, fmt.Errorf("authenticate user, check user group: %s", err)
 		}
-		for _, allowGroupName := range allowedGroups {
-			if groupInfo.Name == allowGroupName {
-				return true, nil
-			}
+		if slices.Contains(allowedGroups, groupInfo.Name) {
+			return true, nil
 		}
 	}
 

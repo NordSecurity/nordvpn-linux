@@ -48,7 +48,7 @@ func (n NorduserSnap) stopAll(disable bool) {
 	}
 	uids = strings.Trim(uids, "\n")
 
-	for _, uid := range strings.Split(uids, "\n") {
+	for uid := range strings.SplitSeq(uids, "\n") {
 		uidInt, err := strconv.ParseUint(strings.TrimSpace(uid), 10, 32)
 		if err != nil {
 			log.Errorf("Invalid unix user id, failed to convert from string: %s", uid)

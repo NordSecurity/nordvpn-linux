@@ -20,8 +20,8 @@ func (connectServer) SetHeader(metadata.MD) error  { return nil }
 func (connectServer) SendHeader(metadata.MD) error { return nil }
 func (connectServer) SetTrailer(metadata.MD)       {}
 func (connectServer) Context() context.Context     { return nil }
-func (connectServer) SendMsg(m interface{}) error  { return nil }
-func (connectServer) RecvMsg(m interface{}) error  { return nil }
+func (connectServer) SendMsg(m any) error          { return nil }
+func (connectServer) RecvMsg(m any) error          { return nil }
 func (a *connectServer) Send(data *pb.Payload) error {
 	switch data.GetType() {
 	case internal.CodeFailure:

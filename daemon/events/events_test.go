@@ -19,21 +19,21 @@ func TestNewDaemonSubjects(t *testing.T) {
 // isValid returns true if given val is not nil. In case val is struct,
 // it checks if any of exported fields are not nil
 // Also, returns the minimum number of a private map field elements
-func isValid(val interface{}) (bool, int) {
+func isValid(val any) (bool, int) {
 	return isValidGetMin(val, math.MaxInt32)
 }
 
-func isValidGetMin(val interface{}, min int) (bool, int) {
+func isValidGetMin(val any, min int) (bool, int) {
 	v := reflect.ValueOf(val)
-	if v.Kind() == reflect.Ptr {
+	if v.Kind() == reflect.Pointer {
 		if v.IsNil() {
 			return false, -1
 		}
 		v = reflect.ValueOf(v.Elem().Interface())
 	}
 	if v.Kind() == reflect.Struct {
-		for i := 0; i < v.NumField(); i++ {
-			field := v.Field(i)
+		for _, field := range v.Fields() {
+			field := field
 			subMin := min
 			if !isPrivate(field) {
 				var valid bool
