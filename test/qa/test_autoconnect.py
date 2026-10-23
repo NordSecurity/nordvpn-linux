@@ -6,6 +6,7 @@ from lib import daemon, network, settings, IS_NIGHTLY
 from lib.shell import sh_no_tty
 from lib.dynamic_parametrize import dynamic_parametrize
 from lib import capture_utils
+from test_routing import get_network_interface
 
 pytestmark = pytest.mark.usefixtures("nordvpnd_scope_function")
 
@@ -42,6 +43,7 @@ def autoconnect_base_test(vpn_protocol, group):
     else:
         pytest.fail(f"Unexpected group: {group}")
 
+    assert get_network_interface(vpn_protocol) in sh.ip.a(), f"{get_network_interface(vpn_protocol)} should be present in `ip a` output"
     if vpn_protocol in lib.OVPN_VPN_PROTOCOLS:
         capture_utils.verify_ovpn_traffic(vpn_protocol)
 
