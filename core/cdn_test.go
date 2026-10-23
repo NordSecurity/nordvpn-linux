@@ -5,7 +5,6 @@ import (
 	"compress/gzip"
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -59,11 +58,7 @@ func setupCdnApi() (*CDNAPI, context.CancelFunc) {
 		}
 	}
 
-	userAgent, err := request.GetUserAgentValue(Version, sysinfo.GetHostOSPrettyName)
-	if err != nil {
-		userAgent = fmt.Sprintf("%s/%s (unknown)", request.AppName, Version)
-		log.Errorf("Error while constructing UA value: %s. Falls back to default: %s", err, userAgent)
-	}
+	userAgent := request.GetUserAgentValue(Version, sysinfo.NewHostInfo().OSPrettyName)
 
 	httpGlobalCtx, httpCancel := context.WithCancel(context.Background())
 

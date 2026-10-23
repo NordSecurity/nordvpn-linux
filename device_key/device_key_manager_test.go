@@ -8,6 +8,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
+	"github.com/NordSecurity/nordvpn-linux/sysinfo"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	"github.com/google/uuid"
@@ -73,6 +74,8 @@ func (g *generator) Private() string {
 	return g.privateKey
 }
 
+var testHostInfo = sysinfo.HostInfo{OSName: "Ubuntu"}
+
 type registry struct {
 	mesh.Registry
 	registerErrors []error
@@ -86,8 +89,10 @@ func (m *registry) getUnsetWasCalled() bool {
 	return wasCalled
 }
 
-const registryUUID = "00000000-0000-0000-0000-000000000001"
-const registryIP = "0.0.0.1"
+const (
+	registryUUID = "00000000-0000-0000-0000-000000000001"
+	registryIP   = "0.0.0.1"
+)
 
 func (r *registry) popRegisterErr() error {
 	if len(r.registerErrors) == 0 {
@@ -124,7 +129,7 @@ func TestForceRegister_NotYetRegistered(t *testing.T) {
 	delayChecker := delayChecker{}
 
 	cm := &mock.ConfigManager{}
-	rc := NewDeviceKeyManager(cm, &generator{privateKey: privateKey}, &registry{}, &mockDedicatedServersAPI{})
+	rc := NewDeviceKeyManager(cm, &generator{privateKey: privateKey}, &registry{}, &mockDedicatedServersAPI{}, testHostInfo)
 	rc.delayFunc = delayChecker.Delay
 
 	err := rc.ForceRegisterMeshnet()
@@ -133,6 +138,18 @@ func TestForceRegister_NotYetRegistered(t *testing.T) {
 	assert.Equal(t, registryUUID, cm.Cfg.MeshDevice.ID.String())
 	assert.Equal(t, registryIP, cm.Cfg.MeshDevice.Address.String())
 	assert.True(t, delayChecker.called, "App did not block after registering a new mesh key.")
+}
+
+func TestForceRegister_UnknownOSName(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	cm := &mock.ConfigManager{}
+	rc := NewDeviceKeyManager(cm, &generator{privateKey: privateKey}, &registry{}, &mockDedicatedServersAPI{},
+		sysinfo.HostInfo{})
+	rc.delayFunc = func(time.Duration) {}
+
+	err := rc.ForceRegisterMeshnet()
+	assert.Error(t, err)
 }
 
 func TestForceRegister_AlreadyRegistered(t *testing.T) {
@@ -149,7 +166,7 @@ func TestForceRegister_AlreadyRegistered(t *testing.T) {
 			},
 		},
 	}
-	rc := NewDeviceKeyManager(cm, &generator{privateKey: privateKey}, &registry{}, &mockDedicatedServersAPI{})
+	rc := NewDeviceKeyManager(cm, &generator{privateKey: privateKey}, &registry{}, &mockDedicatedServersAPI{}, testHostInfo)
 	rc.delayFunc = delayChecker.Delay
 
 	err := rc.ForceRegisterMeshnet()
@@ -179,7 +196,8 @@ func TestCheckAndRegisterMeshnet_NotYetRegistered(t *testing.T) {
 				MeshDevice: &mesh.Machine{
 					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					Address: netip.MustParseAddr("0.0.0.2"),
-				}},
+				},
+			},
 			newPrivateKey: true,
 		},
 		{
@@ -194,7 +212,8 @@ func TestCheckAndRegisterMeshnet_NotYetRegistered(t *testing.T) {
 				DeviceKey: "0002",
 				MeshDevice: &mesh.Machine{
 					Address: netip.MustParseAddr("0.0.0.2"),
-				}},
+				},
+			},
 		},
 		{
 			name: "no address",
@@ -202,14 +221,15 @@ func TestCheckAndRegisterMeshnet_NotYetRegistered(t *testing.T) {
 				DeviceKey: "0002",
 				MeshDevice: &mesh.Machine{
 					ID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
-				}},
+				},
+			},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			cm := &mock.ConfigManager{Cfg: test.cfg}
-			rc := NewDeviceKeyManager(cm, &generator{privateKey: privateKey}, &registry{}, &mockDedicatedServersAPI{})
+			rc := NewDeviceKeyManager(cm, &generator{privateKey: privateKey}, &registry{}, &mockDedicatedServersAPI{}, testHostInfo)
 			delayChecker := delayChecker{}
 			rc.delayFunc = delayChecker.Delay
 			ok := rc.CheckAndRegisterMeshnet()
@@ -237,7 +257,7 @@ func TestCheckAndRegisterMeshnet_AlreadyRegistered(t *testing.T) {
 		},
 	}
 	delayChecker := delayChecker{}
-	rc := NewDeviceKeyManager(cm, &generator{privateKey: privateKey}, &registry{}, &mockDedicatedServersAPI{})
+	rc := NewDeviceKeyManager(cm, &generator{privateKey: privateKey}, &registry{}, &mockDedicatedServersAPI{}, testHostInfo)
 	rc.delayFunc = delayChecker.Delay
 	ok := rc.CheckAndRegisterMeshnet()
 	assert.True(t, ok)
@@ -259,7 +279,7 @@ func TestForceRegisterMeshnet_ConflictHandling(t *testing.T) {
 	delayChecker := delayChecker{}
 	registryMock := &registry{}
 	registryMock.registerErrors = []error{core.ErrConflict}
-	rc := NewDeviceKeyManager(cm, &generator{privateKey: newPrivateKey}, registryMock, &mockDedicatedServersAPI{})
+	rc := NewDeviceKeyManager(cm, &generator{privateKey: newPrivateKey}, registryMock, &mockDedicatedServersAPI{}, testHostInfo)
 	rc.delayFunc = delayChecker.Delay
 
 	err := rc.ForceRegisterMeshnet()
@@ -326,7 +346,8 @@ func TestCheckAndRegisterDedicatedServers(t *testing.T) {
 			rc := NewDeviceKeyManager(cm,
 				&generator{privateKey: test.generatedPrivateKey},
 				&registry{},
-				&mockDedicatedServer)
+				&mockDedicatedServer,
+				testHostInfo)
 
 			deviceData := rc.CheckAndRegisterDedicatedServers()
 			assert.NotNil(t, deviceData)
@@ -357,10 +378,11 @@ func TestCheckAndRegisterDedicatedServers_ConflictHandling(t *testing.T) {
 		updateDeviceResponse: core.DevicesResponse{
 			UUID: deviceUUID.String(),
 		},
-		registerDeviceErr: core.ErrConflict}
+		registerDeviceErr: core.ErrConflict,
+	}
 	meshRegistryMock := registry{}
 
-	rc := NewDeviceKeyManager(&configManagerMock, &keyGeneratorMock, &meshRegistryMock, &dedicatedServersAPIMock)
+	rc := NewDeviceKeyManager(&configManagerMock, &keyGeneratorMock, &meshRegistryMock, &dedicatedServersAPIMock, testHostInfo)
 	deviceData := rc.CheckAndRegisterDedicatedServers()
 	assert.NotNil(t, deviceData)
 	assert.True(t, dedicatedServersAPIMock.wasRegisterDeviceCalled)
@@ -382,7 +404,7 @@ func TestDeviceKeyManager_DedicatedServersMeshnetInteraction(t *testing.T) {
 	dedicatedServersAPIMock := mockDedicatedServersAPI{deviceUUID: deviceUUID.String()}
 	meshRegistryMock := registry{}
 
-	rc := NewDeviceKeyManager(&configManagerMock, &keyGeneratorMock, &meshRegistryMock, &dedicatedServersAPIMock)
+	rc := NewDeviceKeyManager(&configManagerMock, &keyGeneratorMock, &meshRegistryMock, &dedicatedServersAPIMock, testHostInfo)
 	delayChecker := delayChecker{}
 	rc.delayFunc = delayChecker.Delay
 
