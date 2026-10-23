@@ -70,8 +70,9 @@ def test_not_autoconnect(vpn_protocol):
 
     lib.set_vpn_protocol(vpn_protocol)
 
-    output = sh.nordvpn.set.autoconnect.off()
-    print(output)
+    with lib.Defer(sh.nordvpn.set.autoconnect.off):
+        output = sh.nordvpn.set.autoconnect.on()
+        print(output)
 
     daemon.restart()
     assert network.is_disconnected(), "Network should be disconnected when autoconnect is off"
