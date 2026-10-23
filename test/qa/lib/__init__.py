@@ -175,6 +175,18 @@ PORTS_RANGE = [
     Port("3000:3100", Protocol.ALL),
 ]
 
+QUICK_CONNECT_COUNTRIES = [
+    "Austria",
+    "Belgium",
+    "Czech_Republic",
+    "Denmark",
+    "Finland",
+    "France",
+    "Germany",
+    "Netherlands",
+    "Poland",
+    "Switzerland",
+]
 
 # Implements context manager a.k.a. with block and executes command on exit if exception was thrown.
 class ErrorDefer:
