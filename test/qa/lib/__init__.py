@@ -82,6 +82,9 @@ OBFUSCATED_GROUPS = [
     "Obfuscated"
 ]
 
+ALL_GROUPS = ADDITIONAL_GROUPS + ADDITIONAL_GROUPS_NORDWHISPER + DEDICATED_IP_GROUPS + OBFUSCATED_GROUPS
+
+
 # Used for test parametrization, when the same test has to be run for different countries.
 COUNTRIES = [
     "Germany",
@@ -175,6 +178,18 @@ PORTS_RANGE = [
     Port("3000:3100", Protocol.ALL),
 ]
 
+QUICK_CONNECT_COUNTRIES = [
+    "Austria",
+    "Belgium",
+    "Czech_Republic",
+    "Denmark",
+    "Finland",
+    "France",
+    "Germany",
+    "Netherlands",
+    "Poland",
+    "Switzerland",
+]
 
 # Implements context manager a.k.a. with block and executes command on exit if exception was thrown.
 class ErrorDefer:

@@ -5,11 +5,15 @@ import lib
 from lib import daemon, network, settings, IS_NIGHTLY
 from lib.shell import sh_no_tty
 from lib.dynamic_parametrize import dynamic_parametrize
+from lib import capture_utils
+from test_routing import get_network_interface
 
 pytestmark = pytest.mark.usefixtures("nordvpnd_scope_function")
 
 
-def autoconnect_base_test(group):
+def autoconnect_base_test(vpn_protocol, group):
+    lib.set_vpn_protocol(vpn_protocol)
+
     output = sh_no_tty.nordvpn.set.autoconnect.on(group)
     print(output)
     assert settings.MSG_AUTOCONNECT_ENABLE_SUCCESS in output, "Should show autoconnect enable success message"
@@ -20,6 +24,28 @@ def autoconnect_base_test(group):
 
     status_info = daemon.get_status_data()
     assert "Connected" in status_info["status"], "Status should show Connected"
+
+    # Verify, that we get connected to specified target
+    if group == "":
+        assert status_info["country"] in lib.QUICK_CONNECT_COUNTRIES, "Country should be visible in status"
+    elif group == "Standard_VPN_Servers":
+        assert 'group' not in status_info, "Group field should not be visible in status"
+    elif group in lib.COUNTRY_CODES:
+        country_code_index = lib.COUNTRY_CODES.index(group)
+        assert lib.COUNTRIES[country_code_index].replace("_", " ") in status_info["country"], \
+            "Country should be visible in status"
+    elif group in lib.COUNTRIES:
+        assert group.replace("_", " ") in status_info["country"], "Country should be visible in status"
+    elif group in lib.CITIES:
+        assert group.replace("_", " ") in status_info["city"], "City should be visible in status"
+    elif group in lib.ALL_GROUPS:
+        assert group.replace("_", " ") in status_info["group"], "Group should be visible in status"
+    else:
+        pytest.fail(f"Unexpected group: {group}")
+
+    assert get_network_interface(vpn_protocol) in sh.ip.a(), f"{get_network_interface(vpn_protocol)} should be present in `ip a` output"
+    if vpn_protocol in lib.OVPN_VPN_PROTOCOLS:
+        capture_utils.verify_ovpn_traffic(vpn_protocol)
 
     output = sh_no_tty.nordvpn.set.autoconnect.off()
     print(output)
@@ -35,8 +61,7 @@ def autoconnect_base_test(group):
 def test_autoconnect_default(vpn_protocol):
     """Manual TC: LVPN-6779"""
 
-    lib.set_vpn_protocol(vpn_protocol)
-    autoconnect_base_test("")
+    autoconnect_base_test(vpn_protocol, "")
 
 
 @pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
@@ -45,8 +70,9 @@ def test_not_autoconnect(vpn_protocol):
 
     lib.set_vpn_protocol(vpn_protocol)
 
-    output = sh.nordvpn.set.autoconnect.off()
-    print(output)
+    with lib.Defer(sh.nordvpn.set.autoconnect.off):
+        output = sh.nordvpn.set.autoconnect.on()
+        print(output)
 
     daemon.restart()
     assert network.is_disconnected(), "Network should be disconnected when autoconnect is off"
@@ -64,8 +90,7 @@ def test_not_autoconnect(vpn_protocol):
 def test_autoconnect_to_country(vpn_protocol, group):
     """Manual TC: LVPN-6781"""
 
-    lib.set_vpn_protocol(vpn_protocol)
-    autoconnect_base_test(group)
+    autoconnect_base_test(vpn_protocol, group)
 
 
 @dynamic_parametrize(
@@ -80,8 +105,7 @@ def test_autoconnect_to_country(vpn_protocol, group):
 def test_autoconnect_to_city(vpn_protocol, group):
     """Manual TC: LVPN-6784"""
 
-    lib.set_vpn_protocol(vpn_protocol)
-    autoconnect_base_test(group)
+    autoconnect_base_test(vpn_protocol, group)
 
 
 @dynamic_parametrize(
@@ -96,8 +120,7 @@ def test_autoconnect_to_city(vpn_protocol, group):
 def test_autoconnect_to_additional_group(vpn_protocol, group):
     """Manual TC: LVPN-6786"""
 
-    lib.set_vpn_protocol(vpn_protocol)
-    autoconnect_base_test(group)
+    autoconnect_base_test(vpn_protocol, group)
 
 
 @dynamic_parametrize(
@@ -112,8 +135,7 @@ def test_autoconnect_to_additional_group(vpn_protocol, group):
 def test_nordwhisper_autoconnect_to_additional_group(vpn_protocol, group):
     """Manual TC: LVPN-6786"""
 
-    lib.set_vpn_protocol(vpn_protocol)
-    autoconnect_base_test(group)
+    autoconnect_base_test(vpn_protocol, group)
 
 
 @pytest.mark.parametrize("group", lib.DEDICATED_IP_GROUPS)
@@ -121,8 +143,7 @@ def test_nordwhisper_autoconnect_to_additional_group(vpn_protocol, group):
 def test_autoconnect_to_ovpn_group(vpn_protocol, group):
     """Manual TC: LVPN-6786"""
 
-    lib.set_vpn_protocol(vpn_protocol)
-    autoconnect_base_test(group)
+    autoconnect_base_test(vpn_protocol, group)
 
 
 @pytest.mark.parametrize("group", lib.OBFUSCATED_GROUPS)
@@ -130,8 +151,7 @@ def test_autoconnect_to_ovpn_group(vpn_protocol, group):
 def test_autoconnect_to_obfuscated_group(vpn_protocol, group):
     """Manual TC: LVPN-6786"""
 
-    lib.set_vpn_protocol(vpn_protocol)
-    autoconnect_base_test(group)
+    autoconnect_base_test(vpn_protocol, group)
 
 
 @pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
