@@ -82,6 +82,9 @@ OBFUSCATED_GROUPS = [
     "Obfuscated"
 ]
 
+ALL_GROUPS = ADDITIONAL_GROUPS + ADDITIONAL_GROUPS_NORDWHISPER + DEDICATED_IP_GROUPS + OBFUSCATED_GROUPS
+
+
 # Used for test parametrization, when the same test has to be run for different countries.
 COUNTRIES = [
     "Germany",

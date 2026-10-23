@@ -23,6 +23,24 @@ def autoconnect_base_test(group):
     status_info = daemon.get_status_data()
     assert "Connected" in status_info["status"], "Status should show Connected"
 
+    # Verify, that we get connected to specified target
+    if group == "":
+        assert status_info["country"] in lib.QUICK_CONNECT_COUNTRIES, "Country should be visible in status"
+    elif group == "Standard_VPN_Servers":
+        assert 'group' not in status_info, "Group field should not be visible in status"
+    elif group in lib.COUNTRY_CODES:
+        country_code_index = lib.COUNTRY_CODES.index(group)
+        assert lib.COUNTRIES[country_code_index].replace("_", " ") in status_info["country"], \
+            "Country should be visible in status"
+    elif group in lib.COUNTRIES:
+        assert group.replace("_", " ") in status_info["country"], "Country should be visible in status"
+    elif group in lib.CITIES:
+        assert group.replace("_", " ") in status_info["city"], "City should be visible in status"
+    elif group in lib.ALL_GROUPS:
+        assert group.replace("_", " ") in status_info["group"], "Group should be visible in status"
+    else:
+        pytest.fail(f"Unexpected group: {group}")
+
     output = sh_no_tty.nordvpn.set.autoconnect.off()
     print(output)
     assert settings.MSG_AUTOCONNECT_DISABLE_SUCCESS in output, "Should show autoconnect disable success message"
