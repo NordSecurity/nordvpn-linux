@@ -2688,3 +2688,21 @@ func (loginClientAPIStub) Services() (core.ServicesResponse, error) {
 		},
 	}, nil
 }
+
+func payment(created, status string) core.PurchasePayment {
+	return core.PurchasePayment{
+		ID: 1, CreatedAt: created, Status: status,
+		Amount: "100.00", Currency: "USD", Provider: "stripe", SubscriptionID: 1,
+	}
+}
+
+func subscription(id int64, interval int64, unit string) core.PurchaseSubscription {
+	return core.PurchaseSubscription{
+		ID: id, FrequencyInterval: interval, FrequencyUnit: unit,
+		MerchantID: "1", Status: "active",
+	}
+}
+
+func plan(id int64, planType string) core.PurchasePlan {
+	return core.PurchasePlan{ID: id, Type: planType}
+}

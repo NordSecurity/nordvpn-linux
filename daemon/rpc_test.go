@@ -100,6 +100,7 @@ func testRPC() *RPC {
 		core_test.NewMockServersAPI(),
 		&core_test.CredentialsAPIMock{},
 		&core_test.DedicatedServersAPIMock{},
+		core_test.NewMockSubscriptionAPI(),
 		testNewCDNAPI(),
 		testNewRepoAPI(),
 		&core_test.AuthenticationAPImock{},

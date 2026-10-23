@@ -43,6 +43,7 @@ type mockSimpleClientAPI struct {
 	CreateUserFunc                    func(email, password string) (*core.UserCreateResponse, error)
 	OrdersFunc                        func(token string) ([]core.Order, error)
 	PaymentsFunc                      func(token string) ([]core.PaymentResponse, error)
+	PurchasesFunc                     func(token string) (core.PurchasesResult, error)
 	RegisterFunc                      func(token string, peer mesh.Machine) (*mesh.Machine, error)
 	UpdateFunc                        func(token string, id uuid.UUID, info mesh.MachineUpdateRequest) error
 	ConfigureFunc                     func(token string, id uuid.UUID, peerID uuid.UUID, peerUpdateInfo mesh.PeerUpdateRequest) error
@@ -153,6 +154,10 @@ func (m *mockSimpleClientAPI) Orders(token string) ([]core.Order, error) {
 
 func (m *mockSimpleClientAPI) Payments(token string) ([]core.PaymentResponse, error) {
 	return m.PaymentsFunc(token)
+}
+
+func (m *mockSimpleClientAPI) Purchases(token string) (core.PurchasesResult, error) {
+	return m.PurchasesFunc(token)
 }
 
 func (m *mockSimpleClientAPI) Register(token string, peer mesh.Machine) (*mesh.Machine, error) {
