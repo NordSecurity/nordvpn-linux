@@ -7,6 +7,8 @@ import pyshark
 
 from enum import Enum
 
+from lib import network, settings
+
 class IPProtocol(str, Enum):
     TCP = '6'
     UDP = '17'
@@ -117,3 +119,19 @@ def is_routed_through_host(packets: list, peer_ip, endpoint_ip) -> bool:
 
 def has_tunnel_packets(packets: list) -> bool:
     return any(ifindex_to_name(packet.sll.ifindex) == "nordlynx" for packet in packets)
+
+
+def verify_ovpn_traffic(vpn_protocol):
+    """Verify OpenVPN tunnel traffic uses the expected transport protocol."""
+    cap = BackgroundCapture("any", display_filter=f"ip.addr == {settings.get_server_ip()}")
+    cap.start()
+    network.generate_traffic()
+    cap.stop()
+
+    assert len(cap.packets) > 0, f"No packets captured for {vpn_protocol}"
+
+    for p in cap.packets:
+        if vpn_protocol == "openvpn_tcp":
+            assert p.ip.proto == IPProtocol.TCP, "TCP packets should travel to VPN server"
+        else:
+            assert p.ip.proto == IPProtocol.UDP, "UDP packets should travel to VPN server"
