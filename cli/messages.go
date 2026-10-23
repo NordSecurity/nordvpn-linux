@@ -21,14 +21,11 @@ We couldn’t process your payment. Please try again.`
 
 	MsgNordVPNGroup = "By default, all users who are members of the 'nordvpn' group have permission to control the NordVPN application.\nTo limit access exclusively to the root user, remove all users from the 'nordvpn' group."
 
-	RateNoArgsMessage    = "Type [1–5] to rate your previous connection (1 – poor, 5 – great): "
-	RateNoConnectionMade = "It seems you haven’t connected to the VPN yet. Please rate your experience after your first connection."
-	RateAlreadyRated     = "You have already provided a rating for your active/previous connection."
-	RateSuccess          = "Thank you for your feedback!"
+	RateNoArgsMessage = "Type [1–5] to rate your previous connection (1 – very dissatisfied, 5 – very satisfied): "
+	RateThanksMessage = "Thank you for your feedback!"
 
 	SetReconnect = "You're connected to the VPN. Please reconnect to apply the setting."
 
-	MsgNothingToRate = "To rate a connection, first connect to one of our servers."
 	// MsgSetSuccess is a generic success message template.
 	MsgSetSuccess = "%s has been successfully set to '%s'."
 	// MsgAlreadySet is a generic noop message template.
@@ -109,7 +106,7 @@ Example: nordvpn set %s on`
 	AccountCantFetchVPNService    = "We couldn't load your %s service data. If the issue persists, please contact our customer support."
 	UpdateAvailableMessage        = "A new version of NordVPN is available!\nPlease update the app."
 	DisconnectNotConnected        = "You are not connected to NordVPN."
-	DisconnectConnectionRating    = "How would you rate your connection quality on a scale from 1 (poor) to 5 (excellent)? Type '%s rate [1-5]'."
+	DisconnectConnectionRating    = "How satisfied are you with your VPN connection? Rate from 1 (very dissatisfied) to 5 (very satisfied). Type '%s rate [1-5]'"
 
 	CitiesNotFoundError = "Servers by city are not available for this country."
 

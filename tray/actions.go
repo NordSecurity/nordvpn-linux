@@ -330,7 +330,7 @@ func (ti *Instance) disconnect(itemName pb.UIEvent_ItemName, itemValue pb.UIEven
 		switch out.Type {
 		case internal.CodeVPNNotRunning:
 			ti.n.Alert(cli.DisconnectNotConnected).Show()
-		case internal.CodeDisconnected:
+		case internal.CodeDisconnected, internal.CodeDisconnectedWithFeedbackRequest:
 		}
 	}
 	return true

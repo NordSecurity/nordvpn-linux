@@ -58,7 +58,7 @@ func itemNameToString(name pb.UIEvent_ItemName) string {
 	case pb.UIEvent_LOGOUT:
 		return "logout"
 	case pb.UIEvent_RATE_CONNECTION:
-		return "rate_connection"
+		return "vpn_csat_score"
 	case pb.UIEvent_MESHNET_INVITE_SEND:
 		return "meshnet_invite_send"
 	case pb.UIEvent_PAUSE:
@@ -129,6 +129,16 @@ func itemValueToString(value pb.UIEvent_ItemValue) string {
 		return "dedicated_server"
 	case pb.UIEvent_ITEM_VALUE_LEARN_MORE:
 		return "learn_more"
+	case pb.UIEvent_CSAT_SCORE_1:
+		return "1"
+	case pb.UIEvent_CSAT_SCORE_2:
+		return "2"
+	case pb.UIEvent_CSAT_SCORE_3:
+		return "3"
+	case pb.UIEvent_CSAT_SCORE_4:
+		return "4"
+	case pb.UIEvent_CSAT_SCORE_5:
+		return "5"
 	}
 	return ""
 }

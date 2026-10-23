@@ -68,6 +68,12 @@ message UIEvent {
     DEDICATED_SERVER = 15;
 
     ITEM_VALUE_LEARN_MORE = 16;
+
+    CSAT_SCORE_1     = 17;
+    CSAT_SCORE_2     = 18;
+    CSAT_SCORE_3     = 19;
+    CSAT_SCORE_4     = 20;
+    CSAT_SCORE_5     = 21;
   }
 
   FormReference form_reference = 1;
