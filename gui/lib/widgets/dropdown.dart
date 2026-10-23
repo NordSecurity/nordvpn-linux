@@ -28,6 +28,7 @@ class _DropdownState<T> extends State<Dropdown<T>> {
   late T _value;
   // FocusNode to track focus state for dropdown
   final FocusNode _focusNode = FocusNode();
+  final MenuController _menuController = MenuController();
   bool _isFocused = false;
 
   @override
@@ -55,53 +56,108 @@ class _DropdownState<T> extends State<Dropdown<T>> {
     final dropdownTheme = context.dropdownTheme;
     final appTheme = context.appTheme;
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: dropdownTheme.color,
-        border: Border.all(
-          color: widget.showError
-              ? dropdownTheme.errorBorderColor
-              : _isFocused
-              ? dropdownTheme.focusBorderColor
-              : dropdownTheme.borderColor,
-          width: dropdownTheme.borderWidth,
+    final borderRadius = BorderRadius.circular(dropdownTheme.borderRadius);
+    final padding = EdgeInsets.symmetric(
+      horizontal: dropdownTheme.horizontalPadding,
+    );
+    final selected = widget.items.where((e) => e.value == _value).firstOrNull;
+    final itemStyle =
+        MenuItemButton.styleFrom(
+          padding: padding,
+          overlayColor: Colors.transparent,
+        ).copyWith(
+          backgroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.hovered) ||
+                states.contains(WidgetState.focused)) {
+              return dropdownTheme.itemHoverColor;
+            }
+            return dropdownTheme.color;
+          }),
+        );
+
+    return LayoutBuilder(
+      builder: (context, constraints) => MenuAnchor(
+        controller: _menuController,
+        childFocusNode: _focusNode,
+        crossAxisUnconstrained: false,
+        onOpen: () => setState(() {}),
+        onClose: () => setState(() {}),
+        style: MenuStyle(
+          backgroundColor: WidgetStatePropertyAll(dropdownTheme.color),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(borderRadius: borderRadius),
+          ),
+          minimumSize: WidgetStatePropertyAll(
+            Size(constraints.hasBoundedWidth ? constraints.maxWidth : 0, 0),
+          ),
         ),
-        borderRadius: BorderRadius.circular(dropdownTheme.borderRadius),
-      ),
-      child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: dropdownTheme.horizontalPadding,
-        ),
-        child: DropdownButton<T>(
-          key: ValueKey(_value),
-          focusNode: _focusNode,
-          dropdownColor: dropdownTheme.color,
-          focusColor: dropdownTheme.focusBorderColor,
-          borderRadius: BorderRadius.circular(dropdownTheme.borderRadius),
-          underline: SizedBox(),
-          isExpanded: true,
-          icon: DynamicThemeImage("dropdown_icon.svg"),
-          value: _value,
-          items: widget.items.map((e) {
-            return DropdownMenuItem<T>(
-              value: e.value,
-              child: Text(e.label, style: appTheme.body, maxLines: 1),
-            );
-          }).toList(),
-          onChanged: widget.enabled ? _onChanged : null,
+        menuChildren: widget.items.map((e) {
+          return MenuItemButton(
+            autofocus: e.value == _value,
+            onPressed: () => _onChanged(e.value),
+            style: itemStyle,
+            child: Text(e.label, style: appTheme.body, maxLines: 1),
+          );
+        }).toList(),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: dropdownTheme.color,
+            border: Border.all(
+              color: widget.showError
+                  ? dropdownTheme.errorBorderColor
+                  : _isFocused
+                  ? dropdownTheme.focusBorderColor
+                  : dropdownTheme.borderColor,
+              width: dropdownTheme.borderWidth,
+            ),
+            borderRadius: borderRadius,
+          ),
+          child: Semantics(
+            button: true,
+            expanded: _menuController.isOpen,
+            child: InkWell(
+              focusNode: _focusNode,
+              onTap: widget.enabled ? _toggleMenu : null,
+              focusColor: dropdownTheme.focusBorderColor,
+              borderRadius: borderRadius,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  minHeight: kMinInteractiveDimension,
+                ),
+                child: Padding(
+                  padding: padding,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          selected?.label ?? "",
+                          style: appTheme.body,
+                          maxLines: 1,
+                        ),
+                      ),
+                      DynamicThemeImage("dropdown_icon.svg"),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
 
-  void _onChanged(T? value) {
-    assert(value != null, "dropdown values cannot be null");
-    if (value != null) {
-      widget.onChanged(value);
-      setState(() {
-        _value = value;
-      });
+  void _toggleMenu() {
+    if (_menuController.isOpen) {
+      _menuController.close();
+    } else {
+      _menuController.open();
     }
+  }
+
+  void _onChanged(T value) {
+    widget.onChanged(value);
+    setState(() => _value = value);
   }
 }
 

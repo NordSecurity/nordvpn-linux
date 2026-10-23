@@ -12,6 +12,7 @@ final class DropdownTheme extends ThemeExtension<DropdownTheme>
   final double borderRadius;
   final Color borderColor;
   final Color focusBorderColor;
+  final Color itemHoverColor;
   final Color errorBorderColor;
   final double borderWidth;
   final double horizontalPadding;
@@ -21,6 +22,7 @@ final class DropdownTheme extends ThemeExtension<DropdownTheme>
     required this.borderRadius,
     required this.borderColor,
     required this.focusBorderColor,
+    required this.itemHoverColor,
     required this.errorBorderColor,
     required this.borderWidth,
     required this.horizontalPadding,
