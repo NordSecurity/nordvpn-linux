@@ -7,7 +7,7 @@ go 1.26.10
 // may also need to update versions in `./lib-versions.env` file.
 require (
 	github.com/NordSecurity/libdrop-go/v9 v9.0.0
-	github.com/NordSecurity/libtelio-go/v6 v6.2.4
+	github.com/NordSecurity/libtelio-go/v6 v6.2.5
 )
 
 require (
