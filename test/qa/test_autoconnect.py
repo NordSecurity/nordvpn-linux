@@ -1,3 +1,5 @@
+import time
+
 import pytest
 import sh
 
@@ -148,3 +150,13 @@ def test_autoconnect_to_unavailable_groups(vpn_protocol):
 
         print(ex.value)
         assert lib.is_connect_unsuccessful(ex), "Connection should be unsuccessful"
+
+
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
+def test_autoconnect_off_after_set_defaults_with_autoconnect_enabled(vpn_protocol):
+    lib.set_vpn_protocol(vpn_protocol)
+    sh.nordvpn.set.autoconnect.on()
+    sh.nordvpn.set.defaults()
+    daemon.restart()
+    time.sleep(10)
+    assert daemon.is_disconnected(), "Autoconnect should not work, after setting defaults"
