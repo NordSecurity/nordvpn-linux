@@ -3,10 +3,13 @@ package internal
 import (
 	"fmt"
 	"os/user"
+	"slices"
 )
 
-var allowedGroups []string = []string{"nordvpn"}
-var ErrNoPermission error = fmt.Errorf("requesting user does not have permissions")
+var (
+	allowedGroups   []string = []string{"nordvpn"}
+	ErrNoPermission error    = fmt.Errorf("requesting user does not have permissions")
+)
 
 // IsInAllowedGroup returns true if user with the given UID is in nordvpn privileged group
 func IsInAllowedGroup(uid uint32) (bool, error) {
@@ -25,10 +28,8 @@ func IsInAllowedGroup(uid uint32) (bool, error) {
 		if err != nil {
 			return false, fmt.Errorf("authenticate user, check user group: %s", err)
 		}
-		for _, allowGroupName := range allowedGroups {
-			if groupInfo.Name == allowGroupName {
-				return true, nil
-			}
+		if slices.Contains(allowedGroups, groupInfo.Name) {
+			return true, nil
 		}
 	}
 

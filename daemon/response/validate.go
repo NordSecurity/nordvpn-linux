@@ -142,8 +142,8 @@ func parseRSAPublicKey(rawKey []byte) (*rsa.PublicKey, error) {
 
 func parseKeyVal(str string) (map[string]string, error) {
 	keyVal := map[string]string{}
-	pairs := strings.Split(str, ",")
-	for _, pair := range pairs {
+	pairs := strings.SplitSeq(str, ",")
+	for pair := range pairs {
 		parts := strings.Split(pair, "=")
 		if len(parts) != 2 {
 			return nil, fmt.Errorf("invalid key-value format")
@@ -161,6 +161,7 @@ func getSignAlgoName(name string) string {
 	}
 	return ""
 }
+
 func getHashFunction(name string) func([]byte) []byte {
 	switch name {
 	case "sha256":
@@ -171,5 +172,5 @@ func getHashFunction(name string) func([]byte) []byte {
 
 func getSHA256Hash(data []byte) []byte {
 	sum := sha256.Sum256(data)
-	return []byte(fmt.Sprintf("%x", sum))
+	return fmt.Appendf(nil, "%x", sum)
 }

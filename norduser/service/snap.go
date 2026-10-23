@@ -48,14 +48,14 @@ func (n NorduserSnap) stopAll(disable bool) {
 	}
 	uids = strings.Trim(uids, "\n")
 
-	for _, uid := range strings.Split(uids, "\n") {
+	for uid := range strings.SplitSeq(uids, "\n") {
 		uidInt, err := strconv.ParseUint(strings.TrimSpace(uid), 10, 32)
 		if err != nil {
 			log.Errorf("Invalid unix user id, failed to convert from string: %s", uid)
 			continue
 		}
 
-		//parsed value is within uint32 range
+		// parsed value is within uint32 range
 		// #nosec G115
 		if err := process.NewNorduserGRPCProcessManager(uint32(uidInt)).StopProcess(disable); err != nil {
 			log.Error("Failed to stop norduserd for uid: ", uid)

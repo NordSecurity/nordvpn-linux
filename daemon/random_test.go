@@ -23,7 +23,7 @@ func TestRandFloat(t *testing.T) {
 	}
 
 	for _, item := range testData {
-		for i := 0; i < 500; i++ {
+		for range 500 {
 			got := randFloat(time.Now().Unix(), item.min, item.max)
 			assert.Greater(t, got, item.min)
 			assert.Less(t, got, item.max)

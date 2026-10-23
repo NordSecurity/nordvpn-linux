@@ -118,7 +118,7 @@ func setHostLines(content []byte, hosts Hosts) []byte {
 func removeHostLinesFrom(content []byte) []byte {
 	lines := [][]byte{}
 	// Remove the .nord lines
-	for _, line := range bytes.Split(content, []byte{'\n'}) {
+	for line := range bytes.SplitSeq(content, []byte{'\n'}) {
 		if !bytes.HasSuffix(line, []byte(mark)) {
 			lines = append(lines, line)
 		}

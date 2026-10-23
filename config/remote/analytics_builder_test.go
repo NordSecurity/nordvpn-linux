@@ -120,7 +120,7 @@ func TestDebuggerEventContainsOnlyDesignedFields(t *testing.T) {
 	event := NewDownloadFailureEvent(rolloutGroup, "test-env", FeatureLibtelio, DownloadErrorIntegrity, "Integrity corrupted")
 	debugerEvent := event.ToDebuggerEvent()
 
-	var payload map[string]interface{}
+	var payload map[string]any
 	err := json.Unmarshal([]byte(debugerEvent.JsonData), &payload)
 	require.NoError(t, err, "JSON should be valid")
 

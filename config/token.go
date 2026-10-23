@@ -15,6 +15,6 @@ type TokenData struct {
 	NordLynxPrivateKey     string     `json:"nordlynx_private_key"`
 	OpenVPNUsername        string     `json:"openvpn_username"`
 	OpenVPNPassword        string     `json:"openvpn_password"`
-	NCData                 NCData     `json:"nc_data,omitempty"`
+	NCData                 NCData     `json:"nc_data"`
 	IdempotencyKey         *uuid.UUID `json:"idempotency_key,omitempty"`
 }
