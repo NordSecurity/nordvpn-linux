@@ -5,6 +5,12 @@ import time
 
 import pyshark
 
+from enum import Enum
+
+class IPProtocol(str, Enum):
+    TCP = '6'
+    UDP = '17'
+
 class SLL2LiveCapture(pyshark.LiveCapture):
     def _get_dumpcap_parameters(self):
         params = super()._get_dumpcap_parameters()
