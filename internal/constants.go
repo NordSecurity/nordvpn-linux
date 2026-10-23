@@ -78,6 +78,7 @@ const (
 	Norduserd = "norduserd"
 
 	NorduserdLogFileName = "norduserd" + LogFileExtension
+	NordvpndLogFileName  = "nordvpnd" + LogFileExtension
 	CLILogFileName       = "cli" + LogFileExtension
 	MaxUserLogSizeMB     = 100
 

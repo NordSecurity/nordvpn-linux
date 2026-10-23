@@ -24,7 +24,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
 	"github.com/godbus/dbus/v5"
-	"github.com/snapcore/snapd/client"
 	"golang.org/x/sys/unix"
 	"google.golang.org/protobuf/encoding/prototext"
 )
@@ -36,27 +35,21 @@ const (
 	// maxZipFileSize caps the resulting diagnostics archive (40 MB).
 	maxZipFileSize = 40 * 1024 * 1024
 
-	noDaemonLogSourceMsg = "We couldn't extract daemon logs automatically because the daemon was not started via systemd or snap. Contact our support team for help collecting logs manually."
+	noDaemonLogSourceMsg = "We couldn't extract daemon logs automatically. Contact our support team for help collecting logs manually."
 )
 
 // errZipSizeLimitExceeded is returned when writing more data would push the
 // diagnostics zip past maxZipFileSize.
 var errZipSizeLimitExceeded = errors.New("diagnostics zip exceeds size limit")
 
-// errNoDaemonLogSource is returned by addDaemonLogs when no supervisor was
-// detected and no fallback log file is available.
+// errNoDaemonLogSource is returned when no daemon log source is available:
+// either no supervisor was detected, or the snap log file doesn't exist yet.
 var errNoDaemonLogSource = errors.New(noDaemonLogSourceMsg)
 
 func (r *RPC) CollectDiagnostics(
 	in *pb.Empty,
 	srv pb.Daemon_CollectDiagnosticsServer,
 ) error {
-	if snapconf.IsUnderSnap() {
-		return srv.Send(&pb.DiagnosticsProgress{
-			ErrorCode: pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_NOT_SUPPORTED,
-		})
-	}
-
 	caller, err := resolveDiagnosticsCaller(srv.Context())
 	if err != nil {
 		log.Diagnostics.Error("resolving diagnostics caller failed:", err)
@@ -74,7 +67,7 @@ func (r *RPC) CollectDiagnostics(
 	}
 	defer outputRoot.Close()
 
-	zipFile, err := createDiagnosticsFile(outputRoot)
+	zipFile, err := createDiagnosticsFile(outputRoot, snapconf.IsUnderSnap())
 	if err != nil {
 		log.Diagnostics.Error("failed to create diagnostics zip:", err)
 		return srv.Send(&pb.DiagnosticsProgress{
@@ -487,8 +480,9 @@ func addDaemonLogs(zipWriter *zip.Writer, supervisor daemonSupervisor) error {
 	// *oldest* entries instead of the newest.
 	switch supervisor {
 	case daemonSupervisorSnap:
-		return streamSnapLogs(writer, "nordvpn.nordvpnd")
+		return streamSnapLogs(writer)
 	case daemonSupervisorSystemd:
+		// -r (newest first) so the 500 MB cap drops the oldest entries.
 		return streamCommandToWriter(
 			writer, "journalctl", "-u", "nordvpnd", "--no-pager", "-r",
 		)
@@ -538,41 +532,12 @@ func streamCommandToWriter(
 	return nil
 }
 
-// snapLogsMaxLines bounds how many journal entries snapd will return for the
-// daemon's service. snapd's Logs API emits entries chronologically (oldest →
-// newest within the kept window), so we can't byte-cap from the newest end the
-// way `journalctl -r` allows; instead we cap on line count and let snapd drop
-// the oldest entries beyond this window. At ~200 B/line this is ~20 MB —
-// comfortably below the 500 MB diagnostics-archive cap.
-const snapLogsMaxLines = 100000
-
-// streamSnapLogs fetches the last snapLogsMaxLines entries of the named snap
-// service's logs via snapd's privileged Logs API and writes them
-// chronologically to writer. snapd is the only thing on the snap side with
-// access to the host journal; sdjournal and journalctl run from inside snap
-// confinement see only the snap's private mount-namespace view.
-func streamSnapLogs(writer io.Writer, service string) error {
-	c := client.New(nil)
-	logs, err := c.Logs([]string{service}, client.LogOptions{
-		N:      snapLogsMaxLines,
-		Follow: false,
-	})
-	if err != nil {
-		return err
+func streamSnapLogs(writer io.Writer) error {
+	logPath := snapconf.DaemonLogPath()
+	if _, err := os.Stat(logPath); err != nil {
+		return errNoDaemonLogSource
 	}
-
-	var count int
-	for entry := range logs {
-		count++
-		// nolint:errcheck
-		fmt.Fprintf(writer, "%s %s[%s]: %s\n",
-			entry.Timestamp.Format("Jan 02 15:04:05"),
-			service, entry.PID, entry.Message)
-	}
-	if count == 0 {
-		return fmt.Errorf("snapd returned no log entries for %s", service)
-	}
-	return nil
+	return streamFileToWriter(writer, logPath)
 }
 
 // streamFileToWriter streams the contents of filePath into writer, capped at
@@ -1110,8 +1075,12 @@ func resolvectlStatus(logf logFunc) string {
 }
 
 // createDiagnosticsFile - creates a unique file inside the `rootDir` directory
-func createDiagnosticsFile(rootDir *os.Root) (*os.File, error) {
-	prefix := fmt.Sprintf("nordvpn-diagnostics-%s", time.Now().Format("20060102-150405"))
+func createDiagnosticsFile(rootDir *os.Root, underSnap bool) (*os.File, error) {
+	snapPostfix := ""
+	if underSnap {
+		snapPostfix = "-snap"
+	}
+	prefix := fmt.Sprintf("nordvpn-diagnostics-%s%s", time.Now().Format("20060102-150405"), snapPostfix)
 
 	name := prefix + ".zip"
 	f, err := rootDir.OpenFile(name, os.O_RDWR|os.O_CREATE|os.O_EXCL, internal.PermUserRW)
