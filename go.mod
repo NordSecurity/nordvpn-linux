@@ -1,12 +1,15 @@
 module github.com/NordSecurity/nordvpn-linux
 
+// versions.yaml: go {go}
 go 1.26.10
 
 // Bindings
 // NOTE: If you are chaning the binding versions here, keep in mind that you
 // may also need to update versions in `./lib-versions.env` file.
 require (
+	// versions.yaml: github.com/NordSecurity/libdrop-go/v9 {libdrop}
 	github.com/NordSecurity/libdrop-go/v9 v9.0.0
+	// versions.yaml: github.com/NordSecurity/libtelio-go/v6 {libtelio}
 	github.com/NordSecurity/libtelio-go/v6 v6.2.4
 )
 
@@ -55,7 +58,7 @@ require (
 require (
 	go.opentelemetry.io/otel/sdk v1.46.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v1.46.0 // indirect
-	go.yaml.in/yaml/v3 v3.0.5 // indirect
+	go.yaml.in/yaml/v3 v3.0.5
 )
 
 require (

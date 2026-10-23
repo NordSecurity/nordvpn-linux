@@ -39,6 +39,9 @@ func readVarsFromFile(filename string) (map[string]string, error) {
 
 	env := map[string]string{}
 	for line := range strings.SplitSeq(string(content), "\n") {
+		if strings.HasPrefix(strings.TrimSpace(line), "#") {
+			continue
+		}
 		key, value, ok := strings.Cut(line, "=")
 		if !ok {
 			continue

@@ -1,3 +1,4 @@
+# versions.yaml: FROM ghcr.io/nordsecurity/nordvpn-linux/golang:{image-golang}
 FROM ghcr.io/nordsecurity/nordvpn-linux/golang:ubuntu22.04-20262110@sha256:df63d87fdd8700cf5b8d574152a625ccf86873ea34ebd86fa9f456269348b834
 
 ENV GOBIN=/usr/bin

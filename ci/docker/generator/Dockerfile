@@ -1,3 +1,4 @@
+# versions.yaml: FROM ghcr.io/nordsecurity/nordvpn-linux/golang:{image-golang} AS builder
 FROM ghcr.io/nordsecurity/nordvpn-linux/golang:ubuntu22.04-20262110@sha256:df63d87fdd8700cf5b8d574152a625ccf86873ea34ebd86fa9f456269348b834 AS builder
 
 LABEL org.opencontainers.image.source=https://github.com/NordSecurity/nordvpn-linux
@@ -11,6 +12,7 @@ RUN wget --progress=dot:giga https://github.com/protocolbuffers/protobuf/release
     ln -s /usr/bin/protoc-gen-go-grpc /usr/bin/protoc-gen-go_grpc && \
     go clean -cache -modcache
 
+# versions.yaml: FROM alpine:{alpine-generator}
 FROM alpine:3.20.3
 COPY --from=builder /usr/bin/protoc-gen-go /usr/bin/
 COPY --from=builder /usr/bin/protoc-gen-go_grpc /usr/bin/

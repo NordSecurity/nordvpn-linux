@@ -1,0 +1,35 @@
+# XXX: update docs
+
+# Edit versions here only, then run:
+#
+#   mage versions:sync   # write versions into all files
+#   mage versions:check  # fail if any file differs from this file
+
+versions:
+  # toolchains
+  go: "1.26.10"
+  go-linux-amd64-sha256: "ccfe7ae822d2c2f41f4fe7c956199967a4dac22d0ee0d2b2bfdb440aab3b20c5"
+
+  # libs
+  libtelio: "v6.2.4"
+  libdrop: "v9.0.0"
+
+  # project images
+  image-golang: "ubuntu22.04-20262110@sha256:df63d87fdd8700cf5b8d574152a625ccf86873ea34ebd86fa9f456269348b834"
+  image-builder: "1.4.8"
+  image-flutter: "3.44.7-1.0.1"
+  image-packager: "1.3.7"
+  image-depender: "1.4.6"
+  image-snaper: "1.2.2"
+  image-generator: "1.5.3"
+  image-scanner: "1.1.0"
+  image-tester: "1.6.5"
+  image-qa-peer: "1.0.5"
+  image-ruster: "1.4.2"
+  image-codeql: "1.0.1"
+
+  # third-party base images
+  ubuntu-glibc-baseline: "22.04" # glibc 2.35 for images building or running shipped binaries
+  debian-slim: "bullseye-slim"
+  alpine-generator: "3.20.3"
+  snapcraft: "8_core22@sha256:f24fc9cd8a1f394b48dcd35f8e3f31b127023a4bb79134afeb2728b012bf2007"

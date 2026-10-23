@@ -1,3 +1,4 @@
+# versions.yaml: FROM ubuntu:{ubuntu-glibc-baseline}
 FROM ubuntu:22.04
 # (glibc 2.35)
 # TODO: Change base image to debian:bookworm-slim on 2027-06-01 (glibc 2.36)
@@ -6,7 +7,9 @@ FROM ubuntu:22.04
 LABEL org.opencontainers.image.source=https://github.com/NordSecurity/nordvpn-linux
 
 # Based on: https://github.com/docker-library/golang/blob/master/1.25/bookworm/Dockerfile
+# versions.yaml: ENV GOLANG_VERSION {go}
 ENV GOLANG_VERSION 1.26.10
+# versions.yaml: ENV GOLANG_SHA256 {go-linux-amd64-sha256}
 ENV GOLANG_SHA256 ccfe7ae822d2c2f41f4fe7c956199967a4dac22d0ee0d2b2bfdb440aab3b20c5
 
 RUN apt-get update && \
