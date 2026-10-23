@@ -33,7 +33,6 @@ func isValidGetMin(val any, min int) (bool, int) {
 	}
 	if v.Kind() == reflect.Struct {
 		for _, field := range v.Fields() {
-			field := field
 			subMin := min
 			if !isPrivate(field) {
 				var valid bool
