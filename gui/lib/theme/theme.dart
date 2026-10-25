@@ -756,15 +756,37 @@ final class NordVpnTheme {
   }
 
   DropdownTheme _dropdownThemeExt() {
+    const borderRadius = 4.0;
+    final color = design.semanticColors.bgSecondary;
+
     return DropdownTheme(
-      color: design.semanticColors.bgSecondary,
-      borderRadius: 4,
+      color: color,
+      borderRadius: borderRadius,
       borderColor: design.semanticColors.borderPrimary,
       focusBorderColor: design.semanticColors.borderAccent,
-      itemHoverColor: design.semanticColors.bgTertiary,
       errorBorderColor: design.semanticColors.borderCritical,
-      borderWidth: 1,
-      horizontalPadding: 8,
+      borderWidth: AppBorderWidth.md,
+      horizontalPadding: AppSpacing.spacing2,
+      itemStyle:
+          MenuItemButton.styleFrom(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.spacing2,
+            ),
+            overlayColor: design.colors.transparent,
+          ).copyWith(
+            backgroundColor: _hoverButtonBackgroundColor(
+              defaultColor: color,
+              hoverColor: design.semanticColors.bgTertiary,
+            ),
+          ),
+      menuStyle: MenuStyle(
+        backgroundColor: WidgetStatePropertyAll(color),
+        shape: WidgetStatePropertyAll(
+          RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(borderRadius),
+          ),
+        ),
+      ),
     );
   }
 

@@ -14,10 +14,11 @@ mixin _$DropdownThemeTailorMixin on ThemeExtension<DropdownTheme> {
   double get borderRadius;
   Color get borderColor;
   Color get focusBorderColor;
-  Color get itemHoverColor;
   Color get errorBorderColor;
   double get borderWidth;
   double get horizontalPadding;
+  ButtonStyle get itemStyle;
+  MenuStyle get menuStyle;
 
   @override
   DropdownTheme copyWith({
@@ -25,20 +26,22 @@ mixin _$DropdownThemeTailorMixin on ThemeExtension<DropdownTheme> {
     double? borderRadius,
     Color? borderColor,
     Color? focusBorderColor,
-    Color? itemHoverColor,
     Color? errorBorderColor,
     double? borderWidth,
     double? horizontalPadding,
+    ButtonStyle? itemStyle,
+    MenuStyle? menuStyle,
   }) {
     return DropdownTheme(
       color: color ?? this.color,
       borderRadius: borderRadius ?? this.borderRadius,
       borderColor: borderColor ?? this.borderColor,
       focusBorderColor: focusBorderColor ?? this.focusBorderColor,
-      itemHoverColor: itemHoverColor ?? this.itemHoverColor,
       errorBorderColor: errorBorderColor ?? this.errorBorderColor,
       borderWidth: borderWidth ?? this.borderWidth,
       horizontalPadding: horizontalPadding ?? this.horizontalPadding,
+      itemStyle: itemStyle ?? this.itemStyle,
+      menuStyle: menuStyle ?? this.menuStyle,
     );
   }
 
@@ -54,7 +57,6 @@ mixin _$DropdownThemeTailorMixin on ThemeExtension<DropdownTheme> {
         other.focusBorderColor,
         t,
       )!,
-      itemHoverColor: Color.lerp(itemHoverColor, other.itemHoverColor, t)!,
       errorBorderColor: Color.lerp(
         errorBorderColor,
         other.errorBorderColor,
@@ -62,6 +64,8 @@ mixin _$DropdownThemeTailorMixin on ThemeExtension<DropdownTheme> {
       )!,
       borderWidth: t < 0.5 ? borderWidth : other.borderWidth,
       horizontalPadding: t < 0.5 ? horizontalPadding : other.horizontalPadding,
+      itemStyle: t < 0.5 ? itemStyle : other.itemStyle,
+      menuStyle: t < 0.5 ? menuStyle : other.menuStyle,
     );
   }
 
@@ -84,10 +88,6 @@ mixin _$DropdownThemeTailorMixin on ThemeExtension<DropdownTheme> {
               other.focusBorderColor,
             ) &&
             const DeepCollectionEquality().equals(
-              itemHoverColor,
-              other.itemHoverColor,
-            ) &&
-            const DeepCollectionEquality().equals(
               errorBorderColor,
               other.errorBorderColor,
             ) &&
@@ -98,7 +98,9 @@ mixin _$DropdownThemeTailorMixin on ThemeExtension<DropdownTheme> {
             const DeepCollectionEquality().equals(
               horizontalPadding,
               other.horizontalPadding,
-            ));
+            ) &&
+            const DeepCollectionEquality().equals(itemStyle, other.itemStyle) &&
+            const DeepCollectionEquality().equals(menuStyle, other.menuStyle));
   }
 
   @override
@@ -109,10 +111,11 @@ mixin _$DropdownThemeTailorMixin on ThemeExtension<DropdownTheme> {
       const DeepCollectionEquality().hash(borderRadius),
       const DeepCollectionEquality().hash(borderColor),
       const DeepCollectionEquality().hash(focusBorderColor),
-      const DeepCollectionEquality().hash(itemHoverColor),
       const DeepCollectionEquality().hash(errorBorderColor),
       const DeepCollectionEquality().hash(borderWidth),
       const DeepCollectionEquality().hash(horizontalPadding),
+      const DeepCollectionEquality().hash(itemStyle),
+      const DeepCollectionEquality().hash(menuStyle),
     );
   }
 }
@@ -123,8 +126,9 @@ extension DropdownThemeBuildContextProps on BuildContext {
   double get borderRadius => dropdownTheme.borderRadius;
   Color get borderColor => dropdownTheme.borderColor;
   Color get focusBorderColor => dropdownTheme.focusBorderColor;
-  Color get itemHoverColor => dropdownTheme.itemHoverColor;
   Color get errorBorderColor => dropdownTheme.errorBorderColor;
   double get borderWidth => dropdownTheme.borderWidth;
   double get horizontalPadding => dropdownTheme.horizontalPadding;
+  ButtonStyle get itemStyle => dropdownTheme.itemStyle;
+  MenuStyle get menuStyle => dropdownTheme.menuStyle;
 }

@@ -56,25 +56,6 @@ class _DropdownState<T> extends State<Dropdown<T>> {
     final dropdownTheme = context.dropdownTheme;
     final appTheme = context.appTheme;
 
-    final borderRadius = BorderRadius.circular(dropdownTheme.borderRadius);
-    final padding = EdgeInsets.symmetric(
-      horizontal: dropdownTheme.horizontalPadding,
-    );
-    final selected = widget.items.where((e) => e.value == _value).firstOrNull;
-    final itemStyle =
-        MenuItemButton.styleFrom(
-          padding: padding,
-          overlayColor: Colors.transparent,
-        ).copyWith(
-          backgroundColor: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.hovered) ||
-                states.contains(WidgetState.focused)) {
-              return dropdownTheme.itemHoverColor;
-            }
-            return dropdownTheme.color;
-          }),
-        );
-
     return LayoutBuilder(
       builder: (context, constraints) => MenuAnchor(
         controller: _menuController,
@@ -82,69 +63,80 @@ class _DropdownState<T> extends State<Dropdown<T>> {
         crossAxisUnconstrained: false,
         onOpen: () => setState(() {}),
         onClose: () => setState(() {}),
-        style: MenuStyle(
-          backgroundColor: WidgetStatePropertyAll(dropdownTheme.color),
-          shape: WidgetStatePropertyAll(
-            RoundedRectangleBorder(borderRadius: borderRadius),
-          ),
+        style: dropdownTheme.menuStyle.copyWith(
           minimumSize: WidgetStatePropertyAll(
             Size(constraints.hasBoundedWidth ? constraints.maxWidth : 0, 0),
           ),
         ),
-        menuChildren: widget.items.map((e) {
-          return MenuItemButton(
-            autofocus: e.value == _value,
-            onPressed: () => _onChanged(e.value),
-            style: itemStyle,
-            child: Text(e.label, style: appTheme.body, maxLines: 1),
-          );
-        }).toList(),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: dropdownTheme.color,
-            border: Border.all(
-              color: widget.showError
-                  ? dropdownTheme.errorBorderColor
-                  : _isFocused
-                  ? dropdownTheme.focusBorderColor
-                  : dropdownTheme.borderColor,
-              width: dropdownTheme.borderWidth,
+        menuChildren: _buildMenuItems(dropdownTheme, appTheme),
+        child: _buildTrigger(dropdownTheme, appTheme),
+      ),
+    );
+  }
+
+  List<Widget> _buildMenuItems(DropdownTheme dropdownTheme, AppTheme appTheme) {
+    return widget.items.map((e) {
+      return MenuItemButton(
+        autofocus: e.value == _value,
+        onPressed: () => _onChanged(e.value),
+        style: dropdownTheme.itemStyle,
+        child: Text(e.label, style: appTheme.body, maxLines: 1),
+      );
+    }).toList();
+  }
+
+  Widget _buildTrigger(DropdownTheme dropdownTheme, AppTheme appTheme) {
+    final borderRadius = BorderRadius.circular(dropdownTheme.borderRadius);
+    final selected = widget.items.where((e) => e.value == _value).firstOrNull;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: dropdownTheme.color,
+        border: Border.all(
+          color: _borderColor(dropdownTheme),
+          width: dropdownTheme.borderWidth,
+        ),
+        borderRadius: borderRadius,
+      ),
+      child: Semantics(
+        button: true,
+        expanded: _menuController.isOpen,
+        child: InkWell(
+          focusNode: _focusNode,
+          onTap: widget.enabled ? _toggleMenu : null,
+          focusColor: dropdownTheme.focusBorderColor,
+          borderRadius: borderRadius,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              minHeight: kMinInteractiveDimension,
             ),
-            borderRadius: borderRadius,
-          ),
-          child: Semantics(
-            button: true,
-            expanded: _menuController.isOpen,
-            child: InkWell(
-              focusNode: _focusNode,
-              onTap: widget.enabled ? _toggleMenu : null,
-              focusColor: dropdownTheme.focusBorderColor,
-              borderRadius: borderRadius,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                  minHeight: kMinInteractiveDimension,
-                ),
-                child: Padding(
-                  padding: padding,
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          selected?.label ?? "",
-                          style: appTheme.body,
-                          maxLines: 1,
-                        ),
-                      ),
-                      DynamicThemeImage("dropdown_icon.svg"),
-                    ],
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: dropdownTheme.horizontalPadding,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      selected?.label ?? "",
+                      style: appTheme.body,
+                      maxLines: 1,
+                    ),
                   ),
-                ),
+                  DynamicThemeImage("dropdown_icon.svg"),
+                ],
               ),
             ),
           ),
         ),
       ),
     );
+  }
+
+  Color _borderColor(DropdownTheme dropdownTheme) {
+    if (widget.showError) return dropdownTheme.errorBorderColor;
+    if (_isFocused) return dropdownTheme.focusBorderColor;
+    return dropdownTheme.borderColor;
   }
 
   void _toggleMenu() {
