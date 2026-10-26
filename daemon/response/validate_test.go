@@ -122,10 +122,36 @@ func validHeaders(data []byte) http.Header {
 func TestNewNordValidator(t *testing.T) {
 	category.Set(t, category.Unit)
 	validator, err := NewNordValidator()
-	key, ok := validator.pubKeys["rsa-key-1"]
 	assert.NoError(t, err)
-	assert.True(t, ok)
-	assert.NotNil(t, key)
+	for _, keyID := range []string{"rsa-key-1", "rsa-key-2"} {
+		key, ok := validator.pubKeys[keyID]
+		assert.True(t, ok, keyID)
+		assert.NotNil(t, key, keyID)
+	}
+}
+
+func TestNewNordValidator_KeyMapping(t *testing.T) {
+	category.Set(t, category.Unit)
+	validator, err := NewNordValidator()
+	assert.NoError(t, err)
+
+	tests := []struct {
+		keyID  string
+		rawKey []byte
+	}{
+		{keyID: "rsa-key-1", rawKey: rsaKey1},
+		{keyID: "rsa-key-2", rawKey: rsaKey2},
+	}
+	for _, test := range tests {
+		t.Run(test.keyID, func(t *testing.T) {
+			expected, err := parseSSHPublicKey(test.rawKey)
+			assert.NoError(t, err)
+
+			key, ok := validator.pubKeys[test.keyID]
+			assert.True(t, ok)
+			assert.Equal(t, expected.Marshal(), key.Marshal())
+		})
+	}
 }
 
 func TestNordValidator_Validate(t *testing.T) {
