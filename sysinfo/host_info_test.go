@@ -11,6 +11,11 @@ import (
 func Test_newHostInfo(t *testing.T) {
 	category.Set(t, category.Unit)
 
+	const (
+		fullOSRelease = "NAME=\"Ubuntu\"\nPRETTY_NAME=\"Ubuntu 24.04.1 LTS\""
+		nameOSRelease = "NAME=\"Ubuntu\""
+	)
+
 	tests := []struct {
 		name     string
 		src      hostInfoSources
@@ -19,7 +24,7 @@ func Test_newHostInfo(t *testing.T) {
 		{
 			name: "all sources available",
 			src: hostInfoSources{
-				osName:       value("Ubuntu"),
+				osRelease:    release(nameOSRelease),
 				osPrettyName: value("Ubuntu 24.04.1 LTS"),
 				architecture: x86,
 				deviceType:   desktop,
@@ -32,9 +37,39 @@ func Test_newHostInfo(t *testing.T) {
 			},
 		},
 		{
-			name: "pretty name falls back to OS name on error",
+			name: "pretty name falls back to os-release pretty name on error",
 			src: hostInfoSources{
-				osName:       value("Ubuntu"),
+				osRelease:    release(fullOSRelease),
+				osPrettyName: fail,
+				architecture: x86,
+				deviceType:   desktop,
+			},
+			expected: HostInfo{
+				OSName:       "Ubuntu",
+				OSPrettyName: "Ubuntu 24.04.1 LTS",
+				Architecture: "x86_64",
+				DeviceType:   SystemDeviceTypeDesktop,
+			},
+		},
+		{
+			name: "pretty name falls back to os-release pretty name when empty",
+			src: hostInfoSources{
+				osRelease:    release(fullOSRelease),
+				osPrettyName: value(""),
+				architecture: x86,
+				deviceType:   desktop,
+			},
+			expected: HostInfo{
+				OSName:       "Ubuntu",
+				OSPrettyName: "Ubuntu 24.04.1 LTS",
+				Architecture: "x86_64",
+				DeviceType:   SystemDeviceTypeDesktop,
+			},
+		},
+		{
+			name: "pretty name falls back to OS name when missing in os-release",
+			src: hostInfoSources{
+				osRelease:    release(nameOSRelease),
 				osPrettyName: fail,
 				architecture: x86,
 				deviceType:   desktop,
@@ -47,9 +82,9 @@ func Test_newHostInfo(t *testing.T) {
 			},
 		},
 		{
-			name: "pretty name falls back to OS name when empty",
+			name: "pretty name falls back to OS name when empty in os-release",
 			src: hostInfoSources{
-				osName:       value("Ubuntu"),
+				osRelease:    release(nameOSRelease + "\nPRETTY_NAME=\"\""),
 				osPrettyName: value(""),
 				architecture: x86,
 				deviceType:   desktop,
@@ -64,7 +99,7 @@ func Test_newHostInfo(t *testing.T) {
 		{
 			name: "nothing available",
 			src: hostInfoSources{
-				osName:       fail,
+				osRelease:    func() (osRelease, error) { return nil, errors.New("fail") },
 				osPrettyName: fail,
 				architecture: func() string { return "" },
 				deviceType:   func() SystemDeviceType { return SystemDeviceTypeUnknown },
@@ -89,6 +124,9 @@ func Test_NewHostInfo(t *testing.T) {
 	assert.NotEmpty(t, info.Architecture)
 }
 
+func release(content string) func() (osRelease, error) {
+	return func() (osRelease, error) { return osRelease(content), nil }
+}
 func value(v string) func() (string, error) {
 	return func() (string, error) { return v, nil }
 }

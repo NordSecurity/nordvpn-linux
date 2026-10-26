@@ -3,30 +3,19 @@ package sysinfo
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"os"
 )
 
 const etcOSReleaseFile = "/etc/os-release"
 
-// readOSReleaseTag opens the 'etcOSReleaseFile' file and retrieves the specified tag.
-func readOSReleaseTag(tag string) (string, error) {
-	file, err := os.Open(etcOSReleaseFile)
-	if err != nil {
-		return "", err
-	}
-	defer file.Close()
+type osRelease []byte
 
-	return readTagFromOSRelease(file, tag)
+func readOSRelease() (osRelease, error) {
+	return os.ReadFile(etcOSReleaseFile)
 }
 
-func readTagFromOSRelease(r io.Reader, tag string) (string, error) {
-	data, err := io.ReadAll(r)
-	if err != nil {
-		return "", err
-	}
-
-	for line := range bytes.SplitSeq(data, []byte("\n")) {
+func (o osRelease) tag(tag string) (string, error) {
+	for line := range bytes.SplitSeq(o, []byte("\n")) {
 		key, value, ok := bytes.Cut(line, []byte("="))
 		if !ok {
 			continue

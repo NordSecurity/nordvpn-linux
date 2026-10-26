@@ -10,7 +10,7 @@ type HostInfo struct {
 }
 
 type hostInfoSources struct {
-	osName       func() (string, error)
+	osRelease    func() (osRelease, error)
 	osPrettyName func() (string, error)
 	architecture func() string
 	deviceType   func() SystemDeviceType
@@ -18,7 +18,7 @@ type hostInfoSources struct {
 
 func NewHostInfo() HostInfo {
 	return newHostInfo(hostInfoSources{
-		osName:       func() (string, error) { return readOSReleaseTag("NAME") },
+		osRelease:    readOSRelease,
 		osPrettyName: getHostOSPrettyName,
 		architecture: GetHostArchitecture,
 		deviceType:   getDeviceType,
@@ -26,7 +26,12 @@ func NewHostInfo() HostInfo {
 }
 
 func newHostInfo(src hostInfoSources) HostInfo {
-	osName, err := src.osName()
+	osRelease, err := src.osRelease()
+	if err != nil {
+		log.Sysinfo.Warnf("reading %s: %s", etcOSReleaseFile, err)
+	}
+
+	osName, err := osRelease.tag("NAME")
 	if err != nil {
 		log.Sysinfo.Warnf("reading OS name from %s: %s", etcOSReleaseFile, err)
 	}
@@ -34,8 +39,15 @@ func newHostInfo(src hostInfoSources) HostInfo {
 	osPrettyName, err := src.osPrettyName()
 	if err != nil || osPrettyName == "" {
 		log.Sysinfo.Warnf(
-			"retrieving OS pretty name: err '%v', name '%s', fallback to osName %s",
-			err, osPrettyName, osName,
+			"retrieving OS pretty name: err '%v', name '%s', fallback to %s",
+			err, osPrettyName, etcOSReleaseFile,
+		)
+		osPrettyName, err = osRelease.tag("PRETTY_NAME")
+	}
+	if err != nil || osPrettyName == "" {
+		log.Sysinfo.Warnf(
+			"reading OS pretty name from %s: err '%v', name '%s', fallback to osName %s",
+			etcOSReleaseFile, err, osPrettyName, osName,
 		)
 		osPrettyName = osName
 	}
