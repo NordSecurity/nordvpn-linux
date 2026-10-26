@@ -13,6 +13,7 @@ const (
 	AppName           = "NordApp Linux"
 	nordAgentApp      = "NordVPN"
 	nordAgentPlatform = "Linux"
+	unknownDistroName = "unknown"
 )
 
 type nordAgent struct {
@@ -52,7 +53,7 @@ func NewClientIdentity(
 func (c ClientIdentity) UserAgent() string {
 	distroName := c.hostInfo.OSPrettyName
 	if distroName == "" {
-		distroName = "unknown"
+		distroName = unknownDistroName
 	}
 	return fmt.Sprintf("%s/%s (%s)", AppName, c.version, distroName)
 }
