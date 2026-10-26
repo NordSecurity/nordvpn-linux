@@ -4,9 +4,9 @@ import (
 	"net"
 	"testing"
 
+	"github.com/NordSecurity/nordvpn-linux/mapset"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
-	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
 
