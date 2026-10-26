@@ -1,6 +1,11 @@
 // Package mapset provides a generic, map-backed set of comparable elements.
 package mapset
 
+import (
+	"fmt"
+	"strings"
+)
+
 // Set is a collection of unique comparable elements. Implementations are not
 // safe for concurrent use; callers must provide their own synchronization.
 type Set[T comparable] interface {
@@ -24,6 +29,9 @@ type Set[T comparable] interface {
 	// IsSubset reports whether every element of the set is also present in
 	// other. The empty set is a subset of every set, including itself.
 	IsSubset(other Set[T]) bool
+
+	// String returns string representation of the set.
+	String() string
 }
 
 // set is the default map-backed implementation of Set. The map value type is
@@ -38,32 +46,40 @@ func NewSet[T comparable](elements ...T) Set[T] {
 	for _, element := range elements {
 		s[element] = struct{}{}
 	}
-	return &s
+	return s
 }
 
-func (s *set[T]) Add(element T) {
-	(*s)[element] = struct{}{}
+func (s set[T]) Add(element T) {
+	s[element] = struct{}{}
 }
 
-func (s *set[T]) Contains(element T) bool {
-	_, ok := (*s)[element]
+func (s set[T]) Contains(element T) bool {
+	_, ok := s[element]
 	return ok
 }
 
-func (s *set[T]) IsEmpty() bool {
-	return len(*s) == 0
+func (s set[T]) IsEmpty() bool {
+	return len(s) == 0
 }
 
-func (s *set[T]) Length() int {
-	return len(*s)
+func (s set[T]) Length() int {
+	return len(s)
 }
 
-func (s *set[T]) Equal(other Set[T]) bool {
+func (s set[T]) Equal(other Set[T]) bool {
 	if s.Length() != other.Length() {
 		return false
 	}
 
-	for element := range *s {
+	return other.IsSubset(s)
+}
+
+func (s set[T]) IsSubset(other Set[T]) bool {
+	if s.Length() > other.Length() {
+		return false
+	}
+
+	for element := range s {
 		if !other.Contains(element) {
 			return false
 		}
@@ -72,16 +88,10 @@ func (s *set[T]) Equal(other Set[T]) bool {
 	return true
 }
 
-func (s *set[T]) IsSubset(other Set[T]) bool {
-	if s.Length() > other.Length() {
-		return false
+func (s set[T]) String() string {
+	elements := make([]string, 0, len(s))
+	for element := range s {
+		elements = append(elements, fmt.Sprint(element))
 	}
-
-	for element := range *s {
-		if !other.Contains(element) {
-			return false
-		}
-	}
-
-	return true
+	return fmt.Sprintf("[%s]", strings.Join(elements, " "))
 }

@@ -20,8 +20,8 @@ func TestNewSet(t *testing.T) {
 				s := NewSet[int]()
 				assert.NotNil(t, s, "NewSet should not return nil")
 
-				rawMap := s.(*set[int])
-				assert.Empty(t, *rawMap, "expected empty set")
+				rawMap := s.(set[int])
+				assert.Empty(t, rawMap, "expected empty set")
 			},
 		},
 		{
@@ -30,8 +30,8 @@ func TestNewSet(t *testing.T) {
 				s := NewSet[string]()
 				assert.NotNil(t, s, "NewSet should not return nil")
 
-				rawMap := s.(*set[string])
-				assert.Empty(t, *rawMap, "expected empty set")
+				rawMap := s.(set[string])
+				assert.Empty(t, rawMap, "expected empty set")
 			},
 		},
 		{
@@ -40,8 +40,8 @@ func TestNewSet(t *testing.T) {
 				elements := []string{"a", "b", "c"}
 				s := NewSet(elements...)
 
-				rawMap := s.(*set[string])
-				assert.Len(t, *rawMap, len(elements), "expected 3 element set")
+				rawMap := s.(set[string])
+				assert.Len(t, rawMap, len(elements), "expected 3 element set")
 
 				for _, element := range elements {
 					assert.True(t, s.Contains(element), "expected element %s not found in the set", element)
@@ -77,8 +77,8 @@ func TestAddInt(t *testing.T) {
 				s.Add(e)
 			}
 
-			rawMap := s.(*set[int])
-			assert.Len(t, *rawMap, test.wantLen)
+			rawMap := s.(set[int])
+			assert.Len(t, rawMap, test.wantLen)
 		})
 	}
 }
@@ -103,8 +103,8 @@ func TestAddString(t *testing.T) {
 				s.Add(e)
 			}
 
-			rawMap := s.(*set[string])
-			assert.Len(t, *rawMap, test.wantLen)
+			rawMap := s.(set[string])
+			assert.Len(t, rawMap, test.wantLen)
 		})
 	}
 }
@@ -182,11 +182,11 @@ func TestEqual(t *testing.T) {
 		{name: "disjoint sets", a: []int{1, 2}, b: []int{3, 4}, want: false},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			a := NewSet(tt.a...)
-			b := NewSet(tt.b...)
-			assert.Equal(t, tt.want, a.Equal(b))
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			a := NewSet(test.a...)
+			b := NewSet(test.b...)
+			assert.Equal(t, test.want, a.Equal(b))
 		})
 	}
 }
@@ -204,10 +204,10 @@ func TestEqualSymmetry(t *testing.T) {
 		{name: "unequal different length", a: []int{1}, b: []int{1, 2}},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			a := NewSet(tt.a...)
-			b := NewSet(tt.b...)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			a := NewSet(test.a...)
+			b := NewSet(test.b...)
 			assert.Equal(t, a.Equal(b), b.Equal(a), "Equal is not symmetric")
 		})
 	}
@@ -233,11 +233,144 @@ func TestEqualStrings(t *testing.T) {
 		{name: "unequal string sets", a: []string{"a", "b"}, b: []string{"a", "c"}, want: false},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			a := NewSet(tt.a...)
-			b := NewSet(tt.b...)
-			assert.Equal(t, tt.want, a.Equal(b))
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			a := NewSet(test.a...)
+			b := NewSet(test.b...)
+			assert.Equal(t, test.want, a.Equal(b))
 		})
+	}
+}
+
+func TestIsSubset(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name string
+		a    []string
+		b    []string
+		want bool
+	}{
+		{
+			name: "b is a subset of a",
+			a:    []string{"a", "b", "c", "d"},
+			b:    []string{"c", "a"},
+			want: true,
+		},
+		{
+			name: "b is not a subset of a",
+			a:    []string{"a", "b", "c", "d"},
+			b:    []string{"e", "f"},
+			want: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			a := NewSet(test.a...)
+			b := NewSet(test.b...)
+			assert.Equal(t, test.want, b.IsSubset(a))
+		})
+	}
+}
+
+func TestIsEmpty(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name string
+		set  []string
+		want bool
+	}{
+		{
+			name: "non-empty set",
+			set:  []string{"a", "b", "c", "d"},
+			want: false,
+		},
+		{
+			name: "empty set",
+			set:  []string{},
+			want: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			set := NewSet(test.set...)
+			assert.Equal(t, test.want, set.IsEmpty())
+		})
+	}
+}
+
+func TestIsLength(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name string
+		set  []string
+		want int
+	}{
+		{
+			name: "non-empty set",
+			set:  []string{"a", "b", "c", "d"},
+			want: 4,
+		},
+		{
+			name: "empty set",
+			set:  []string{},
+			want: 0,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			set := NewSet(test.set...)
+			assert.Equal(t, test.want, set.Length())
+		})
+	}
+}
+
+func TestString(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name string
+		run  func(t *testing.T)
+	}{
+		{
+			name: "set of strings",
+			run: func(t *testing.T) {
+				s := NewSet("a", "b", "c")
+				setString := s.String()
+				// check for each individual element, as map doesn't have any ordering
+				assert.Contains(t, setString, "a")
+				assert.Contains(t, setString, "b")
+				assert.Contains(t, setString, "c")
+				assert.Len(t, setString, len("[a b c]"))
+			},
+		},
+		{
+			name: "set of ints",
+			run: func(t *testing.T) {
+				s := NewSet(1, 2, 3)
+				setString := s.String()
+				// check for each individual element, as map  doesn't have any ordering
+				assert.Contains(t, setString, "1")
+				assert.Contains(t, setString, "2")
+				assert.Contains(t, setString, "3")
+				assert.Len(t, setString, len("[1 2 3]"))
+			},
+		},
+		{
+			name: "empty set",
+			run: func(t *testing.T) {
+				s := NewSet[int]()
+				assert.Equal(t, "[]", s.String())
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, test.run)
 	}
 }
