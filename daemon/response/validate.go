@@ -20,6 +20,9 @@ import (
 //go:embed rsa-key-1.pub
 var rsaKey1 []byte
 
+//go:embed rsa-key-2.pub
+var rsaKey2 []byte
+
 type Validator interface {
 	// Validate validates headers.
 	Validate(code int, headers http.Header, body []byte) error
@@ -38,9 +41,14 @@ func NewNordValidator() (*NordValidator, error) {
 	if err != nil {
 		return nil, fmt.Errorf("parsing rsa-key-1: %w", err)
 	}
+	rsaKey2Pub, err := parseSSHPublicKey(rsaKey2)
+	if err != nil {
+		return nil, fmt.Errorf("parsing rsa-key-2: %w", err)
+	}
 	return &NordValidator{
 		pubKeys: map[string]ssh.PublicKey{
 			"rsa-key-1": rsaKey1Pub,
+			"rsa-key-2": rsaKey2Pub,
 		},
 	}, nil
 }
