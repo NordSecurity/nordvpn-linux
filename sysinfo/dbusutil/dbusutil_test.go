@@ -58,13 +58,13 @@ func Test_GetStringProperty_NilClient(t *testing.T) {
 func Test_NewPropertyClient_NilClient(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	client := dbusutil.NewObjectClient(nil, "Service", "AnyProp")
+	client := dbusutil.NewObjectClient(nil, "Service")
 	assert.Nil(t, client)
 }
 
 func Test_NewPropertyClient_DummyClient(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	client := dbusutil.NewObjectClient(&dbus.Conn{}, "Service", "AnyProp")
+	client := dbusutil.NewObjectClient(&dbus.Conn{}, "Service")
 	assert.NotNil(t, client)
 }

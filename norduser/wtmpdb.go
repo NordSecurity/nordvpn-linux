@@ -25,8 +25,13 @@ func newWtmpdb() *wtmpdbSessionGetter {
 func (w *wtmpdbSessionGetter) init() error {
 	db, err := sql.Open("sqlite3", wtmpdbPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("opening sqlite database: %w", err)
 	}
+
+	if err := db.Ping(); err != nil {
+		return fmt.Errorf("pinging sqlite database: %w", err)
+	}
+
 	w.database = db
 
 	dbusConn, err := dbus.ConnectSystemBus()
@@ -36,7 +41,7 @@ func (w *wtmpdbSessionGetter) init() error {
 		w.dbusLoginClient = nil
 	} else {
 		w.dbusConn = dbusConn
-		w.dbusLoginClient = dbusutil.NewObjectClient(dbusConn, "/org/freedesktop/login1", "")
+		w.dbusLoginClient = dbusutil.NewObjectClient(dbusConn, "org.freedesktop.login1")
 	}
 
 	return nil
@@ -114,9 +119,14 @@ func (w *wtmpdbSessionGetter) hasGUISession(username string) (bool, error) {
 			continue
 		}
 
-		sessionType, err := dbusutil.GetStringProperty(w.dbusLoginClient, string(path))
+		sessionTypeProperty, err := w.dbusLoginClient.GetObject(path).GetProperty("org.freedesktop.login1.Session.Type")
 		if err != nil {
 			log.ProcessMonitor.Warn("failed to get session type:", err)
+			continue
+		}
+
+		sessionType, ok := sessionTypeProperty.Value().(string)
+		if !ok {
 			continue
 		}
 

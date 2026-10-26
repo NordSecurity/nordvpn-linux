@@ -30,7 +30,7 @@ func (c *genericDBusObjectClient) GetProperty(name string) (dbus.Variant, error)
 
 // NewObjectClient returns a generic D-Bus object client.
 // This can be used for any service and object path.
-func NewObjectClient(conn *dbus.Conn, service string, objectPath dbus.ObjectPath) DBusObjectClient {
+func NewObjectClient(conn *dbus.Conn, service string) DBusObjectClient {
 	if conn == nil {
 		log.DBusUtil.Errorf("D-Bus connection is nil; cannot create property client")
 		return nil

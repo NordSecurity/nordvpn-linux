@@ -83,7 +83,6 @@ func Test_NewHostname1DBusPropertyClient(t *testing.T) {
 	client := dbusutil.NewObjectClient(
 		nil,
 		"org.freedesktop.hostname1",
-		"/org/freedesktop/hostname1",
 	)
 	assert.Nil(t, client, "must be nil")
 }
