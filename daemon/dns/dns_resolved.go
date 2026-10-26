@@ -90,12 +90,12 @@ func setDNSWithSystemdResolve(ifname string, addresses []string) error {
 		return fmt.Errorf("setting link default route for %s via dbus: %s: %w", iface.Name, strings.TrimSpace(string(out)), err)
 	}
 
-	dnsSECOption := "allow-downgrade"
+	// empty string makes the link use the global DNSSEC setting
+	dnsSECOption := ""
 	if areOnlyNordDNSServers(addresses) {
 		dnsSECOption = "no"
 	}
 
-	// Use secure DNS extension, but allow to downgrade if it's unsupported
 	// #nosec G204 -- input is properly validated
 	out, err = exec.Command(execBusctl,
 		"call",
