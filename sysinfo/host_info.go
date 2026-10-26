@@ -33,7 +33,10 @@ func newHostInfo(src hostInfoSources) HostInfo {
 
 	osPrettyName, err := src.osPrettyName()
 	if err != nil || osPrettyName == "" {
-		log.Sysinfo.Warnf("retrieving OS pretty name: %v. Falling back to OS name: %s", err, osName)
+		log.Sysinfo.Warnf(
+			"retrieving OS pretty name: err '%v', name '%s', fallback to osName %s",
+			err, osPrettyName, osName,
+		)
 		osPrettyName = osName
 	}
 
