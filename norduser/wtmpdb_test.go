@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/NordSecurity/nordvpn-linux/test/category"
 	dbusutil_mock "github.com/NordSecurity/nordvpn-linux/test/mock/sysinfo/dbusutil"
 
 	"github.com/godbus/dbus/v5"
@@ -63,6 +64,8 @@ func sessionTuple(id, uid, user, seat string, path dbus.ObjectPath) []interface{
 }
 
 func TestHasGUISession(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	x11Path := "/org/freedesktop/login1/session/_31"
 	waylandPath := "/org/freedesktop/login1/session/_32"
 	otherPath := "/org/freedesktop/login1/session/_33"

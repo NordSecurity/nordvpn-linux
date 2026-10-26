@@ -26,8 +26,7 @@ func newSessionGetter() sessionGetter {
 		} else {
 			return wtmpdb
 		}
-	}
-	if !os.IsNotExist(err) {
+	} else if !os.IsNotExist(err) {
 		log.Warn("failed to stat wtmpdb file: %w", err)
 	}
 
