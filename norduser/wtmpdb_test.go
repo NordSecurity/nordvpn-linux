@@ -66,9 +66,9 @@ func sessionTuple(id, uid, user, seat string, path dbus.ObjectPath) []interface{
 func TestHasGUISession(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	x11Path := "/org/freedesktop/login1/session/_31"
-	waylandPath := "/org/freedesktop/login1/session/_32"
-	otherPath := "/org/freedesktop/login1/session/_33"
+	x11Path := dbus.ObjectPath("/org/freedesktop/login1/session/_31")
+	waylandPath := dbus.ObjectPath("/org/freedesktop/login1/session/_32")
+	otherPath := dbus.ObjectPath("/org/freedesktop/login1/session/_33")
 
 	x11Prop := dbus.MakeVariant("x11")
 	waylandProp := dbus.MakeVariant("wayland")
@@ -78,19 +78,19 @@ func TestHasGUISession(t *testing.T) {
 	tests := []struct {
 		name           string
 		sessions       [][]interface{}
-		properties     map[string]dbus.Variant
+		properties     map[dbus.ObjectPath]dbus.Variant
 		expectedResult bool
 	}{
 		{
 			name:           "x11 session",
-			sessions:       [][]interface{}{sessionTuple("1", "1000", "alice", "seat0", dbus.ObjectPath(x11Path))},
-			properties:     map[string]dbus.Variant{x11Path: x11Prop},
+			sessions:       [][]interface{}{sessionTuple("1", "1000", "alice", "seat0", x11Path)},
+			properties:     map[dbus.ObjectPath]dbus.Variant{x11Path: x11Prop},
 			expectedResult: true,
 		},
 		{
 			name:           "wayland session",
-			sessions:       [][]interface{}{sessionTuple("1", "1000", "alice", "seat0", dbus.ObjectPath(waylandPath))},
-			properties:     map[string]dbus.Variant{waylandPath: waylandProp},
+			sessions:       [][]interface{}{sessionTuple("1", "1000", "alice", "seat0", waylandPath)},
+			properties:     map[dbus.ObjectPath]dbus.Variant{waylandPath: waylandProp},
 			expectedResult: true,
 		},
 		{
@@ -100,14 +100,14 @@ func TestHasGUISession(t *testing.T) {
 		},
 		{
 			name:           "tty session only",
-			sessions:       [][]interface{}{sessionTuple("1", "1000", "alice", "seat0", dbus.ObjectPath(otherPath))},
-			properties:     map[string]dbus.Variant{otherPath: ttyProp},
+			sessions:       [][]interface{}{sessionTuple("1", "1000", "alice", "seat0", otherPath)},
+			properties:     map[dbus.ObjectPath]dbus.Variant{otherPath: ttyProp},
 			expectedResult: false,
 		},
 		{
 			name:           "different user",
-			sessions:       [][]interface{}{sessionTuple("1", "1000", "bob", "seat0", dbus.ObjectPath(x11Path))},
-			properties:     map[string]dbus.Variant{x11Path: x11Prop},
+			sessions:       [][]interface{}{sessionTuple("1", "1000", "bob", "seat0", x11Path)},
+			properties:     map[dbus.ObjectPath]dbus.Variant{x11Path: x11Prop},
 			expectedResult: false,
 		},
 		{
@@ -127,8 +127,8 @@ func TestHasGUISession(t *testing.T) {
 		},
 		{
 			name:           "get property fails",
-			sessions:       [][]interface{}{sessionTuple("1", "1000", "alice", "seat0", dbus.ObjectPath(x11Path))},
-			properties:     map[string]dbus.Variant{x11Path: failProp},
+			sessions:       [][]interface{}{sessionTuple("1", "1000", "alice", "seat0", x11Path)},
+			properties:     map[dbus.ObjectPath]dbus.Variant{x11Path: failProp},
 			expectedResult: false,
 		},
 		{
@@ -137,19 +137,31 @@ func TestHasGUISession(t *testing.T) {
 				sessionTuple("1", "1000", "alice", "seat0", dbus.ObjectPath(otherPath)),
 				sessionTuple("2", "1000", "alice", "seat0", dbus.ObjectPath(x11Path)),
 			},
-			properties:     map[string]dbus.Variant{otherPath: ttyProp, x11Path: x11Prop},
+			properties:     map[dbus.ObjectPath]dbus.Variant{otherPath: ttyProp, x11Path: x11Prop},
 			expectedResult: true,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			manager := &mockBusObject{callFn: func(string, ...interface{}) *dbus.Call {
-				return &dbus.Call{Body: []interface{}{test.sessions}}
-			}}
-			objects := map[dbus.ObjectPath]dbus.BusObject{"/org/freedesktop/login1": manager}
+			manager := &mockBusObject{
+				callFn: func(string, ...interface{}) *dbus.Call {
+					return &dbus.Call{Body: []interface{}{test.sessions}}
+				},
+			}
 
-			dbusMock := dbusutil_mock.NewMockDbusObjectClient(objects, test.properties, nil)
+			objects := make(map[dbus.ObjectPath]dbus.BusObject)
+
+			objects["/org/freedesktop/login1"] = manager
+			for path, object := range test.properties {
+				objects[path] = &mockBusObject{
+					getPropFn: func(prop string) (dbus.Variant, error) {
+						return object, nil
+					},
+				}
+			}
+
+			dbusMock := dbusutil_mock.NewMockDbusObjectClient(objects, map[string]dbus.Variant{}, nil)
 			dbusMock.Objects = objects
 			getter := &wtmpdbSessionGetter{dbusLoginClient: dbusMock}
 
