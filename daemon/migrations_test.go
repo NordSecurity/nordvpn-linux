@@ -397,3 +397,221 @@ func TestMigrateAutoconnectTarget(t *testing.T) {
 		})
 	}
 }
+
+func TestMigrateObfuscatedSettingsToNordWhisper(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name                 string
+		cfg                  config.Config
+		isNordWhisperEnabled bool
+		expected             config.Config
+	}{
+		{
+			name: "migrate to NordWhisper",
+			cfg: config.Config{
+				AutoConnectData: config.AutoConnectData{
+					Obfuscate: true,
+				},
+				VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP,
+			},
+			isNordWhisperEnabled: true,
+			expected: config.Config{
+				AutoConnectData: config.AutoConnectData{
+					Obfuscate: false,
+				},
+				VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
+			},
+		},
+		{
+			name: "migrate to OpenVPN, when NordWhisper is disabled",
+			cfg: config.Config{
+				AutoConnectData: config.AutoConnectData{
+					Obfuscate: true,
+					Group:     config.ServerGroup_OVPN_OBFUSCATED,
+				},
+
+				VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP,
+			},
+			isNordWhisperEnabled: false,
+			expected: config.Config{
+				AutoConnectData: config.AutoConnectData{
+					Obfuscate: false,
+					Group:     config.ServerGroup_UNDEFINED,
+				},
+				VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP,
+			},
+		},
+		{
+			name: "migrate to OpenVPN with Obfuscated group, when NordWhisper is disabled",
+			cfg: config.Config{
+				AutoConnectData: config.AutoConnectData{
+					Obfuscate: true,
+					Group:     config.ServerGroup_OVPN_OBFUSCATED,
+				},
+				VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP,
+			},
+			isNordWhisperEnabled: false,
+			expected: config.Config{
+				AutoConnectData: config.AutoConnectData{
+					Obfuscate: false,
+					Group:     config.ServerGroup_UNDEFINED,
+				},
+				VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP,
+			},
+		},
+		{
+			name: "no migration happening, only Obfuscated=false",
+			cfg: config.Config{
+				AutoConnectData: config.AutoConnectData{
+					Obfuscate: true,
+				},
+				VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
+			},
+			isNordWhisperEnabled: true,
+			expected: config.Config{
+				AutoConnectData: config.AutoConnectData{
+					Obfuscate: false,
+				},
+				VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := migrateObfuscatedSettingsToNordWhisper(test.cfg, test.isNordWhisperEnabled)
+			assert.DeepEqual(t, result, test.expected)
+		})
+	}
+}
+
+func TestMigrateDeprecatedAutoconnectToSpecificServer(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	testServerTag := "ts123"
+	testCountryName := "Test Country"
+	testCityName := "Test City"
+
+	testServerLocation := core.Locations{
+		core.Location{
+			Country: core.Country{
+				Name: testCountryName,
+				City: core.City{
+					Name: testCityName,
+				},
+			},
+		},
+	}
+
+	testServer := core.Server{
+		Hostname:  testServerTag + ".nordvpn.com",
+		Locations: testServerLocation,
+	}
+
+	testDoubleVPNServerTag := "ts-st123"
+	testDoubleVPNCountryName := "Test Double VPN Country"
+	testDoubleVPNCityName := "Test Double VPN City"
+
+	testDoubleVPNServerLocation := core.Locations{
+		core.Location{
+			Country: core.Country{
+				Name: testDoubleVPNCountryName,
+				City: core.City{
+					Name: testDoubleVPNCityName,
+				},
+			},
+		},
+	}
+
+	testDoubleVPNServer := core.Server{
+		Hostname:  testDoubleVPNServerTag + ".nordvpn.com",
+		Locations: testDoubleVPNServerLocation,
+	}
+
+	testServersList := core.Servers{testServer, testDoubleVPNServer}
+
+	tests := []struct {
+		name                string
+		serversList         core.Servers
+		currentServerTag    string
+		expectedTag         string
+		expectedCountryName string
+		expectedCityName    string
+	}{
+		{
+			name:                "server set to specific, fallback to country",
+			currentServerTag:    testServerTag,
+			serversList:         testServersList,
+			expectedTag:         "",
+			expectedCountryName: testCountryName,
+			expectedCityName:    testCityName,
+		},
+		{
+			name:                "server set to specific double VPN, fallback to country",
+			currentServerTag:    testDoubleVPNServerTag,
+			serversList:         testServersList,
+			expectedTag:         "",
+			expectedCountryName: testDoubleVPNCountryName,
+			expectedCityName:    testDoubleVPNCityName,
+		},
+		{
+			name:             "server set to country, no fallback",
+			currentServerTag: strings.ToLower(testCountryName),
+			serversList:      testServersList,
+			expectedTag:      "",
+		},
+		{
+			name:             "server set to city, no fallback",
+			currentServerTag: strings.ToLower(testCityName),
+			serversList:      testServersList,
+			expectedTag:      "",
+		},
+		{
+			name:             "server tag empty, no fallback",
+			currentServerTag: "",
+			serversList:      testServersList,
+		},
+		{
+			name:             "server set to specific, server not found, fallback to country code",
+			currentServerTag: testServerTag,
+			serversList:      core.Servers{},
+			expectedTag:      "",
+		},
+		{
+			name:             "server set to specific, server tag invalid format, fallback to fastest",
+			currentServerTag: "tttt111",
+			serversList:      core.Servers{},
+			expectedTag:      "",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			dataManager := DataManager{}
+			dataManager.serversData = ServersData{
+				Servers: test.serversList,
+			}
+
+			cfg := config.Config{
+				AutoConnectData: config.AutoConnectData{
+					ServerTag: test.currentServerTag,
+				},
+			}
+
+			configManager := newMockConfigManager()
+			configManager.c = cfg
+
+			MigrateAutoconnectTarget(configManager, &dataManager)
+
+			cfgAfterFallback := configManager.c
+
+			assert.Equal(t, test.expectedTag, cfgAfterFallback.AutoConnectData.ServerTag,
+				"Invalid server tag saved in local config after fallback.")
+			assert.Equal(t, test.expectedCountryName, cfgAfterFallback.AutoConnectData.Country,
+				"Invalid country saved in local config after fallback.")
+			assert.Equal(t, test.expectedCityName, cfgAfterFallback.AutoConnectData.City,
+				"Invalid city saved in local config after fallback.")
+		})
+	}
+}

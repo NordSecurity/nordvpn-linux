@@ -16,10 +16,9 @@ import 'package:fixnum/fixnum.dart' as $fixnum;
 import 'package:protobuf/protobuf.dart' as $pb;
 
 import 'common.pb.dart' as $0;
-import 'config/analytics_consent.pbenum.dart' as $3;
+import 'config/analytics_consent.pbenum.dart' as $2;
 import 'config/group.pbenum.dart' as $1;
-import 'config/protocol.pbenum.dart' as $4;
-import 'config/technology.pbenum.dart' as $2;
+import 'config/vpn_protocol.pbenum.dart' as $3;
 
 export 'package:protobuf/protobuf.dart' show GeneratedMessageGenericExtensions;
 
@@ -197,27 +196,24 @@ class AutoconnectData extends $pb.GeneratedMessage {
 
 class Settings extends $pb.GeneratedMessage {
   factory Settings({
-    $2.Technology? technology,
     $core.bool? firewall,
     $core.bool? killSwitch,
     AutoconnectData? autoConnectData,
     $core.bool? meshnet,
     $core.bool? routing,
     $core.int? fwmark,
-    $3.ConsentMode? analyticsConsent,
+    $2.ConsentMode? analyticsConsent,
     $core.Iterable<$core.String>? dns,
     $core.bool? realTimeProtection,
-    $4.Protocol? protocol,
     $core.bool? lanDiscovery,
     $0.Allowlist? allowlist,
-    $core.bool? obfuscate,
     $core.bool? postquantumVpn,
     UserSpecificSettings? userSettings,
     $core.bool? arpIgnore,
     $core.bool? ech,
+    $3.VPNProtocol? vpnProtocol,
   }) {
     final result = create();
-    if (technology != null) result.technology = technology;
     if (firewall != null) result.firewall = firewall;
     if (killSwitch != null) result.killSwitch = killSwitch;
     if (autoConnectData != null) result.autoConnectData = autoConnectData;
@@ -228,14 +224,13 @@ class Settings extends $pb.GeneratedMessage {
     if (dns != null) result.dns.addAll(dns);
     if (realTimeProtection != null)
       result.realTimeProtection = realTimeProtection;
-    if (protocol != null) result.protocol = protocol;
     if (lanDiscovery != null) result.lanDiscovery = lanDiscovery;
     if (allowlist != null) result.allowlist = allowlist;
-    if (obfuscate != null) result.obfuscate = obfuscate;
     if (postquantumVpn != null) result.postquantumVpn = postquantumVpn;
     if (userSettings != null) result.userSettings = userSettings;
     if (arpIgnore != null) result.arpIgnore = arpIgnore;
     if (ech != null) result.ech = ech;
+    if (vpnProtocol != null) result.vpnProtocol = vpnProtocol;
     return result;
   }
 
@@ -252,8 +247,6 @@ class Settings extends $pb.GeneratedMessage {
       _omitMessageNames ? '' : 'Settings',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
-    ..aE<$2.Technology>(1, _omitFieldNames ? '' : 'technology',
-        enumValues: $2.Technology.values)
     ..aOB(2, _omitFieldNames ? '' : 'firewall')
     ..aOB(3, _omitFieldNames ? '' : 'killSwitch')
     ..aOM<AutoconnectData>(4, _omitFieldNames ? '' : 'autoConnectData',
@@ -261,21 +254,20 @@ class Settings extends $pb.GeneratedMessage {
     ..aOB(6, _omitFieldNames ? '' : 'meshnet')
     ..aOB(7, _omitFieldNames ? '' : 'routing')
     ..aI(8, _omitFieldNames ? '' : 'fwmark', fieldType: $pb.PbFieldType.OU3)
-    ..aE<$3.ConsentMode>(9, _omitFieldNames ? '' : 'analyticsConsent',
-        enumValues: $3.ConsentMode.values)
+    ..aE<$2.ConsentMode>(9, _omitFieldNames ? '' : 'analyticsConsent',
+        enumValues: $2.ConsentMode.values)
     ..pPS(10, _omitFieldNames ? '' : 'dns')
     ..aOB(11, _omitFieldNames ? '' : 'realTimeProtection')
-    ..aE<$4.Protocol>(12, _omitFieldNames ? '' : 'protocol',
-        enumValues: $4.Protocol.values)
     ..aOB(13, _omitFieldNames ? '' : 'lanDiscovery')
     ..aOM<$0.Allowlist>(14, _omitFieldNames ? '' : 'allowlist',
         subBuilder: $0.Allowlist.create)
-    ..aOB(15, _omitFieldNames ? '' : 'obfuscate')
     ..aOB(17, _omitFieldNames ? '' : 'postquantumVpn')
     ..aOM<UserSpecificSettings>(18, _omitFieldNames ? '' : 'userSettings',
         subBuilder: UserSpecificSettings.create)
     ..aOB(19, _omitFieldNames ? '' : 'arpIgnore')
     ..aOB(20, _omitFieldNames ? '' : 'ech')
+    ..aE<$3.VPNProtocol>(21, _omitFieldNames ? '' : 'vpnProtocol',
+        enumValues: $3.VPNProtocol.values)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -296,167 +288,149 @@ class Settings extends $pb.GeneratedMessage {
       _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Settings>(create);
   static Settings? _defaultInstance;
 
-  @$pb.TagNumber(1)
-  $2.Technology get technology => $_getN(0);
-  @$pb.TagNumber(1)
-  set technology($2.Technology value) => $_setField(1, value);
-  @$pb.TagNumber(1)
-  $core.bool hasTechnology() => $_has(0);
-  @$pb.TagNumber(1)
-  void clearTechnology() => $_clearField(1);
-
   @$pb.TagNumber(2)
-  $core.bool get firewall => $_getBF(1);
+  $core.bool get firewall => $_getBF(0);
   @$pb.TagNumber(2)
-  set firewall($core.bool value) => $_setBool(1, value);
+  set firewall($core.bool value) => $_setBool(0, value);
   @$pb.TagNumber(2)
-  $core.bool hasFirewall() => $_has(1);
+  $core.bool hasFirewall() => $_has(0);
   @$pb.TagNumber(2)
   void clearFirewall() => $_clearField(2);
 
   @$pb.TagNumber(3)
-  $core.bool get killSwitch => $_getBF(2);
+  $core.bool get killSwitch => $_getBF(1);
   @$pb.TagNumber(3)
-  set killSwitch($core.bool value) => $_setBool(2, value);
+  set killSwitch($core.bool value) => $_setBool(1, value);
   @$pb.TagNumber(3)
-  $core.bool hasKillSwitch() => $_has(2);
+  $core.bool hasKillSwitch() => $_has(1);
   @$pb.TagNumber(3)
   void clearKillSwitch() => $_clearField(3);
 
   @$pb.TagNumber(4)
-  AutoconnectData get autoConnectData => $_getN(3);
+  AutoconnectData get autoConnectData => $_getN(2);
   @$pb.TagNumber(4)
   set autoConnectData(AutoconnectData value) => $_setField(4, value);
   @$pb.TagNumber(4)
-  $core.bool hasAutoConnectData() => $_has(3);
+  $core.bool hasAutoConnectData() => $_has(2);
   @$pb.TagNumber(4)
   void clearAutoConnectData() => $_clearField(4);
   @$pb.TagNumber(4)
-  AutoconnectData ensureAutoConnectData() => $_ensure(3);
+  AutoconnectData ensureAutoConnectData() => $_ensure(2);
 
   @$pb.TagNumber(6)
-  $core.bool get meshnet => $_getBF(4);
+  $core.bool get meshnet => $_getBF(3);
   @$pb.TagNumber(6)
-  set meshnet($core.bool value) => $_setBool(4, value);
+  set meshnet($core.bool value) => $_setBool(3, value);
   @$pb.TagNumber(6)
-  $core.bool hasMeshnet() => $_has(4);
+  $core.bool hasMeshnet() => $_has(3);
   @$pb.TagNumber(6)
   void clearMeshnet() => $_clearField(6);
 
   @$pb.TagNumber(7)
-  $core.bool get routing => $_getBF(5);
+  $core.bool get routing => $_getBF(4);
   @$pb.TagNumber(7)
-  set routing($core.bool value) => $_setBool(5, value);
+  set routing($core.bool value) => $_setBool(4, value);
   @$pb.TagNumber(7)
-  $core.bool hasRouting() => $_has(5);
+  $core.bool hasRouting() => $_has(4);
   @$pb.TagNumber(7)
   void clearRouting() => $_clearField(7);
 
   @$pb.TagNumber(8)
-  $core.int get fwmark => $_getIZ(6);
+  $core.int get fwmark => $_getIZ(5);
   @$pb.TagNumber(8)
-  set fwmark($core.int value) => $_setUnsignedInt32(6, value);
+  set fwmark($core.int value) => $_setUnsignedInt32(5, value);
   @$pb.TagNumber(8)
-  $core.bool hasFwmark() => $_has(6);
+  $core.bool hasFwmark() => $_has(5);
   @$pb.TagNumber(8)
   void clearFwmark() => $_clearField(8);
 
   @$pb.TagNumber(9)
-  $3.ConsentMode get analyticsConsent => $_getN(7);
+  $2.ConsentMode get analyticsConsent => $_getN(6);
   @$pb.TagNumber(9)
-  set analyticsConsent($3.ConsentMode value) => $_setField(9, value);
+  set analyticsConsent($2.ConsentMode value) => $_setField(9, value);
   @$pb.TagNumber(9)
-  $core.bool hasAnalyticsConsent() => $_has(7);
+  $core.bool hasAnalyticsConsent() => $_has(6);
   @$pb.TagNumber(9)
   void clearAnalyticsConsent() => $_clearField(9);
 
   @$pb.TagNumber(10)
-  $pb.PbList<$core.String> get dns => $_getList(8);
+  $pb.PbList<$core.String> get dns => $_getList(7);
 
   @$pb.TagNumber(11)
-  $core.bool get realTimeProtection => $_getBF(9);
+  $core.bool get realTimeProtection => $_getBF(8);
   @$pb.TagNumber(11)
-  set realTimeProtection($core.bool value) => $_setBool(9, value);
+  set realTimeProtection($core.bool value) => $_setBool(8, value);
   @$pb.TagNumber(11)
-  $core.bool hasRealTimeProtection() => $_has(9);
+  $core.bool hasRealTimeProtection() => $_has(8);
   @$pb.TagNumber(11)
   void clearRealTimeProtection() => $_clearField(11);
 
-  @$pb.TagNumber(12)
-  $4.Protocol get protocol => $_getN(10);
-  @$pb.TagNumber(12)
-  set protocol($4.Protocol value) => $_setField(12, value);
-  @$pb.TagNumber(12)
-  $core.bool hasProtocol() => $_has(10);
-  @$pb.TagNumber(12)
-  void clearProtocol() => $_clearField(12);
-
   @$pb.TagNumber(13)
-  $core.bool get lanDiscovery => $_getBF(11);
+  $core.bool get lanDiscovery => $_getBF(9);
   @$pb.TagNumber(13)
-  set lanDiscovery($core.bool value) => $_setBool(11, value);
+  set lanDiscovery($core.bool value) => $_setBool(9, value);
   @$pb.TagNumber(13)
-  $core.bool hasLanDiscovery() => $_has(11);
+  $core.bool hasLanDiscovery() => $_has(9);
   @$pb.TagNumber(13)
   void clearLanDiscovery() => $_clearField(13);
 
   @$pb.TagNumber(14)
-  $0.Allowlist get allowlist => $_getN(12);
+  $0.Allowlist get allowlist => $_getN(10);
   @$pb.TagNumber(14)
   set allowlist($0.Allowlist value) => $_setField(14, value);
   @$pb.TagNumber(14)
-  $core.bool hasAllowlist() => $_has(12);
+  $core.bool hasAllowlist() => $_has(10);
   @$pb.TagNumber(14)
   void clearAllowlist() => $_clearField(14);
   @$pb.TagNumber(14)
-  $0.Allowlist ensureAllowlist() => $_ensure(12);
-
-  @$pb.TagNumber(15)
-  $core.bool get obfuscate => $_getBF(13);
-  @$pb.TagNumber(15)
-  set obfuscate($core.bool value) => $_setBool(13, value);
-  @$pb.TagNumber(15)
-  $core.bool hasObfuscate() => $_has(13);
-  @$pb.TagNumber(15)
-  void clearObfuscate() => $_clearField(15);
+  $0.Allowlist ensureAllowlist() => $_ensure(10);
 
   @$pb.TagNumber(17)
-  $core.bool get postquantumVpn => $_getBF(14);
+  $core.bool get postquantumVpn => $_getBF(11);
   @$pb.TagNumber(17)
-  set postquantumVpn($core.bool value) => $_setBool(14, value);
+  set postquantumVpn($core.bool value) => $_setBool(11, value);
   @$pb.TagNumber(17)
-  $core.bool hasPostquantumVpn() => $_has(14);
+  $core.bool hasPostquantumVpn() => $_has(11);
   @$pb.TagNumber(17)
   void clearPostquantumVpn() => $_clearField(17);
 
   @$pb.TagNumber(18)
-  UserSpecificSettings get userSettings => $_getN(15);
+  UserSpecificSettings get userSettings => $_getN(12);
   @$pb.TagNumber(18)
   set userSettings(UserSpecificSettings value) => $_setField(18, value);
   @$pb.TagNumber(18)
-  $core.bool hasUserSettings() => $_has(15);
+  $core.bool hasUserSettings() => $_has(12);
   @$pb.TagNumber(18)
   void clearUserSettings() => $_clearField(18);
   @$pb.TagNumber(18)
-  UserSpecificSettings ensureUserSettings() => $_ensure(15);
+  UserSpecificSettings ensureUserSettings() => $_ensure(12);
 
   @$pb.TagNumber(19)
-  $core.bool get arpIgnore => $_getBF(16);
+  $core.bool get arpIgnore => $_getBF(13);
   @$pb.TagNumber(19)
-  set arpIgnore($core.bool value) => $_setBool(16, value);
+  set arpIgnore($core.bool value) => $_setBool(13, value);
   @$pb.TagNumber(19)
-  $core.bool hasArpIgnore() => $_has(16);
+  $core.bool hasArpIgnore() => $_has(13);
   @$pb.TagNumber(19)
   void clearArpIgnore() => $_clearField(19);
 
   @$pb.TagNumber(20)
-  $core.bool get ech => $_getBF(17);
+  $core.bool get ech => $_getBF(14);
   @$pb.TagNumber(20)
-  set ech($core.bool value) => $_setBool(17, value);
+  set ech($core.bool value) => $_setBool(14, value);
   @$pb.TagNumber(20)
-  $core.bool hasEch() => $_has(17);
+  $core.bool hasEch() => $_has(14);
   @$pb.TagNumber(20)
   void clearEch() => $_clearField(20);
+
+  @$pb.TagNumber(21)
+  $3.VPNProtocol get vpnProtocol => $_getN(15);
+  @$pb.TagNumber(21)
+  set vpnProtocol($3.VPNProtocol value) => $_setField(21, value);
+  @$pb.TagNumber(21)
+  $core.bool hasVpnProtocol() => $_has(15);
+  @$pb.TagNumber(21)
+  void clearVpnProtocol() => $_clearField(21);
 }
 
 class UserSpecificSettings extends $pb.GeneratedMessage {

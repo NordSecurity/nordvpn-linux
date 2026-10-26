@@ -118,7 +118,7 @@ parts:
       WORKDIR="$(pwd)"; source ./ci/env.sh
       # Inject the computed ${VERSION} into appdata and hand it to parse-info
       sed -i "s/VERSION/${VERSION}/g" contrib/snap/appdata.xml
-      cp contrib/snap/appdata.xml "${SNAPCRAFT_PART_BUILD}/com.nordsec.nordvpn.appdata.xml"    
+      cp contrib/snap/appdata.xml "${SNAPCRAFT_PART_BUILD}/com.nordsec.nordvpn.appdata.xml"
     parse-info: [com.nordsec.nordvpn.appdata.xml]
 
   nordvpn-bin:
@@ -221,7 +221,6 @@ parts:
     organize:
       countries.dat: var/lib/nordvpn/data/countries.dat
       ovpn_template.xslt: var/lib/nordvpn/data/ovpn_template.xslt
-      ovpn_xor_template.xslt: var/lib/nordvpn/data/ovpn_xor_template.xslt
       servers.dat: var/lib/nordvpn/data/servers.dat
     stage:
       - var/lib/nordvpn/data/*

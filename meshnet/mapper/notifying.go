@@ -2,9 +2,10 @@ package mapper
 
 import (
 	"bytes"
-	"strings"
+	"errors"
 	"sync"
 
+	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/events"
 
@@ -40,7 +41,7 @@ func (r *NotifyingMapper) Map(
 	anotherMachine := self
 	resp, err = r.inner.Map(token, anotherMachine, forceUpdate)
 	if err != nil {
-		if strings.Contains(err.Error(), "Machine not found") {
+		if errors.Is(err, core.ErrMeshMachineNotFound) {
 			r.notifySelfRemoved()
 		}
 		return nil, err

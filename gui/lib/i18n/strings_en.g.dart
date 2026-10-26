@@ -99,6 +99,9 @@ class Translations$a11y$en {
 
 	/// en: '$title. $message'
 	String popupWithContent({required Object title, required Object message}) => '${title}. ${message}';
+
+	/// en: 'Link $name'
+	String link({required Object name}) => 'Link ${name}';
 }
 
 // Path: cities
@@ -1324,11 +1327,23 @@ class Translations$daemon$en {
 	/// en: 'This setting is not compatible with post-quantum encryption. To use it, turn off post-quantum encryption first.'
 	String get code_3049_msg => 'This setting is not compatible with post-quantum encryption. To use it, turn off post-quantum encryption first.';
 
-	/// en: 'Disabled technology'
-	String get code_3051_title => 'Disabled technology';
+	/// en: 'Disabled protocol'
+	String get code_3051_title => 'Disabled protocol';
 
-	/// en: 'Unable to connect with the current technology. Please try a different one using the command: nordvpn set technology.'
-	String get code_3051_msg => 'Unable to connect with the current technology. Please try a different one using the command: nordvpn set technology.';
+	/// en: 'Unable to connect with the current protocol. Please try a different one using the command: nordvpn set protocol.'
+	String get code_3051_msg => 'Unable to connect with the current protocol. Please try a different one using the command: nordvpn set protocol.';
+
+	/// en: 'Here's what to know'
+	String get code_3068_title => 'Here\'s what to know';
+
+	/// en: 'Auto-connect is set to a dedicated server, which only works with NordLynx. To use a different protocol, choose another auto-connect location or turn off auto-connect first.'
+	String get code_3068_msg => 'Auto-connect is set to a dedicated server, which only works with NordLynx. To use a different protocol, choose another auto-connect location or turn off auto-connect first.';
+
+	/// en: 'Here's what to know'
+	String get code_3080_title => 'Here\'s what to know';
+
+	/// en: 'Auto-connect is set to obfuscated servers, which only work with NordWhisper. To use a different protocol, choose another auto-connect location or turn off auto-connect first.'
+	String get code_3080_msg => 'Auto-connect is set to obfuscated servers, which only work with NordWhisper. To use a different protocol, choose another auto-connect location or turn off auto-connect first.';
 
 	/// en: 'Restart daemon to apply setting'
 	String get code_5007_title => 'Restart daemon to apply setting';
@@ -1426,9 +1441,6 @@ class Translations$ui$en {
 	/// en: 'Double VPN'
 	String get double_vpn => 'Double VPN';
 
-	/// en: 'Onion Over VPN'
-	String get onion_over_vpn => 'Onion Over VPN';
-
 	/// en: 'Fatal error'
 	String get fatalErrorMessage => 'Fatal error';
 
@@ -1476,9 +1488,6 @@ class Translations$ui$en {
 
 	/// en: 'VPN Protocol'
 	String get vpnProtocol => 'VPN Protocol';
-
-	/// en: 'Obfuscate'
-	String get obfuscate => 'Obfuscate';
 
 	/// en: 'VPN Connection Status Notifications'
 	String get notificationsStatus => 'VPN Connection Status Notifications';
@@ -1636,14 +1645,14 @@ class Translations$ui$en {
 	/// en: 'Double VPN'
 	String get doubleVpn => 'Double VPN';
 
-	/// en: 'Onion over VPN'
-	String get onionOverVpn => 'Onion over VPN';
+	/// en: 'Onion Over VPN'
+	String get onionOverVpn => 'Onion Over VPN';
 
 	/// en: 'Obfuscated'
 	String get obfuscated => 'Obfuscated';
 
-	/// en: 'Obfuscated Servers'
-	String get obfuscatedServers => 'Obfuscated Servers';
+	/// en: 'Obfuscated'
+	String get obfuscatedServers => 'Obfuscated';
 
 	/// en: 'Pick a location for your IP'
 	String get selectServerForDip => 'Pick a location for your IP';
@@ -1687,8 +1696,8 @@ class Translations$ui$en {
 	/// en: 'Security and privacy'
 	String get securityAndPrivacy => 'Security and privacy';
 
-	/// en: 'Allowlist, DNS, LAN discovery, obfuscation, firewall'
-	String get securityAndPrivacySubtitle => 'Allowlist, DNS, LAN discovery, obfuscation, firewall';
+	/// en: 'Allowlist, DNS, LAN discovery, firewall'
+	String get securityAndPrivacySubtitle => 'Allowlist, DNS, LAN discovery, firewall';
 
 	/// en: 'Appearance'
 	String get appearance => 'Appearance';
@@ -1779,12 +1788,6 @@ class Translations$ui$en {
 
 	/// en: 'Activate next-generation encryption that protects your data from threats posed by quantum computing.'
 	String get postQuantumDescription => 'Activate next-generation encryption that protects your data from threats posed by quantum computing.';
-
-	/// en: 'Avoid detection by traffic sensors in restricted networks while using a VPN. When enabled, only obfuscated servers are available.'
-	String get obfuscationDescription => 'Avoid detection by traffic sensors in restricted networks while using a VPN. When enabled, only obfuscated servers are available.';
-
-	/// en: 'Obfuscation'
-	String get obfuscation => 'Obfuscation';
 
 	/// en: 'Add'
 	String get add => 'Add';
@@ -1894,6 +1897,9 @@ class Translations$ui$en {
 	/// en: 'Use the Onion network with VPN protection'
 	String get onionOverVpnDesc => 'Use the Onion network with VPN protection';
 
+	/// en: 'Hide signs of VPN usage on restricted networks'
+	String get obfuscatedServersDesc => 'Hide signs of VPN usage on restricted networks';
+
 	/// en: 'Save'
 	String get save => 'Save';
 
@@ -1914,15 +1920,6 @@ class Translations$ui$en {
 
 	/// en: 'This server is already on the list.'
 	String get duplicatedDnsServer => 'This server is already on the list.';
-
-	/// en: 'Obfuscation is turned on, so only obfuscated server locations will show up.'
-	String get obfuscationSearchWarning => 'Obfuscation is turned on, so only obfuscated server locations will show up.';
-
-	/// en: 'No results found. To access all available servers, turn off obfuscation.'
-	String get obfuscationErrorNoServerFound => 'No results found. To access all available servers, turn off obfuscation.';
-
-	/// en: 'Go to Settings'
-	String get goToSettings => 'Go to Settings';
 
 	/// en: 'Use allowlist'
 	String get useAllowList => 'Use allowlist';
@@ -1984,11 +1981,14 @@ class Translations$ui$en {
 	/// en: 'We couldn't save your settings to the configuration file.'
 	String get couldNotSave => 'We couldn\'t save your settings to the configuration file.';
 
-	/// en: 'Turn off obfuscation for more server types'
-	String get turnOffObfuscationServerTypes => 'Turn off obfuscation for more server types';
+	/// en: 'Some settings weren't applied'
+	String get settingsNotApplied => 'Some settings weren\'t applied';
 
-	/// en: 'Turn off obfuscation for more locations'
-	String get turnOffObfuscationLocations => 'Turn off obfuscation for more locations';
+	/// en: 'Some default network settings could not be applied. Reset settings again to retry. If the problem continues, contact support.'
+	String get networkSettingsNotAppliedDescription => 'Some default network settings could not be applied. Reset settings again to retry. If the problem continues, contact support.';
+
+	/// en: 'Some default settings could not be applied. The reset finished, but these settings may not be active: $settings. Reset settings again to retry. If the problem continues, contact support.'
+	String settingsNotAppliedDescription({required Object settings}) => 'Some default settings could not be applied. The reset finished, but these settings may not be active: ${settings}. Reset settings again to retry. If the problem continues, contact support.';
 
 	/// en: 'NordWhisper'
 	String get nordWhisper => 'NordWhisper';
@@ -2140,8 +2140,8 @@ class Translations$ui$en {
 	/// en: 'Inactive'
 	String get subscriptionInactive => 'Inactive';
 
-	/// en: 'Recent connections'
-	String get recentConnections => 'Recent connections';
+	/// en: 'Recent Connections'
+	String get recentConnections => 'Recent Connections';
 
 	/// en: 'Standard VPN Servers'
 	String get standardVpnServer => 'Standard VPN Servers';
@@ -2242,6 +2242,7 @@ extension on Translations {
 			'a11y.expandibleEntryCollapsed' => 'Collapsed',
 			'a11y.clear' => 'Clear',
 			'a11y.popupWithContent' => ({required Object title, required Object message}) => '${title}. ${message}',
+			'a11y.link' => ({required Object name}) => 'Link ${name}',
 			'cities.tirana' => 'Tirana',
 			'cities.algiers' => 'Algiers',
 			'cities.addis_ababa' => 'Addis Ababa',
@@ -2641,8 +2642,12 @@ extension on Translations {
 			'daemon.code_3048_msg' => 'The post-quantum VPN and Meshnet can\'t run at the same time. Please turn off one feature to use the other.',
 			'daemon.code_3049_title' => 'Here\'s what to know',
 			'daemon.code_3049_msg' => 'This setting is not compatible with post-quantum encryption. To use it, turn off post-quantum encryption first.',
-			'daemon.code_3051_title' => 'Disabled technology',
-			'daemon.code_3051_msg' => 'Unable to connect with the current technology. Please try a different one using the command: nordvpn set technology.',
+			'daemon.code_3051_title' => 'Disabled protocol',
+			'daemon.code_3051_msg' => 'Unable to connect with the current protocol. Please try a different one using the command: nordvpn set protocol.',
+			'daemon.code_3068_title' => 'Here\'s what to know',
+			'daemon.code_3068_msg' => 'Auto-connect is set to a dedicated server, which only works with NordLynx. To use a different protocol, choose another auto-connect location or turn off auto-connect first.',
+			'daemon.code_3080_title' => 'Here\'s what to know',
+			'daemon.code_3080_msg' => 'Auto-connect is set to obfuscated servers, which only work with NordWhisper. To use a different protocol, choose another auto-connect location or turn off auto-connect first.',
 			'daemon.code_5007_title' => 'Restart daemon to apply setting',
 			'daemon.code_5007_msg' => 'Restart the daemon to apply this setting. For example, use the command `sudo systemctl restart nordvpnd` on systemd distributions.',
 			'daemon.code_5008_title' => 'gRPC timeout error',
@@ -2672,7 +2677,6 @@ extension on Translations {
 			'ui.signIn' => 'Sign in',
 			'ui.disconnect' => 'Disconnect',
 			'ui.double_vpn' => 'Double VPN',
-			'ui.onion_over_vpn' => 'Onion Over VPN',
 			'ui.fatalErrorMessage' => 'Fatal error',
 			'ui.connected' => 'Connected',
 			'ui.connectOrPickCountry' => 'Connect now or pick a country',
@@ -2689,7 +2693,6 @@ extension on Translations {
 			'ui.settings' => 'Settings',
 			'ui.launchAppAtStartup' => 'Launch at Startup',
 			'ui.vpnProtocol' => 'VPN Protocol',
-			'ui.obfuscate' => 'Obfuscate',
 			'ui.notificationsStatus' => 'VPN Connection Status Notifications',
 			'ui.firewall' => 'Firewall',
 			'ui.firewallDescription' => 'Allow the use of the system firewall. When enabled, you can attach a firewall mark to VPN packets for custom firewall rules.',
@@ -2736,16 +2739,16 @@ extension on Translations {
 			'ui.connecting' => 'Connecting',
 			'ui.findingServer' => 'Finding server...',
 			'ui.noResultsFound' => 'No results found. Try another keyword.',
+			_ => null,
+		} ?? switch (path) {
 			'ui.searchServersHint' => 'Search countries, cities, or servers',
 			'ui.citiesAvailable' => ({required Object n}) => '${n} cities available',
 			'ui.dedicatedIp' => 'Dedicated IP',
-			_ => null,
-		} ?? switch (path) {
 			'ui.dedicatedServer' => 'Dedicated Server',
 			'ui.doubleVpn' => 'Double VPN',
-			'ui.onionOverVpn' => 'Onion over VPN',
+			'ui.onionOverVpn' => 'Onion Over VPN',
 			'ui.obfuscated' => 'Obfuscated',
-			'ui.obfuscatedServers' => 'Obfuscated Servers',
+			'ui.obfuscatedServers' => 'Obfuscated',
 			'ui.selectServerForDip' => 'Pick a location for your IP',
 			'ui.selectLocation' => 'Select location',
 			'ui.dipSelectLocationDescription' => 'You have successfully purchased a dedicated IP – great! To start using it, select a location for your dedicated IP from the many options that we offer.',
@@ -2760,7 +2763,7 @@ extension on Translations {
 			'ui.invalidFormat' => 'Invalid format',
 			'ui.servers' => 'Servers',
 			'ui.securityAndPrivacy' => 'Security and privacy',
-			'ui.securityAndPrivacySubtitle' => 'Allowlist, DNS, LAN discovery, obfuscation, firewall',
+			'ui.securityAndPrivacySubtitle' => 'Allowlist, DNS, LAN discovery, firewall',
 			'ui.appearance' => 'Appearance',
 			'ui.light' => 'Light',
 			'ui.dark' => 'Dark',
@@ -2791,8 +2794,6 @@ extension on Translations {
 			'ui.routingDescription' => 'Use custom routing rules instead of the default VPN configuration.',
 			'ui.postQuantumVpn' => 'Post-quantum encryption',
 			'ui.postQuantumDescription' => 'Activate next-generation encryption that protects your data from threats posed by quantum computing.',
-			'ui.obfuscationDescription' => 'Avoid detection by traffic sensors in restricted networks while using a VPN. When enabled, only obfuscated servers are available.',
-			'ui.obfuscation' => 'Obfuscation',
 			'ui.add' => 'Add',
 			'ui.customDnsEntries' => ({required Object n}) => 'Custom DNS: ${n}/3',
 			'ui.addUpTo3DnsServers' => 'Add up to 3 DNS servers',
@@ -2829,6 +2830,7 @@ extension on Translations {
 			'ui.settingAutoconnectTo' => ({required Object target}) => 'Setting auto-connect to [${target}]...',
 			'ui.doubleVpnDesc' => 'Encrypt your traffic twice for extra security',
 			'ui.onionOverVpnDesc' => 'Use the Onion network with VPN protection',
+			'ui.obfuscatedServersDesc' => 'Hide signs of VPN usage on restricted networks',
 			'ui.save' => 'Save',
 			'ui.close' => 'Close',
 			'ui.to' => 'to',
@@ -2836,9 +2838,6 @@ extension on Translations {
 			'ui.useCustomDnsDescription' => 'Add up to three DNS servers.',
 			'ui.enterDnsAddress' => 'Enter DNS server address',
 			'ui.duplicatedDnsServer' => 'This server is already on the list.',
-			'ui.obfuscationSearchWarning' => 'Obfuscation is turned on, so only obfuscated server locations will show up.',
-			'ui.obfuscationErrorNoServerFound' => 'No results found. To access all available servers, turn off obfuscation.',
-			'ui.goToSettings' => 'Go to Settings',
 			'ui.useAllowList' => 'Use allowlist',
 			'ui.useAllowListSettingDescription' => 'Exclude ports, port ranges, or subnets from VPN protection.',
 			'ui.useAllowListScreenDescription' => 'Specify ports, port ranges, or subnets to exclude from VPN protection. Allowlisted ports may accept incoming connections from any external source outside your network.',
@@ -2859,8 +2858,9 @@ extension on Translations {
 			'ui.delete' => 'Delete',
 			'ui.settingsWereNotSaved' => 'Settings weren\'t saved',
 			'ui.couldNotSave' => 'We couldn\'t save your settings to the configuration file.',
-			'ui.turnOffObfuscationServerTypes' => 'Turn off obfuscation for more server types',
-			'ui.turnOffObfuscationLocations' => 'Turn off obfuscation for more locations',
+			'ui.settingsNotApplied' => 'Some settings weren\'t applied',
+			'ui.networkSettingsNotAppliedDescription' => 'Some default network settings could not be applied. Reset settings again to retry. If the problem continues, contact support.',
+			'ui.settingsNotAppliedDescription' => ({required Object settings}) => 'Some default settings could not be applied. The reset finished, but these settings may not be active: ${settings}. Reset settings again to retry. If the problem continues, contact support.',
 			'ui.nordWhisper' => 'NordWhisper',
 			'ui.system' => 'System',
 			'ui.removePrivateSubnets' => 'We\'ll remove private subnets from allowlist',
@@ -2911,7 +2911,7 @@ extension on Translations {
 			'ui.changePassword' => 'Change password',
 			'ui.productHub' => 'Product Hub',
 			'ui.subscriptionInactive' => 'Inactive',
-			'ui.recentConnections' => 'Recent connections',
+			'ui.recentConnections' => 'Recent Connections',
 			'ui.standardVpnServer' => 'Standard VPN Servers',
 			'ui.reconnectNow' => 'Reconnect now',
 			'ui.reconnectToChangeProtocol' => 'Reconnect to change protocol',

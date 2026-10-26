@@ -20,15 +20,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/network"
 )
 
-// determineServerGroupIDs returns the IDs of every group the server belongs to.
-func determineServerGroupIDs(server *core.Server) []config.ServerGroup {
-	ids := make([]config.ServerGroup, 0, len(server.Groups))
-	for _, g := range server.Groups {
-		ids = append(ids, g.ID)
-	}
-	return ids
-}
-
 // Connect initiates and handles the VPN connection process
 func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retErr error) {
 	return r.executeConnect(srv, func(ctx context.Context) (bool, error) {
@@ -229,11 +220,11 @@ func (r *RPC) connectWithStoredServerSelection(
 			// show general error because anyways he should not get here
 			return true, srv.Send(&pb.Payload{Type: internal.CodeFailure})
 		}
-		// second, if feature is enabled, check if technology is correct
-		if cfg.Technology != config.Technology_NORDLYNX {
+		// second, if feature is enabled, check if protocol is correct
+		if !cfg.VPNProtocol.IsNordLynx() {
 			return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersNoNordlynx})
 		}
-		// third, if technology is correct, check if post quantum is enabled(pq is not supported for dedicated servers)
+		// third, if protocol is correct, check if post quantum is enabled(pq is not supported for dedicated servers)
 		if cfg.AutoConnectData.PostquantumVpn {
 			return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersPq})
 		}
@@ -290,11 +281,11 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 			// show general error because anyways he should not get here
 			return true, srv.Send(&pb.Payload{Type: internal.CodeGroupNonexisting})
 		}
-		// second, if feature is enabled, check if technology is correct
-		if cfg.Technology != config.Technology_NORDLYNX {
+		// second, if feature is enabled, check if protocol is correct
+		if !cfg.VPNProtocol.IsNordLynx() {
 			return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersNoNordlynx})
 		}
-		// third, if technology is correct, check if post quantum is enabled(pq is not supported for dedicated servers)
+		// third, if protocol is correct, check if post quantum is enabled(pq is not supported for dedicated servers)
 		if cfg.AutoConnectData.PostquantumVpn {
 			return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersPq})
 		}
@@ -309,8 +300,8 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 		return true, srv.Send(&pb.Payload{Type: expirationCheckResult})
 	}
 
-	if cfg.Technology == config.Technology_NORDWHISPER && !features.NordWhisperEnabled {
-		return true, srv.Send(&pb.Payload{Type: internal.CodeTechnologyDisabled})
+	if cfg.VPNProtocol.IsNordWhisper() && !features.NordWhisperEnabled {
+		return true, srv.Send(&pb.Payload{Type: internal.CodeProtocolDisabled})
 	}
 
 	insights := r.dm.GetInsightsData().Insights
@@ -320,8 +311,8 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 
 	inputServerTag := internal.RemoveNonAlphanumeric(in.GetServerTag())
 
-	log.Debugf("picking servers for %v technology, input serverTag=%q serverGroup=%q, server excluded from lookup=%q",
-		cfg.Technology, in.GetServerTag(), in.GetServerGroup(), excludedServer)
+	log.Debugf("picking servers for %v vpn protocol, input serverTag=%q serverGroup=%q, server excluded from lookup=%q",
+		cfg.VPNProtocol, in.GetServerTag(), in.GetServerGroup(), excludedServer)
 
 	serverSelection, err := selectServer(r, &insights, cfg, inputServerTag, in.GetServerGroup(), excludedServer)
 	if err != nil {
@@ -421,12 +412,12 @@ func (r *RPC) connect(
 	serverData := vpn.ServerData{
 		IP:                  subnet.Addr(),
 		Hostname:            serverSelection.Server.Hostname,
-		Protocol:            cfg.AutoConnectData.Protocol,
+		VPNProtocol:         cfg.VPNProtocol,
 		NordLynxPublicKey:   serverSelection.Server.NordLynxPublicKey,
-		Obfuscated:          cfg.AutoConnectData.Obfuscate,
 		PostQuantum:         cfg.AutoConnectData.PostquantumVpn,
 		OpenVPNVersion:      serverSelection.Server.Version(),
 		NordWhisperPort:     serverSelection.Server.NordWhisperPort,
+		DedicatedServer:     isServerDedicated,
 		DedicatedServerPort: serverSelection.Server.DedicatedServersPort,
 	}
 
@@ -440,11 +431,10 @@ func (r *RPC) connect(
 	serverSelectionRule := determineServerSelectionRule(parameters)
 	r.connectionInfo.SetServerSelectionData(serverSelectionRule, serverSelection.Remote)
 
+	offeredGroups := serverpicker.EffectiveGroups(*serverSelection.Server, cfg.VPNProtocol)
 	event := events.DataConnect{
-		Protocol:                cfg.AutoConnectData.Protocol,
-		Technology:              cfg.Technology,
+		VPNProtocol:             cfg.VPNProtocol,
 		RealTimeProtection:      cfg.AutoConnectData.RealTimeProtection,
-		IsObfuscated:            cfg.AutoConnectData.Obfuscate,
 		IsPostQuantum:           cfg.AutoConnectData.PostquantumVpn,
 		IsECHEnabled:            r.getECHEnabledField(cfg).Get(),
 		DurationMs:              getElapsedTime(connectingStartTime),
@@ -455,8 +445,8 @@ func (r *RPC) connect(
 		TargetServerCountry:     country.Name,
 		TargetServerCountryCode: country.Code,
 		TargetServerDomain:      serverSelection.Server.Hostname,
-		TargetServerGroupID:     determineTargetServerGroup(serverSelection.Server, parameters),
-		ServerGroups:            determineServerGroupIDs(serverSelection.Server),
+		TargetServerGroupID:     determineTargetServerGroup(offeredGroups, parameters),
+		ServerGroups:            offeredGroups.IDs(),
 		TargetServerIP:          subnet.Addr(),
 		TargetServerName:        serverSelection.Server.Name,
 		RecommendationUUID:      string(serverSelection.RecommendationUUID),
@@ -495,8 +485,7 @@ func (r *RPC) connect(
 	}
 
 	disconnectSender := events.NewDisconnectSender(events.DataDisconnect{
-		Protocol:           cfg.AutoConnectData.Protocol,
-		Technology:         cfg.Technology,
+		VPNProtocol:        cfg.VPNProtocol,
 		RealTimeProtection: cfg.AutoConnectData.RealTimeProtection,
 		RecommendationUUID: string(serverSelection.RecommendationUUID),
 		VPNConnReason:      vpnConnReason,
@@ -518,7 +507,7 @@ func (r *RPC) connect(
 		storePendingRecentConnection(r.recentVPNConnStore)
 		connectionEstablished := event.EventStatus == events.StatusSuccess
 		if connectionEstablished && isRecentConnectionSupported(event.TargetServerSelection) {
-			recentModel, err := buildRecentConnectionModel(event, parameters, serverSelection.Server, r.dm, cfg)
+			recentModel, err := buildRecentConnectionModel(event, parameters, r.dm, cfg)
 			if err != nil {
 				log.Warn("Failed to build recent VPN connection model:", err)
 				return
@@ -581,18 +570,21 @@ func getElapsedTime(startTime time.Time) int {
 }
 
 // determineTargetServerGroup returns the server group the connection should be attributed to in
-// telemetry, based on the selected server's groups and the requested parameters.
-func determineTargetServerGroup(server *core.Server, parameters serverpicker.ServerParameters) config.ServerGroup {
+// telemetry, based on the groups the selected server offers.
+func determineTargetServerGroup(
+	groups core.Groups,
+	parameters serverpicker.ServerParameters,
+) config.ServerGroup {
 	hasGroup := func(gid config.ServerGroup) bool {
-		return slices.ContainsFunc(server.Groups, func(g core.Group) bool { return g.ID == gid })
+		return slices.ContainsFunc(groups, core.ByGroup(gid))
 	}
 
 	if parameters.Group != config.ServerGroup_UNDEFINED && hasGroup(parameters.Group) {
 		return parameters.Group
 	}
 
-	if hasGroup(config.ServerGroup_OBFUSCATED) {
-		return config.ServerGroup_OBFUSCATED
+	if hasGroup(config.ServerGroup_NW_OBFUSCATED) {
+		return config.ServerGroup_NW_OBFUSCATED
 	}
 
 	if hasGroup(config.ServerGroup_STANDARD_VPN_SERVERS) {
@@ -602,4 +594,4 @@ func determineTargetServerGroup(server *core.Server, parameters serverpicker.Ser
 	return config.ServerGroup_UNDEFINED
 }
 
-type FactoryFunc func(config.Technology) (vpn.VPN, error)
+type FactoryFunc func(config.VPNProtocol) (vpn.VPN, error)

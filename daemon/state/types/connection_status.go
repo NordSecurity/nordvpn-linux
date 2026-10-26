@@ -12,10 +12,8 @@ import (
 type ConnectionStatus struct {
 	// State of the vpn. OpenVPN specific.
 	State pb.ConnectionState
-	// Technology, which may or may not match what's in the config
-	Technology config.Technology
-	// Protocol, which may or may not match what's in the config
-	Protocol config.Protocol
+	// VPNProtocol selected for the current connection
+	VPNProtocol config.VPNProtocol
 	// IP of the other end of the connection
 	IP netip.Addr
 	// Name in a human readable form of the other end of the connection

@@ -1,10 +1,10 @@
 package mapper
 
 import (
-	"errors"
 	"io"
 	"testing"
 
+	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
@@ -13,7 +13,6 @@ import (
 )
 
 func TestNotifyingMapper_Map(t *testing.T) {
-	errNotFound := errors.New("Machine not found")
 	initialMap := &mesh.MachineMap{Raw: []byte{0x02}}
 	updatedMap := &mesh.MachineMap{Raw: []byte{0x02, 0x04}}
 	for _, tt := range []struct {
@@ -34,7 +33,7 @@ func TestNotifyingMapper_Map(t *testing.T) {
 		},
 		{
 			name:          "self removed when not found",
-			err:           errNotFound,
+			err:           core.ErrMeshMachineNotFound,
 			selfPublished: true,
 		},
 		{

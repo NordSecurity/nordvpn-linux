@@ -12,65 +12,46 @@ FILE_HASH_UTILITY = "sha256sum"
 
 API_EXTERNAL_IP = "https://api.nordvpn.com/v1/helpers/ips/insights"
 
-# Used for test parametrization, when the tested functionality does not work with obfuscated.
-STANDARD_TECHNOLOGIES = [
-    # technology, protocol, obfuscation,
-    ("openvpn", "udp", "off"),
-    ("openvpn", "tcp", "off"),
-    ("nordlynx", "", ""),
-    ("nordwhisper", "", ""),
+# Used for test parametrization, when the same test has to be run for every VPN protocol.
+STANDARD_VPN_PROTOCOLS = [
+    "openvpn_udp",
+    "openvpn_tcp",
+    "nordlynx",
+    "nordwhisper",
 ]
 
-# Used for test parametrization, when the tested functionality does not work with obfuscated and NordWhisper.
-STANDARD_TECHNOLOGIES_NO_NORDWHISPER = [
-    # technology, protocol, obfuscation,
-    ("openvpn", "udp", "off"),
-    ("openvpn", "tcp", "off"),
-    ("nordlynx", "", ""),
+# Used for test parametrization, when the tested functionality does not work with NordWhisper.
+STANDARD_VPN_PROTOCOLS_NO_NORDWHISPER = [
+    "openvpn_udp",
+    "openvpn_tcp",
+    "nordlynx",
 ]
 
-# Used for test parametrization, when the same test has to be run for obfuscated technologies.
-OBFUSCATED_TECHNOLOGIES = [
-    # technology, protocol, obfuscation,
-    ("openvpn", "udp", "on"),
-    ("openvpn", "tcp", "on"),
+STANDARD_VPN_PROTOCOLS_NO_MESHNET = [
+    "openvpn_udp",
+    "openvpn_tcp",
+    "nordwhisper",
 ]
 
-OBFUSCATED_TCP = [
-    # technology, protocol, obfuscation,
-    ("openvpn", "tcp", "on"),
+VPN_PROTOCOLS_NO_MESHNET = list(STANDARD_VPN_PROTOCOLS_NO_MESHNET)
+
+# Used for test parametrization, when the tested functionality only works with OpenVPN.
+OVPN_VPN_PROTOCOLS = [
+    "openvpn_udp",
+    "openvpn_tcp",
 ]
 
-STANDARD_TECHNOLOGIES_NO_MESHNET = [
-    # technology, protocol, obfuscation,
-    ("openvpn", "udp", "off"),
-    ("openvpn", "tcp", "off"),
-    ("nordwhisper", "", ""),
+# Used for test parametrization, when the same test has to be run for all VPN protocols.
+VPN_PROTOCOLS = list(STANDARD_VPN_PROTOCOLS)
+
+VPN_PROTOCOLS_BASIC1 = [
+    "nordlynx",
 ]
-
-TECHNOLOGIES_NO_MESHNET = OBFUSCATED_TECHNOLOGIES + STANDARD_TECHNOLOGIES_NO_MESHNET if IS_NIGHTLY \
-    else OBFUSCATED_TCP + STANDARD_TECHNOLOGIES_NO_MESHNET
-
-# Used for test parametrization, when the tested functionality does not work with obfuscated.
-OVPN_STANDARD_TECHNOLOGIES = [
-    # technology, protocol, obfuscation,
-    ("openvpn", "udp", "off"),
-    ("openvpn", "tcp", "off"),
+VPN_PROTOCOLS_BASIC2 = [
+    "openvpn_udp",
 ]
-
-# Used for test parametrization, when the same test has to be run for all technologies.
-
-TECHNOLOGIES = OBFUSCATED_TECHNOLOGIES + STANDARD_TECHNOLOGIES if IS_NIGHTLY \
-    else OBFUSCATED_TCP + STANDARD_TECHNOLOGIES
-
-TECHNOLOGIES_BASIC1 = [
-    ("nordlynx", "", ""),
-]
-TECHNOLOGIES_BASIC2 = [
-    ("openvpn", "udp", "off"),
-]
-NORDWHISPER_TECHNOLOGY = [
-    ("nordwhisper", "", ""),
+NORDWHISPER_VPN_PROTOCOL = [
+    "nordwhisper",
 ]
 
 # Used for test parametrization, when the same test has to be run for different real time protection settings.
@@ -79,26 +60,26 @@ REAL_TIME_PROTECTION = [
     "off",
 ]
 
-# Used for test parametrization, when the tested functionality does not work with obfuscated.
+# Used for test parametrization, when the same test has to be run for different server groups.
 ADDITIONAL_GROUPS = [
     "Double_VPN",
     "Onion_Over_VPN",
     "Standard_VPN_Servers",
 ]
 
-# Used for test parametrization with NordWhisper, since other additional groups are not supported with this technology.
+# Used for test parametrization with NordWhisper, since other additional groups are not supported with this protocol.
 ADDITIONAL_GROUPS_NORDWHISPER = [
     "Standard_VPN_Servers",
 ]
 
-# Used for test parametrization, when the tested functionality only works with non-obfuscated OPENVPN.
+# Used for test parametrization of the Dedicated IP group.
 DEDICATED_IP_GROUPS = [
     "Dedicated_IP"
 ]
 
-# Used for test parametrization, when the tested functionality only works with obfuscated OPENVPN.
-OVPN_OBFUSCATED_GROUPS = [
-    "Obfuscated_Servers"
+# Used for test parametrization of the Obfuscated_Servers group, which NordWhisper aliases for its standard servers.
+OBFUSCATED_GROUPS = [
+    "Obfuscated"
 ]
 
 # Used for test parametrization, when the same test has to be run for different countries.
@@ -220,27 +201,25 @@ class Defer:
         print(self.command())
 
 
-def set_technology_and_protocol(tech, proto, obfuscation):
+def vpn_protocol_display_name(vpn_protocol: str) -> str:
+    """Returns the protocol name shown by `nordvpn status` and `nordvpn settings`, e.g. `OpenVPN (UDP)`."""
+    return {
+        "nordlynx": "NordLynx",
+        "openvpn_udp": "OpenVPN (UDP)",
+        "openvpn_tcp": "OpenVPN (TCP)",
+        "nordwhisper": "NordWhisper",
+    }[vpn_protocol]
+
+
+def set_vpn_protocol(vpn_protocol):
     """
-    Allows setting technology, protocol and obfuscation regardless of whether it is already set or not.
+    Allows setting VPN protocol regardless of whether it is already set or not.
 
     Tests do not break on reordering when using this.
     """
-    if tech:
+    if vpn_protocol:
         try:
-            print(sh.nordvpn.set.technology(tech))
-        except sh.ErrorReturnCode_1 as ex:
-            print("WARNING:", ex)
-
-    if proto:
-        try:
-            print(sh.nordvpn.set.protocol(proto))
-        except sh.ErrorReturnCode_1 as ex:
-            print("WARNING:", ex)
-
-    if obfuscation:
-        try:
-            print(sh.nordvpn.set.obfuscate(obfuscation))
+            print(sh.nordvpn.set.protocol(vpn_protocol))
         except sh.ErrorReturnCode_1 as ex:
             print("WARNING:", ex)
 
@@ -361,16 +340,6 @@ class CommandExecutor:
         if self.ssh_client is None:
             return sh.Command(command.split()[0])(*command.split()[1:], tty_out=False)
         return self.ssh_client.exec_command(command)
-
-def technology_to_upper_camel_case(tech: str) -> str:
-    match tech.upper():
-        case "NORDLYNX":
-            return "NordLynx"
-        case "OPENVPN":
-            return "OpenVPN"
-        case "NORDWHISPER":
-            return "NordWhisper"
-
 
 def squash_whitespace(text: str) -> str:
     """Normalize whitespace by collapsing all sequences of whitespace into single spaces."""

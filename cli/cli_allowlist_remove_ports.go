@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
@@ -56,9 +55,9 @@ func (c *cmd) AllowlistRemovePorts(ctx *cli.Context) error {
 		isTCP = true
 	} else {
 		switch args.Get(3) {
-		case config.Protocol_UDP.String():
+		case stringUDP:
 			isUDP = true
-		case config.Protocol_TCP.String():
+		case stringTCP:
 			isTCP = true
 		default:
 			return formatError(argsParseError(ctx))
@@ -158,10 +157,10 @@ func (c *cmd) AllowlistRemovePortsAutoComplete(ctx *cli.Context) {
 		}
 
 		if slices.Contains(allowlist.Ports.Udp, startPort) {
-			fmt.Println(config.Protocol_UDP.String())
+			fmt.Println(stringUDP)
 		}
 		if slices.Contains(allowlist.Ports.Tcp, startPort) {
-			fmt.Println(config.Protocol_TCP.String())
+			fmt.Println(stringTCP)
 		}
 	default:
 		return

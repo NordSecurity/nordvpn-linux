@@ -22,7 +22,6 @@ import (
 	"github.com/fatih/color"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 var (
@@ -74,15 +73,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Setup logging
-	fileLogger := &lumberjack.Logger{
-		Filename:   filepath.Join(configDir, internal.CLILogFileName),
-		MaxSize:    100,
-		MaxBackups: 1,
-		MaxAge:     28,
-		Compress:   true,
-	}
-	log.SetOutput(fileLogger)
+	log.SetOutput(internal.FileLogOutput(filepath.Join(configDir, internal.CLILogFileName), internal.MaxUserLogSizeMB))
 
 	loaderInterceptor := cli.LoaderInterceptor{}
 

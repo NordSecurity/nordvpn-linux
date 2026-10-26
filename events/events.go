@@ -125,12 +125,11 @@ const (
 type DataConnect struct {
 	IsMeshnetPeer           bool
 	RealTimeProtection      bool
-	Protocol                config.Protocol
+	VPNProtocol             config.VPNProtocol
 	DurationMs              int
 	ServerFromAPI           bool
 	EventStatus             TypeEventStatus
 	TargetServerSelection   config.ServerSelectionRule
-	Technology              config.Technology
 	TargetServerCity        string
 	TargetServerCountry     string
 	TargetServerCountryCode string
@@ -203,10 +202,9 @@ func NewDebuggerEvent(jsonData string) *DebuggerEvent {
 }
 
 type DataDisconnect struct {
-	Protocol              config.Protocol
+	VPNProtocol           config.VPNProtocol
 	ServerFromAPI         bool
 	EventStatus           TypeEventStatus
-	Technology            config.Technology
 	TargetServerSelection config.ServerSelectionRule
 	RealTimeProtection    bool
 	ByUser                bool

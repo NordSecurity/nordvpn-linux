@@ -17,7 +17,6 @@ abstract class VpnStatus with _$VpnStatus {
     required Country? country,
     required ConnectionState status,
     required VpnProtocol protocol,
-    required bool isObfuscated,
     required ConnectionParameters connectionParameters,
     required bool isMeshnetRouting,
   }) = _VpnStatus;
@@ -31,8 +30,7 @@ abstract class VpnStatus with _$VpnStatus {
           ? Country.fromCodeOrName(status.country)
           : null,
       status: status.state,
-      protocol: convertToVpnProtocol(status.technology, status.protocol),
-      isObfuscated: status.obfuscated,
+      protocol: vpnProtocolFromPb(status.vpnProtocol),
       connectionParameters: status.parameters,
       isMeshnetRouting: status.isMeshPeer,
     );
@@ -62,11 +60,7 @@ abstract class VpnStatus with _$VpnStatus {
         country?.name == statusResponse.country &&
         city?.name == statusResponse.city &&
         hostname == statusResponse.hostname &&
-        protocol ==
-            convertToVpnProtocol(
-              statusResponse.technology,
-              statusResponse.protocol,
-            ) &&
+        protocol == vpnProtocolFromPb(statusResponse.vpnProtocol) &&
         connectionParameters.group == statusResponse.parameters.group;
   }
 }

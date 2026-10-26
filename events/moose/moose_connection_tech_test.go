@@ -1,0 +1,189 @@
+//go:build moose
+
+package moose
+
+import (
+	"testing"
+
+	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/test/category"
+
+	moose "moose/events"
+
+	"gotest.tools/v3/assert"
+)
+
+type techContextRecorder struct {
+	userPrefTech  []moose.NordvpnappVpnConnectionTechnology
+	currentTech   []moose.NordvpnappVpnConnectionTechnology
+	userPrefProto []moose.NordvpnappVpnConnectionProtocol
+	currentProto  []moose.NordvpnappVpnConnectionProtocol
+}
+
+func newTechTestSubscriber() (*Subscriber, *techContextRecorder) {
+	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
+	noopDisconnectAmbientMooseFuncs(sub)
+	sub.mooseFuncs.setRTPCurrentState = func(_ bool) uint32 { return 0 }
+	sub.mooseFuncs.sendConnect = func(
+		_ moose.EventParams,
+		_ moose.TargetConnectionParams,
+		_ moose.TargetConnectionAdditionalParams,
+		_ moose.ConnectionParams,
+		_ moose.NordvpnappOptBool,
+		_ int32,
+		_ string,
+		_ *string,
+	) uint32 {
+		return 0
+	}
+	sub.mooseFuncs.sendDisconnect = func(
+		_ moose.EventParams,
+		_ moose.TargetConnectionParams,
+		_ moose.ConnectionParams,
+		_ int32,
+		_ int32,
+		_ *string,
+	) uint32 {
+		return 0
+	}
+
+	r := &techContextRecorder{}
+	sub.mooseFuncs.setTechnologyUserPreference = func(v moose.NordvpnappVpnConnectionTechnology) uint32 {
+		r.userPrefTech = append(r.userPrefTech, v)
+		return 0
+	}
+	sub.mooseFuncs.setTechnologyCurrentState = func(v moose.NordvpnappVpnConnectionTechnology) uint32 {
+		r.currentTech = append(r.currentTech, v)
+		return 0
+	}
+	sub.mooseFuncs.setProtocolUserPreference = func(v moose.NordvpnappVpnConnectionProtocol) uint32 {
+		r.userPrefProto = append(r.userPrefProto, v)
+		return 0
+	}
+	sub.mooseFuncs.setProtocolCurrentState = func(v moose.NordvpnappVpnConnectionProtocol) uint32 {
+		r.currentProto = append(r.currentProto, v)
+		return 0
+	}
+	return sub, r
+}
+
+func connectVPN(t *testing.T, sub *Subscriber, vpnProtocol config.VPNProtocol) {
+	t.Helper()
+	assert.NilError(t, sub.NotifyConnect(events.DataConnect{
+		EventStatus: events.StatusSuccess,
+		VPNProtocol: vpnProtocol,
+	}))
+}
+
+func TestNotifyVPNProtocol_Disconnected_ReportsEffectiveState(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name        string
+		vpnProtocol config.VPNProtocol
+	}{
+		{name: "nordlynx", vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX},
+		{name: "openvpn udp", vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP},
+		{name: "openvpn tcp", vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP},
+		{name: "nordwhisper", vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sub, rec := newTechTestSubscriber()
+
+			err := sub.NotifyVPNProtocol(tt.vpnProtocol)
+
+			assert.NilError(t, err)
+			wantTech := connectionTechnologyToInternalType(tt.vpnProtocol)
+			wantProto := connectionProtocolToInternalType(tt.vpnProtocol)
+			assert.DeepEqual(t, []moose.NordvpnappVpnConnectionTechnology{wantTech}, rec.userPrefTech)
+			assert.DeepEqual(t, []moose.NordvpnappVpnConnectionTechnology{wantTech}, rec.currentTech)
+			assert.DeepEqual(t, []moose.NordvpnappVpnConnectionProtocol{wantProto}, rec.userPrefProto)
+			assert.DeepEqual(t, []moose.NordvpnappVpnConnectionProtocol{wantProto}, rec.currentProto)
+		})
+	}
+}
+
+func TestNotifyVPNProtocol_Unspecified_ReturnsError(t *testing.T) {
+	category.Set(t, category.Unit)
+	sub, rec := newTechTestSubscriber()
+
+	err := sub.NotifyVPNProtocol(config.VPNProtocol_VPN_PROTOCOL_UNSPECIFIED)
+
+	assert.ErrorIs(t, err, errUnknownVPNProtocol)
+	assert.Equal(t, 0, len(rec.userPrefTech))
+	assert.Equal(t, 0, len(rec.currentTech))
+	assert.Equal(t, 0, len(rec.userPrefProto))
+	assert.Equal(t, 0, len(rec.currentProto))
+}
+
+func TestNotifyConnect_NotSuccessful_DoesNotTouchConnectionTechnology(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name string
+		data events.DataConnect
+	}{
+		{
+			name: "attempt",
+			data: events.DataConnect{EventStatus: events.StatusAttempt, VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER},
+		},
+		{
+			name: "failure",
+			data: events.DataConnect{EventStatus: events.StatusFailure, VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER},
+		},
+		{
+			name: "meshnet peer success",
+			data: events.DataConnect{EventStatus: events.StatusSuccess, IsMeshnetPeer: true, VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sub, rec := newTechTestSubscriber()
+
+			err := sub.NotifyConnect(tt.data)
+
+			assert.NilError(t, err)
+			assert.Equal(t, 0, len(rec.currentTech))
+			assert.Equal(t, 0, len(rec.currentProto))
+		})
+	}
+}
+
+func TestNotifyVPNProtocol_MeshnetPeerOnly_IsNotDeferred(t *testing.T) {
+	category.Set(t, category.Unit)
+	sub, rec := newTechTestSubscriber()
+	assert.NilError(t, sub.NotifyConnect(events.DataConnect{EventStatus: events.StatusSuccess, IsMeshnetPeer: true}))
+
+	assert.NilError(t, sub.NotifyVPNProtocol(config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER))
+
+	assert.DeepEqual(t,
+		[]moose.NordvpnappVpnConnectionTechnology{moose.NordvpnappVpnConnectionTechnologyNordwhisper},
+		rec.currentTech)
+
+	assert.NilError(t, sub.NotifyDisconnect(events.DataDisconnect{EventStatus: events.StatusSuccess}))
+}
+
+func TestVPNProtocolChangeWhileConnected_ReportedOnNextConnect(t *testing.T) {
+	category.Set(t, category.Unit)
+	sub, rec := newTechTestSubscriber()
+	udp := moose.NordvpnappVpnConnectionProtocolUdp
+	webtunnel := moose.NordvpnappVpnConnectionProtocolWebtunnel
+
+	assert.NilError(t, sub.NotifyVPNProtocol(config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP))
+
+	connectVPN(t, sub, config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP)
+
+	assert.NilError(t, sub.NotifyVPNProtocol(config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER))
+	assert.DeepEqual(t, []moose.NordvpnappVpnConnectionProtocol{udp, udp}, rec.currentProto)
+	assert.Equal(t, 2, len(rec.userPrefTech))
+	assert.Equal(t, 2, len(rec.userPrefProto))
+
+	assert.NilError(t, sub.NotifyDisconnect(events.DataDisconnect{EventStatus: events.StatusSuccess}))
+
+	connectVPN(t, sub, config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER)
+	assert.DeepEqual(t, []moose.NordvpnappVpnConnectionProtocol{udp, udp, webtunnel, webtunnel}, rec.currentProto)
+}

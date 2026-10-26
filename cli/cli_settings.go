@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/client"
-	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/nstrings"
@@ -33,19 +32,13 @@ func (c *cmd) Settings(ctx *cli.Context) error {
 	}
 	meshEnabled := isMeshnetEnabled(c)
 
-	fmt.Printf("Technology: %s\n", settings.GetTechnology())
-	if settings.Technology == config.Technology_OPENVPN {
-		fmt.Printf("Protocol: %s\n", settings.GetProtocol())
-	}
+	fmt.Printf("Protocol: %s\n", settings.GetVpnProtocol().DisplayName())
 	fmt.Printf("Firewall: %+v\n", nstrings.GetBoolLabel(settings.GetFirewall()))
 	fmt.Printf("Firewall Mark: 0x%x\n", settings.GetFwmark())
 	fmt.Printf("Routing: %+v\n", nstrings.GetBoolLabel(settings.GetRouting()))
 	fmt.Printf("User Consent: %s\n", nstrings.UserConsent(settings.AnalyticsConsent))
 	fmt.Printf("Kill Switch: %+v\n", nstrings.GetBoolLabel(settings.GetKillSwitch()))
 	fmt.Printf("Real-time protection: %+v\n", nstrings.GetBoolLabel(settings.RealTimeProtection))
-	if settings.Technology == config.Technology_OPENVPN {
-		fmt.Printf("Obfuscate: %+v\n", nstrings.GetBoolLabel(settings.GetObfuscate()))
-	}
 	fmt.Printf("Notify: %+v\n", nstrings.GetBoolLabel(settings.UserSettings.Notify))
 	fmt.Printf("Tray: %+v\n", nstrings.GetBoolLabel(settings.UserSettings.Tray))
 	fmt.Printf("Auto-connect: %+v\n", nstrings.GetBoolLabel(settings.AutoConnectData.Enabled))
@@ -65,10 +58,10 @@ func (c *cmd) Settings(ctx *cli.Context) error {
 		fmt.Printf("DNS: %+v\n", strings.Join(settings.Dns, ", "))
 	}
 	fmt.Printf("LAN Discovery: %+v\n", nstrings.GetBoolLabel(settings.LanDiscovery))
-	if settings.Technology == config.Technology_NORDLYNX {
+	if settings.VpnProtocol.IsNordLynx() {
 		fmt.Printf("Post-quantum VPN: %+v\n", nstrings.GetBoolLabel(settings.PostquantumVpn))
 	}
-	if settings.Technology == config.Technology_NORDWHISPER {
+	if settings.VpnProtocol.IsNordWhisper() {
 		fmt.Printf("ECH: %+v\n", nstrings.GetBoolLabel(settings.Ech))
 	}
 	fmt.Printf("ARP Ignore: %+v\n", nstrings.GetBoolLabel(settings.ArpIgnore))

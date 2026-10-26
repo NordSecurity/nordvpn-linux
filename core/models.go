@@ -278,37 +278,6 @@ type Server struct {
 	IPRecords            []ServerIPRecord `json:"ips"`
 }
 
-// ServerObfuscationStatus is the return status of IsServerObfuscated
-type ServerObfuscationStatus int
-
-const (
-	// ServerObfuscated status returned when server is obfuscated
-	ServerObfuscated ServerObfuscationStatus = iota
-	// ServerNotObfuscated status returned when server is not obfuscated
-	ServerNotObfuscated
-	// NotAServerName returned when server with such name has not been found
-	// (there is no hostname beginning with given server tag)
-	NotAServerName
-)
-
-// IsServerObfuscated returns ServerObfuscationStatus for a given server tag
-func IsServerObfuscated(servers Servers, serverTag string) ServerObfuscationStatus {
-	serverIndex := slices.IndexFunc(servers, func(server Server) bool {
-		serverName := strings.Split(server.Hostname, ".")[0]
-		return serverName == serverTag
-	})
-
-	if serverIndex == -1 {
-		return NotAServerName
-	}
-
-	if IsObfuscated()(servers[serverIndex]) {
-		return ServerObfuscated
-	}
-
-	return ServerNotObfuscated
-}
-
 // Predicate function used in algorithms like filter.
 type Predicate func(Server) bool
 
@@ -346,33 +315,19 @@ func IsConnectableVia(tech ServerTechnology) Predicate {
 	}
 }
 
-// IsObfuscated returns a filter for keeping only obfuscated servers.
-func IsObfuscated() Predicate {
+// IsConnectableWithProtocol behaves like IsConnectableVia, but takes a VPN protocol.
+func IsConnectableWithProtocol(p config.VPNProtocol) Predicate {
 	return func(s Server) bool {
-		return IsConnectableVia(OpenVPNUDPObfuscated)(s) ||
-			IsConnectableVia(OpenVPNTCPObfuscated)(s)
-	}
-}
-
-// IsConnectableWithProtocol behaves like IsConnectableVia, but also includes protocol.
-func IsConnectableWithProtocol(tech config.Technology, proto config.Protocol) Predicate {
-	return func(s Server) bool {
-		switch tech {
-		case config.Technology_NORDLYNX:
+		//exhaustive:ignore
+		switch p {
+		case config.VPNProtocol_VPN_PROTOCOL_NORDLYNX:
 			return IsConnectableVia(WireguardTech)(s)
-		case config.Technology_OPENVPN:
-			if proto == config.Protocol_UDP {
-				return IsConnectableVia(OpenVPNUDP)(s) ||
-					IsConnectableVia(OpenVPNUDPObfuscated)(s)
-			}
-			if proto == config.Protocol_TCP {
-				return IsConnectableVia(OpenVPNTCP)(s) ||
-					IsConnectableVia(OpenVPNTCPObfuscated)(s)
-			}
-		case config.Technology_NORDWHISPER:
+		case config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP:
+			return IsConnectableVia(OpenVPNUDP)(s)
+		case config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP:
+			return IsConnectableVia(OpenVPNTCP)(s)
+		case config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER:
 			return IsConnectableVia(NordWhisperTech)(s)
-		case config.Technology_UNKNOWN_TECHNOLOGY:
-			break
 		}
 		return false
 	}
@@ -531,6 +486,15 @@ func (s *Servers) Validate() error {
 }
 
 type Groups []Group
+
+// IDs returns the ID of every group.
+func (g Groups) IDs() []config.ServerGroup {
+	ids := make([]config.ServerGroup, 0, len(g))
+	for _, group := range g {
+		ids = append(ids, group.ID)
+	}
+	return ids
+}
 
 type Group struct {
 	ID    config.ServerGroup `json:"id"`

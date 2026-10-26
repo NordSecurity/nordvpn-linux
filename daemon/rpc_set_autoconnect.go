@@ -47,32 +47,12 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 			return &pb.Payload{Type: internal.CodeGroupNonexisting}, nil
 		}
 
-		if cfg.Technology != config.Technology_NORDLYNX {
+		if !cfg.VPNProtocol.IsNordLynx() {
 			return &pb.Payload{Type: internal.CodeDedicatedServersNoNordlynx}, nil
 		}
 
 		if cfg.AutoConnectData.PostquantumVpn {
 			return &pb.Payload{Type: internal.CodeDedicatedServersPq}, nil
-		}
-	}
-
-	if in.GetEnabled() {
-		switch core.IsServerObfuscated(r.dm.GetServersData().Servers, in.GetServerTag()) {
-		case core.ServerNotObfuscated:
-			if cfg.AutoConnectData.Obfuscate {
-				return &pb.Payload{
-					Type: internal.CodeAutoConnectServerNotObfuscated,
-				}, nil
-			}
-		case core.ServerObfuscated:
-			if !cfg.AutoConnectData.Obfuscate {
-				return &pb.Payload{
-					Type: internal.CodeAutoConnectServerObfuscated,
-				}, nil
-			}
-		case core.NotAServerName:
-			// autoconnect is not set to a specific server
-			// so obfuscation doesn't need to be validated
 		}
 	}
 
@@ -106,7 +86,6 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 				CountryCode:        parameters.CountryCode,
 				City:               parameters.City,
 				Group:              parameters.Group,
-				Protocol:           cfg.AutoConnectData.Protocol,
 				RealTimeProtection: cfg.AutoConnectData.RealTimeProtection,
 				Obfuscate:          cfg.AutoConnectData.Obfuscate,
 				DNS:                cfg.AutoConnectData.DNS,

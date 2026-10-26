@@ -3,12 +3,8 @@ package daemon
 import "math"
 
 const (
-	Alpha  = 0.7
-	Beta   = -0.15
-	Lambda = 1
-	K      = 0.5
-	W      = 0.5
-	Fi     = 7
+	Alpha = 0.7
+	W     = 0.5
 )
 
 func distancePenalty(distance, distanceMin, distanceMax float64) float64 {
@@ -34,17 +30,8 @@ func hubPenalty(hubScore *float64) float64 {
 	return 0
 }
 
-func obfuscationPenalty(obfuscated bool, timestamp, timestampMin, timestampMax int64) float64 {
-	if obfuscated {
-		return Beta*math.Pow((float64(timestamp)-float64(timestampMin))/(float64(timestampMax)-float64(timestampMin)), Fi) + Lambda
-	}
-	return 0
-}
-
 func penalty(
-	obfuscated bool,
 	distance, distanceMin, distanceMax float64,
-	timestamp, timestampMin, timestampMax int64,
 	load int64,
 	userCountryCode, serverCountryCode string,
 	hubScore *float64,
@@ -52,9 +39,8 @@ func penalty(
 ) (float64, float64) {
 	distanceP := distancePenalty(distance, distanceMin, distanceMax)
 	loadP := loadPenalty(load)
-	obfuscationP := obfuscationPenalty(obfuscated, timestamp, timestampMin, timestampMax)
 	countryP := countryPenalty(userCountryCode, serverCountryCode)
 	hubP := hubPenalty(hubScore)
-	partialPenalty := distanceP + randomComponent + obfuscationP - countryP*hubP
+	partialPenalty := distanceP + randomComponent - countryP*hubP
 	return partialPenalty + loadP, partialPenalty
 }

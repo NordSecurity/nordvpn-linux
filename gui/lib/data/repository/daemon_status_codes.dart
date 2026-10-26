@@ -21,20 +21,20 @@ final class DaemonStatusCode {
   static const tokenRenewError = 3022;
   static const tokenLoginFailure = 3035;
   static const serverUnavailable = 3032;
-  static const serverNotObfuscated = 3037;
-  static const serverObfuscated = 3038;
   static const privateSubnetLANDiscovery = 3040;
   static const allowlistSubnetNoop = 3045;
   static const allowlistPortOutOfRange = 3046;
   static const allowlistPortNoop = 3047;
   static const featureHidden = 3050;
-  static const technologyDisabled = 3051;
+  static const protocolDisabled = 3051;
   static const allowlistSubnetTooWideWarn = 3060;
   static const allowlistSubnetWiderConfirm = 3061;
+  static const dedicatedServersNoNordlynx = 3068;
   static const connectionLimitReached = 3076;
+  static const setDefaultsNotApplied = 3078;
+  static const obfuscatedNeedsNordWhisper = 3080;
 
   // custom GUI defined error codes
-  static const invalidTechnology = 5000;
   static const allowListModified = 5001;
   static const dnsListModified = 5002;
   static const tooManyValues = 5003;

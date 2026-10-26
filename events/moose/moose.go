@@ -83,6 +83,9 @@ type (
 		int32,
 		*string,
 	) uint32
+	mooseSendAuthorizationFunc func(moose.EventParams, moose.NordvpnappOptBool, int32, *string) uint32
+	mooseSendLogoutFunc        func(moose.EventParams, int32, *string) uint32
+
 	mooseSetDSIsActiveFunc   func(bool) uint32
 	mooseUnsetDSIsActiveFunc func() uint32
 	mooseSetDSEnabledFunc    func(bool) uint32
@@ -93,6 +96,11 @@ type (
 	mooseSetUserPrefServerGroupFunc   func(moose.NordvpnappServerGroup) uint32
 	mooseSetConnectionPreferenceFunc  func(moose.NordvpnappConnectionPreference) uint32
 	mooseSetAutoConnectTypeFunc       func(moose.NordvpnappVpnAutoConnectType) uint32
+	// technology / protocol context setters (user preference and current state)
+	mooseSetTechnologyFunc func(moose.NordvpnappVpnConnectionTechnology) uint32
+	mooseSetProtocolFunc   func(moose.NordvpnappVpnConnectionProtocol) uint32
+
+	mooseSetIsLoggedInCurrentStateFunc func(bool) uint32
 )
 
 type mooseFunctions struct {
@@ -116,6 +124,9 @@ type mooseFunctions struct {
 	setIsOnVpnCurrentState          mooseSetIsOnVpnCurrentStateFunc
 	sendConnect                     mooseSendConnectFunc
 	sendDisconnect                  mooseSendDisconnectFunc
+	sendLogin                       mooseSendAuthorizationFunc
+	sendRegister                    mooseSendAuthorizationFunc
+	sendLogout                      mooseSendLogoutFunc
 	setDSIsActive                   mooseSetDSIsActiveFunc
 	unsetDSIsActive                 mooseUnsetDSIsActiveFunc
 	setDSEnabled                    mooseSetDSEnabledFunc
@@ -125,6 +136,13 @@ type mooseFunctions struct {
 	setUserPrefServerGroup          mooseSetUserPrefServerGroupFunc
 	setUserPrefConnectionPreference mooseSetConnectionPreferenceFunc
 	setUserPrefAutoConnectType      mooseSetAutoConnectTypeFunc
+	// technology / protocol
+	setTechnologyUserPreference mooseSetTechnologyFunc
+	setTechnologyCurrentState   mooseSetTechnologyFunc
+	setProtocolUserPreference   mooseSetProtocolFunc
+	setProtocolCurrentState     mooseSetProtocolFunc
+
+	setIsLoggedInCurrentState mooseSetIsLoggedInCurrentStateFunc
 }
 
 // Subscriber listen events, send to moose engine
@@ -140,12 +158,16 @@ type Subscriber struct {
 	connectionStartTime              time.Time
 	connectionToMeshnetPeer          bool
 	connectionToSensitiveServerGroup bool
-	initialHeartbeatSent             bool
-	mooseFuncs                       mooseFunctions
-	httpClient                       *http.Client
-	mux                              sync.RWMutex
-	isInitialized                    atomic.Bool
-	configChangeHandlers             []configChangeHandler
+	// configuredVPNProtocol is what the settings tell the next connect will use.
+	// connectedVPNProtocol is what the live VPN tunnel uses. Unspecified while disconnected.
+	configuredVPNProtocol config.VPNProtocol
+	connectedVPNProtocol  config.VPNProtocol
+	initialHeartbeatSent  bool
+	mooseFuncs            mooseFunctions
+	httpClient            *http.Client
+	mux                   sync.RWMutex
+	isInitialized         atomic.Bool
+	configChangeHandlers  []configChangeHandler
 }
 
 func NewSubscriber(
@@ -188,6 +210,9 @@ func NewSubscriber(
 			setIsOnVpnCurrentState:          moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateIsOnVpnValue,
 			sendConnect:                     moose.NordvpnappSendServiceQualityServersConnect,
 			sendDisconnect:                  moose.NordvpnappSendServiceQualityServersDisconnect,
+			sendLogin:                       moose.NordvpnappSendServiceQualityAuthorizationLogin,
+			sendRegister:                    moose.NordvpnappSendServiceQualityAuthorizationRegister,
+			sendLogout:                      moose.NordvpnappSendServiceQualityAuthorizationLogout,
 			setDSIsActive:                   moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStateDedicatedServerIsActive,
 			unsetDSIsActive:                 moose.NordvpnappUnsetContextUserNordvpnappSubscriptionCurrentStateDedicatedServerIsActive,
 			setDSEnabled:                    moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateDedicatedServerEnabled,
@@ -197,6 +222,11 @@ func NewSubscriber(
 			setUserPrefServerGroup:          moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesServerGroup,
 			setUserPrefConnectionPreference: moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesConnectionPreference,
 			setUserPrefAutoConnectType:      moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesAutoConnectTypeValue,
+			setTechnologyUserPreference:     moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesTechnologyValue,
+			setTechnologyCurrentState:       moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateTechnologyValue,
+			setProtocolUserPreference:       moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesProtocolValue,
+			setProtocolCurrentState:         moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateProtocolValue,
+			setIsLoggedInCurrentState:       moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateIsLoggedIn,
 		},
 	}
 	// Add more handlers here as needed
@@ -392,21 +422,20 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 		return fmt.Errorf("setting moose is on vpn: %w", err)
 	}
 
+	if err := s.response(s.mooseFuncs.setIsLoggedInCurrentState(auth.IsAuthenticated(&cfg))); err != nil {
+		return fmt.Errorf("setting moose is logged in: %w", err)
+	}
+
 	if err := s.response(s.mooseFuncs.unsetServerGroupCurrentState()); err != nil {
 		return fmt.Errorf("unsetting initial server group: %w", err)
 	}
 
-	sub := &Subscriber{}
-	if err := sub.NotifyFirewall(true); err != nil {
+	if err := s.NotifyFirewall(true); err != nil {
 		return fmt.Errorf("setting moose firewall: %w", err)
 	}
 
-	if err := sub.NotifyProtocol(cfg.AutoConnectData.Protocol); err != nil {
-		return fmt.Errorf("setting moose protocol: %w", err)
-	}
-
-	if err := sub.NotifyTechnology(cfg.Technology); err != nil {
-		return fmt.Errorf("setting moose technology: %w", err)
+	if err := s.initVPNProtocol(cfg); err != nil {
+		return err
 	}
 
 	if err := s.response(moose.NordvpnappSetContextDeviceCpuArchitecture(s.buildTarget.Architecture)); err != nil {
@@ -543,15 +572,22 @@ func (s *Subscriber) NotifyIpv6(data bool) error {
 }
 
 func (s *Subscriber) NotifyLogin(data events.DataAuthorization) error { // regular login, or login after signup
-	mooseFn := moose.NordvpnappSendServiceQualityAuthorizationLogin
+	mooseFn := s.mooseFuncs.sendLogin
 	if data.EventType == events.LoginSignUp {
-		mooseFn = moose.NordvpnappSendServiceQualityAuthorizationRegister
+		mooseFn = s.mooseFuncs.sendRegister
 	}
 
 	loginFlowAltered := moose.NordvpnappOptBoolNone
 	if data.EventStatus != events.StatusAttempt {
 		if data.IsAlteredFlowOnNordAccount {
 			loginFlowAltered = moose.NordvpnappOptBoolTrue
+		}
+	}
+
+	var loggedInErr error
+	if data.EventStatus == events.StatusSuccess {
+		if err := s.response(s.mooseFuncs.setIsLoggedInCurrentState(true)); err != nil {
+			loggedInErr = fmt.Errorf("setting is logged in current state (true): %w", err)
 		}
 	}
 
@@ -565,17 +601,24 @@ func (s *Subscriber) NotifyLogin(data events.DataAuthorization) error { // regul
 		int32(data.Reason),
 		nil,
 	)); err != nil {
-		return fmt.Errorf("sending login/register event (status=%v, type=%v): %w", data.EventStatus, data.EventType, err)
+		return errors.Join(loggedInErr, fmt.Errorf("sending login/register event (status=%v, type=%v): %w", data.EventStatus, data.EventType, err))
 	}
 
 	if data.EventStatus == events.StatusSuccess {
-		return errors.Join(s.fetchSubscriptions(), s.fetchAndSetServiceContext())
+		return errors.Join(loggedInErr, s.fetchSubscriptions(), s.fetchAndSetServiceContext())
 	}
 	return nil
 }
 
 func (s *Subscriber) NotifyLogout(data events.DataAuthorization) error {
-	if err := s.response(moose.NordvpnappSendServiceQualityAuthorizationLogout(
+	var errs []error
+	if data.EventStatus == events.StatusSuccess {
+		if err := s.response(s.mooseFuncs.setIsLoggedInCurrentState(false)); err != nil {
+			errs = append(errs, fmt.Errorf("setting is logged in current state (false): %w", err))
+		}
+	}
+
+	if err := s.response(s.mooseFuncs.sendLogout(
 		moose.EventParams{
 			EventDuration: int32(data.DurationMs),
 			EventStatus:   eventStatusToInternalType(data.EventStatus),
@@ -584,13 +627,15 @@ func (s *Subscriber) NotifyLogout(data events.DataAuthorization) error {
 		int32(data.Reason),
 		nil,
 	)); err != nil {
-		return fmt.Errorf("sending logout event (status=%v): %w", data.EventStatus, err)
+		errs = append(errs, fmt.Errorf("sending logout event (status=%v): %w", data.EventStatus, err))
+		return errors.Join(errs...)
 	}
 
 	if data.EventStatus == events.StatusSuccess {
 		if err := s.clearSubscriptions(); err != nil {
-			return fmt.Errorf("clearing subscriptions after logout: %w", err)
+			errs = append(errs, fmt.Errorf("clearing subscriptions after logout: %w", err))
 		}
+		return errors.Join(errs...)
 	}
 	return nil
 }
@@ -770,13 +815,6 @@ func (s *Subscriber) NotifyMeshnet(data bool) error {
 	return nil
 }
 
-func (s *Subscriber) NotifyObfuscate(data bool) error {
-	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesObfuscationEnabledValue(data)); err != nil {
-		return fmt.Errorf("setting obfuscation preference (enabled=%v): %w", data, err)
-	}
-	return nil
-}
-
 func (s *Subscriber) NotifyPeerUpdate([]string) error { return nil }
 
 func (s *Subscriber) NotifyRealTimeProtection(isRealTimeProtectionEnabled bool) error {
@@ -814,17 +852,6 @@ func (s *Subscriber) setRealTimeProtection(isRealTimeProtectionEnabled bool) err
 	return errors.Join(errs...)
 }
 
-func (s *Subscriber) NotifyProtocol(data config.Protocol) error {
-	protocol := connectionProtocolToInternalType(data)
-	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateProtocolValue(protocol)); err != nil {
-		return fmt.Errorf("setting protocol current state (%v): %w", data, err)
-	}
-	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesProtocolValue(protocol)); err != nil {
-		return fmt.Errorf("setting protocol user preference (%v): %w", data, err)
-	}
-	return nil
-}
-
 func (s *Subscriber) NotifyAllowlist(data events.DataAllowlist) error {
 	enabled := len(data.UDPPorts) != 0 || len(data.TCPPorts) != 0 || len(data.Subnets) != 0
 	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesSplitTunnelingEnabledMeta(
@@ -835,21 +862,6 @@ func (s *Subscriber) NotifyAllowlist(data events.DataAllowlist) error {
 	}
 	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesSplitTunnelingEnabledValue(enabled)); err != nil {
 		return fmt.Errorf("setting allowlist enabled value (enabled=%v): %w", enabled, err)
-	}
-	return nil
-}
-
-func (s *Subscriber) NotifyTechnology(data config.Technology) error {
-	if data == config.Technology_UNKNOWN_TECHNOLOGY {
-		return errors.New("unknown technology")
-	}
-
-	technology := connectionTechnologyToInternalType(data)
-	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateTechnologyValue(technology)); err != nil {
-		return fmt.Errorf("setting technology current state (%v): %w", data, err)
-	}
-	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesTechnologyValue(technology)); err != nil {
-		return fmt.Errorf("setting technology user preference (%v): %w", data, err)
 	}
 	return nil
 }
@@ -876,6 +888,7 @@ func hasSensitiveServerGroup(groups []config.ServerGroup) bool {
 func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 	sensitive := hasSensitiveServerGroup(data.ServerGroups)
 
+	var connected config.VPNProtocol
 	s.mux.Lock()
 	// Track sensitivity on every server-connect event (not just success) so
 	// that a failed connect attempt to a sensitive group still prevents from leaking
@@ -886,6 +899,11 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 	if data.EventStatus == events.StatusSuccess {
 		s.connectionStartTime = time.Now()
 		s.connectionToMeshnetPeer = data.IsMeshnetPeer
+		if !data.IsMeshnetPeer {
+			// the event carries what the tunnel really uses, not the current settings
+			s.connectedVPNProtocol = data.VPNProtocol
+			connected = s.connectedVPNProtocol
+		}
 	}
 	s.mux.Unlock()
 
@@ -966,12 +984,12 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 			TargetServerType:          moose.NordvpnappServerTypeNone,
 		},
 		moose.TargetConnectionAdditionalParams{
-			TargetProtocol:      connectionProtocolToInternalType(data.Protocol),
+			TargetProtocol:      connectionProtocolToInternalType(data.VPNProtocol),
 			TargetServerCity:    data.TargetServerCity,
 			TargetServerCountry: data.TargetServerCountryCode,
 			TargetServerDomain:  targetServerDomain,
 			TargetServerGroup:   serverGroupToInternalType(data.TargetServerGroupID),
-			TargetTechnology:    connectionTechnologyToInternalType(data.Technology),
+			TargetTechnology:    connectionTechnologyToInternalType(data.VPNProtocol),
 		},
 		moose.ConnectionParams{
 			ConnectionFunnel:     connectionFunnel,
@@ -989,6 +1007,10 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 	if data.EventStatus == events.StatusSuccess {
 		if err := s.response(s.mooseFuncs.setRTPCurrentState(data.RealTimeProtection)); err != nil {
 			return fmt.Errorf("setting real time protection current state after successful connect (enabled=%v): %w", data.RealTimeProtection, err)
+		}
+
+		if err := s.reportEffectiveConnection(connected); err != nil {
+			return fmt.Errorf("setting technology/protocol current state after successful connect: %w", err)
 		}
 
 		if err := s.response(s.mooseFuncs.setIsOnVpnCurrentState(true)); err != nil {
@@ -1020,6 +1042,8 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 		connectionDuration = -1
 	}
 	s.connectionStartTime = time.Time{}
+	s.connectedVPNProtocol = config.VPNProtocol_VPN_PROTOCOL_UNSPECIFIED
+	configured := s.configuredVPNProtocol
 	wasSensitive := s.connectionToSensitiveServerGroup
 	s.connectionToSensitiveServerGroup = false
 	s.mux.Unlock()
@@ -1117,6 +1141,12 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 
 	if err := s.response(s.mooseFuncs.setIsOnVpnCurrentState(false)); err != nil {
 		return fmt.Errorf("setting is-on-VPN current state after disconnect: %w", err)
+	}
+
+	// Once disconnected, the configured vpn-protocol takes effect on the next
+	// connection. This also reports changes made while the tunnel was up.
+	if err := s.reportEffectiveConnection(configured); err != nil {
+		return fmt.Errorf("setting vpn-protocol current state after disconnect: %w", err)
 	}
 
 	return nil
@@ -1705,36 +1735,32 @@ func eventStatusToInternalType(status events.TypeEventStatus) moose.NordvpnappEv
 	}
 }
 
-// connectionProtocolToInternalType converts the connection protocol to the internal representation
-func connectionProtocolToInternalType(proto config.Protocol) moose.NordvpnappVpnConnectionProtocol {
-	switch proto {
-	case config.Protocol_TCP:
-		return moose.NordvpnappVpnConnectionProtocolTcp
-	case config.Protocol_UDP:
+// connectionProtocolToInternalType converts the vpn protocol to the moose protocol, with NordLynx as UDP
+func connectionProtocolToInternalType(p config.VPNProtocol) moose.NordvpnappVpnConnectionProtocol {
+	//exhaustive:ignore
+	switch p {
+	case config.VPNProtocol_VPN_PROTOCOL_NORDLYNX, config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP:
 		return moose.NordvpnappVpnConnectionProtocolUdp
-	case config.Protocol_Webtunnel:
+	case config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP:
+		return moose.NordvpnappVpnConnectionProtocolTcp
+	case config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER:
 		return moose.NordvpnappVpnConnectionProtocolWebtunnel
-	case config.Protocol_UNKNOWN_PROTOCOL:
-		return moose.NordvpnappVpnConnectionProtocolNone
-	default:
-		return moose.NordvpnappVpnConnectionProtocolRecommended
 	}
+	return moose.NordvpnappVpnConnectionProtocolNone
 }
 
-// connectionTechnologyToInternalType converts connection technology to the internal representation
-func connectionTechnologyToInternalType(tech config.Technology) moose.NordvpnappVpnConnectionTechnology {
-	switch tech {
-	case config.Technology_OPENVPN:
-		return moose.NordvpnappVpnConnectionTechnologyOpenvpn
-	case config.Technology_NORDLYNX:
+// connectionTechnologyToInternalType converts the vpn protocol to the moose technology
+func connectionTechnologyToInternalType(p config.VPNProtocol) moose.NordvpnappVpnConnectionTechnology {
+	//exhaustive:ignore
+	switch p {
+	case config.VPNProtocol_VPN_PROTOCOL_NORDLYNX:
 		return moose.NordvpnappVpnConnectionTechnologyNordlynx
-	case config.Technology_NORDWHISPER:
+	case config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP, config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP:
+		return moose.NordvpnappVpnConnectionTechnologyOpenvpn
+	case config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER:
 		return moose.NordvpnappVpnConnectionTechnologyNordwhisper
-	case config.Technology_UNKNOWN_TECHNOLOGY:
-		return moose.NordvpnappVpnConnectionTechnologyNone
-	default:
-		return moose.NordvpnappVpnConnectionTechnologyRecommended
 	}
+	return moose.NordvpnappVpnConnectionTechnologyNone
 }
 
 // serverListOriginToInternalType converts server list origin to the internal representation
@@ -1779,7 +1805,7 @@ func serverGroupToInternalType(group config.ServerGroup) moose.NordvpnappServerG
 		return moose.NordvpnappServerGroupDedicatedIp
 	case config.ServerGroup_STANDARD_VPN_SERVERS:
 		return moose.NordvpnappServerGroupStandard
-	case config.ServerGroup_OBFUSCATED:
+	case config.ServerGroup_NW_OBFUSCATED:
 		return moose.NordvpnappServerGroupObfuscated
 	case config.ServerGroup_DEDICATED_SERVER:
 		return moose.NordvpnappServerGroupDedicatedServer

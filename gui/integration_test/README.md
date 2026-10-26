@@ -20,7 +20,7 @@ The steps you need to make in GUI are:
 2. Wait to display the login page.
 3. Login.
 4. Go to settings.
-5. Set technology to OpenVPN.
+5. Set protocol to OpenVPN.
 6. Enable obfuscated servers.
 7. Go to the account page.
 8. Validate that user information contains all you expect.

@@ -37,7 +37,6 @@ enum _SecurityAndPrivacySettingsItems {
   lanDiscovery,
   customDns,
   postQuantum,
-  obfuscated,
   firewall,
   firewallMark,
 }
@@ -61,8 +60,6 @@ class _SecurityAndPrivacySettingsState
       _SecurityAndPrivacySettingsItems.allowList,
       _SecurityAndPrivacySettingsItems.customDns,
       _SecurityAndPrivacySettingsItems.lanDiscovery,
-      if (settings.protocol.isOpenVpn())
-        _SecurityAndPrivacySettingsItems.obfuscated,
       _SecurityAndPrivacySettingsItems.firewall,
       _SecurityAndPrivacySettingsItems.firewallMark,
       if (settings.protocol == VpnProtocol.nordlynx)
@@ -89,18 +86,6 @@ class _SecurityAndPrivacySettingsState
                 await ref
                     .read(vpnSettingsControllerProvider.notifier)
                     .setPostQuantum(value);
-              },
-            );
-          case _SecurityAndPrivacySettingsItems.obfuscated:
-            return _accessibleSwitchTile(
-              context,
-              title: t.ui.obfuscation,
-              subtitle: t.ui.obfuscationDescription,
-              value: settings.obfuscatedServers,
-              onChanged: (value) async {
-                await ref
-                    .read(vpnSettingsControllerProvider.notifier)
-                    .setObfuscated(value);
               },
             );
           case _SecurityAndPrivacySettingsItems.firewall:

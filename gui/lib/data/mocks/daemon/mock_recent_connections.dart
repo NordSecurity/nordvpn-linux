@@ -6,8 +6,14 @@ import 'package:nordvpn/pb/daemon/servers.pb.dart';
 
 class MockRecentConnections {
   final MockServersList _serversList;
+  List<RecentConnectionModel>? _override;
 
   MockRecentConnections(this._serversList);
+
+  // Replace the generated recent connections with the given list
+  void setConnections(List<RecentConnectionModel> connections) {
+    _override = connections;
+  }
 
   ServerCountry? _findCountry(List<ServerCountry> servers, String code) {
     for (var server in servers) {
@@ -27,12 +33,31 @@ class MockRecentConnections {
     return null;
   }
 
-  List<RecentConnectionModel> getConnections() {
+  List<RecentConnectionModel> getConnections(bool obfuscatedServers) {
+    if (_override != null) return _override!;
+
     final servers = _serversList.serversList.servers.serversByCountry;
     final List<RecentConnectionModel> recentConnections = [];
 
     if (servers.isEmpty) {
       return [];
+    }
+
+    if (obfuscatedServers) {
+      // Obfuscated
+      final country = _findCountry(servers, 'US');
+      if (country != null) {
+        recentConnections.add(
+          RecentConnectionModel(
+            connectionType: ServerSelectionRule.COUNTRY,
+            country: country.countryName,
+            countryCode: country.countryCode,
+            group: cfg.ServerGroup.NW_OBFUSCATED,
+          ),
+        );
+      }
+
+      return recentConnections;
     }
 
     // 1. A city connection
@@ -53,7 +78,7 @@ class MockRecentConnections {
     }
 
     // 2. A country connection
-    country = _findCountry(servers, 'JP');
+    country = _findCountry(servers, 'IN');
     if (country != null) {
       recentConnections.add(
         RecentConnectionModel(

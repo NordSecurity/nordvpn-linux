@@ -2,12 +2,11 @@ syntax = "proto3";
 
 package pb;
 
-option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
-
-import "config/protocol.proto";
-import "config/technology.proto";
 import "config/group.proto";
+import "config/vpn_protocol.proto";
 import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
 
 enum ConnectionSource {
   UNKNOWN_SOURCE = 0;
@@ -16,11 +15,11 @@ enum ConnectionSource {
 }
 
 enum ConnectionState {
-    UNKNOWN_STATE = 0;
-    DISCONNECTED = 1;
-    CONNECTING = 2;
-    CONNECTED = 3;
-    PAUSED = 4;
+  UNKNOWN_STATE = 0;
+  DISCONNECTED = 1;
+  CONNECTING = 2;
+  CONNECTED = 3;
+  PAUSED = 4;
 }
 
 message ConnectionParameters {
@@ -34,8 +33,10 @@ message ConnectionParameters {
 
 message StatusResponse {
   ConnectionState state = 1;
-  config.Technology technology = 2;
-  config.Protocol protocol = 3;
+  reserved 2;
+  reserved "technology";
+  reserved 3;
+  reserved "protocol";
   string ip = 4;
   string hostname = 5;
   string country = 6;
@@ -54,4 +55,5 @@ message StatusResponse {
   google.protobuf.Timestamp paused_at = 19;
   uint32 pause_remaining_duration_sec = 20;
   bool ech = 21;
+  config.VPNProtocol vpn_protocol = 22;
 }

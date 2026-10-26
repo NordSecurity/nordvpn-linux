@@ -14,7 +14,7 @@ import 'package:nordvpn/vpn/server_item_image.dart';
 import 'package:nordvpn/widgets/custom_list_tile.dart';
 
 /// The two title lines shown on a recent connection item.
-typedef _TitleParts = ({String primary, String? secondary});
+typedef TitleParts = ({String primary, String? secondary});
 
 /// Factory for building list items for recent connections
 final class RecentConnectionsItemFactory {
@@ -31,11 +31,11 @@ final class RecentConnectionsItemFactory {
     final appTheme = context.appTheme;
     final serversListTheme = context.serversListTheme;
 
-    final isSpecialtyServer = _isSpecialtyServer(model);
+    final isSpecialtyServer = isASpecialtyServer(model);
 
     // Pre-compute connect arguments to avoid recalculation on each tap
     final connectArgs = _buildConnectArgs(model, isSpecialtyServer);
-    final titleParts = _buildTitleParts(model, isSpecialtyServer);
+    final titleParts = buildTitleParts(model, isSpecialtyServer);
 
     return MergeSemantics(
       child: CustomListTile(
@@ -53,12 +53,12 @@ final class RecentConnectionsItemFactory {
     );
   }
 
-  bool _isSpecialtyServer(RecentConnection model) =>
+  static bool isASpecialtyServer(RecentConnection model) =>
       model.group != ServerGroup.UNDEFINED &&
       model.group != ServerGroup.STANDARD_VPN_SERVERS;
 
   String semanticsLabelFor(RecentConnection model) {
-    final parts = _buildTitleParts(model, _isSpecialtyServer(model));
+    final parts = buildTitleParts(model, isASpecialtyServer(model));
     final details = parts.secondary == null
         ? parts.primary
         : "${parts.primary}, ${parts.secondary}";
@@ -90,22 +90,36 @@ final class RecentConnectionsItemFactory {
         : const Icon(Icons.history);
   }
 
-  _TitleParts _buildTitleParts(RecentConnection model, bool isSpecialtyServer) {
-    if (isSpecialtyServer) {
-      if (model.country.isNotEmpty) {
-        final country = Country.fromCodeOrName(model.countryCode);
-        final city = model.city;
-        final location = city.isEmpty ? t.ui.fastest : City(city).localizedName;
-        final subtitle = "${country.localizedName} - $location";
-
-        return (primary: model.specialtyServer, secondary: subtitle);
-      }
-
+  static TitleParts buildTitleParts(
+    RecentConnection model,
+    bool isSpecialtyServer,
+  ) {
+    // specialty group without location: "Double VPN" / "Fastest"
+    if (isSpecialtyServer && model.countryCode.isEmpty) {
       return (primary: model.specialtyServer, secondary: t.ui.fastest);
+    }
+
+    // NOTE: this is safe fallback for exceptional cases like
+    // standard VPN servers group which is not supported in GUI,
+    // but can be selected still in CLI and is supported in Tray
+    // This group should not be used and will be handled in the future
+    // in LVPN-11280.
+    if (model.countryCode.isEmpty) {
+      return (primary: "", secondary: t.ui.fastest);
     }
 
     final country = Country.fromCodeOrName(model.countryCode);
 
+    // specialty group with location: "<group>" / "<country> - <city>"
+    if (isSpecialtyServer) {
+      final city = model.city;
+      final location = city.isEmpty ? t.ui.fastest : City(city).localizedName;
+      final subtitle = "${country.localizedName} - $location";
+
+      return (primary: model.specialtyServer, secondary: subtitle);
+    }
+
+    // city: "<country>" / "<city>"
     final isCity =
         model.city.isNotEmpty &&
         model.connectionType == ServerSelectionRule.CITY;
@@ -117,6 +131,7 @@ final class RecentConnectionsItemFactory {
       );
     }
 
+    // specific server: "<country>" / "#123"
     final isSpecificServer =
         model.specificServerName.isNotEmpty &&
         model.connectionType == ServerSelectionRule.SPECIFIC_SERVER;
@@ -126,10 +141,11 @@ final class RecentConnectionsItemFactory {
       return (primary: country.localizedName, secondary: serverId);
     }
 
+    // country: "<country>" / "Fastest"
     return (primary: country.localizedName, secondary: t.ui.fastest);
   }
 
-  Widget _buildTitle(AppTheme appTheme, _TitleParts parts) {
+  Widget _buildTitle(AppTheme appTheme, TitleParts parts) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.center,

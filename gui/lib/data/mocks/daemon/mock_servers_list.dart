@@ -5,6 +5,7 @@ import 'package:nordvpn/data/mocks/daemon/connect_arguments_extension.dart';
 import 'package:nordvpn/pb/daemon/connect.pb.dart';
 import 'package:nordvpn/pb/daemon/servers.pb.dart';
 import 'package:nordvpn/pb/daemon/config/group.pb.dart' as config;
+import 'package:nordvpn/pb/daemon/config/vpn_protocol.pbenum.dart' as settings;
 import 'package:nordvpn/pb/daemon/settings.pb.dart';
 import 'package:nordvpn/pb/daemon/state.pb.dart';
 import 'package:fixnum/fixnum.dart';
@@ -31,7 +32,9 @@ final class MockServersList {
   late final StreamSubscription<AppState> _appStateSub;
 
   MockServersList(this.stream) {
-    _serversList = _generateServersList();
+    _serversList = _generateServersList(
+      settings.VPNProtocol.VPN_PROTOCOL_NORDLYNX,
+    );
     _appStateSub = stream.stream.listen((value) {
       if (value.hasSettingsChange()) {
         final newSettings = value.settingsChange;
@@ -39,7 +42,7 @@ final class MockServersList {
           return;
         }
         _settings = newSettings;
-        _serversList = _generateServersList(obfuscated: _settings!.obfuscate);
+        _serversList = _generateServersList(_settings!.vpnProtocol);
       }
     });
   }
@@ -60,15 +63,17 @@ final class MockServersList {
     stream.add(AppState(updateEvent: UpdateEvent.SERVERS_LIST_UPDATE));
   }
 
-  ServersResponse _generateServersList({bool obfuscated = false}) {
-    debugPrint("Servers list changed obfuscated=$obfuscated");
+  ServersResponse _generateServersList(settings.VPNProtocol vpnProtocol) {
+    debugPrint("Servers list changed vpnProtocol=$vpnProtocol");
 
     _dipServers = [];
 
-    const obfuscatedGroups = [config.ServerGroup.OBFUSCATED];
-
-    const standardGroups = [
+    // every server reachable over NordWhisper is obfuscated, so the daemon reports the standard
+    // servers as obfuscated ones as well
+    final standardGroups = [
       config.ServerGroup.STANDARD_VPN_SERVERS,
+      if (vpnProtocol == settings.VPNProtocol.VPN_PROTOCOL_NORDWHISPER)
+        config.ServerGroup.NW_OBFUSCATED,
     ];
 
     final countries = <ServerCountry>[];
@@ -84,61 +89,53 @@ final class MockServersList {
       "AU": "Austria",
     };
 
-    Map<String, List<Map<String, List<config.ServerGroup>>>> locations =
-        obfuscated
-        ? {
-            "IT": [
-              {"Rome": obfuscatedGroups},
-            ],
-            "CA": [
-              {"Toronto": obfuscatedGroups},
-            ],
-          }
-        : {
-            "FR": [
-              {"Paris": standardGroups},
-              {
-                "Marseille": [config.ServerGroup.ONION_OVER_VPN],
-              },
-            ],
-            "DE": [
-              {"Berlin": standardGroups},
-              {"Frankfurt": standardGroups},
-              {"Hamburg": standardGroups},
-            ],
-            "LT": [
-              {"Vilnius": standardGroups},
-            ],
-            "IN": [
-              {"Mumbai": standardGroups},
-            ],
-            "US": [
-              {"Los Angeles": standardGroups},
-              {
-                "New York": [config.ServerGroup.DOUBLE_VPN],
-              },
-            ],
-            "ES": [
-              {
-                "Madrid": [config.ServerGroup.DOUBLE_VPN],
-              },
-              {"Barcelona": standardGroups},
-            ],
-            "AT": [
-              {
-                "Vienna": [config.ServerGroup.DEDICATED_IP],
-              },
-            ],
-            "BE": [
-              {
-                "Bruxelles": [config.ServerGroup.DEDICATED_IP],
-              },
-            ],
-          };
+    Map<String, List<Map<String, List<config.ServerGroup>>>> locations = {
+      "FR": [
+        {"Paris": standardGroups},
+        {
+          "Marseille": [config.ServerGroup.ONION_OVER_VPN],
+        },
+      ],
+      "DE": [
+        {"Berlin": standardGroups},
+        {"Frankfurt": standardGroups},
+        {"Hamburg": standardGroups},
+      ],
+      "LT": [
+        {"Vilnius": standardGroups},
+      ],
+      "IN": [
+        {"Mumbai": standardGroups},
+      ],
+      "US": [
+        {"Los Angeles": standardGroups},
+        {
+          "New York": [config.ServerGroup.DOUBLE_VPN],
+        },
+      ],
+      "ES": [
+        {
+          "Madrid": [config.ServerGroup.DOUBLE_VPN],
+        },
+        {"Barcelona": standardGroups},
+      ],
+      "AT": [
+        {
+          "Vienna": [config.ServerGroup.DEDICATED_IP],
+        },
+      ],
+      "BE": [
+        {
+          "Bruxelles": [config.ServerGroup.DEDICATED_IP],
+        },
+      ],
+    };
 
-    final technologies = obfuscated
-        ? [Technology.OBFUSCATED_OPENVPN_TCP, Technology.OBFUSCATED_OPENVPN_UDP]
-        : [Technology.NORDLYNX, Technology.OPENVPN_TCP, Technology.OPENVPN_UDP];
+    final technologies = [
+      Technology.NORDLYNX,
+      Technology.OPENVPN_TCP,
+      Technology.OPENVPN_UDP,
+    ];
 
     var serverId = 0;
     for (final countryCode in locations.keys) {

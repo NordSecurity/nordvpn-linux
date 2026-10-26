@@ -26,7 +26,6 @@ func configToProtobuf(cfg *config.Config, uid int64) *pb.Settings {
 	trayOff := cfg.UsersData.TrayOff[uid]
 
 	settings := pb.Settings{
-		Technology:       cfg.Technology,
 		Firewall:         cfg.Firewall,
 		Fwmark:           cfg.FirewallMark,
 		Routing:          cfg.Routing.Get(),
@@ -42,13 +41,11 @@ func configToProtobuf(cfg *config.Config, uid int64) *pb.Settings {
 		Meshnet:            cfg.Mesh,
 		Dns:                cfg.AutoConnectData.DNS,
 		RealTimeProtection: cfg.AutoConnectData.RealTimeProtection,
-		Protocol:           cfg.AutoConnectData.Protocol,
 		LanDiscovery:       cfg.LanDiscovery,
 		Allowlist: &pb.Allowlist{
 			Ports:   &ports,
 			Subnets: subnets,
 		},
-		Obfuscate: cfg.AutoConnectData.Obfuscate,
 		UserSettings: &pb.UserSpecificSettings{
 			Uid:    uid,
 			Notify: !notifyOff,
@@ -57,6 +54,7 @@ func configToProtobuf(cfg *config.Config, uid int64) *pb.Settings {
 		PostquantumVpn: cfg.AutoConnectData.PostquantumVpn,
 		ArpIgnore:      cfg.ARPIgnore.Get(),
 		Ech:            cfg.AutoConnectData.ECH.Get(),
+		VpnProtocol:    cfg.VPNProtocol,
 	}
 
 	return &settings
@@ -101,8 +99,6 @@ func statusStream(stateChan <-chan any,
 					Hostname:                  e.Status.Hostname,
 					IsMeshPeer:                e.Status.IsMeshnetPeer,
 					ByUser:                    true,
-					Technology:                e.Status.Technology,
-					Protocol:                  e.Status.Protocol,
 					Obfuscated:                e.Status.IsObfuscated,
 					PostQuantum:               e.Status.IsPostQuantum,
 					Ech:                       e.Status.IsECHEnabled,
@@ -110,6 +106,7 @@ func statusStream(stateChan <-chan any,
 					Download:                  e.Status.Rx,
 					PausedAt:                  timestamppb.New(e.Status.PausedAt),
 					PauseRemainingDurationSec: e.Status.PauseRemainingTimeSec,
+					VpnProtocol:               e.Status.VPNProtocol,
 				}
 
 				// for disconnected state connection parameters shall be left empty

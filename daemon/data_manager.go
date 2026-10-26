@@ -12,6 +12,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/daemon/serverpicker"
 	event "github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
@@ -216,48 +217,16 @@ func (dm *DataManager) SetVersionData(version semver.Version, newerAvailable boo
 	}
 }
 
-func toServerTechnology(
-	technology config.Technology,
-	protocol config.Protocol,
-	obfuscated bool,
-) (core.ServerTechnology, error) {
-	var serverTechnology core.ServerTechnology
-	switch technology {
-	case config.Technology_NORDLYNX:
-		serverTechnology = core.WireguardTech
-	case config.Technology_OPENVPN:
-		switch protocol {
-		case config.Protocol_TCP:
-			if obfuscated {
-				serverTechnology = core.OpenVPNTCPObfuscated
-			} else {
-				serverTechnology = core.OpenVPNTCP
-			}
-		case config.Protocol_UDP:
-			if obfuscated {
-				serverTechnology = core.OpenVPNUDPObfuscated
-			} else {
-				serverTechnology = core.OpenVPNUDP
-			}
-		case config.Protocol_Webtunnel:
-			return 0, errors.New("webtunnel protocol is not compatible with opevpn")
-		case config.Protocol_UNKNOWN_PROTOCOL:
-			return 0, errors.New("invalid protocol")
-		}
-	case config.Technology_NORDWHISPER:
-		serverTechnology = core.NordWhisperTech
-	case config.Technology_UNKNOWN_TECHNOLOGY:
-		return 0, errors.New("invalid technology")
+func toServerTechnology(vpnProtocol config.VPNProtocol) (core.ServerTechnology, error) {
+	serverTechnology := serverpicker.VPNProtocolToServerTech(vpnProtocol)
+	if serverTechnology == core.Unknown {
+		return 0, fmt.Errorf("invalid vpn protocol: %v", vpnProtocol)
 	}
 	return serverTechnology, nil
 }
 
-func (dm *DataManager) Countries(
-	technology config.Technology,
-	protocol config.Protocol,
-	obfuscated bool,
-) ([]*pb.ServerGroup, error) {
-	serverTechnology, err := toServerTechnology(technology, protocol, obfuscated)
+func (dm *DataManager) Countries(vpnProtocol config.VPNProtocol) ([]*pb.ServerGroup, error) {
+	serverTechnology, err := toServerTechnology(vpnProtocol)
 	if err != nil {
 		return nil, err
 	}
@@ -298,11 +267,9 @@ func (dm *DataManager) Countries(
 
 func (dm *DataManager) Cities(
 	countryName string,
-	technology config.Technology,
-	protocol config.Protocol,
-	obfuscated bool,
+	vpnProtocol config.VPNProtocol,
 ) ([]*pb.ServerGroup, error) {
-	serverTechnology, err := toServerTechnology(technology, protocol, obfuscated)
+	serverTechnology, err := toServerTechnology(vpnProtocol)
 	if err != nil {
 		return nil, err
 	}
@@ -340,12 +307,8 @@ func (dm *DataManager) Cities(
 	return result, nil
 }
 
-func (dm *DataManager) Groups(
-	technology config.Technology,
-	protocol config.Protocol,
-	obfuscated bool,
-) ([]*pb.ServerGroup, error) {
-	serverTechnology, err := toServerTechnology(technology, protocol, obfuscated)
+func (dm *DataManager) Groups(vpnProtocol config.VPNProtocol) ([]*pb.ServerGroup, error) {
+	serverTechnology, err := toServerTechnology(vpnProtocol)
 	if err != nil {
 		return nil, err
 	}
@@ -358,7 +321,7 @@ func (dm *DataManager) Groups(
 			continue
 		}
 
-		for _, group := range server.Groups {
+		for _, group := range serverpicker.EffectiveGroups(server, vpnProtocol) {
 			if groupsSet.Contains(group.Title) {
 				continue
 			}

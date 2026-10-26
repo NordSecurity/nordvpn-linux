@@ -9,6 +9,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/serverpicker"
+	"github.com/NordSecurity/nordvpn-linux/features"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
@@ -43,8 +44,7 @@ func MigrateLegacyAllowlist(c config.Config) config.Config {
 	return c
 }
 
-// ConfigCleanup - validate/cleanup DNS addresses, allowlist subnets
-func ConfigCleanup(c config.Config) config.Config {
+func MigrateConfig(c config.Config) config.Config {
 	// Remove all nameservers with IPv6 addresses
 	var dnsList []string
 	for _, addr := range c.AutoConnectData.DNS {
@@ -60,6 +60,26 @@ func ConfigCleanup(c config.Config) config.Config {
 	c.AutoConnectData.Allowlist.NormalizeSubnets(func(removed, reason string) {
 		log.Warn("On start, allowlist remove subnet:", removed, "; reason:", reason)
 	})
+
+	// switch from OpenVPN obfuscated to NordWhisper or simple OpenVPN
+	return migrateObfuscatedSettingsToNordWhisper(c, features.NordWhisperEnabled)
+}
+
+func migrateObfuscatedSettingsToNordWhisper(c config.Config, isNordWhisperEnabled bool) config.Config {
+	if !c.AutoConnectData.Obfuscate {
+		return c
+	}
+
+	log.Info("migrating OpenVPN obfuscated")
+
+	c.AutoConnectData.Obfuscate = false
+
+	if isNordWhisperEnabled {
+		c.VPNProtocol = config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER
+	} else if c.AutoConnectData.Group == config.ServerGroup_OVPN_OBFUSCATED {
+		// for open source builds change the group to non obfuscated
+		c.AutoConnectData.Group = config.ServerGroup_UNDEFINED
+	}
 
 	return c
 }

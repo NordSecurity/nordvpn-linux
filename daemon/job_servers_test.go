@@ -18,6 +18,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// isLegacyXOR reports whether the server is from the retired XOR OpenVPN servers. The API
+// still returns such servers, but the daemon must never select or list them.
+func isLegacyXOR(s core.Server) bool {
+	return core.IsConnectableVia(core.OpenVPNUDPObfuscated)(s) ||
+		core.IsConnectableVia(core.OpenVPNTCPObfuscated)(s)
+}
+
 type mockConfigManager struct {
 	c config.Config
 }
@@ -35,11 +42,10 @@ func newMockConfigManager() *mockConfigManager {
 			},
 		},
 		AutoConnectData: config.AutoConnectData{
-			ID:       1337,
-			Protocol: config.Protocol_UDP,
+			ID: 1337,
 		},
-		Technology: config.Technology_OPENVPN,
-		Mesh:       true,
+		VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP,
+		Mesh:        true,
 		MeshDevice: &mesh.Machine{
 			ID: uuid.New(),
 		},
@@ -52,7 +58,7 @@ func (m *mockConfigManager) SaveWith(f config.SaveFunc) error {
 }
 
 func (m *mockConfigManager) Load(c *config.Config) error {
-	c.Technology = m.c.Technology
+	c.VPNProtocol = m.c.VPNProtocol
 	c.Firewall = m.c.Firewall
 	c.Routing = m.c.Routing
 	c.KillSwitch = m.c.KillSwitch
@@ -96,21 +102,21 @@ func TestJobServers(t *testing.T) {
 	err := JobServers(dm, core_test.NewMockServersAPI(), true)()
 	assert.NoError(t, err)
 
-	t.Run("obfuscated server exists", func(t *testing.T) {
-		obfsExist := false
+	t.Run("legacy XOR server is kept in the cache", func(t *testing.T) {
+		xorExists := false
 		for _, s := range dm.GetServersData().Servers {
-			if core.IsObfuscated()(s) {
-				obfsExist = true
+			if isLegacyXOR(s) {
+				xorExists = true
 				break
 			}
 		}
-		assert.True(t, obfsExist)
+		assert.True(t, xorExists)
 	})
 
 	t.Run("regular server exists", func(t *testing.T) {
 		servExist := false
 		for _, s := range dm.GetServersData().Servers {
-			if !core.IsObfuscated()(s) {
+			if !isLegacyXOR(s) {
 				servExist = true
 				break
 			}
@@ -121,8 +127,7 @@ func TestJobServers(t *testing.T) {
 	t.Run("server with atleast one TCP technology available exists", func(t *testing.T) {
 		tcpExists := false
 		for _, s := range dm.GetServersData().Servers {
-			if core.IsConnectableVia(core.OpenVPNTCP)(s) ||
-				core.IsConnectableVia(core.OpenVPNTCPObfuscated)(s) {
+			if core.IsConnectableVia(core.OpenVPNTCP)(s) {
 				tcpExists = true
 				break
 			}
@@ -133,8 +138,7 @@ func TestJobServers(t *testing.T) {
 	t.Run("server with atleast one UDP technology available exists", func(t *testing.T) {
 		udpExists := false
 		for _, s := range dm.GetServersData().Servers {
-			if core.IsConnectableVia(core.OpenVPNUDP)(s) ||
-				core.IsConnectableVia(core.OpenVPNUDPObfuscated)(s) {
+			if core.IsConnectableVia(core.OpenVPNUDP)(s) {
 				udpExists = true
 				break
 			}
@@ -146,9 +150,7 @@ func TestJobServers(t *testing.T) {
 		isOVPN := false
 		for _, s := range dm.GetServersData().Servers {
 			if core.IsConnectableVia(core.OpenVPNTCP)(s) ||
-				core.IsConnectableVia(core.OpenVPNTCPObfuscated)(s) ||
-				core.IsConnectableVia(core.OpenVPNUDP)(s) ||
-				core.IsConnectableVia(core.OpenVPNUDPObfuscated)(s) {
+				core.IsConnectableVia(core.OpenVPNUDP)(s) {
 				isOVPN = true
 				break
 			}

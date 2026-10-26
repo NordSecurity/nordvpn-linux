@@ -70,8 +70,10 @@ final class RichNotificationPopup extends Popup {
 
   // The visible heading of a rich popup is `header`, not the title bar text.
   @override
-  String semanticLabel(WidgetRef ref) =>
-      joinSemanticLabel(richMetadata.header, richMetadata.message(ref));
+  String semanticLabel(WidgetRef ref) => joinSemanticLabel(
+    richMetadata.header,
+    richMetadata.semanticsMessage(ref),
+  );
 
   Widget _actionButton(BuildContext context, WidgetRef ref) {
     return ElevatedButton(

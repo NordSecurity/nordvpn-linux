@@ -13,6 +13,7 @@ import 'package:nordvpn/pb/daemon/account.pb.dart';
 import 'package:nordvpn/pb/daemon/cities.pb.dart';
 import 'package:nordvpn/pb/daemon/common.pb.dart';
 import 'package:nordvpn/pb/daemon/config/analytics_consent.pb.dart';
+import 'package:nordvpn/pb/daemon/config/vpn_protocol.pbenum.dart' as cfg;
 import 'package:nordvpn/pb/daemon/connect.pb.dart';
 import 'package:nordvpn/pb/daemon/defaults.pb.dart';
 import 'package:nordvpn/pb/daemon/features.pb.dart';
@@ -258,34 +259,21 @@ final class MockDaemon extends DaemonServiceBase {
   }
 
   @override
-  Future<Payload> setObfuscate(ServiceCall call, SetGenericRequest request) {
-    return appSettings.setSettings(obfuscate: request.enabled);
-  }
-
-  @override
   Future<Payload> setPostQuantum(ServiceCall call, SetGenericRequest request) {
     return appSettings.setSettings(postquantumVpn: request.enabled);
   }
 
   @override
-  Future<SetProtocolResponse> setProtocol(
+  Future<Payload> setVPNProtocol(
     ServiceCall call,
-    SetProtocolRequest request,
+    SetVPNProtocolRequest request,
   ) {
-    return appSettings.setProtocol(request);
+    return appSettings.setVpnProtocol(request.vpnProtocol);
   }
 
   @override
   Future<Payload> setRouting(ServiceCall call, SetGenericRequest request) {
     return appSettings.setSettings(routing: request.enabled);
-  }
-
-  @override
-  Future<Payload> setTechnology(
-    ServiceCall call,
-    SetTechnologyRequest request,
-  ) {
-    return appSettings.setSettings(technology: request.technology);
   }
 
   @override
@@ -318,16 +306,6 @@ final class MockDaemon extends DaemonServiceBase {
     }
 
     return appSettings.settings;
-  }
-
-  @override
-  Future<Payload> settingsProtocols(ServiceCall call, Empty request) {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<Payload> settingsTechnologies(ServiceCall call, Empty request) {
-    throw UnimplementedError();
   }
 
   @override
@@ -375,7 +353,10 @@ final class MockDaemon extends DaemonServiceBase {
   ) {
     return Future.value(
       RecentConnectionsResponse(
-        connections: recentConnections.getConnections(),
+        connections: recentConnections.getConnections(
+          appSettings.currentSettings.vpnProtocol ==
+              cfg.VPNProtocol.VPN_PROTOCOL_NORDWHISPER,
+        ),
       ),
     );
   }

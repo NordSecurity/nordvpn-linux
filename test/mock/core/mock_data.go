@@ -65,6 +65,8 @@ func CountriesList() core.Countries {
 }
 
 func ServersList() core.Servers {
+	// legacy XOR technologies, still returned by the API. Kept so tests can prove these servers are
+	// filtered out
 	obfuscatedTechnologies := core.Technologies{
 		core.Technology{
 			ID:    core.OpenVPNTCPObfuscated,
@@ -91,6 +93,13 @@ func ServersList() core.Servers {
 		},
 	}
 
+	nordWhisperTechnologies := core.Technologies{
+		core.Technology{
+			ID:    core.NordWhisperTech,
+			Pivot: core.Pivot{Status: core.Online},
+		},
+	}
+
 	standardGroups := core.Groups{
 		core.Group{
 			ID:    config.ServerGroup_DOUBLE_VPN,
@@ -108,7 +117,7 @@ func ServersList() core.Servers {
 
 	obfuscatedGroups := core.Groups{
 		core.Group{
-			ID:    config.ServerGroup_OBFUSCATED,
+			ID:    config.ServerGroup_OVPN_OBFUSCATED,
 			Title: "Obfuscated Servers",
 		},
 	}
@@ -150,6 +159,26 @@ func ServersList() core.Servers {
 			Hostname:     "de3.nordvpn.com",
 			Status:       core.Online,
 			Technologies: technologies,
+			CreatedAt:    "2006-01-02 15:04:05",
+			Station:      "127.0.0.1",
+			Locations: core.Locations{
+				core.Location{
+					Country: core.Country{
+						Name: "Germany",
+						ID:   133,
+						Code: "DE",
+						City: core.City{Name: "Berlin", ID: 28},
+					},
+				},
+			},
+			Groups: standardGroups,
+		},
+		core.Server{
+			ID:           6,
+			Name:         "Germany #4",
+			Hostname:     "de4.nordvpn.com",
+			Status:       core.Online,
+			Technologies: nordWhisperTechnologies,
 			CreatedAt:    "2006-01-02 15:04:05",
 			Station:      "127.0.0.1",
 			Locations: core.Locations{

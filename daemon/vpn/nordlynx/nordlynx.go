@@ -1,4 +1,4 @@
-// Package nordlynx provides nordlynx vpn technology.
+// Package nordlynx provides nordlynx vpn protocol.
 package nordlynx
 
 import (

@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
+import 'package:nordvpn/pb/daemon/config/group.pbenum.dart';
+import 'package:nordvpn/pb/daemon/settings.pb.dart';
 
 import '../../test/utils/test_helpers.dart';
 
@@ -13,6 +15,24 @@ void runAutoConnectSettingsTests() async {
         equals("${t.ui.fastestServer} (${t.ui.quickConnect})"),
       );
     });
+
+    testWidgets(
+      "shows fastest server label when standard VPN servers are set as auto-connect target",
+      (tester) async {
+        final app = await tester.setupIntegrationTests();
+        await app.appSettings.setSettings(
+          autoConnectData: AutoconnectData(
+            enabled: true,
+            serverGroup: ServerGroup.STANDARD_VPN_SERVERS,
+          ),
+        );
+        final screen = await app.goToAutoConnectSettingsScreen();
+        expect(
+          screen.autoConnectServerLabel(),
+          equals("${t.ui.fastestServer} (${t.ui.quickConnect})"),
+        );
+      },
+    );
 
     testWidgets(
       "disables 'Secure my connection' button when connected to selected location",

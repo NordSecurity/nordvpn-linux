@@ -41,12 +41,12 @@ type ServerData struct {
 	IP                  netip.Addr
 	Endpoint            string
 	Hostname            string // used in openvpn server certificate validation
-	Protocol            config.Protocol
+	VPNProtocol         config.VPNProtocol
 	NordLynxPublicKey   string
-	Obfuscated          bool
 	OpenVPNVersion      string
 	PostQuantum         bool
 	NordWhisperPort     int64
+	DedicatedServer     bool
 	DedicatedServerPort int64
 }
 

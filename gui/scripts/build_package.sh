@@ -40,7 +40,7 @@ declare -A FLUTTER_FOLDER_NAME=(
 ARCH_FOLDER_NAME=${FLUTTER_FOLDER_NAME[$ARCH]}
 
 export PKG_HOMEPAGE="https://nordvpn.com/"
-export PKG_DESCRIPTION="The NordVPN app for Linux now offers a visual interface for effortless online security. NordVPN protects your internet traffic with top-grade encryption and changes your IP address, so whatever you do online stays private and secure. Connect to over 7,100 high-speed servers covering 118 countries.\n\nYou can secure up to 10 devices with a single account. Enjoy a safer internet experience on all your devices."
+export PKG_DESCRIPTION="Protect your connection with NordVPN"
 export PKG_VERSION=${VERSION}
 
 # variables used into the package installation scripts
@@ -134,12 +134,18 @@ envsubst <templates/nordvpn-gui_template.desktop >"${APP_BUNDLE_DIR}/${NAME}.des
 
 # create install scripts
 mkdir -p "${APP_BUNDLE_DIR}"/scriptlets/{deb,rpm}
+cp templates/scriptlets/deb/preinst_template "${APP_BUNDLE_DIR}"/scriptlets/deb/preinst
+# shellcheck disable=SC2016
 envsubst '${INSTALL_SCRIPT} ${SUCCESS_INSTALL_MESSAGE}' <templates/scriptlets/deb/postinst_template >"${APP_BUNDLE_DIR}"/scriptlets/deb/postinst
-envsubst '' <templates/scriptlets/deb/prerm_template >"${APP_BUNDLE_DIR}"/scriptlets/deb/prerm
+cp templates/scriptlets/deb/prerm_template "${APP_BUNDLE_DIR}"/scriptlets/deb/prerm
+# shellcheck disable=SC2016
 envsubst '${UNINSTALL_SCRIPT}' <templates/scriptlets/deb/postrm_template >"${APP_BUNDLE_DIR}"/scriptlets/deb/postrm
 
+cp templates/scriptlets/rpm/pre_template "${APP_BUNDLE_DIR}"/scriptlets/rpm/pre
+# shellcheck disable=SC2016
 envsubst '${INSTALL_SCRIPT} ${SUCCESS_INSTALL_MESSAGE}' <templates/scriptlets/rpm/post_template >"${APP_BUNDLE_DIR}"/scriptlets/rpm/post
-envsubst '' <templates/scriptlets/rpm/preun_template >"${APP_BUNDLE_DIR}"/scriptlets/rpm/preun
+cp templates/scriptlets/rpm/preun_template "${APP_BUNDLE_DIR}"/scriptlets/rpm/preun
+# shellcheck disable=SC2016
 envsubst '${UNINSTALL_SCRIPT}' <templates/scriptlets/rpm/postun_template >"${APP_BUNDLE_DIR}"/scriptlets/rpm/postun
 
 # value expected by `nfpm` template and must be given from outside, break here if not set

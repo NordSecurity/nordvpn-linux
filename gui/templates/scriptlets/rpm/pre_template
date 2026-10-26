@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+case "$1" in
+1) # Fresh install
+    # Nothing to do yet
+    ;;
+2) # Upgrade
+    pkill -TERM -x nordvpn-gui || :
+    ;;
+*)
+    echo "pre called with unknown argument '$1'" >&2
+    # deliberately no error returned
+    ;;
+esac
+
+exit 0

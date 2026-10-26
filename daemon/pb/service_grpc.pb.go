@@ -41,9 +41,7 @@ const (
 	Daemon_Settings_FullMethodName                 = "/pb.Daemon/Settings"
 	Daemon_SetDefaults_FullMethodName              = "/pb.Daemon/SetDefaults"
 	Daemon_SetAutoConnect_FullMethodName           = "/pb.Daemon/SetAutoConnect"
-	Daemon_SetProtocol_FullMethodName              = "/pb.Daemon/SetProtocol"
-	Daemon_SetTechnology_FullMethodName            = "/pb.Daemon/SetTechnology"
-	Daemon_SetObfuscate_FullMethodName             = "/pb.Daemon/SetObfuscate"
+	Daemon_SetVPNProtocol_FullMethodName           = "/pb.Daemon/SetVPNProtocol"
 	Daemon_SetPostQuantum_FullMethodName           = "/pb.Daemon/SetPostQuantum"
 	Daemon_SetECH_FullMethodName                   = "/pb.Daemon/SetECH"
 	Daemon_GetRecentConnections_FullMethodName     = "/pb.Daemon/GetRecentConnections"
@@ -55,8 +53,6 @@ const (
 	Daemon_SetLANDiscovery_FullMethodName          = "/pb.Daemon/SetLANDiscovery"
 	Daemon_SetNotify_FullMethodName                = "/pb.Daemon/SetNotify"
 	Daemon_SetTray_FullMethodName                  = "/pb.Daemon/SetTray"
-	Daemon_SettingsProtocols_FullMethodName        = "/pb.Daemon/SettingsProtocols"
-	Daemon_SettingsTechnologies_FullMethodName     = "/pb.Daemon/SettingsTechnologies"
 	Daemon_GetFeatureToggles_FullMethodName        = "/pb.Daemon/GetFeatureToggles"
 	Daemon_SetAllowlist_FullMethodName             = "/pb.Daemon/SetAllowlist"
 	Daemon_SetARPIgnore_FullMethodName             = "/pb.Daemon/SetARPIgnore"
@@ -103,9 +99,7 @@ type DaemonClient interface {
 	SetDefaults(ctx context.Context, in *SetDefaultsRequest, opts ...grpc.CallOption) (*Payload, error)
 	// ==================== Connection Settings ====================
 	SetAutoConnect(ctx context.Context, in *SetAutoconnectRequest, opts ...grpc.CallOption) (*Payload, error)
-	SetProtocol(ctx context.Context, in *SetProtocolRequest, opts ...grpc.CallOption) (*SetProtocolResponse, error)
-	SetTechnology(ctx context.Context, in *SetTechnologyRequest, opts ...grpc.CallOption) (*Payload, error)
-	SetObfuscate(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
+	SetVPNProtocol(ctx context.Context, in *SetVPNProtocolRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetPostQuantum(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetECH(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
 	GetRecentConnections(ctx context.Context, in *RecentConnectionsRequest, opts ...grpc.CallOption) (*RecentConnectionsResponse, error)
@@ -120,8 +114,6 @@ type DaemonClient interface {
 	SetNotify(ctx context.Context, in *SetNotifyRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetTray(ctx context.Context, in *SetTrayRequest, opts ...grpc.CallOption) (*Payload, error)
 	// ==================== Configuration Info ====================
-	SettingsProtocols(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
-	SettingsTechnologies(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
 	GetFeatureToggles(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*FeatureToggles, error)
 	// ==================== Allowlist Management ====================
 	SetAllowlist(ctx context.Context, in *SetAllowlistRequest, opts ...grpc.CallOption) (*Payload, error)
@@ -387,30 +379,10 @@ func (c *daemonClient) SetAutoConnect(ctx context.Context, in *SetAutoconnectReq
 	return out, nil
 }
 
-func (c *daemonClient) SetProtocol(ctx context.Context, in *SetProtocolRequest, opts ...grpc.CallOption) (*SetProtocolResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SetProtocolResponse)
-	err := c.cc.Invoke(ctx, Daemon_SetProtocol_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *daemonClient) SetTechnology(ctx context.Context, in *SetTechnologyRequest, opts ...grpc.CallOption) (*Payload, error) {
+func (c *daemonClient) SetVPNProtocol(ctx context.Context, in *SetVPNProtocolRequest, opts ...grpc.CallOption) (*Payload, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Payload)
-	err := c.cc.Invoke(ctx, Daemon_SetTechnology_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *daemonClient) SetObfuscate(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Payload)
-	err := c.cc.Invoke(ctx, Daemon_SetObfuscate_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Daemon_SetVPNProtocol_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -521,26 +493,6 @@ func (c *daemonClient) SetTray(ctx context.Context, in *SetTrayRequest, opts ...
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Payload)
 	err := c.cc.Invoke(ctx, Daemon_SetTray_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *daemonClient) SettingsProtocols(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Payload)
-	err := c.cc.Invoke(ctx, Daemon_SettingsProtocols_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *daemonClient) SettingsTechnologies(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Payload)
-	err := c.cc.Invoke(ctx, Daemon_SettingsTechnologies_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -717,9 +669,7 @@ type DaemonServer interface {
 	SetDefaults(context.Context, *SetDefaultsRequest) (*Payload, error)
 	// ==================== Connection Settings ====================
 	SetAutoConnect(context.Context, *SetAutoconnectRequest) (*Payload, error)
-	SetProtocol(context.Context, *SetProtocolRequest) (*SetProtocolResponse, error)
-	SetTechnology(context.Context, *SetTechnologyRequest) (*Payload, error)
-	SetObfuscate(context.Context, *SetGenericRequest) (*Payload, error)
+	SetVPNProtocol(context.Context, *SetVPNProtocolRequest) (*Payload, error)
 	SetPostQuantum(context.Context, *SetGenericRequest) (*Payload, error)
 	SetECH(context.Context, *SetGenericRequest) (*Payload, error)
 	GetRecentConnections(context.Context, *RecentConnectionsRequest) (*RecentConnectionsResponse, error)
@@ -734,8 +684,6 @@ type DaemonServer interface {
 	SetNotify(context.Context, *SetNotifyRequest) (*Payload, error)
 	SetTray(context.Context, *SetTrayRequest) (*Payload, error)
 	// ==================== Configuration Info ====================
-	SettingsProtocols(context.Context, *Empty) (*Payload, error)
-	SettingsTechnologies(context.Context, *Empty) (*Payload, error)
 	GetFeatureToggles(context.Context, *Empty) (*FeatureToggles, error)
 	// ==================== Allowlist Management ====================
 	SetAllowlist(context.Context, *SetAllowlistRequest) (*Payload, error)
@@ -829,14 +777,8 @@ func (UnimplementedDaemonServer) SetDefaults(context.Context, *SetDefaultsReques
 func (UnimplementedDaemonServer) SetAutoConnect(context.Context, *SetAutoconnectRequest) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetAutoConnect not implemented")
 }
-func (UnimplementedDaemonServer) SetProtocol(context.Context, *SetProtocolRequest) (*SetProtocolResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SetProtocol not implemented")
-}
-func (UnimplementedDaemonServer) SetTechnology(context.Context, *SetTechnologyRequest) (*Payload, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SetTechnology not implemented")
-}
-func (UnimplementedDaemonServer) SetObfuscate(context.Context, *SetGenericRequest) (*Payload, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SetObfuscate not implemented")
+func (UnimplementedDaemonServer) SetVPNProtocol(context.Context, *SetVPNProtocolRequest) (*Payload, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetVPNProtocol not implemented")
 }
 func (UnimplementedDaemonServer) SetPostQuantum(context.Context, *SetGenericRequest) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetPostQuantum not implemented")
@@ -870,12 +812,6 @@ func (UnimplementedDaemonServer) SetNotify(context.Context, *SetNotifyRequest) (
 }
 func (UnimplementedDaemonServer) SetTray(context.Context, *SetTrayRequest) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetTray not implemented")
-}
-func (UnimplementedDaemonServer) SettingsProtocols(context.Context, *Empty) (*Payload, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SettingsProtocols not implemented")
-}
-func (UnimplementedDaemonServer) SettingsTechnologies(context.Context, *Empty) (*Payload, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SettingsTechnologies not implemented")
 }
 func (UnimplementedDaemonServer) GetFeatureToggles(context.Context, *Empty) (*FeatureToggles, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFeatureToggles not implemented")
@@ -1316,56 +1252,20 @@ func _Daemon_SetAutoConnect_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Daemon_SetProtocol_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SetProtocolRequest)
+func _Daemon_SetVPNProtocol_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetVPNProtocolRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DaemonServer).SetProtocol(ctx, in)
+		return srv.(DaemonServer).SetVPNProtocol(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Daemon_SetProtocol_FullMethodName,
+		FullMethod: Daemon_SetVPNProtocol_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).SetProtocol(ctx, req.(*SetProtocolRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Daemon_SetTechnology_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SetTechnologyRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DaemonServer).SetTechnology(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Daemon_SetTechnology_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).SetTechnology(ctx, req.(*SetTechnologyRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Daemon_SetObfuscate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SetGenericRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DaemonServer).SetObfuscate(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Daemon_SetObfuscate_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).SetObfuscate(ctx, req.(*SetGenericRequest))
+		return srv.(DaemonServer).SetVPNProtocol(ctx, req.(*SetVPNProtocolRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1564,42 +1464,6 @@ func _Daemon_SetTray_Handler(srv interface{}, ctx context.Context, dec func(inte
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DaemonServer).SetTray(ctx, req.(*SetTrayRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Daemon_SettingsProtocols_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DaemonServer).SettingsProtocols(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Daemon_SettingsProtocols_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).SettingsProtocols(ctx, req.(*Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Daemon_SettingsTechnologies_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DaemonServer).SettingsTechnologies(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Daemon_SettingsTechnologies_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).SettingsTechnologies(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1894,16 +1758,8 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Daemon_SetAutoConnect_Handler,
 		},
 		{
-			MethodName: "SetProtocol",
-			Handler:    _Daemon_SetProtocol_Handler,
-		},
-		{
-			MethodName: "SetTechnology",
-			Handler:    _Daemon_SetTechnology_Handler,
-		},
-		{
-			MethodName: "SetObfuscate",
-			Handler:    _Daemon_SetObfuscate_Handler,
+			MethodName: "SetVPNProtocol",
+			Handler:    _Daemon_SetVPNProtocol_Handler,
 		},
 		{
 			MethodName: "SetPostQuantum",
@@ -1948,14 +1804,6 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetTray",
 			Handler:    _Daemon_SetTray_Handler,
-		},
-		{
-			MethodName: "SettingsProtocols",
-			Handler:    _Daemon_SettingsProtocols_Handler,
-		},
-		{
-			MethodName: "SettingsTechnologies",
-			Handler:    _Daemon_SettingsTechnologies_Handler,
 		},
 		{
 			MethodName: "GetFeatureToggles",

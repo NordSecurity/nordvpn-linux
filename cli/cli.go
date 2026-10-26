@@ -867,35 +867,12 @@ func getSetSubcommands(cmd *cmd, isMeshnetEnabled bool) []*cli.Command {
 			),
 		},
 		{
-			Name:         "obfuscate",
-			Usage:        SetObfuscateUsageText,
-			Action:       cmd.SetObfuscate,
-			BashComplete: cmd.SetBoolAutocomplete,
-			ArgsUsage:    MsgSetBoolArgsUsage,
-			Description: fmt.Sprintf(
-				MsgSetBoolDescription,
-				SetObfuscateUsageText,
-				"obfuscate",
-				"obfuscate",
-			),
-			Hidden: cmd.Except(config.Technology_OPENVPN),
-		},
-		{
 			Name:         "protocol",
-			Usage:        SetProtocolUsageText,
-			Action:       cmd.SetProtocol,
-			BashComplete: cmd.SetProtocolAutoComplete,
-			ArgsUsage:    SetProtocolArgsUsageText,
-			Description:  SetProtocolDescription,
-			Hidden:       cmd.Except(config.Technology_OPENVPN),
-		},
-		{
-			Name:         "technology",
-			Usage:        SetTechnologyUsageText,
-			Action:       cmd.SetTechnology,
-			BashComplete: cmd.SetTechnologyAutoComplete,
-			ArgsUsage:    SetTechnologyArgsUsageText,
-			Description:  SetTechnologyDescription,
+			Usage:        SetVPNProtocolUsageText,
+			Action:       cmd.SetVPNProtocol,
+			BashComplete: cmd.SetVPNProtocolAutoComplete,
+			ArgsUsage:    SetVPNProtocolArgsUsageText,
+			Description:  buildVPNProtocolDescription(),
 		},
 		{
 			Name:      "lan-discovery",
@@ -923,7 +900,7 @@ func getSetSubcommands(cmd *cmd, isMeshnetEnabled bool) []*cli.Command {
 				"post-quantum",
 				"post-quantum",
 			),
-			Hidden: cmd.Except(config.Technology_NORDLYNX),
+			Hidden: cmd.Except(config.VPNProtocol_VPN_PROTOCOL_NORDLYNX),
 		},
 		{
 			Name:         "arp-ignore",
@@ -953,7 +930,7 @@ func getSetSubcommands(cmd *cmd, isMeshnetEnabled bool) []*cli.Command {
 				"ech",
 				"ech",
 			),
-			Hidden: cmd.Except(config.Technology_NORDWHISPER),
+			Hidden: cmd.Except(config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER),
 		})
 	}
 

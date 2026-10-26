@@ -33,9 +33,6 @@ import (
 var (
 	// ErrTunnelClosed while enabling meshnet.
 	ErrTunnelClosed = errors.New("tunnel was closed")
-	// MsgMeshnetInviteSendSameAccountEmail is a string used to identify same account error
-	// returned when invite destination address is the same as sender email address
-	MsgMeshnetInviteSendSameAccountEmail = "Bad Request: Email should belong to a different user"
 )
 
 // Server is an implementation of pb.MeshnetServer. It represents the
@@ -520,14 +517,14 @@ func (s *Server) Invite(
 				},
 			}, nil
 		}
-		if strings.Contains(err.Error(), "must be a valid email address") {
+		if errors.Is(err, core.ErrInvalidFormData) {
 			return &pb.InviteResponse{
 				Response: &pb.InviteResponse_InviteResponseErrorCode{
 					InviteResponseErrorCode: pb.InviteResponseErrorCode_INVALID_EMAIL,
 				},
 			}, nil
 		}
-		if strings.Contains(err.Error(), MsgMeshnetInviteSendSameAccountEmail) {
+		if errors.Is(err, core.ErrInvitationReceivedSameUser) {
 			return &pb.InviteResponse{
 				Response: &pb.InviteResponse_InviteResponseErrorCode{
 					InviteResponseErrorCode: pb.InviteResponseErrorCode_SAME_ACCOUNT_EMAIL,
@@ -1831,7 +1828,7 @@ func (s *Server) connect(
 		}
 	}
 
-	if cfg.Technology != config.Technology_NORDLYNX {
+	if !cfg.VPNProtocol.IsNordLynx() {
 		return &pb.ConnectResponse{
 			Response: &pb.ConnectResponse_UpdatePeerError{
 				UpdatePeerError: updatePeerMeshError(pb.MeshnetErrorCode_TECH_FAILURE),
@@ -1867,8 +1864,7 @@ func (s *Server) connect(
 	// Measure the time it takes to obtain tokens as the connection attempt event duration
 	connectingStartTime := time.Now()
 	event := events.DataConnect{
-		Technology:         cfg.Technology,
-		Protocol:           cfg.AutoConnectData.Protocol,
+		VPNProtocol:        cfg.VPNProtocol,
 		IsMeshnetPeer:      true,
 		TargetServerIP:     peer.Address,
 		TargetServerDomain: peer.Hostname,
@@ -1885,8 +1881,7 @@ func (s *Server) connect(
 	connectingStartTime = time.Now()
 
 	disconnectSender := events.NewDisconnectSender(events.DataDisconnect{
-		Protocol:           cfg.AutoConnectData.Protocol,
-		Technology:         cfg.Technology,
+		VPNProtocol:        cfg.VPNProtocol,
 		RealTimeProtection: cfg.AutoConnectData.RealTimeProtection,
 	}, s.daemonEvents.Service.Disconnect.Publish)
 
@@ -1898,7 +1893,7 @@ func (s *Server) connect(
 		vpn.ServerData{
 			IP:                peer.Address,
 			Hostname:          peer.Hostname,
-			Protocol:          config.Protocol_UDP,
+			VPNProtocol:       config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			NordLynxPublicKey: peer.PublicKey,
 		},
 		cfg.AutoConnectData.Allowlist,
