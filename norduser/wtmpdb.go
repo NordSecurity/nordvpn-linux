@@ -119,7 +119,13 @@ func (w *wtmpdbSessionGetter) hasGUISession(username string) (bool, error) {
 			continue
 		}
 
-		sessionTypeProperty, err := w.dbusLoginClient.GetObject(path).GetProperty("org.freedesktop.login1.Session.Type")
+		sessionTypeObject := w.dbusLoginClient.GetObject(path)
+		if sessionTypeObject == nil {
+			log.ProcessMonitor.Warn("malformed dbus tuple, session type object is nil")
+			continue
+		}
+
+		sessionTypeProperty, err := sessionTypeObject.GetProperty("org.freedesktop.login1.Session.Type")
 		if err != nil {
 			log.ProcessMonitor.Warn("failed to get session type:", err)
 			continue
