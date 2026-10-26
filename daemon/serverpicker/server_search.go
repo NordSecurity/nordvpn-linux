@@ -31,11 +31,10 @@ func newServerSearch(
 	countries core.Countries,
 	servers core.Servers,
 ) (*serverSearch, error) {
-	tech := cfg.Technology
-	protocol := cfg.AutoConnectData.Protocol
-	log.ServerSel.Debug("search server", tech, protocol, "with input", input)
+	proto := cfg.VPNProtocol
+	log.ServerSel.Debug("search server", proto, "with input", input)
 
-	serverTech := TechToServerTech(tech, protocol)
+	serverTech := VPNProtocolToServerTech(proto)
 	if serverTech == core.Unknown {
 		return nil, ErrUnknownTechnology
 	}
@@ -47,8 +46,8 @@ func newServerSearch(
 	}
 
 	// the group the servers are actually looked up by can differ from the requested ones
-	// on specific technology (edge case)
-	serverGroup := searchGroup(requestedGroup, tech)
+	// on specific protocol (edge case)
+	serverGroup := searchGroup(requestedGroup, proto)
 	log.ServerSel.Debug("resolved server group", requestedGroup, "search group", serverGroup)
 
 	//exhaustive:ignore - only groups not served by the server search are relevant

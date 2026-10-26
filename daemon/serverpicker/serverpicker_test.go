@@ -23,24 +23,21 @@ func TestFilterServers(t *testing.T) {
 	tests := []struct {
 		name          string
 		servers       core.Servers
-		tech          config.Technology
-		proto         config.Protocol
+		vpnProtocol   config.VPNProtocol
 		expectedCount int
 		hasError      bool
 	}{
 		{
 			name:          "nil servers",
 			servers:       nil,
-			tech:          config.Technology_NORDLYNX,
-			proto:         config.Protocol_UDP,
+			vpnProtocol:   config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			expectedCount: 0,
 			hasError:      true,
 		},
 		{
 			name:          "0 servers",
 			servers:       core.Servers{},
-			tech:          config.Technology_NORDLYNX,
-			proto:         config.Protocol_UDP,
+			vpnProtocol:   config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			expectedCount: 0,
 			hasError:      true,
 		},
@@ -62,8 +59,7 @@ func TestFilterServers(t *testing.T) {
 					},
 				},
 			},
-			tech:          config.Technology_NORDLYNX,
-			proto:         config.Protocol_UDP,
+			vpnProtocol:   config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			expectedCount: 0,
 			hasError:      true,
 		},
@@ -96,8 +92,7 @@ func TestFilterServers(t *testing.T) {
 					},
 				},
 			},
-			tech:          config.Technology_NORDLYNX,
-			proto:         config.Protocol_UDP,
+			vpnProtocol:   config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			expectedCount: 1,
 			hasError:      false,
 		},
@@ -147,8 +142,7 @@ func TestFilterServers(t *testing.T) {
 					},
 				},
 			},
-			tech:          config.Technology_NORDLYNX,
-			proto:         config.Protocol_UDP,
+			vpnProtocol:   config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			expectedCount: 1,
 			hasError:      false,
 		},
@@ -156,7 +150,7 @@ func TestFilterServers(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			search := newTestServerSearch(t, test.tech, test.proto, SearchParams{}, nil, test.servers)
+			search := newTestServerSearch(t, test.vpnProtocol, SearchParams{}, nil, test.servers)
 			servers, err := search.findLocally(test.servers)
 			assert.Equal(t, test.hasError, err != nil)
 			assert.Equal(t, test.expectedCount, len(servers))
@@ -240,22 +234,23 @@ func TestResolveServerGroup(t *testing.T) {
 	}
 }
 
-func TestIsObfuscatedTech(t *testing.T) {
+func TestIsObfuscatedProtocol(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		tech     config.Technology
-		expected bool
+		vpnProtocol config.VPNProtocol
+		expected    bool
 	}{
-		{tech: config.Technology_NORDWHISPER, expected: true},
-		{tech: config.Technology_NORDLYNX, expected: false},
-		{tech: config.Technology_OPENVPN, expected: false},
-		{tech: config.Technology_UNKNOWN_TECHNOLOGY, expected: false},
+		{vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER, expected: true},
+		{vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX, expected: false},
+		{vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP, expected: false},
+		{vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP, expected: false},
+		{vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_UNSPECIFIED, expected: false},
 	}
 
 	for _, test := range tests {
-		t.Run(test.tech.String(), func(t *testing.T) {
-			assert.Equal(t, test.expected, IsObfuscatedTech(test.tech))
+		t.Run(test.vpnProtocol.String(), func(t *testing.T) {
+			assert.Equal(t, test.expected, IsObfuscatedProtocol(test.vpnProtocol))
 		})
 	}
 }
@@ -264,52 +259,52 @@ func TestSearchGroup(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		name      string
-		requested config.ServerGroup
-		tech      config.Technology
-		expected  config.ServerGroup
+		name        string
+		requested   config.ServerGroup
+		vpnProtocol config.VPNProtocol
+		expected    config.ServerGroup
 	}{
 		{
-			name:      "obfuscated over nordwhisper is searched as standard",
-			requested: config.ServerGroup_NW_OBFUSCATED,
-			tech:      config.Technology_NORDWHISPER,
-			expected:  config.ServerGroup_STANDARD_VPN_SERVERS,
+			name:        "obfuscated over nordwhisper is searched as standard",
+			requested:   config.ServerGroup_NW_OBFUSCATED,
+			vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
+			expected:    config.ServerGroup_STANDARD_VPN_SERVERS,
 		},
 		{
-			name:      "obfuscated over nordlynx is left alone",
-			requested: config.ServerGroup_NW_OBFUSCATED,
-			tech:      config.Technology_NORDLYNX,
-			expected:  config.ServerGroup_NW_OBFUSCATED,
+			name:        "obfuscated over nordlynx is left alone",
+			requested:   config.ServerGroup_NW_OBFUSCATED,
+			vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+			expected:    config.ServerGroup_NW_OBFUSCATED,
 		},
 		{
-			name:      "obfuscated over openvpn is left alone",
-			requested: config.ServerGroup_NW_OBFUSCATED,
-			tech:      config.Technology_OPENVPN,
-			expected:  config.ServerGroup_NW_OBFUSCATED,
+			name:        "obfuscated over openvpn is left alone",
+			requested:   config.ServerGroup_NW_OBFUSCATED,
+			vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP,
+			expected:    config.ServerGroup_NW_OBFUSCATED,
 		},
 		{
-			name:      "other groups are never touched",
-			requested: config.ServerGroup_DOUBLE_VPN,
-			tech:      config.Technology_NORDWHISPER,
-			expected:  config.ServerGroup_DOUBLE_VPN,
+			name:        "other groups are never touched",
+			requested:   config.ServerGroup_DOUBLE_VPN,
+			vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
+			expected:    config.ServerGroup_DOUBLE_VPN,
 		},
 		{
-			name:      "standard stays standard",
-			requested: config.ServerGroup_STANDARD_VPN_SERVERS,
-			tech:      config.Technology_NORDWHISPER,
-			expected:  config.ServerGroup_STANDARD_VPN_SERVERS,
+			name:        "standard stays standard",
+			requested:   config.ServerGroup_STANDARD_VPN_SERVERS,
+			vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
+			expected:    config.ServerGroup_STANDARD_VPN_SERVERS,
 		},
 		{
-			name:      "undefined stays undefined",
-			requested: config.ServerGroup_UNDEFINED,
-			tech:      config.Technology_NORDWHISPER,
-			expected:  config.ServerGroup_UNDEFINED,
+			name:        "undefined stays undefined",
+			requested:   config.ServerGroup_UNDEFINED,
+			vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
+			expected:    config.ServerGroup_UNDEFINED,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			assert.Equal(t, test.expected, searchGroup(test.requested, test.tech))
+			assert.Equal(t, test.expected, searchGroup(test.requested, test.vpnProtocol))
 		})
 	}
 }
@@ -331,7 +326,7 @@ func TestEffectiveGroups(t *testing.T) {
 		groups       core.Groups
 		technologies core.Technologies
 		status       core.Status
-		tech         config.Technology
+		vpnProtocol  config.VPNProtocol
 		expected     core.Groups
 	}{
 		{
@@ -339,7 +334,7 @@ func TestEffectiveGroups(t *testing.T) {
 			groups:       core.Groups{standard},
 			technologies: nordWhisper,
 			status:       core.Online,
-			tech:         config.Technology_NORDWHISPER,
+			vpnProtocol:  config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
 			expected:     core.Groups{standard, obfuscated},
 		},
 		{
@@ -347,7 +342,7 @@ func TestEffectiveGroups(t *testing.T) {
 			groups:       core.Groups{standard},
 			technologies: nordWhisper,
 			status:       core.Online,
-			tech:         config.Technology_NORDLYNX,
+			vpnProtocol:  config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			expected:     core.Groups{standard},
 		},
 		{
@@ -355,7 +350,7 @@ func TestEffectiveGroups(t *testing.T) {
 			groups:       core.Groups{doubleVpn},
 			technologies: nordWhisper,
 			status:       core.Online,
-			tech:         config.Technology_NORDWHISPER,
+			vpnProtocol:  config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
 			expected:     core.Groups{doubleVpn},
 		},
 		{
@@ -363,7 +358,7 @@ func TestEffectiveGroups(t *testing.T) {
 			groups:       core.Groups{standard},
 			technologies: wireguardOnly,
 			status:       core.Online,
-			tech:         config.Technology_NORDWHISPER,
+			vpnProtocol:  config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
 			expected:     core.Groups{standard},
 		},
 		{
@@ -371,7 +366,7 @@ func TestEffectiveGroups(t *testing.T) {
 			groups:       core.Groups{standard},
 			technologies: nordWhisperOffline,
 			status:       core.Online,
-			tech:         config.Technology_NORDWHISPER,
+			vpnProtocol:  config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
 			expected:     core.Groups{standard},
 		},
 		{
@@ -379,7 +374,7 @@ func TestEffectiveGroups(t *testing.T) {
 			groups:       core.Groups{standard},
 			technologies: nordWhisper,
 			status:       core.Offline,
-			tech:         config.Technology_NORDWHISPER,
+			vpnProtocol:  config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
 			expected:     core.Groups{standard},
 		},
 		{
@@ -387,7 +382,7 @@ func TestEffectiveGroups(t *testing.T) {
 			groups:       core.Groups{xor, standard},
 			technologies: nordWhisper,
 			status:       core.Online,
-			tech:         config.Technology_OPENVPN,
+			vpnProtocol:  config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP,
 			expected:     core.Groups{standard},
 		},
 		{
@@ -395,7 +390,7 @@ func TestEffectiveGroups(t *testing.T) {
 			groups:       core.Groups{xor, standard},
 			technologies: nordWhisper,
 			status:       core.Online,
-			tech:         config.Technology_NORDWHISPER,
+			vpnProtocol:  config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
 			expected:     core.Groups{standard, obfuscated},
 		},
 		{
@@ -403,7 +398,7 @@ func TestEffectiveGroups(t *testing.T) {
 			groups:       core.Groups{},
 			technologies: nordWhisper,
 			status:       core.Online,
-			tech:         config.Technology_NORDWHISPER,
+			vpnProtocol:  config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
 			expected:     core.Groups{},
 		},
 	}
@@ -416,7 +411,7 @@ func TestEffectiveGroups(t *testing.T) {
 				Status:       test.status,
 			}
 
-			got := EffectiveGroups(server, test.tech)
+			got := EffectiveGroups(server, test.vpnProtocol)
 
 			assert.Equal(t, test.expected, got)
 			assert.Equal(t, test.groups, server.Groups)
@@ -731,42 +726,34 @@ func TestServerTagFromString(t *testing.T) {
 	}
 }
 
-func TestTechToServerTech(t *testing.T) {
+func TestVPNProtocolToServerTech(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		name       string
-		tech       config.Technology
-		protocol   config.Protocol
-		obfuscated bool
-		expected   core.ServerTechnology
+		name        string
+		vpnProtocol config.VPNProtocol
+		expected    core.ServerTechnology
 	}{
 		{
-			name:       "wireguard",
-			tech:       config.Technology_NORDLYNX,
-			protocol:   config.Protocol_UDP,
-			obfuscated: false,
-			expected:   core.WireguardTech,
+			name:        "wireguard",
+			vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+			expected:    core.WireguardTech,
 		},
 		{
-			name:       "openvpn tcp",
-			tech:       config.Technology_OPENVPN,
-			protocol:   config.Protocol_TCP,
-			obfuscated: false,
-			expected:   core.OpenVPNTCP,
+			name:        "openvpn tcp",
+			vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP,
+			expected:    core.OpenVPNTCP,
 		},
 		{
-			name:       "openvpn udp",
-			tech:       config.Technology_OPENVPN,
-			protocol:   config.Protocol_UDP,
-			obfuscated: false,
-			expected:   core.OpenVPNUDP,
+			name:        "openvpn udp",
+			vpnProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP,
+			expected:    core.OpenVPNUDP,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got := TechToServerTech(test.tech, test.protocol)
+			got := VPNProtocolToServerTech(test.vpnProtocol)
 			assert.Equal(t, test.expected, got)
 		})
 	}
@@ -778,7 +765,7 @@ func TestPickServer(t *testing.T) {
 		name                 string
 		api                  core.ServersAPI
 		servers              core.Servers
-		tech                 config.Technology
+		vpnProtocol          config.VPNProtocol
 		tag                  string
 		group                string
 		excludedServer       string
@@ -790,7 +777,7 @@ func TestPickServer(t *testing.T) {
 			name:               "find server using country code",
 			api:                core_test.NewMockFailingServersAPI(errors.New("500")),
 			servers:            core_test.ServersList(),
-			tech:               config.Technology_NORDLYNX,
+			vpnProtocol:        config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			tag:                "de",
 			expectedServerName: "Germany #3",
 		},
@@ -798,7 +785,7 @@ func TestPickServer(t *testing.T) {
 			name:               "find server using country name",
 			api:                core_test.NewMockFailingServersAPI(errors.New("500")),
 			servers:            core_test.ServersList(),
-			tech:               config.Technology_NORDLYNX,
+			vpnProtocol:        config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			tag:                "germany",
 			expectedServerName: "Germany #3",
 		},
@@ -806,7 +793,7 @@ func TestPickServer(t *testing.T) {
 			name:               "find server using city name",
 			api:                core_test.NewMockFailingServersAPI(errors.New("500")),
 			servers:            core_test.ServersList(),
-			tech:               config.Technology_NORDLYNX,
+			vpnProtocol:        config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			tag:                "berlin",
 			expectedServerName: "Germany #3",
 		},
@@ -814,7 +801,7 @@ func TestPickServer(t *testing.T) {
 			name:               "find server using country + city name",
 			api:                core_test.NewMockFailingServersAPI(errors.New("500")),
 			servers:            core_test.ServersList(),
-			tech:               config.Technology_NORDLYNX,
+			vpnProtocol:        config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			tag:                "germany berlin",
 			expectedServerName: "Germany #3",
 		},
@@ -822,7 +809,7 @@ func TestPickServer(t *testing.T) {
 			name:               "find server using country code + city name",
 			api:                core_test.NewMockFailingServersAPI(errors.New("500")),
 			servers:            core_test.ServersList(),
-			tech:               config.Technology_NORDLYNX,
+			vpnProtocol:        config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			tag:                "de berlin",
 			expectedServerName: "Germany #3",
 		},
@@ -830,7 +817,7 @@ func TestPickServer(t *testing.T) {
 			name:                 "server selected from the API is marked as remote",
 			api:                  core_test.NewMockServersAPI(),
 			servers:              core_test.ServersList(),
-			tech:                 config.Technology_NORDLYNX,
+			vpnProtocol:          config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			tag:                  "de3",
 			expectedServerName:   "Germany #3",
 			expectedRemoteServer: true,
@@ -839,14 +826,14 @@ func TestPickServer(t *testing.T) {
 			name:          "can't find a server",
 			api:           core_test.NewMockFailingServersAPI(errors.New("500")),
 			servers:       core.Servers{},
-			tech:          config.Technology_NORDLYNX,
+			vpnProtocol:   config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			expectedError: internal.ErrServerIsUnavailable,
 		},
 		{
 			name:           "exclude server de3.nordvpn.com",
 			api:            core_test.NewMockFailingServersAPI(errors.New("500")),
 			servers:        core_test.ServersList(),
-			tech:           config.Technology_NORDLYNX,
+			vpnProtocol:    config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			tag:            "de berlin",
 			excludedServer: "de3.nordvpn.com",
 			expectedError:  internal.ErrServerIsUnavailable,
@@ -856,7 +843,7 @@ func TestPickServer(t *testing.T) {
 			name:               "obfuscated group over nordwhisper is served by the standard servers",
 			api:                core_test.NewMockFailingServersAPI(errors.New("500")),
 			servers:            core_test.ServersList(),
-			tech:               config.Technology_NORDWHISPER,
+			vpnProtocol:        config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
 			group:              "obfuscated",
 			expectedServerName: "Germany #4",
 		},
@@ -864,7 +851,7 @@ func TestPickServer(t *testing.T) {
 			name:                 "obfuscated group over nordwhisper is translated before the API is asked",
 			api:                  core_test.NewMockServersAPI(),
 			servers:              core_test.ServersList(),
-			tech:                 config.Technology_NORDWHISPER,
+			vpnProtocol:          config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
 			group:                "obfuscated",
 			expectedServerName:   "Germany #4",
 			expectedRemoteServer: true,
@@ -873,7 +860,7 @@ func TestPickServer(t *testing.T) {
 			name:               "obfuscated group given as the tag over nordwhisper",
 			api:                core_test.NewMockFailingServersAPI(errors.New("500")),
 			servers:            core_test.ServersList(),
-			tech:               config.Technology_NORDWHISPER,
+			vpnProtocol:        config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
 			tag:                "obfuscated",
 			expectedServerName: "Germany #4",
 		},
@@ -881,7 +868,7 @@ func TestPickServer(t *testing.T) {
 			name:               "standard group over nordwhisper keeps working",
 			api:                core_test.NewMockFailingServersAPI(errors.New("500")),
 			servers:            core_test.ServersList(),
-			tech:               config.Technology_NORDWHISPER,
+			vpnProtocol:        config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER,
 			group:              "standard_vpn_servers",
 			expectedServerName: "Germany #4",
 		},
@@ -889,7 +876,7 @@ func TestPickServer(t *testing.T) {
 			name:          "obfuscated group is not connectable over nordlynx",
 			api:           core_test.NewMockFailingServersAPI(errors.New("500")),
 			servers:       core_test.ServersList(),
-			tech:          config.Technology_NORDLYNX,
+			vpnProtocol:   config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			group:         "obfuscated",
 			expectedError: internal.ErrServerIsUnavailable,
 		},
@@ -897,7 +884,7 @@ func TestPickServer(t *testing.T) {
 			name:          "legacy XOR only server is not connectable by name",
 			api:           core_test.NewMockFailingServersAPI(errors.New("500")),
 			servers:       core_test.ServersList(),
-			tech:          config.Technology_OPENVPN,
+			vpnProtocol:   config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP,
 			tag:           "lt17",
 			expectedError: internal.ErrServerIsUnavailable,
 		},
@@ -905,14 +892,14 @@ func TestPickServer(t *testing.T) {
 			name:          "unknown technology",
 			api:           core_test.NewMockServersAPI(),
 			servers:       core_test.ServersList(),
-			tech:          config.Technology_UNKNOWN_TECHNOLOGY,
+			vpnProtocol:   config.VPNProtocol_VPN_PROTOCOL_UNSPECIFIED,
 			expectedError: ErrUnknownTechnology,
 		},
 		{
 			name:          "group given both as the tag and the flag",
 			api:           core_test.NewMockServersAPI(),
 			servers:       core_test.ServersList(),
-			tech:          config.Technology_NORDLYNX,
+			vpnProtocol:   config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			tag:           "onion_over_vpn",
 			group:         "double_vpn",
 			expectedError: internal.ErrDoubleGroup,
@@ -921,7 +908,7 @@ func TestPickServer(t *testing.T) {
 			name:          "group flag does not exist",
 			api:           core_test.NewMockServersAPI(),
 			servers:       core_test.ServersList(),
-			tech:          config.Technology_NORDLYNX,
+			vpnProtocol:   config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			group:         "not_a_group",
 			expectedError: internal.ErrGroupDoesNotExist,
 		},
@@ -929,7 +916,7 @@ func TestPickServer(t *testing.T) {
 			name:          "dedicated IP group is handled by the caller",
 			api:           core_test.NewMockServersAPI(),
 			servers:       core_test.ServersList(),
-			tech:          config.Technology_NORDLYNX,
+			vpnProtocol:   config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			group:         "dedicated_ip",
 			expectedError: ErrDedicatedIPServer,
 		},
@@ -937,7 +924,7 @@ func TestPickServer(t *testing.T) {
 			name:          "dedicated server group is handled by the caller",
 			api:           core_test.NewMockServersAPI(),
 			servers:       core_test.ServersList(),
-			tech:          config.Technology_NORDLYNX,
+			vpnProtocol:   config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			group:         "dedicated_server",
 			expectedError: ErrDedicatedServer,
 		},
@@ -945,7 +932,7 @@ func TestPickServer(t *testing.T) {
 			name:          "tag does not exist",
 			api:           core_test.NewMockServersAPI(),
 			servers:       core_test.ServersList(),
-			tech:          config.Technology_NORDLYNX,
+			vpnProtocol:   config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			tag:           "not a tag",
 			expectedError: internal.ErrTagDoesNotExist,
 		},
@@ -953,17 +940,14 @@ func TestPickServer(t *testing.T) {
 			name:          "local servers are all dedicated IP servers",
 			api:           core_test.NewMockFailingServersAPI(errors.New("500")),
 			servers:       core_test.ServersList("lt7.nordvpn.com", "lt8.nordvpn.com"),
-			tech:          config.Technology_NORDLYNX,
+			vpnProtocol:   config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			expectedError: internal.ErrServerIsUnavailable,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			cfg := config.Config{Technology: test.tech}
-			if test.tech == config.Technology_OPENVPN {
-				cfg.AutoConnectData.Protocol = config.Protocol_TCP
-			}
+			cfg := config.Config{VPNProtocol: test.vpnProtocol}
 
 			serverSelection, err := PickServer(
 				test.api,
@@ -1125,9 +1109,7 @@ func TestRecommendationUUID_GetServersRemote(t *testing.T) {
 		api                     core.ServersAPI
 		longitude               float64
 		latitude                float64
-		tech                    config.Technology
-		protocol                config.Protocol
-		obfuscated              bool
+		vpnProtocol             config.VPNProtocol
 		tag                     core.ServerTag
 		group                   config.ServerGroup
 		expectedError           error
@@ -1136,7 +1118,7 @@ func TestRecommendationUUID_GetServersRemote(t *testing.T) {
 		{
 			name:                    "recommended uuid",
 			api:                     core_test.NewMockServersAPI(),
-			tech:                    config.Technology_NORDLYNX,
+			vpnProtocol:             config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			expectedError:           nil,
 			expectedRecommendedUUID: RecommendationUUID(core_test.TestRecommendedUUID),
 		},
@@ -1146,7 +1128,7 @@ func TestRecommendationUUID_GetServersRemote(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			filter := core.ServersFilter{
 				Group: test.group,
-				Tech:  TechToServerTech(test.tech, test.protocol),
+				Tech:  VPNProtocolToServerTech(test.vpnProtocol),
 				Tag:   test.tag,
 				Limit: apiServersLimit,
 			}
@@ -1281,7 +1263,7 @@ func TestPickServer_ServerSelectionOrder(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			api := &core_test.MockServersAPI{ServersList: test.apiServers}
-			cfg := config.Config{Technology: config.Technology_NORDLYNX}
+			cfg := config.Config{VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX}
 
 			serverSelection, err := PickServer(
 				api,
@@ -1354,7 +1336,7 @@ func TestFindServersLocally_VirtualServers(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			servers := append(newServers(test.physicalCount, false), newServers(test.virtualCount, true)...)
 
-			search := newTestServerSearch(t, config.Technology_NORDLYNX, config.Protocol_UDP, SearchParams{}, nil, servers)
+			search := newTestServerSearch(t, config.VPNProtocol_VPN_PROTOCOL_NORDLYNX, SearchParams{}, nil, servers)
 			selected, err := search.findLocally(servers)
 
 			assert.NoError(t, err)
@@ -1436,8 +1418,7 @@ func TestFindServersLocally_DedicatedIPServers(t *testing.T) {
 			countries := core.Countries{{ID: 1, Name: "Lithuania", Code: "LT"}}
 			search := newTestServerSearch(
 				t,
-				config.Technology_NORDLYNX,
-				config.Protocol_UDP,
+				config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 				SearchParams{Tag: test.tag},
 				countries, test.servers,
 			)
@@ -1523,7 +1504,7 @@ func TestPickServer_Fallback(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			cfg := config.Config{Technology: config.Technology_NORDLYNX}
+			cfg := config.Config{VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX}
 
 			serverSelection, err := PickServer(
 				test.api,
@@ -1558,17 +1539,13 @@ func withoutKeys(servers core.Servers) core.Servers {
 
 func newTestServerSearch(
 	t *testing.T,
-	tech config.Technology,
-	proto config.Protocol,
+	vpnProtocol config.VPNProtocol,
 	input SearchParams,
 	countries core.Countries,
 	servers core.Servers,
 ) *serverSearch {
 	t.Helper()
-	cfg := config.Config{
-		Technology:      tech,
-		AutoConnectData: config.AutoConnectData{Protocol: proto},
-	}
+	cfg := config.Config{VPNProtocol: vpnProtocol}
 	search, err := newServerSearch(cfg, input, countries, servers)
 	require.NoError(t, err)
 	return search

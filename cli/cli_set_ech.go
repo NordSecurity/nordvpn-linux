@@ -31,7 +31,7 @@ func (c *cmd) SetECH(ctx *cli.Context) error {
 	switch resp.Type {
 	case internal.CodeConfigError:
 		return formatError(ErrConfig)
-	case internal.CodeECHTechUnsupported:
+	case internal.CodeECHProtocolUnsupported:
 		return formatError(errors.New(SetECHTechUnsupported))
 	case internal.CodeECHGloballyDisabled:
 		return formatError(errors.New(SetECHGloballyDisabled))

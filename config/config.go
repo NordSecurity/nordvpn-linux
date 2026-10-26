@@ -13,12 +13,9 @@ const defaultFWMarkValue uint32 = 0xe1f1
 
 func newConfig(machineIDGetter MachineIDGetter) *Config {
 	return &Config{
-		Technology:   Technology_NORDLYNX,
-		Firewall:     true,
-		FirewallMark: defaultFWMarkValue,
-		AutoConnectData: AutoConnectData{
-			Protocol: Protocol_UDP,
-		},
+		VPNProtocol:      VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+		Firewall:         true,
+		FirewallMark:     defaultFWMarkValue,
 		MachineID:        machineIDGetter.GetMachineID(),
 		UsersData:        &UsersData{NotifyOff: UidBoolMap{}, TrayOff: UidBoolMap{}},
 		TokensData:       map[int64]TokenData{},
@@ -31,10 +28,10 @@ func newConfig(machineIDGetter MachineIDGetter) *Config {
 // Config should be evolved is such a way, that it does not
 // require any use of constructors by the caller.
 type Config struct {
-	Technology   Technology `json:"technology,omitempty"`
-	Firewall     bool       `json:"firewall"` // omitempty breaks this
-	FirewallMark uint32     `json:"fwmark"`
-	Routing      TrueField  `json:"routing"`
+	VPNProtocol  VPNProtocol `json:"vpn_protocol,omitempty"`
+	Firewall     bool        `json:"firewall"` // omitempty breaks this
+	FirewallMark uint32      `json:"fwmark"`
+	Routing      TrueField   `json:"routing"`
 	// AnalyticsConsent describes user decision about extra analytics.
 	// If `ConsentMode_NONE`, the consent flow was not yet completed by user.
 	AnalyticsConsent AnalyticsConsent `json:"analytics_consent"`
@@ -79,7 +76,6 @@ type AutoConnectData struct {
 	CountryCode string
 	City        string
 	Group       ServerGroup
-	Protocol    Protocol `json:"protocol,omitempty"`
 	// TODO: rename json key when v6 comes out.
 	RealTimeProtection bool      `json:"realtimeprotection,omitempty"`
 	Obfuscate          bool      `json:"obfuscate,omitempty"`

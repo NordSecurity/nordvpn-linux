@@ -78,6 +78,7 @@ const (
 	Norduserd = "norduserd"
 
 	NorduserdLogFileName = "norduserd" + LogFileExtension
+	NordvpndLogFileName  = "nordvpnd" + LogFileExtension
 	CLILogFileName       = "cli" + LogFileExtension
 	MaxUserLogSizeMB     = 100
 
@@ -173,8 +174,8 @@ var (
 	// MeshSubnet is the subnet used for meshnet
 	MeshSubnet = netip.MustParsePrefix("100.64.0.0/10")
 
-	// NordLynxSubnet is the subnet used for NordLynx VPN and Dedicated Server
-	NordLynxSubnet = netip.MustParsePrefix("10.5.0.0/16")
+	// DedicatedServerSubnet is the subnet used for Dedicated Server
+	DedicatedServerSubnet = netip.MustParsePrefix("10.5.0.1/32")
 
 	LocalNetworks = []string{
 		"10.0.0.0/8",
@@ -182,7 +183,8 @@ var (
 		"192.168.0.0/16",
 		"169.254.0.0/16",
 	}
-	MDNSSubnet = "224.0.0.251/32"
+	MulticastSubnet = "224.0.0.0/24"
+	SSDPSubnet      = "239.255.255.250/32"
 )
 
 var (

@@ -164,8 +164,7 @@ func (c *ConnectionInfo) ConnectionStatusNotifyConnect(e events.DataConnect) err
 
 	status := types.ConnectionStatus{
 		State:              connectionStatus,
-		Technology:         e.Technology,
-		Protocol:           e.Protocol,
+		VPNProtocol:        e.VPNProtocol,
 		IP:                 e.TargetServerIP,
 		Name:               e.TargetServerName,
 		Hostname:           e.TargetServerDomain,

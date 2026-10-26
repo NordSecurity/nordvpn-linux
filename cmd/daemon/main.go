@@ -8,6 +8,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	_ "net/http/pprof" // #nosec G108 -- http server is not run in production builds
@@ -135,11 +136,7 @@ func main() {
 	if *ksMode {
 		log.Info("Daemon running in killswitch mode")
 	}
-	stopLevelWatcher := log.SetupLogger(
-		os.Stdout,
-		internal.LogLevelFile,
-		log.DefaultLevel(),
-	)
+	stopLevelWatcher := log.SetupLogger(logWriter(), internal.LogLevelFile, log.DefaultLevel())
 	defer stopLevelWatcher()
 
 	// pprof
@@ -420,10 +417,10 @@ func main() {
 		rcConfig.IsFeatureEnabled(remote.FeatureENS),
 	)
 
-	vpn, err := vpnFactory(cfg.Technology)
+	vpn, err := vpnFactory(cfg.VPNProtocol)
 	if err != nil {
 		// if NordWhisper was disabled we'll fall back automatically to NordLynx if autoconnect is enabled or tell user
-		// to switch to a different tech
+		// to switch to a different protocol
 		if !errors.Is(err, ErrNordWhisperDisabled) {
 			log.Fatal(err)
 		} else {
@@ -773,8 +770,10 @@ func main() {
 	go func() {
 		if err := dm.LoadData(); err != nil {
 			log.Warn("DataManager failed to load data:", err)
-		} else {
-			log.Info("data successfully loaded from disk")
+		}
+		log.Info("data successfully loaded from disk")
+		if err := daemon.MigrateDeprecatedAutoconnectToSpecificServer(fsystem, dm); err != nil {
+			log.Warn("failed to migrate autoconnect to a specific server:", err)
 		}
 	}()
 
@@ -838,6 +837,16 @@ func main() {
 		log.Error("stopping analytics:", err)
 	}
 	log.Info("Daemon stopped")
+}
+
+func logWriter() io.Writer {
+	if !snapconf.IsUnderSnap() {
+		return os.Stdout
+	}
+	return io.MultiWriter(os.Stdout, internal.FileLogOutput(
+		snapconf.DaemonLogPath(),
+		internal.MaxUserLogSizeMB,
+	))
 }
 
 // assignMooseDBPermissions updates moose DB permissions.

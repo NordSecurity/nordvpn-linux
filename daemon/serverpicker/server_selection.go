@@ -1,6 +1,6 @@
 // Package serverpicker contains the logic for selecting a VPN server that
-// matches a set of user criteria (technology, protocol, location, group and
-// tags). It resolves the requested target into a concrete server,
+// matches a set of user criteria (protocol, location, group and tags).
+// It resolves the requested target into a concrete server,
 // preferring the recommendations API and falling back to the locally cached
 // server list.
 package serverpicker
@@ -16,7 +16,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
-var ErrUnknownTechnology = errors.New("unknown technology")
+var ErrUnknownTechnology = errors.New("no server technology for specified vpn protocol")
 
 // RecommendationUUID identifies a server recommendation returned by the API.
 type RecommendationUUID string

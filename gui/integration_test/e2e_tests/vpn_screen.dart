@@ -1,7 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
+import 'package:nordvpn/pb/daemon/config/group.pb.dart';
+import 'package:nordvpn/pb/daemon/recent_connections.pb.dart';
+import 'package:nordvpn/pb/daemon/server_selection_rule.pb.dart';
 import 'package:nordvpn/pb/daemon/servers.pb.dart';
-import 'package:nordvpn/pb/daemon/config/technology.pbenum.dart' as settings;
+import 'package:nordvpn/pb/daemon/config/vpn_protocol.pbenum.dart';
 
 import '../../test/utils/finders.dart';
 import '../../test/utils/test_helpers.dart';
@@ -89,7 +92,7 @@ void runVpnScreenTests() async {
       );
 
       // Trigger settings change
-      await app.setTechnology(settings.Technology.NORDWHISPER);
+      await app.setVpnProtocol(VPNProtocol.VPN_PROTOCOL_NORDWHISPER);
 
       await mainScreen.waitUntilFound(
         find.textContaining("Bucharest, Romania"),
@@ -101,11 +104,31 @@ void runVpnScreenTests() async {
         cityName: "Dallas",
       );
 
-      await app.setTechnology(settings.Technology.NORDLYNX);
+      await app.setVpnProtocol(VPNProtocol.VPN_PROTOCOL_NORDLYNX);
 
       await mainScreen.waitUntilFound(
         find.textContaining("Dallas, United States"),
       );
     });
+  });
+
+  group("test recent connections", () {
+    testWidgets(
+      "standard VPN servers without location does not crash recents list",
+      (tester) async {
+        final app = await tester.setupIntegrationTests();
+        app.daemon.recentConnections.setConnections([
+          RecentConnectionModel(
+            group: ServerGroup.STANDARD_VPN_SERVERS,
+            connectionType: ServerSelectionRule.GROUP,
+          ),
+        ]);
+
+        final screen = await app.goToVpnScreen();
+        await screen.waitUntilFound(find.text(t.ui.fastest));
+
+        expect(find.text(t.ui.fastest), findsOneWidget);
+      },
+    );
   });
 }

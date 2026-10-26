@@ -394,8 +394,10 @@ final class AutoConnectServerInfo extends StatelessWidget {
   }
 
   List<Widget> _selectedServerLabel(AutoconnectPanelTheme theme) {
-    if (savedLocation?.specialtyGroup == null &&
-        savedLocation?.country != null) {
+    final hasGroup = savedLocation?.specialtyGroup != null;
+    final hasCountry = savedLocation?.country != null;
+
+    if (!hasGroup && hasCountry) {
       // regular server selected - show:
       // ┌──────┐
       // │      │    Country name
@@ -405,8 +407,7 @@ final class AutoConnectServerInfo extends StatelessWidget {
       return _countryNameAndCityName(theme);
     }
 
-    if (savedLocation?.specialtyGroup != null &&
-        savedLocation?.country != null) {
+    if (hasGroup && hasCountry) {
       // specialty server selected with specific location, city name optional - show:
       // ┌──────┐
       // │      │    Server group
@@ -416,13 +417,17 @@ final class AutoConnectServerInfo extends StatelessWidget {
       return _serverGroupWithCountryAndCityName(theme);
     }
 
-    // specialty server selected without specific location - show:
-    // ┌──────┐
-    // │      │    Server group
-    // │ flag │
-    // │      │    "Fastest Server"
-    // └──────┘
-    return _serverGroupAndFastestServer(theme);
+    if (hasGroup && !hasCountry) {
+      // specialty server selected without specific location - show:
+      // ┌──────┐
+      // │      │    Server group
+      // │ flag │
+      // │      │    "Fastest Server"
+      // └──────┘
+      return _serverGroupAndFastestServer(theme);
+    }
+
+    return _defaultFastestServer(theme);
   }
 
   List<Widget> _countryNameAndCityName(AutoconnectPanelTheme theme) {

@@ -455,15 +455,9 @@ func (netw *Combined) configureNetwork(
 		return err
 	}
 
+	// setup DS route if Meshnet & Dedicated server
 	if netw.isMeshnetSet && serverData.DedicatedServer {
-		netw.publisher.Publish("adding ds route for meshnet")
-		if err := netw.router.Add(routes.Route{
-			Subnet: internal.NordLynxSubnet,
-			Device: netw.vpnet.Tun().Interface(),
-		}); err != nil {
-			log.Netw.Warn("adding ds route for meshnet:", err)
-			// Continue - not critical for meshnet functionality
-		}
+		netw.setupDedicatedServerRoute()
 	}
 
 	if err := netw.configureDNS(serverData, nameservers); err != nil {
@@ -477,6 +471,17 @@ func (netw *Combined) configureNetwork(
 	}
 
 	return nil
+}
+
+func (netw *Combined) setupDedicatedServerRoute() {
+	msg := "adding ds route for meshnet"
+	netw.publisher.Publish(msg)
+	if err := netw.router.Add(routes.Route{
+		Subnet: internal.DedicatedServerSubnet,
+		Device: netw.vpnet.Tun().Interface(),
+	}); err != nil {
+		log.Netw.Warnf("%s: %s", msg, err)
+	}
 }
 
 func (netw *Combined) configureDNS(serverData vpn.ServerData, nameservers config.DNS) error {
@@ -550,15 +555,9 @@ func (netw *Combined) restart(
 		return err
 	}
 
+	// setup DS route if Meshnet & Dedicated server
 	if netw.isMeshnetSet && serverData.DedicatedServer {
-		netw.publisher.Publish("restoring ds route for meshnet after VPN restart")
-		if err := netw.router.Add(routes.Route{
-			Subnet: internal.NordLynxSubnet,
-			Device: netw.vpnet.Tun().Interface(),
-		}); err != nil {
-			log.Netw.Warn("adding ds route for meshnet during restart:", err)
-			// Continue - not critical for meshnet functionality
-		}
+		netw.setupDedicatedServerRoute()
 	}
 
 	if err := netw.configureDNS(serverData, nameservers); err != nil {
@@ -579,7 +578,7 @@ func (netw *Combined) restart(
 	}
 
 	// configure firewall
-	// update only the interface name, in case there is a different VPN technology used
+	// update only the interface name, in case there is a different VPN protocol used
 	tunnelIP, _ := netw.vpnet.Tun().IP()
 	newCfg := netw.fwConfig.CopyWith(
 		firewall.WithTunnelInterface(netw.vpnet.Tun().Interface().Name, tunnelIP),
@@ -670,7 +669,7 @@ func (netw *Combined) stop() error {
 	return nil
 }
 
-// switchToNextVpn check if VPN technology was changed when connect was in progress
+// switchToNextVpn check if VPN protocol was changed when connect was in progress
 func (netw *Combined) switchToNextVpn() {
 	if netw.nextVPN != nil {
 		netw.vpnet = netw.nextVPN
@@ -1189,15 +1188,9 @@ func (netw *Combined) setMesh(
 		)
 	}
 
+	// setup DS route if Connected to Dedicated server
 	if netw.isVpnSet && netw.lastServer.DedicatedServer {
-		netw.publisher.Publish("adding ds route for meshnet")
-		if err := netw.router.Add(routes.Route{
-			Subnet: internal.NordLynxSubnet,
-			Device: netw.vpnet.Tun().Interface(),
-		}); err != nil {
-			log.Netw.Warn("adding ds route for meshnet:", err)
-			// Continue - not critical for meshnet functionality
-		}
+		netw.setupDedicatedServerRoute()
 	}
 
 	err = netw.refresh(cfg)

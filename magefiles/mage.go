@@ -21,17 +21,17 @@ import (
 
 const (
 	registryPrefix         = "ghcr.io/nordsecurity/nordvpn-linux/"
-	imageBuilder           = registryPrefix + "builder:1.4.7"
+	imageBuilder           = registryPrefix + "builder:1.4.8"
 	imageGUIFlutter        = registryPrefix + "flutter:3.44.7-1.0.1"
-	imagePackager          = registryPrefix + "packager:1.3.6"
-	imageDepender          = registryPrefix + "depender:1.3.5"
+	imagePackager          = registryPrefix + "packager:1.3.7"
+	imageDepender          = registryPrefix + "depender:1.4.6"
 	imageSnapPackager      = registryPrefix + "snaper:1.2.2"
-	imageProtobufGenerator = registryPrefix + "generator:1.5.2"
+	imageProtobufGenerator = registryPrefix + "generator:1.5.3"
 	imageScanner           = registryPrefix + "scanner:1.1.0"
 	imageTester            = registryPrefix + "tester:1.6.5"
 	imageQAPeer            = registryPrefix + "qa-peer:1.0.5"
 	imageRuster            = registryPrefix + "ruster:1.4.2"
-	imageCodeQL            = registryPrefix + "codeql:1.0.0"
+	imageCodeQL            = registryPrefix + "codeql:1.0.1"
 
 	dockerWorkDir    = "/opt"
 	guiDockerWorkDir = dockerWorkDir + "/gui"

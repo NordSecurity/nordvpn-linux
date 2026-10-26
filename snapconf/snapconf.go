@@ -282,6 +282,10 @@ func RealUserHomeDir() string {
 	return ""
 }
 
+func DaemonLogPath() string {
+	return filepath.Join(LogsDir(), internal.NordvpndLogFileName)
+}
+
 // LogsDir returns $SNAP_COMMON/logs, creating it if necessary.
 func LogsDir() string {
 	dir := os.Getenv(EnvSnapCommon)

@@ -1,5 +1,4 @@
-from config import protocol_pb2 as _protocol_pb2
-from config import technology_pb2 as _technology_pb2
+from config import vpn_protocol_pb2 as _vpn_protocol_pb2
 from google.protobuf.internal import containers as _containers
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
@@ -26,12 +25,6 @@ class SetDNSStatus(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     INVALID_DNS_ADDRESS: _ClassVar[SetDNSStatus]
     TOO_MANY_VALUES: _ClassVar[SetDNSStatus]
 
-class SetProtocolStatus(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
-    __slots__ = ()
-    PROTOCOL_CONFIGURED: _ClassVar[SetProtocolStatus]
-    PROTOCOL_CONFIGURED_VPN_ON: _ClassVar[SetProtocolStatus]
-    INVALID_TECHNOLOGY: _ClassVar[SetProtocolStatus]
-
 class SetLANDiscoveryStatus(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     __slots__ = ()
     DISCOVERY_CONFIGURED: _ClassVar[SetLANDiscoveryStatus]
@@ -45,9 +38,6 @@ DNS_CONFIGURED: SetDNSStatus
 DNS_CONFIGURED_RTP_RESET: SetDNSStatus
 INVALID_DNS_ADDRESS: SetDNSStatus
 TOO_MANY_VALUES: SetDNSStatus
-PROTOCOL_CONFIGURED: SetProtocolStatus
-PROTOCOL_CONFIGURED_VPN_ON: SetProtocolStatus
-INVALID_TECHNOLOGY: SetProtocolStatus
 DISCOVERY_CONFIGURED: SetLANDiscoveryStatus
 DISCOVERY_CONFIGURED_ALLOWLIST_RESET: SetLANDiscoveryStatus
 
@@ -119,25 +109,11 @@ class SetTrayRequest(_message.Message):
     tray: bool
     def __init__(self, tray: bool = ...) -> None: ...
 
-class SetProtocolRequest(_message.Message):
-    __slots__ = ("protocol",)
-    PROTOCOL_FIELD_NUMBER: _ClassVar[int]
-    protocol: _protocol_pb2.Protocol
-    def __init__(self, protocol: _Optional[_Union[_protocol_pb2.Protocol, str]] = ...) -> None: ...
-
-class SetProtocolResponse(_message.Message):
-    __slots__ = ("error_code", "set_protocol_status")
-    ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
-    SET_PROTOCOL_STATUS_FIELD_NUMBER: _ClassVar[int]
-    error_code: SetErrorCode
-    set_protocol_status: SetProtocolStatus
-    def __init__(self, error_code: _Optional[_Union[SetErrorCode, str]] = ..., set_protocol_status: _Optional[_Union[SetProtocolStatus, str]] = ...) -> None: ...
-
-class SetTechnologyRequest(_message.Message):
-    __slots__ = ("technology",)
-    TECHNOLOGY_FIELD_NUMBER: _ClassVar[int]
-    technology: _technology_pb2.Technology
-    def __init__(self, technology: _Optional[_Union[_technology_pb2.Technology, str]] = ...) -> None: ...
+class SetVPNProtocolRequest(_message.Message):
+    __slots__ = ("vpn_protocol",)
+    VPN_PROTOCOL_FIELD_NUMBER: _ClassVar[int]
+    vpn_protocol: _vpn_protocol_pb2.VPNProtocol
+    def __init__(self, vpn_protocol: _Optional[_Union[_vpn_protocol_pb2.VPNProtocol, str]] = ...) -> None: ...
 
 class PortRange(_message.Message):
     __slots__ = ("start_port", "end_port")

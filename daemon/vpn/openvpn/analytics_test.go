@@ -25,13 +25,11 @@ func TestDCOStatusEvent_ToDebuggerEvent(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	event := &dcoStatusEvent{
-		Namespace:       ovpnNamespace,
-		Subscope:        ovpnSubscope,
-		Event:           dcoStatusEventName,
-		DCOActive:       true,
-		LinkKind:        "ovpn-dco",
-		ModuleAvailable: true,
-		ModuleVersion:   "0.2.20260519",
+		Namespace:     ovpnNamespace,
+		Subscope:      ovpnSubscope,
+		Event:         dcoStatusEventName,
+		LinkKind:      "ovpn",
+		KernelVersion: "Linux 7.0.0-31-generic",
 	}
 	debuggerEvent := event.ToDebuggerEvent()
 
@@ -46,9 +44,7 @@ func TestDCOStatusEvent_ToDebuggerEvent(t *testing.T) {
 	assert.Equal(t, "openvpn", decoded.Subscope)
 	assert.Equal(t, "openvpn_dco_status", decoded.Event)
 
-	assert.Equal(t, true, contextValueByPath(debuggerEvent.KeyBasedContextPaths, "openvpn.dco_active"))
-	assert.Equal(t, "ovpn-dco", contextValueByPath(debuggerEvent.KeyBasedContextPaths, "openvpn.link_kind"))
-	assert.Equal(t, true, contextValueByPath(debuggerEvent.KeyBasedContextPaths, "openvpn.module_available"))
+	assert.Equal(t, "ovpn", contextValueByPath(debuggerEvent.KeyBasedContextPaths, "openvpn.link_kind"))
 	assert.NotEmpty(t, debuggerEvent.GeneralContextPaths)
 }
 
@@ -75,7 +71,7 @@ func TestDCOAnalytics_NotifyConnect(t *testing.T) {
 			name: "successful openvpn connect publishes DCO status",
 			event: events.DataConnect{
 				EventStatus: events.StatusSuccess,
-				Technology:  config.Technology_OPENVPN,
+				VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP,
 			},
 			wantPublished: true,
 		},
@@ -83,7 +79,7 @@ func TestDCOAnalytics_NotifyConnect(t *testing.T) {
 			name: "successful nordlynx connect publishes nothing",
 			event: events.DataConnect{
 				EventStatus: events.StatusSuccess,
-				Technology:  config.Technology_NORDLYNX,
+				VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			},
 			wantPublished: false,
 		},
@@ -91,7 +87,7 @@ func TestDCOAnalytics_NotifyConnect(t *testing.T) {
 			name: "openvpn connect attempt publishes nothing",
 			event: events.DataConnect{
 				EventStatus: events.StatusAttempt,
-				Technology:  config.Technology_OPENVPN,
+				VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP,
 			},
 			wantPublished: false,
 		},

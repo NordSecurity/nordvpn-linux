@@ -24,7 +24,6 @@ const (
 	// Error
 	CodeFailure      int64 = 3000
 	CodeUnauthorized int64 = 3001
-	CodeFormatError  int64 = 3003
 	// CodeConfigError is returned when config loading and/or saving fails.
 	CodeConfigError                            int64 = 3004
 	CodeEmptyPayloadError                      int64 = 3005
@@ -63,7 +62,7 @@ const (
 	CodePqAndMeshnetSimultaneously             int64 = 3048
 	CodePqWithoutNordlynx                      int64 = 3049
 	CodeFeatureHidden                          int64 = 3050
-	CodeTechnologyDisabled                     int64 = 3051
+	CodeProtocolDisabled                       int64 = 3051
 	CodeNotInNordVPNGroup                      int64 = 3052
 	CodeConsentMissing                         int64 = 3052
 	CodeExpiredAccessToken                     int64 = 3053
@@ -86,11 +85,13 @@ const (
 	CodeDedicatedServersPq                     int64 = 3071
 	CodeDedicatedServersServerNotSetUp         int64 = 3072
 	CodePauseInterrupted                       int64 = 3073
-	CodeECHTechUnsupported                     int64 = 3074
+	CodeECHProtocolUnsupported                 int64 = 3074
 	CodeECHGloballyDisabled                    int64 = 3075
 	CodeConnectionLimitReached                 int64 = 3076
 	CodeP2PDeprecated                          int64 = 3077
 	CodeSetDefaultsNotApplied                  int64 = 3078
+	CodeAutoconnectToSpecificServer            int64 = 3079
+	CodeObfuscatedNeedsNordwhisper             int64 = 3080
 )
 
 type ErrorWithCode struct {

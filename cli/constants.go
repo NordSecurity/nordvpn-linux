@@ -18,4 +18,6 @@ const (
 	flagToken         = "token"
 	flagLoginCallback = "callback"
 	stringProtocol    = "protocol"
+	stringUDP         = "UDP"
+	stringTCP         = "TCP"
 )

@@ -132,7 +132,7 @@ class VpnStatusController extends _$VpnStatusController
     }
 
     final vpnStatus = state.value!.copyWith(
-      protocol: convertToVpnProtocol(status.technology, status.protocol),
+      protocol: vpnProtocolFromPb(status.vpnProtocol),
       ip: status.ip.isNotEmpty ? status.ip : null,
       hostname: status.hostname.isNotEmpty ? status.hostname : null,
       country: status.hasCountry()

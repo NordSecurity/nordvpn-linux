@@ -94,21 +94,32 @@ final class RecentConnectionsItemFactory {
     RecentConnection model,
     bool isSpecialtyServer,
   ) {
-    if (isSpecialtyServer) {
-      if (model.countryCode.isNotEmpty) {
-        final country = Country.fromCodeOrName(model.countryCode);
-        final city = model.city;
-        final location = city.isEmpty ? t.ui.fastest : City(city).localizedName;
-        final subtitle = "${country.localizedName} - $location";
-
-        return (primary: model.specialtyServer, secondary: subtitle);
-      }
-
+    // specialty group without location: "Double VPN" / "Fastest"
+    if (isSpecialtyServer && model.countryCode.isEmpty) {
       return (primary: model.specialtyServer, secondary: t.ui.fastest);
+    }
+
+    // NOTE: this is safe fallback for exceptional cases like
+    // standard VPN servers group which is not supported in GUI,
+    // but can be selected still in CLI and is supported in Tray
+    // This group should not be used and will be handled in the future
+    // in LVPN-11280.
+    if (model.countryCode.isEmpty) {
+      return (primary: "", secondary: t.ui.fastest);
     }
 
     final country = Country.fromCodeOrName(model.countryCode);
 
+    // specialty group with location: "<group>" / "<country> - <city>"
+    if (isSpecialtyServer) {
+      final city = model.city;
+      final location = city.isEmpty ? t.ui.fastest : City(city).localizedName;
+      final subtitle = "${country.localizedName} - $location";
+
+      return (primary: model.specialtyServer, secondary: subtitle);
+    }
+
+    // city: "<country>" / "<city>"
     final isCity =
         model.city.isNotEmpty &&
         model.connectionType == ServerSelectionRule.CITY;
@@ -120,6 +131,7 @@ final class RecentConnectionsItemFactory {
       );
     }
 
+    // specific server: "<country>" / "#123"
     final isSpecificServer =
         model.specificServerName.isNotEmpty &&
         model.connectionType == ServerSelectionRule.SPECIFIC_SERVER;
@@ -129,6 +141,7 @@ final class RecentConnectionsItemFactory {
       return (primary: country.localizedName, secondary: serverId);
     }
 
+    // country: "<country>" / "Fastest"
     return (primary: country.localizedName, secondary: t.ui.fastest);
   }
 

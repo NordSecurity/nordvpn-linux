@@ -158,16 +158,16 @@ type Subscriber struct {
 	connectionStartTime              time.Time
 	connectionToMeshnetPeer          bool
 	connectionToSensitiveServerGroup bool
-	// configuredTechProto is what the settings tell the next connect will use.
-	// connectedTechProto is what the live VPN tunnel uses. Zero while disconnected.
-	configuredTechProto  techProto
-	connectedTechProto   techProto
-	initialHeartbeatSent bool
-	mooseFuncs           mooseFunctions
-	httpClient           *http.Client
-	mux                  sync.RWMutex
-	isInitialized        atomic.Bool
-	configChangeHandlers []configChangeHandler
+	// configuredVPNProtocol is what the settings tell the next connect will use.
+	// connectedVPNProtocol is what the live VPN tunnel uses. Unspecified while disconnected.
+	configuredVPNProtocol config.VPNProtocol
+	connectedVPNProtocol  config.VPNProtocol
+	initialHeartbeatSent  bool
+	mooseFuncs            mooseFunctions
+	httpClient            *http.Client
+	mux                   sync.RWMutex
+	isInitialized         atomic.Bool
+	configChangeHandlers  []configChangeHandler
 }
 
 func NewSubscriber(
@@ -434,7 +434,7 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 		return fmt.Errorf("setting moose firewall: %w", err)
 	}
 
-	if err := s.initTechProto(cfg); err != nil {
+	if err := s.initVPNProtocol(cfg); err != nil {
 		return err
 	}
 
@@ -888,7 +888,7 @@ func hasSensitiveServerGroup(groups []config.ServerGroup) bool {
 func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 	sensitive := hasSensitiveServerGroup(data.ServerGroups)
 
-	var connected techProto
+	var connected config.VPNProtocol
 	s.mux.Lock()
 	// Track sensitivity on every server-connect event (not just success) so
 	// that a failed connect attempt to a sensitive group still prevents from leaking
@@ -901,8 +901,8 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 		s.connectionToMeshnetPeer = data.IsMeshnetPeer
 		if !data.IsMeshnetPeer {
 			// the event carries what the tunnel really uses, not the current settings
-			s.connectedTechProto = techProto{technology: data.Technology, protocol: data.Protocol}
-			connected = s.connectedTechProto
+			s.connectedVPNProtocol = data.VPNProtocol
+			connected = s.connectedVPNProtocol
 		}
 	}
 	s.mux.Unlock()
@@ -984,12 +984,12 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 			TargetServerType:          moose.NordvpnappServerTypeNone,
 		},
 		moose.TargetConnectionAdditionalParams{
-			TargetProtocol:      connectionProtocolToInternalType(data.Protocol),
+			TargetProtocol:      connectionProtocolToInternalType(data.VPNProtocol),
 			TargetServerCity:    data.TargetServerCity,
 			TargetServerCountry: data.TargetServerCountryCode,
 			TargetServerDomain:  targetServerDomain,
 			TargetServerGroup:   serverGroupToInternalType(data.TargetServerGroupID),
-			TargetTechnology:    connectionTechnologyToInternalType(data.Technology),
+			TargetTechnology:    connectionTechnologyToInternalType(data.VPNProtocol),
 		},
 		moose.ConnectionParams{
 			ConnectionFunnel:     connectionFunnel,
@@ -1042,8 +1042,8 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 		connectionDuration = -1
 	}
 	s.connectionStartTime = time.Time{}
-	s.connectedTechProto = techProto{}
-	configured := s.configuredTechProto
+	s.connectedVPNProtocol = config.VPNProtocol_VPN_PROTOCOL_UNSPECIFIED
+	configured := s.configuredVPNProtocol
 	wasSensitive := s.connectionToSensitiveServerGroup
 	s.connectionToSensitiveServerGroup = false
 	s.mux.Unlock()
@@ -1143,10 +1143,10 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 		return fmt.Errorf("setting is-on-VPN current state after disconnect: %w", err)
 	}
 
-	// Once disconnected, the configured technology/protocol takes effect on the next
+	// Once disconnected, the configured vpn-protocol takes effect on the next
 	// connection. This also reports changes made while the tunnel was up.
 	if err := s.reportEffectiveConnection(configured); err != nil {
-		return fmt.Errorf("setting technology/protocol current state after disconnect: %w", err)
+		return fmt.Errorf("setting vpn-protocol current state after disconnect: %w", err)
 	}
 
 	return nil
@@ -1735,36 +1735,32 @@ func eventStatusToInternalType(status events.TypeEventStatus) moose.NordvpnappEv
 	}
 }
 
-// connectionProtocolToInternalType converts the connection protocol to the internal representation
-func connectionProtocolToInternalType(proto config.Protocol) moose.NordvpnappVpnConnectionProtocol {
-	switch proto {
-	case config.Protocol_TCP:
-		return moose.NordvpnappVpnConnectionProtocolTcp
-	case config.Protocol_UDP:
+// connectionProtocolToInternalType converts the vpn protocol to the moose protocol, with NordLynx as UDP
+func connectionProtocolToInternalType(p config.VPNProtocol) moose.NordvpnappVpnConnectionProtocol {
+	//exhaustive:ignore
+	switch p {
+	case config.VPNProtocol_VPN_PROTOCOL_NORDLYNX, config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP:
 		return moose.NordvpnappVpnConnectionProtocolUdp
-	case config.Protocol_Webtunnel:
+	case config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP:
+		return moose.NordvpnappVpnConnectionProtocolTcp
+	case config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER:
 		return moose.NordvpnappVpnConnectionProtocolWebtunnel
-	case config.Protocol_UNKNOWN_PROTOCOL:
-		return moose.NordvpnappVpnConnectionProtocolNone
-	default:
-		return moose.NordvpnappVpnConnectionProtocolRecommended
 	}
+	return moose.NordvpnappVpnConnectionProtocolNone
 }
 
-// connectionTechnologyToInternalType converts connection technology to the internal representation
-func connectionTechnologyToInternalType(tech config.Technology) moose.NordvpnappVpnConnectionTechnology {
-	switch tech {
-	case config.Technology_OPENVPN:
-		return moose.NordvpnappVpnConnectionTechnologyOpenvpn
-	case config.Technology_NORDLYNX:
+// connectionTechnologyToInternalType converts the vpn protocol to the moose technology
+func connectionTechnologyToInternalType(p config.VPNProtocol) moose.NordvpnappVpnConnectionTechnology {
+	//exhaustive:ignore
+	switch p {
+	case config.VPNProtocol_VPN_PROTOCOL_NORDLYNX:
 		return moose.NordvpnappVpnConnectionTechnologyNordlynx
-	case config.Technology_NORDWHISPER:
+	case config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP, config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP:
+		return moose.NordvpnappVpnConnectionTechnologyOpenvpn
+	case config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER:
 		return moose.NordvpnappVpnConnectionTechnologyNordwhisper
-	case config.Technology_UNKNOWN_TECHNOLOGY:
-		return moose.NordvpnappVpnConnectionTechnologyNone
-	default:
-		return moose.NordvpnappVpnConnectionTechnologyRecommended
 	}
+	return moose.NordvpnappVpnConnectionTechnologyNone
 }
 
 // serverListOriginToInternalType converts server list origin to the internal representation

@@ -11,23 +11,27 @@ import (
 // carries that group anymore, so the title is not taken from the API.
 const ObfuscatedServersGroupTitle = "Obfuscated"
 
-// IsObfuscatedTech reports whether connections over the technology are obfuscated.
-func IsObfuscatedTech(tech config.Technology) bool {
-	return tech == config.Technology_NORDWHISPER
+// IsObfuscatedProtocol reports whether connections over the protocol are obfuscated.
+func IsObfuscatedProtocol(protocol config.VPNProtocol) bool {
+	return protocol == config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER
 }
 
 // searchGroup returns the group to look servers up by for the requested one.
-func searchGroup(requested config.ServerGroup, tech config.Technology) config.ServerGroup {
-	if requested == config.ServerGroup_NW_OBFUSCATED && IsObfuscatedTech(tech) {
+func searchGroup(requested config.ServerGroup, protocol config.VPNProtocol) config.ServerGroup {
+	if requested == config.ServerGroup_NW_OBFUSCATED && IsObfuscatedProtocol(protocol) {
 		return config.ServerGroup_STANDARD_VPN_SERVERS
 	}
 
 	return requested
 }
 
-// withObfuscatedAlias adds the Obfuscated group for obfuscated technologies.
-func withObfuscatedAlias(groups core.Groups, s core.Server, tech config.Technology) core.Groups {
-	if !IsObfuscatedTech(tech) {
+// withObfuscatedAlias adds the Obfuscated group for obfuscated protocol.
+func withObfuscatedAlias(
+	groups core.Groups,
+	s core.Server,
+	protocol config.VPNProtocol,
+) core.Groups {
+	if !IsObfuscatedProtocol(protocol) {
 		return groups
 	}
 
