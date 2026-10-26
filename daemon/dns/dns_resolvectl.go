@@ -41,16 +41,14 @@ func setDNSWithResolvectl(iface string, addresses []string) error {
 	if out, err := exec.Command(execResolvectl, "domain", iface, "~.").CombinedOutput(); err != nil {
 		log.Warn("dns domain routing with resolvectl:", strings.TrimSpace(string(out)), "err:", err)
 	}
+	// empty string makes the link use the global DNSSEC setting
+	dnsSECOption := ""
 	if areOnlyNordDNSServers(addresses) {
-		// #nosec G204 -- input is properly validated
-		if out, err := exec.Command(execResolvectl, "dnssec", iface, "off").CombinedOutput(); err != nil {
-			log.Warn("dnssec with resolvectl:", strings.TrimSpace(string(out)), "err:", err)
-		}
-	} else {
-		// #nosec G204 -- input is properly validated
-		if out, err := exec.Command(execResolvectl, "dnssec", iface, "").CombinedOutput(); err != nil {
-			log.Warn("dnssec with resolvectl:", strings.TrimSpace(string(out)), "err:", err)
-		}
+		dnsSECOption = "off"
+	}
+	// #nosec G204 -- input is properly validated
+	if out, err := exec.Command(execResolvectl, "dnssec", iface, dnsSECOption).CombinedOutput(); err != nil {
+		log.Warn("dnssec with resolvectl:", strings.TrimSpace(string(out)), "err:", err)
 	}
 	// #nosec G204 -- input is properly validated
 	if out, err := exec.Command(execResolvectl, "default-route", iface, "true").CombinedOutput(); err != nil {
