@@ -37,10 +37,20 @@ func newHostInfo(src hostInfoSources) HostInfo {
 		osPrettyName = osName
 	}
 
+	architecture := src.architecture()
+	if architecture == "" {
+		log.Sysinfo.Warn("host architecture is unknown")
+	}
+
+	deviceType := src.deviceType()
+	if deviceType == SystemDeviceTypeUnknown {
+		log.Sysinfo.Warn("device type is unknown")
+	}
+
 	return HostInfo{
 		OSName:       osName,
 		OSPrettyName: osPrettyName,
-		Architecture: src.architecture(),
-		DeviceType:   src.deviceType(),
+		Architecture: architecture,
+		DeviceType:   deviceType,
 	}
 }
