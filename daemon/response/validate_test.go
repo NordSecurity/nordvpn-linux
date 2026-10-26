@@ -130,6 +130,30 @@ func TestNewNordValidator(t *testing.T) {
 	}
 }
 
+func TestNewNordValidator_KeyMapping(t *testing.T) {
+	category.Set(t, category.Unit)
+	validator, err := NewNordValidator()
+	assert.NoError(t, err)
+
+	tests := []struct {
+		keyID  string
+		rawKey []byte
+	}{
+		{keyID: "rsa-key-1", rawKey: rsaKey1},
+		{keyID: "rsa-key-2", rawKey: rsaKey2},
+	}
+	for _, test := range tests {
+		t.Run(test.keyID, func(t *testing.T) {
+			expected, err := parseSSHPublicKey(test.rawKey)
+			assert.NoError(t, err)
+
+			key, ok := validator.pubKeys[test.keyID]
+			assert.True(t, ok)
+			assert.Equal(t, expected.Marshal(), key.Marshal())
+		})
+	}
+}
+
 func TestNordValidator_Validate(t *testing.T) {
 	category.Set(t, category.Unit)
 	sampleData := []byte(`"foo": "bar"`)
