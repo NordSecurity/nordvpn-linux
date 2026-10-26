@@ -24,15 +24,55 @@ groupAddedMessage="By default the user '$DEFAULT_USER' was added to the '$NORDVP
 userModMessage="To allow other users to control the application run 'usermod -aG $NORDVPN_GROUP otheruser'."
 userDelMessage="To limit access exclusively to the root user, remove all users from the '$NORDVPN_GROUP' group."
 helpMessage="If you need help using the app, use the command 'nordvpn --help'."
-importantUpdateMessage="Critical update - NordVPN updated with improved server communication security. Please update other installations too, since older versions will stop working soon."
+importantUpdateMessage=$'Critical update - NordVPN updated with improved server communication\nsecurity. Please update other installations too, since older versions\nwill stop working soon.'
+separatorLine="--------------------------------------------------------------------------------"
 
-# Colors only when output is a terminal
+# Colors only when output is a terminal that supports them
 COLOR_RED=""
+COLOR_BLUE=""
+COLOR_TEXT=""
+BOLD=""
 RESET_COLOR=""
-if [[ -t 1 ]]; then
+if [[ -t 1 && "$TERM" != "dumb" ]]; then
     COLOR_RED=$'\e[1;31m' # bold; red
+    COLOR_BLUE=$'\e[38;5;63m'
+    COLOR_TEXT=$'\e[39m' # terminal's default text color
+    BOLD=$'\e[1m'
     RESET_COLOR=$'\e[0m'
 fi
+
+# Prints a compact NordVPN logo, colored on a terminal
+printLogo() {
+    local line out i
+    echo
+    while IFS= read -r line; do
+        out=""
+        for (( i = 0; i < ${#line}; i++ )); do
+            case ${line:i:1} in
+                " ") out+=" " ;;
+                ".") out+="${COLOR_TEXT}." ;;
+                *) out+="${COLOR_BLUE}${line:i:1}" ;;
+            esac
+        done
+        echo "${out}${RESET_COLOR}"
+    done <<'LOGO'
+          :--======--:
+       -+**************+-:
+    :=********************=:
+   -************************=
+  =************++************+
+ =************=..=************=
+:*********++*-....-*++*********:
+:********=..=:.....-=.=********-
+:*******-....:......:..-*******-
+ +****+:................:+*****:
+ :***+:...................=***-
+  -*=......................-*-
+LOGO
+    echo
+    echo "            ${BOLD}${COLOR_TEXT}NordVPN${RESET_COLOR}"
+    echo
+}
 
 # update configuration and shared library cache for linker to find .so files
 echo "${LIBS_DIR}" > /etc/ld.so.conf.d/nordvpn.conf
@@ -122,6 +162,7 @@ case "$1" in
 
         # Message will be shown only on fresh install (after purge)
         if [[ ! "$2" ]]; then
+            printLogo
             echo "$installSuccess"
             echo "$quickTutorial"
             echo "$quickTutorialConnect"
@@ -135,7 +176,13 @@ case "$1" in
         fi
 
         # Shown on both: fresh install and upgrade
-        echo "${COLOR_RED}${importantUpdateMessage}${RESET_COLOR}"
+        echo
+        echo "${COLOR_RED}${separatorLine}"
+        echo
+        echo "${importantUpdateMessage}"
+        echo
+        echo "${separatorLine}${RESET_COLOR}"
+        echo
     ;;
     abort-upgrade|abort-remove|abort-deconfigure)
     ;;
