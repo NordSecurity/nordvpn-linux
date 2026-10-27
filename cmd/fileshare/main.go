@@ -66,8 +66,6 @@ func main() {
 		redirectNativeOutput(f)
 	}
 
-	log.Info("DEBUG:", Environment)
-
 	processStatus := fileshare_process.NewFileshareGRPCProcessManager().ProcessStatus()
 	switch processStatus {
 	case childprocess.Running:

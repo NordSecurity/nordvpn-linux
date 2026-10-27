@@ -520,10 +520,11 @@ def test_only_root_can_change_sanitization_setting():
     version = sh.nordvpn.version()
     if "- dev" in version:
         setting = "on"
+
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.set.log_sanitization(setting)
+        sh.nordvpn.set("log-sanitization", setting)
 
-    assert ex.exit_code == 1
-    assert "You need root privileges in order to disable sanitization." in ex.stderr
+    assert "Log sanitization changes require admin access. Run this command as root." in ex.value.stdout.decode("utf-8")
 
-    sh.sudo.nordvpn.set.log_sanitization(setting)
+    command_handle = sh.sudo.nordvpn.set("log-sanitization", setting)
+    assert command_handle.exit_code == 0
