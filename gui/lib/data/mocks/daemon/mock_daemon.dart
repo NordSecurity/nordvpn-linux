@@ -300,7 +300,7 @@ final class MockDaemon extends DaemonServiceBase {
   }
 
   @override
-  Future<Payload> setSanitization(ServiceCall call, SetGenericRequest) {
+  Future<Payload> setLogSanitization(ServiceCall call, SetGenericRequest) {
     throw UnimplementedError();
   }
 
