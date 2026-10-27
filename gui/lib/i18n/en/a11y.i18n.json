@@ -16,5 +16,6 @@
   "popupWithContent": "$title. $message",
   "link": "Link $name",
   "selected": "Selected",
-  "notSelected": "Not selected"
+  "notSelected": "Not selected",
+  "appVersion": "NordVPN version $version"
 }
