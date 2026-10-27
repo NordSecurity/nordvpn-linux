@@ -14,5 +14,7 @@
   "expandibleEntryCollapsed": "Collapsed",
   "clear": "Clear",
   "popupWithContent": "$title. $message",
-  "link": "Link $name"
+  "link": "Link $name",
+  "selected": "Selected",
+  "notSelected": "Not selected"
 }
