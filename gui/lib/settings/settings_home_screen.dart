@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/logger.dart';
 import 'package:nordvpn/router/routes.dart';
@@ -9,8 +10,31 @@ import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 // Main page for settings, this contains only the settings categories
-final class SettingsHomeScreen extends StatelessWidget {
+final class SettingsHomeScreen extends StatefulWidget {
   const SettingsHomeScreen({super.key});
+
+  @override
+  State<SettingsHomeScreen> createState() => _SettingsHomeScreenState();
+}
+
+final class _SettingsHomeScreenState extends State<SettingsHomeScreen> {
+  static final Future<PackageInfo> _packageInfo = PackageInfo.fromPlatform();
+
+  @override
+  void initState() {
+    super.initState();
+    _packageInfo.then(_announceVersion).ignore();
+  }
+
+  void _announceVersion(PackageInfo packageInfo) {
+    if (!mounted || !MediaQuery.supportsAnnounceOf(context)) return;
+
+    SemanticsService.sendAnnouncement(
+      View.of(context),
+      t.a11y.appVersion(version: packageInfo.version),
+      Directionality.of(context),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -91,7 +115,7 @@ final class SettingsHomeScreen extends StatelessWidget {
 
   Widget _buildAppVersion(BuildContext context) {
     return FutureBuilder<PackageInfo>(
-      future: PackageInfo.fromPlatform(),
+      future: _packageInfo,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           logger.e("Failed to get app version ${snapshot.error}");
