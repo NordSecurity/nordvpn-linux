@@ -59,8 +59,7 @@ final class ConnectionCardLabel extends StatelessWidget {
     } else {
       final serverGroup = vpnStatus.connectionParameters.group
           .toSpecialtyType();
-      if (serverGroup != null &&
-          serverGroup != ServerType.standardVpn) {
+      if (serverGroup != null && serverGroup != ServerType.standardVpn) {
         serverType = labelForServerType(serverGroup);
       }
     }

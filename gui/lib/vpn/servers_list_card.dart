@@ -148,7 +148,7 @@ final class _ServersListCardState extends State<ServersListCard> {
                 Row(
                   children: [
                     Expanded(
-                      child: Builder( 
+                      child: Builder(
                         builder: (context) {
                           final controller = DefaultTabController.of(context);
                           return ListenableBuilder(
@@ -159,8 +159,15 @@ final class _ServersListCardState extends State<ServersListCard> {
                                 horizontal: serverListTheme.labelPadding,
                               ),
                               tabs: [
-                                _accessibleTab(t.ui.countries, controller.index == 0),
-                                _accessibleTab(t.ui.specialServers, controller.index == 1, key: ServerListWidgetKeys.specialtyServersTab),
+                                _accessibleTab(
+                                  t.ui.countries,
+                                  controller.index == 0,
+                                ),
+                                _accessibleTab(
+                                  t.ui.specialServers,
+                                  controller.index == 1,
+                                  key: ServerListWidgetKeys.specialtyServersTab,
+                                ),
                               ],
                             ),
                           );
@@ -200,7 +207,7 @@ final class _ServersListCardState extends State<ServersListCard> {
       label: '$text. ${selected ? t.a11y.selected : t.a11y.notSelected}',
       excludeSemantics: true,
       child: Tab(key: key, text: text),
-      );
+    );
   }
 
   Widget _buildTabsWithServers(ServersList serversList, WidgetRef ref) {
