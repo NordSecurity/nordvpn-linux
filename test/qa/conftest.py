@@ -27,6 +27,7 @@ from constants import (
     NORDVPND_CONFIG_FILE,
     SNAP,
 )
+from pytest_check import check
 
 pytest_plugins = "lib.pytest_timeouts.pytest_timeouts"
 
@@ -401,3 +402,9 @@ def backup_restore_rc_config_files(nordvpnd_scope_function):  # noqa: ARG001
     yield
     print("Restore original remote monitoring config files")
     sh.sudo.cp("-r", TMP_DAEMON_PATH_BACKUP, LOCAL_CACHE_DIR)
+
+
+@pytest.fixture(name='check')
+def check_fixture():
+    """Return pytest-check methods for lazy assertions."""
+    return check
