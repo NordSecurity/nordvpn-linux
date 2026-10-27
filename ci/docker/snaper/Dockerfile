@@ -1,3 +1,4 @@
+# versions.yaml: FROM ghcr.io/canonical/snapcraft:{snapcraft}
 FROM ghcr.io/canonical/snapcraft:8_core22@sha256:f24fc9cd8a1f394b48dcd35f8e3f31b127023a4bb79134afeb2728b012bf2007
 
 ARG DEBIAN_FRONTEND=noninteractive

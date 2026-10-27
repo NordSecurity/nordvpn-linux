@@ -1,3 +1,4 @@
+# versions.yaml: FROM debian:{debian-slim}
 FROM debian:bullseye-slim
 
 ARG DEBIAN_FRONTEND=noninteractive
