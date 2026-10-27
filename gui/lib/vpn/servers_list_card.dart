@@ -148,18 +148,23 @@ final class _ServersListCardState extends State<ServersListCard> {
                 Row(
                   children: [
                     Expanded(
-                      child: TabBar(
-                        isScrollable: true,
-                        labelPadding: EdgeInsets.symmetric(
-                          horizontal: serverListTheme.labelPadding,
-                        ),
-                        tabs: [
-                          Tab(text: t.ui.countries),
-                          Tab(
-                            key: ServerListWidgetKeys.specialtyServersTab,
-                            text: t.ui.specialServers,
-                          ),
-                        ],
+                      child: Builder( 
+                        builder: (context) {
+                          final controller = DefaultTabController.of(context);
+                          return ListenableBuilder(
+                            listenable: controller,
+                            builder: (context, _) => TabBar(
+                              isScrollable: true,
+                              labelPadding: EdgeInsets.symmetric(
+                                horizontal: serverListTheme.labelPadding,
+                              ),
+                              tabs: [
+                                _accessibleTab(t.ui.countries, controller.index == 0),
+                                _accessibleTab(t.ui.specialServers, controller.index == 1, key: ServerListWidgetKeys.specialtyServersTab),
+                              ],
+                            ),
+                          );
+                        },
                       ),
                     ),
                     Padding(
@@ -187,6 +192,15 @@ final class _ServersListCardState extends State<ServersListCard> {
         ),
       ],
     );
+  }
+
+  Widget _accessibleTab(String text, bool selected, {Key? key}) {
+    return Semantics(
+      enabled: true,
+      label: '$text. ${selected ? t.a11y.selected : t.a11y.notSelected}',
+      excludeSemantics: true,
+      child: Tab(key: key, text: text),
+      );
   }
 
   Widget _buildTabsWithServers(ServersList serversList, WidgetRef ref) {
