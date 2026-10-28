@@ -195,13 +195,13 @@ func TestDoAutoConnect_ObfuscatedGroupNeedsNordWhisper(t *testing.T) {
 			rpc.serversAPI = core_test.NewMockServersAPI()
 			mockConfigManager := newMockConfigManager()
 			updateAutoconnectData(mockConfigManager, config.AutoConnectData{
-				Group:     config.ServerGroup_OVPN_OBFUSCATED,
+				Group:     config.ServerGroup_NW_OBFUSCATED,
 				ServerTag: "obfuscated_servers",
 			})
 			mockConfigManager.c.VPNProtocol = vpnProtocol
 			rpc.cm = mockConfigManager
 
-			assert.Error(t, rpc.doAutoConnect())
+			assert.ErrorIs(t, rpc.doAutoConnect(), errServersUnavailable)
 		})
 	}
 }
