@@ -5,7 +5,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/device"
 	"github.com/NordSecurity/nordvpn-linux/log"
-	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/NordSecurity/nordvpn-linux/mapset"
 	"github.com/vishvananda/netlink"
 )
 
