@@ -42,6 +42,11 @@ function(APPLY_STANDARD_SETTINGS TARGET)
   target_compile_options(${TARGET} PRIVATE -Wall -Werror)
   target_compile_options(${TARGET} PRIVATE "$<$<NOT:$<CONFIG:Debug>>:-O3>")
   target_compile_definitions(${TARGET} PRIVATE "$<$<NOT:$<CONFIG:Debug>>:NDEBUG>")
+  # hardening
+  target_compile_options(${TARGET} PRIVATE "$<$<CONFIG:Release>:-fstack-protector-strong>")
+  target_compile_definitions(${TARGET} PRIVATE "$<$<CONFIG:Release>:_FORTIFY_SOURCE=2>")
+  target_link_options(${TARGET} PRIVATE "$<$<CONFIG:Release>:-Wl,-z,relro,-z,now>")
+  target_link_options(${TARGET} PRIVATE "$<$<CONFIG:Release>:-s>")
 endfunction()
 
 # Flutter library and tool build rules.
@@ -91,6 +96,11 @@ set_target_properties(${BINARY_NAME}
 # Generated plugin build rules, which manage building the plugins and adding
 # them to the application.
 include(flutter/generated_plugins.cmake)
+
+# Don't leak build-time RPATHs into the bundle.
+foreach(plugin ${FLUTTER_PLUGIN_LIST})
+  set_target_properties(${plugin}_plugin PROPERTIES SKIP_BUILD_RPATH TRUE)
+endforeach(plugin)
 
 
 # === Installation ===
