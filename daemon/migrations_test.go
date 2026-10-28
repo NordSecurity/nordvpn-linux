@@ -269,6 +269,11 @@ func TestMigrateAutoconnectTarget(t *testing.T) {
 			wantCity:    "preexisting_city",
 		},
 		{
+			name:        "uk country code alias resolves to united kingdom",
+			inTag:       "uk",
+			wantCountry: "united_kingdom",
+		},
+		{
 			// a city tag also overwrites Country with the city's parent country.
 			name:        "city overwrites country and sets city",
 			inTag:       "berlin",

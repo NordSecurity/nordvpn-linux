@@ -104,6 +104,7 @@ func serverTagFromString(
 // * the matched country and city if name is a city
 // * nil, nil if name is neither a country nor a city
 func FindCountryAndCity(name string, countries core.Countries) (*core.Country, *core.City) {
+	name = UnitedKingdomServerTagFix(name)
 	for _, country := range countries {
 		countryName := internal.SnakeCase(country.Name)
 		countryCode := internal.SnakeCase(country.Code)

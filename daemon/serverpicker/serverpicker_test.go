@@ -1152,3 +1152,19 @@ func TestNewSearchParams(t *testing.T) {
 		})
 	}
 }
+
+func TestGetServerParameters_UnitedKingdomAlias(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	for _, tag := range []string{"uk", "UK"} {
+		t.Run(tag, func(t *testing.T) {
+			params := GetServerParameters(tag, "", core_test.CountriesList())
+
+			assert.Equal(t, ServerParameters{
+				Group:       config.ServerGroup_UNDEFINED,
+				Country:     "United Kingdom",
+				CountryCode: "GB",
+			}, params)
+		})
+	}
+}
