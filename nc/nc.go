@@ -143,7 +143,7 @@ type Client struct {
 	startMu          sync.Mutex
 	started          bool
 	cancelConnecting context.CancelFunc // Used to stop connecting attempts if we are already stopping
-	statusChan       <-chan any
+	statusChan       <-chan interface{}
 }
 
 // NewClient is a constructor for a NC client
