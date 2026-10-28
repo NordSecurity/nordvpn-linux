@@ -1,8 +1,10 @@
 import glob
 import os
+import re
 import shutil
 
 import pytest
+import requests
 import sh
 
 import lib
@@ -12,24 +14,34 @@ from test_connect import connect_base_test, disconnect_base_test
 
 PROJECT_ROOT = os.environ['WORKDIR']
 DEB_PATH = glob.glob(f'{PROJECT_ROOT}/dist/app/deb/nordvpn_*amd64.deb')[0]
+PROD_REPO_PACKAGES_URL = "https://repo.nordvpn.com/deb/nordvpn/debian/dists/stable/main/binary-amd64/Packages"
+
+def _extract_release_version(version: str) -> tuple[int, int, int] | None:
+    match = re.match(r"(\d+)\.(\d+)\.(\d+)", version)
+    return tuple(int(part) for part in match.groups()) if match else None
+
+
+def _published_app_versions(packages_index: str) -> set[tuple[int, int, int]]:
+    versions = set()
+    for stanza in packages_index.split("\n\n"):
+        fields = dict(re.findall(r"^(Package|Version): (.+)$", stanza, re.MULTILINE))
+        if fields.get("Package") == "nordvpn" and (version := _extract_release_version(fields.get("Version", ""))):
+            versions.add(version)
+    return versions
 
 
 def _previous_app_version() -> str:
-    """Return the current-but-one (N-1) app version derived from the prod changelog."""
+    """Return the newest app version published in the prod repo that is older than the version under test."""
 
-    changelog_dir = os.path.join(PROJECT_ROOT, "contrib", "changelog", "prod")
-    versions = set()
-    for name in os.listdir(changelog_dir):
-        if not name.endswith(".md"):
-            continue
-        bare = name[:-len(".md")].split("_", 1)[0]
-        parts = bare.split(".")
-        if len(parts) == 3 and all(part.isdigit() for part in parts):
-            versions.add(tuple(int(part) for part in parts))
+    current = _extract_release_version(sh.dpkg_deb("-f", DEB_PATH, "Version").strip())
+    assert current, f"cannot parse version of {DEB_PATH}"
 
-    ordered = sorted(versions)
-    assert len(ordered) >= 2, f"need at least two changelog versions in {changelog_dir} to pick the previous one"
-    return ".".join(str(num) for num in ordered[-2])
+    response = requests.get(PROD_REPO_PACKAGES_URL, timeout=30)
+    response.raise_for_status()
+
+    older = [version for version in _published_app_versions(response.text) if version < current]
+    assert older, f"no nordvpn version older than {current} is published in {PROD_REPO_PACKAGES_URL}"
+    return ".".join(str(num) for num in max(older))
 
 class TestData:
     INVOLVES_MESHNET = None
@@ -52,7 +64,7 @@ def setup_function(function):  # noqa: ARG001
     sh.sudo.apt.purge("-y", "nordvpn")
 
     # in order to simulate actual upgrade, always install current-but-one version
-    # the exact version to be installed, is determined based on the presence of changelogs in the repository.
+    # the exact version to be installed, is the newest one older than the tested build, which is still published in the prod repo.
     # finally, use the fetched previous version and provide it to the installation script
     previous_version = _previous_app_version()
     logging.log(data=f"Installing previous production version: {previous_version}")
