@@ -25,6 +25,51 @@ userModMessage="To allow other users to control the application run 'usermod -aG
 userDelMessage="To limit access exclusively to the root user, remove all users from the '$NORDVPN_GROUP' group."
 helpMessage="If you need help using the app, use the command 'nordvpn --help'."
 
+# Colors only when output is a terminal that supports them
+COLOR_BLUE=""
+COLOR_TEXT=""
+BOLD=""
+RESET_COLOR=""
+if [[ -t 1 && "$TERM" != "dumb" ]]; then
+    COLOR_BLUE=$'\e[38;5;63m'
+    COLOR_TEXT=$'\e[39m' # terminal's default text color
+    BOLD=$'\e[1m'
+    RESET_COLOR=$'\e[0m'
+fi
+
+# Prints a compact NordVPN logo, colored on a terminal
+printLogo() {
+    local line out i
+    echo
+    while IFS= read -r line; do
+        out=""
+        for (( i = 0; i < ${#line}; i++ )); do
+            case ${line:i:1} in
+                " ") out+=" " ;;
+                ".") out+="${COLOR_TEXT}." ;;
+                *) out+="${COLOR_BLUE}${line:i:1}" ;;
+            esac
+        done
+        echo "${out}${RESET_COLOR}"
+    done <<'LOGO'
+          :--======--:
+       -+**************+-:
+    :=********************=:
+   -************************=
+  =************++************+
+ =************=..=************=
+:*********++*-....-*++*********:
+:********=..=:.....-=.=********-
+:*******-....:......:..-*******-
+ +****+:................:+*****:
+ :***+:...................=***-
+  -*=......................-*-
+LOGO
+    echo
+    echo "            ${BOLD}${COLOR_TEXT}NordVPN${RESET_COLOR}"
+    echo
+}
+
 # update configuration and shared library cache for linker to find .so files
 echo "${LIBS_DIR}" > /etc/ld.so.conf.d/nordvpn.conf
 
@@ -43,6 +88,7 @@ export DBUS_SESSION_BUS_ADDRESS="unix:path=${XDG_RUNTIME_DIR}/bus"
 
 case "$1" in
     1)
+        printLogo
         update-desktop-database 2> /dev/null
         gpasswd -M "" "$NORDVPN_GROUP"
         if [[ "$DEFAULT_USER" ]]; then
