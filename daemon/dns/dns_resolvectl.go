@@ -29,6 +29,10 @@ func (m *Resolvectl) Name() string {
 	return "resolvectl"
 }
 
+// Following the logic from https://systemd.io/RESOLVED-VPNS/
+// resolvectl domain privacy0 '~.'
+// resolvectl default-route privacy0 true
+// resolvectl dns privacy0 <IP>
 func setDNSWithResolvectl(iface string, addresses []string) error {
 	cmdStr := []string{"dns", iface}
 	cmdStr = append(cmdStr, addresses...)
@@ -36,7 +40,7 @@ func setDNSWithResolvectl(iface string, addresses []string) error {
 	if out, err := exec.Command(execResolvectl, cmdStr...).CombinedOutput(); err != nil {
 		return fmt.Errorf("setting dns with resolvectl: %s: %w", strings.TrimSpace(string(out)), err)
 	}
-	// "Catch-all" domain routing for interface, more here: https://github.com/poettering/systemd/commit/8cedb0aef94da880e61b4c8cfeb7f450f8760ec6
+	// "Catch-all" domain routing for interface
 	// #nosec G204 -- input is properly validated
 	if out, err := exec.Command(execResolvectl, "domain", iface, "~.").CombinedOutput(); err != nil {
 		log.DNS.Warn("dns domain routing with resolvectl:", strings.TrimSpace(string(out)), "err:", err)
@@ -62,18 +66,9 @@ func setDNSWithResolvectl(iface string, addresses []string) error {
 }
 
 func unsetDNSWithResolvectl(iface string) error {
-	// Just set empty/no DNS server for interface
 	// #nosec G204 -- input is properly validated
-	if out, err := exec.Command(execResolvectl, "dns", iface, "").CombinedOutput(); err != nil {
-		return fmt.Errorf("unsetting dns with resolvectl: %s: %w", strings.TrimSpace(string(out)), err)
-	}
-	// #nosec G204 -- input is properly validated
-	if out, err := exec.Command(execResolvectl, "domain", iface, "").CombinedOutput(); err != nil {
-		log.DNS.Warn("dns domain routing with resolvectl:", strings.TrimSpace(string(out)), "err:", err)
-	}
-	// #nosec G204 -- input is properly validated
-	if out, err := exec.Command(execResolvectl, "default-route", iface, "false").CombinedOutput(); err != nil {
-		log.DNS.Warn("dns domain default-route with resolvectl:", strings.TrimSpace(string(out)), "err:", err)
+	if out, err := exec.Command(execResolvectl, "revert", iface).CombinedOutput(); err != nil {
+		return fmt.Errorf("reverting dns with resolvectl: %s: %w", strings.TrimSpace(string(out)), err)
 	}
 	// #nosec G204 -- input is properly validated
 	if out, err := exec.Command(execResolvectl, "flush-caches").CombinedOutput(); err != nil {
