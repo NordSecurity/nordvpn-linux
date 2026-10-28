@@ -73,8 +73,7 @@ func isUserLoggedIn(username string) (bool, error) {
 	defer C.free(unsafe.Pointer(usersCArray))
 
 	for index := 0; index < int(size); index++ {
-		userC := (*C.user)(unsafe.Pointer(uintptr(unsafe.Pointer(usersCArray)) +
-			uintptr(index)*unsafe.Sizeof(*usersCArray)))
+		userC := (*C.user)(unsafe.Add(unsafe.Pointer(usersCArray), uintptr(index)*unsafe.Sizeof(*usersCArray)))
 		usernameC := (*C.char)(unsafe.Pointer(&userC.username))
 		if username == C.GoString(usernameC) {
 			return true, nil
@@ -100,8 +99,7 @@ func getActiveUsers() (userData, error) {
 
 	users := make(userData)
 	for index := 0; index < int(size); index++ {
-		userC := (*C.user)(unsafe.Pointer(uintptr(unsafe.Pointer(usersCArray)) +
-			uintptr(index)*unsafe.Sizeof(*usersCArray)))
+		userC := (*C.user)(unsafe.Add(unsafe.Pointer(usersCArray), uintptr(index)*unsafe.Sizeof(*usersCArray)))
 		usernameC := (*C.char)(unsafe.Pointer(&userC.username))
 		username := C.GoString(usernameC)
 
