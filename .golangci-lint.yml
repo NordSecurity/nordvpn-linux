@@ -18,6 +18,7 @@ linters:
     - unused
     - whitespace
     - depguard
+    - modernize
   exclusions:
     generated: lax
     presets:
