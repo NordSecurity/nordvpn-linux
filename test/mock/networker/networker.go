@@ -132,8 +132,8 @@ func (m *Mock) UnsetKillSwitch() error {
 	return nil
 }
 
-func (*Mock) SetVPN(vpn.VPN)         {}
-func (*Mock) LastServerName() string { return "" }
+func (*Mock) SetVPN(vpn.VPN)             {}
+func (*Mock) LastServer() vpn.ServerData { return vpn.ServerData{} }
 
 func (m *Mock) SetLanDiscoveryAndResetMesh(enabled bool, peers mesh.MachinePeers) {
 	m.MeshPeers = peers
@@ -206,7 +206,7 @@ func (Failing) Refresh(mesh.MachineMap) error                       { return moc
 func (Failing) Allow(mesh.Machine) error                            { return mock.ErrOnPurpose }
 func (Failing) Block(mesh.Machine) error                            { return mock.ErrOnPurpose }
 func (Failing) SetVPN(vpn.VPN)                                      {}
-func (Failing) LastServerName() string                              { return "" }
+func (Failing) LastServer() vpn.ServerData                          { return vpn.ServerData{} }
 func (Failing) SetLanDiscoveryAndResetMesh(bool, mesh.MachinePeers) {}
 func (Failing) ApplySettings(networker.Settings) error              { return mock.ErrOnPurpose }
 func (Failing) SetLanDiscovery(bool)                                {}

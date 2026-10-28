@@ -321,7 +321,7 @@ func (*meshNetworker) Refresh(mesh.MachineMap) error { return nil }
 func (*meshNetworker) StatusMap() (map[string]string, error) {
 	return map[string]string{}, nil
 }
-func (*meshNetworker) LastServerName() string { return "" }
+func (*meshNetworker) LastServer() vpn.ServerData { return vpn.ServerData{} }
 func (*meshNetworker) GetConnectionParameters() (vpn.ServerData, bool) {
 	return vpn.ServerData{}, false
 }
