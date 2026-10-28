@@ -77,7 +77,7 @@ type Networker interface {
 	SetKillSwitch() error
 	UnsetKillSwitch() error
 	SetVPN(vpn.VPN)
-	LastServerName() string
+	LastServer() vpn.ServerData
 	SetLanDiscovery(bool)
 	UnsetFirewall() error
 	GetConnectionParameters() (vpn.ServerData, bool)
@@ -678,8 +678,8 @@ func (netw *Combined) switchToNextVpn() {
 }
 
 // LastServerName returns last used server hostname
-func (netw *Combined) LastServerName() string {
-	return netw.lastServer.Hostname
+func (netw *Combined) LastServer() vpn.ServerData {
+	return netw.lastServer
 }
 
 // SetDNS to the given nameservers.
@@ -1333,6 +1333,13 @@ func (netw *Combined) unSetMesh() error {
 	if netw.isVpnSet {
 		if err := netw.addDefaultRoute(); err != nil {
 			return err
+		}
+
+		// meshnet interface config sticks for the entire lifetime
+		// of the connection so we have to keep the dedicated server
+		// route
+		if netw.lastServer.DedicatedServer {
+			netw.setupDedicatedServerRoute()
 		}
 	}
 

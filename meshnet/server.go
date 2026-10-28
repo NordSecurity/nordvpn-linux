@@ -340,8 +340,10 @@ func (s *Server) DisableMeshnet(context.Context, *pb.Empty) (*pb.MeshnetResponse
 		s.pub.Publish(fmt.Errorf("disabling fileshare: %w", err))
 	}
 
+	lastServer := s.netw.LastServer()
 	// try to stop networker only if mesh peer connected before
-	if s.netw.LastServerName() == s.lastConnectedPeer {
+	// check if last server is not dedicated, as dedicated servers do not have hostnames
+	if lastServer.Hostname == s.lastConnectedPeer && !lastServer.DedicatedServer {
 		if err := s.netw.Stop(); err != nil {
 			s.pub.Publish(fmt.Errorf("disconnecting: %w", err))
 		}
