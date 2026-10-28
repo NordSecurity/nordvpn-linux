@@ -80,13 +80,6 @@ def get_set_subcommands() -> set:
     return result
 
 
-def get_server_ip() -> str:
-    """Returns str with IP Address of the server from `nordvpn status`, that NordVPN client is currently connected to."""
-    return sh.nordvpn.status().split('\n')[3].replace('IP: ', '')
-
-
-
-
 def is_meshnet_enabled():
     """Return True when Meshnet is enabled."""
     return Settings().get("Meshnet") == "enabled"
