@@ -96,7 +96,7 @@ func (*workingNetworker) Refresh(mesh.MachineMap) error { return nil }
 func (*workingNetworker) StatusMap() (map[string]string, error) {
 	return map[string]string{}, nil
 }
-func (*workingNetworker) LastServerName() string { return "" }
+func (*workingNetworker) LastServer() vpn.ServerData { return vpn.ServerData{} }
 func (*workingNetworker) GetConnectionParameters() (vpn.ServerData, bool) {
 	return vpn.ServerData{}, false
 }
