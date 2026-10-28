@@ -12,7 +12,6 @@ import 'package:package_info_plus/package_info_plus.dart';
 // Main page for settings, this contains only the settings categories
 final class SettingsHomeScreen extends StatelessWidget {
   static final Future<PackageInfo> _packageInfo = PackageInfo.fromPlatform();
-
   const SettingsHomeScreen({super.key});
 
   @override
