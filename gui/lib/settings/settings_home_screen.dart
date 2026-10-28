@@ -1,40 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/logger.dart';
 import 'package:nordvpn/router/routes.dart';
 import 'package:nordvpn/settings/settings_wrapper_widget.dart';
 import 'package:nordvpn/theme/app_theme.dart';
 import 'package:nordvpn/widgets/advanced_list_tile.dart';
+import 'package:nordvpn/widgets/announce_on_show.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 // Main page for settings, this contains only the settings categories
-final class SettingsHomeScreen extends StatefulWidget {
-  const SettingsHomeScreen({super.key});
-
-  @override
-  State<SettingsHomeScreen> createState() => _SettingsHomeScreenState();
-}
-
-final class _SettingsHomeScreenState extends State<SettingsHomeScreen> {
+final class SettingsHomeScreen extends StatelessWidget {
   static final Future<PackageInfo> _packageInfo = PackageInfo.fromPlatform();
 
-  @override
-  void initState() {
-    super.initState();
-    _packageInfo.then(_announceVersion).ignore();
-  }
-
-  void _announceVersion(PackageInfo packageInfo) {
-    if (!mounted || !MediaQuery.supportsAnnounceOf(context)) return;
-
-    SemanticsService.sendAnnouncement(
-      View.of(context),
-      t.a11y.appVersion(version: packageInfo.version),
-      Directionality.of(context),
-    );
-  }
+  const SettingsHomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -121,11 +100,14 @@ final class _SettingsHomeScreenState extends State<SettingsHomeScreen> {
           logger.e("Failed to get app version ${snapshot.error}");
         } else if (snapshot.hasData) {
           final packageInfo = snapshot.data!;
-          return Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              "${t.ui.nordVpn} ${packageInfo.version}",
-              style: context.appTheme.caption,
+          return AnnounceOnShow(
+            announcement: () => t.a11y.appVersion(version: packageInfo.version),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                "${t.ui.nordVpn} ${packageInfo.version}",
+                style: context.appTheme.caption,
+              ),
             ),
           );
         }

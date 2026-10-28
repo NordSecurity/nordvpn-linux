@@ -1,12 +1,12 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nordvpn/data/models/popup_metadata.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/internal/scaler_responsive_box.dart';
 import 'package:nordvpn/theme/popup_theme.dart';
+import 'package:nordvpn/widgets/announce_on_show.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 
 // Base class providing "template" for popups.
@@ -26,7 +26,10 @@ abstract class Popup extends ConsumerWidget {
     final popupTheme = context.popupTheme;
     final theme = Theme.of(context);
 
-    return _AnnounceOnShow(
+    // Announced imperatively on purpose: a name on the dialog node would be
+    // re-read on every focus change inside the popup, prepending the title and
+    // the message to each of its buttons.
+    return AnnounceOnShow(
       announcement: () => semanticLabel(ref),
       child: Semantics(
         key: semanticsKey,
@@ -119,75 +122,4 @@ abstract class Popup extends ConsumerWidget {
 
   Widget? get leadingIcon => null;
   Widget buildContent(BuildContext context, WidgetRef ref);
-}
-
-// Announces the popup once, when it appears. This is imperative on purpose: a
-// name on the dialog node would be re-read on every focus change inside the
-// popup, prepending the title and the message to each of its buttons.
-final class _AnnounceOnShow extends StatefulWidget {
-  final ValueGetter<String> announcement;
-  final Widget child;
-
-  const _AnnounceOnShow({required this.announcement, required this.child});
-
-  @override
-  State<_AnnounceOnShow> createState() => _AnnounceOnShowState();
-}
-
-final class _AnnounceOnShowState extends State<_AnnounceOnShow> {
-  Animation<double>? _transition;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => _scheduleAnnouncement(),
-    );
-  }
-
-  // Wait for the popup to finish appearing: announcing while the route is still
-  // animating competes with the speech for the route change itself.
-  void _scheduleAnnouncement() {
-    if (!mounted) return;
-
-    // No route to wait for when a popup is built directly, as in tests.
-    final transition = ModalRoute.of(context)?.animation;
-    if (transition == null || transition.isCompleted) {
-      _announce();
-      return;
-    }
-
-    _transition = transition..addStatusListener(_onTransitionStatus);
-  }
-
-  void _onTransitionStatus(AnimationStatus status) {
-    if (status != AnimationStatus.completed) return;
-
-    _stopListening();
-    _announce();
-  }
-
-  void _stopListening() {
-    _transition?.removeStatusListener(_onTransitionStatus);
-    _transition = null;
-  }
-
-  void _announce() {
-    if (!mounted || !MediaQuery.supportsAnnounceOf(context)) return;
-
-    SemanticsService.sendAnnouncement(
-      View.of(context),
-      widget.announcement(),
-      Directionality.of(context),
-    );
-  }
-
-  @override
-  void dispose() {
-    _stopListening();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => widget.child;
 }
