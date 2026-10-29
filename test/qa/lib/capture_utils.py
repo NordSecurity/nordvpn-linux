@@ -132,6 +132,6 @@ def verify_ovpn_traffic(vpn_protocol):
 
     for p in cap.packets:
         if vpn_protocol == "openvpn_tcp":
-            assert p.ip.proto == IPProtocol.TCP, "TCP packets should travel to VPN server"
+            assert p.ip.proto == IPProtocol.TCP, f"TCP packets should travel to VPN server, detected {p.ip.proto} instead"
         else:
-            assert p.ip.proto == IPProtocol.UDP, "UDP packets should travel to VPN server"
+            assert p.ip.proto == IPProtocol.UDP, f"UDP packets should travel to VPN server, detected {p.ip.proto} instead"
