@@ -9,6 +9,7 @@ final class Dropdown<T> extends StatefulWidget {
   final void Function(T value) onChanged;
   final bool enabled;
   final bool showError;
+  final String? announcementLabel;
 
   const Dropdown({
     super.key,
@@ -17,6 +18,7 @@ final class Dropdown<T> extends StatefulWidget {
     required this.onChanged,
     this.enabled = true,
     this.showError = false,
+    this.announcementLabel,
   });
 
   @override
@@ -80,7 +82,12 @@ class _DropdownState<T> extends State<Dropdown<T>> {
         autofocus: e.value == _value,
         onPressed: () => _onChanged(e.value),
         style: dropdownTheme.itemStyle,
-        child: Text(e.label, style: appTheme.body, maxLines: 1),
+        child: Text(
+          e.label,
+          semanticsLabel: _semanticsLabel(e),
+          style: appTheme.body,
+          maxLines: 1,
+        ),
       );
     }).toList();
   }
@@ -100,7 +107,9 @@ class _DropdownState<T> extends State<Dropdown<T>> {
       ),
       child: Semantics(
         button: true,
+        enabled: widget.enabled,
         expanded: _menuController.isOpen,
+        label: _semanticsLabel(selected),
         child: InkWell(
           focusNode: _focusNode,
           onTap: widget.enabled ? _toggleMenu : null,
@@ -117,10 +126,12 @@ class _DropdownState<T> extends State<Dropdown<T>> {
               child: Row(
                 children: [
                   Expanded(
-                    child: Text(
-                      selected?.label ?? "",
-                      style: appTheme.body,
-                      maxLines: 1,
+                    child: ExcludeSemantics(
+                      child: Text(
+                        selected?.label ?? "",
+                        style: appTheme.body,
+                        maxLines: 1,
+                      ),
                     ),
                   ),
                   DynamicThemeImage("dropdown_icon.svg"),
@@ -131,6 +142,13 @@ class _DropdownState<T> extends State<Dropdown<T>> {
         ),
       ),
     );
+  }
+
+  String _semanticsLabel(DropdownItem<T>? selected) {
+    final value = selected?.label ?? "";
+    return widget.announcementLabel == null
+        ? value
+        : "${widget.announcementLabel} $value";
   }
 
   Color _borderColor(DropdownTheme dropdownTheme) {

@@ -147,6 +147,7 @@ class _AddPortState extends State<AddPort> {
                             DropdownItem(value: PortType.udp, label: "UDP"),
                           ],
                           initialValue: _portType,
+                          announcementLabel: t.ui.selectProtocol,
                           showError: (error == _ErrorType.duplicate),
                           onChanged: (value) => setState(() {
                             _portType = value;
