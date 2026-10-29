@@ -7,7 +7,6 @@ import lib
 from lib import (
     daemon,
     network,
-    settings,
     IS_NIGHTLY
 )
 from lib.dynamic_parametrize import dynamic_parametrize
@@ -54,7 +53,7 @@ def test_reconnect_matrix(
     """Manual TC: LVPN-8674, LVPN-8694, LVPN-676"""
     def verify_ovpn_traffic(vpn_protocol):
         """Verify OpenVPN tunnel traffic uses the expected transport protocol."""
-        cap = capture_utils.BackgroundCapture("any", display_filter=f"ip.addr == {settings.get_server_ip()}")
+        cap = capture_utils.BackgroundCapture("any", display_filter=f"ip.addr == {daemon.get_status_data()['ip']}")
         cap.start()
         network.generate_traffic()
         cap.stop()
