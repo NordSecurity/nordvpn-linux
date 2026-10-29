@@ -10,6 +10,8 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
+const feedbackRequestFrequency uint64 = 5
+
 func (r *RPC) Disconnect(_ *pb.Empty, srv pb.Daemon_DisconnectServer) error {
 	connectionStateBeforeDisconnect, err := r.DoDisconnect()
 	if err != nil {
@@ -24,7 +26,13 @@ func (r *RPC) Disconnect(_ *pb.Empty, srv pb.Daemon_DisconnectServer) error {
 	if connectionStateBeforeDisconnect == pb.ConnectionState_PAUSED {
 		return srv.Send(&pb.Payload{Type: internal.CodePauseInterrupted})
 	}
-	return srv.Send(&pb.Payload{Type: internal.CodeDisconnected})
+
+	code := internal.CodeDisconnected
+	if r.disconnectCounter.Add(1)%feedbackRequestFrequency == 0 {
+		code = internal.CodeDisconnectedWithFeedbackRequest
+	}
+
+	return srv.Send(&pb.Payload{Type: code})
 }
 
 // DoDisconnect is the non-gRPC function for Disconnect to be used directly.

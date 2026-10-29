@@ -76,7 +76,7 @@ Logs you out.
 .PP
 \fBrate\fR
 .RS 4
-Rates your last connection quality (1-5).
+Rates how satisfied you are with your VPN connection. Rate from 1 (very dissatisfied) to 5 (very satisfied).
 .RE
 .PP
 \fBregister\fR
