@@ -694,7 +694,7 @@ func TestAccessTokenSessionStore_Renew_StoresTokenRenewDateInConfig(t *testing.T
 	idempotencyKey := uuid.New()
 	pastTime := time.Now().UTC().Add(-24 * time.Hour)
 	futureTime := time.Now().UTC().Add(24 * time.Hour)
-	updatedAt := time.Now().UTC()
+	oldRenewDate := pastTime.Add(-24 * time.Hour).Format(internal.ServerDateFormat)
 
 	cfg := &config.Config{
 		AutoConnectData: config.AutoConnectData{ID: uid},
@@ -703,6 +703,7 @@ func TestAccessTokenSessionStore_Renew_StoresTokenRenewDateInConfig(t *testing.T
 				Token:          "old-token",
 				RenewToken:     "old-renew",
 				TokenExpiry:    pastTime.Format(internal.ServerDateFormat),
+				TokenRenewDate: oldRenewDate,
 				IdempotencyKey: &idempotencyKey,
 			},
 		},
@@ -716,15 +717,21 @@ func TestAccessTokenSessionStore_Renew_StoresTokenRenewDateInConfig(t *testing.T
 			Token:      "ab78bb36299d442fa0715fb53b5e3e58",
 			RenewToken: "ab78bb36299d442fa0715fb53b5e3e59",
 			ExpiresAt:  futureTime.Format(internal.ServerDateFormat),
-			UpdatedAt:  updatedAt.Format(internal.ServerDateFormat),
 		}, nil
 	}
 
 	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall)
+
+	before := time.Now().UTC().Truncate(time.Second)
 	assert.NoError(t, store.Renew())
+	after := time.Now().UTC()
 
 	// Verify TokenRenewDate is stored in config
 	tokenData := cfgManager.Cfg.TokensData[uid]
-	assert.Equal(t, updatedAt.Format(internal.ServerDateFormat), tokenData.TokenRenewDate,
-		"TokenRenewDate should be stored in config")
+	assert.NotEqual(t, oldRenewDate, tokenData.TokenRenewDate, "TokenRenewDate should be updated on renewal")
+
+	renewDate, err := time.Parse(internal.ServerDateFormat, tokenData.TokenRenewDate)
+	assert.NoError(t, err, "TokenRenewDate should be in ServerDateFormat")
+	assert.False(t, renewDate.Before(before), "TokenRenewDate should not be before the renewal")
+	assert.False(t, renewDate.After(after), "TokenRenewDate should not be after the renewal")
 }
