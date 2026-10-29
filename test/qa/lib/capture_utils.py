@@ -125,7 +125,7 @@ def verify_ovpn_traffic(vpn_protocol):
     """Verify OpenVPN tunnel traffic uses the expected transport protocol."""
     cap = BackgroundCapture("any", display_filter=f"ip.dst == {daemon.get_status_data()['ip']}")
     cap.start()
-    network.generate_traffic(5)
+    network.generate_traffic(1)
     cap.stop()
 
     assert len(cap.packets) > 0, f"No packets captured for {vpn_protocol}"
