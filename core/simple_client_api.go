@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"sync"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
@@ -58,6 +60,8 @@ type RawSubscriptionAPI interface {
 	Orders(token string) ([]Order, error)
 	// Payments returns a list of payments done by the user
 	Payments(token string) ([]PaymentResponse, error)
+	// Purchases returns the cached purchase information (orders, plans, payments, subscriptions) for the authenticated user
+	Purchases(token string) (PurchasesResult, error)
 }
 
 type SimpleClientAPI struct {
@@ -662,4 +666,59 @@ func getData[T any](api *SimpleClientAPI, token string, url string) (T, error) {
 	}
 
 	return data, nil
+}
+
+// Fetches purchases from the core API
+// 200 - Cached purchases for the user
+// 202 - Purchases are not yet in the cache. We must try again after Retry-After(from header) seconds.
+// 4XX/5XX - Errors
+func (api *SimpleClientAPI) Purchases(token string) (PurchasesResult, error) {
+	resp, err := api.request(urlPurchases, http.MethodGet, nil, token)
+	if err != nil {
+		return PurchasesResult{}, fmt.Errorf("executing HTTP GET request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		var body PurchasesSuccessBody
+		if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+			return PurchasesResult{}, fmt.Errorf("decoding response body: %w", err)
+		}
+		return PurchasesResult{
+			Status: PurchaseStatusReady,
+			Data:   body.Data,
+		}, nil
+
+	case http.StatusAccepted:
+		retryAfter, err := parseRetryAfter(resp.Header.Get("Retry-After"))
+		if err != nil {
+			return PurchasesResult{}, fmt.Errorf("parsing Retry-After header: %w", err)
+		}
+		return PurchasesResult{
+			Status:     PurchaseStatusPending,
+			RetryAfter: retryAfter,
+		}, nil
+
+	default:
+		return PurchasesResult{}, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+}
+
+func parseRetryAfter(v string) (time.Duration, error) {
+	const maxAcceptedRetry int = 10 * 60 // 10 minutes
+	if v == "" {
+		return 0, fmt.Errorf("missing Retry-After header")
+	}
+
+	secs, err := strconv.Atoi(v)
+	if err != nil {
+		return 0, fmt.Errorf("invalid Retry-After value %q: %w", v, err)
+	}
+
+	if secs <= 0 || secs > maxAcceptedRetry {
+		return 0, fmt.Errorf("out of bounds Retry-After: %d", secs)
+	}
+
+	return time.Duration(secs) * time.Second, nil
 }
