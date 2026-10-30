@@ -165,6 +165,7 @@ def test_routing_access_LAN():
 
     sh_no_tty.nordvpn.mesh.peer.local.allow(peer_hostname)
 
+    # TODO: LVPN-11405
     current_retries = 0
     max_retry = 30
     while current_retries < max_retry:
@@ -177,12 +178,14 @@ def test_routing_access_LAN():
             ssh_client.network.ping(default_gateway, retry=1)
             ssh_client.network.ping(this_device.ip, retry=1)
         logging.log(f"No internet connection after {current_retries}/{max_retry} retries.")
+    # TODO: LVPN-11405
 
     ssh_client.exec_command("nordvpn mesh peer refresh")
     cap = capture_utils.BackgroundCapture("any", display_filter=f"ip.addr == {default_gateway}")
     cap.start()
     time.sleep(2)
 
+    # TODO: LVPN-11405
     current_retries = 0
     while current_retries < max_retry:
         if ssh_client.network.ping(default_gateway, retry=1):
@@ -191,6 +194,7 @@ def test_routing_access_LAN():
         current_retries += 1
     if current_retries > 3:
         logging.log(f"No access to gw after {current_retries}/{max_retry} retries.")
+    # TODO: LVPN-11405
 
     time.sleep(2)
     cap.stop()
