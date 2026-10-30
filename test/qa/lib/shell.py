@@ -12,6 +12,7 @@ class ShWithoutTTY:
     def __call__(self, *args, **kwargs):
         # When the command is finally called, add _tty_out=False
         kwargs["_tty_out"] = False
+        kwargs["_return_cmd"] = True
         return self.base(*args, **kwargs)
 
 sh_no_tty = ShWithoutTTY()
