@@ -5,11 +5,13 @@ import 'package:nordvpn/router/routes.dart';
 import 'package:nordvpn/settings/settings_wrapper_widget.dart';
 import 'package:nordvpn/theme/app_theme.dart';
 import 'package:nordvpn/widgets/advanced_list_tile.dart';
+import 'package:nordvpn/widgets/announce_on_show.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 // Main page for settings, this contains only the settings categories
 final class SettingsHomeScreen extends StatelessWidget {
+  static final Future<PackageInfo> _packageInfo = PackageInfo.fromPlatform();
   const SettingsHomeScreen({super.key});
 
   @override
@@ -91,17 +93,20 @@ final class SettingsHomeScreen extends StatelessWidget {
 
   Widget _buildAppVersion(BuildContext context) {
     return FutureBuilder<PackageInfo>(
-      future: PackageInfo.fromPlatform(),
+      future: _packageInfo,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           logger.e("Failed to get app version ${snapshot.error}");
         } else if (snapshot.hasData) {
           final packageInfo = snapshot.data!;
-          return Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              "${t.ui.nordVpn} ${packageInfo.version}",
-              style: context.appTheme.caption,
+          return AnnounceOnShow(
+            announcement: () => t.a11y.appVersion(version: packageInfo.version),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                "${t.ui.nordVpn} ${packageInfo.version}",
+                style: context.appTheme.caption,
+              ),
             ),
           );
         }

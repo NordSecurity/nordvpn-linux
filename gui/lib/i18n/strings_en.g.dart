@@ -108,6 +108,9 @@ class Translations$a11y$en {
 
 	/// en: 'Not selected'
 	String get notSelected => 'Not selected';
+
+	/// en: 'NordVPN version $version'
+	String appVersion({required Object version}) => 'NordVPN version ${version}';
 }
 
 // Path: cities
@@ -2251,6 +2254,7 @@ extension on Translations {
 			'a11y.link' => ({required Object name}) => 'Link ${name}',
 			'a11y.selected' => 'Selected',
 			'a11y.notSelected' => 'Not selected',
+			'a11y.appVersion' => ({required Object version}) => 'NordVPN version ${version}',
 			'cities.tirana' => 'Tirana',
 			'cities.algiers' => 'Algiers',
 			'cities.addis_ababa' => 'Addis Ababa',
@@ -2744,9 +2748,9 @@ extension on Translations {
 			'ui.knowledgeBase' => 'Knowledge Base',
 			'ui.routing' => 'Routing',
 			'ui.connectToVpn' => 'Connect to VPN',
-			'ui.connecting' => 'Connecting',
 			_ => null,
 		} ?? switch (path) {
+			'ui.connecting' => 'Connecting',
 			'ui.findingServer' => 'Finding server...',
 			'ui.noResultsFound' => 'No results found. Try another keyword.',
 			'ui.searchServersHint' => 'Search countries, cities, or servers',
