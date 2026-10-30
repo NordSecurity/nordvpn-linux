@@ -58,6 +58,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events/meshunsetter"
 	"github.com/NordSecurity/nordvpn-linux/events/refresher"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
+	"github.com/NordSecurity/nordvpn-linux/features"
 	grpcmiddleware "github.com/NordSecurity/nordvpn-linux/grpc_middleware"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/ipv6"
@@ -258,7 +259,8 @@ func main() {
 
 	hostInfo := sysinfo.NewHostInfo()
 
-	userAgent := request.GetUserAgentValue(Version, hostInfo.OSPrettyName)
+	identity := request.NewClientIdentity(Version, features.BuildType, hostInfo)
+	userAgent := identity.UserAgent()
 
 	httpGlobalCtx, httpCancel := context.WithCancel(context.Background())
 
@@ -268,9 +270,16 @@ func main() {
 	h1SimpleTransport := request.NewHTTPReTransport(
 		1, 1, "HTTP/1.1", createSimpleH1Transport(Environment), nil, simpleTransportNeedsRecreate)
 	daemonEvents.Service.Connect.Subscribe(h1SimpleTransport.NotifyConnect)
-	httpClientSimple.Transport = request.NewPublishingRoundTripper(
-		request.NewContextRoundTripper(h1SimpleTransport, httpGlobalCtx),
-		httpCallsSubject,
+
+	nordAgent := identity.NordAgent()
+	log.Info(request.NordAgentHeader+":", nordAgent)
+
+	httpClientSimple.Transport = request.NewNordAgentRoundTripper(
+		request.NewPublishingRoundTripper(
+			request.NewContextRoundTripper(h1SimpleTransport, httpGlobalCtx),
+			httpCallsSubject,
+		),
+		nordAgent,
 	)
 
 	cdnUrl := core.CDNURL
@@ -290,13 +299,16 @@ func main() {
 	)
 
 	httpClientWithRotator := request.NewStdHTTP()
-	httpClientWithRotator.Transport = createTimedOutTransport(
-		resolver,
-		cfg.FirewallMark,
-		httpCallsSubject,
-		daemonEvents.Service.Connect,
-		httpGlobalCtx,
-		Environment,
+	httpClientWithRotator.Transport = request.NewNordAgentRoundTripper(
+		createTimedOutTransport(
+			resolver,
+			cfg.FirewallMark,
+			httpCallsSubject,
+			daemonEvents.Service.Connect,
+			httpGlobalCtx,
+			Environment,
+		),
+		nordAgent,
 	)
 
 	cdnAPI := core.NewCDNAPI(
