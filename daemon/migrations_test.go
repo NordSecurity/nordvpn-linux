@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -180,6 +181,210 @@ func TestMigrateLegacyAllowlist_RewritesConfigFile(t *testing.T) {
 	assert.Assert(t, !strings.Contains(string(saved), `"whitelist"`))
 }
 
+func migrationTestCountries() core.Countries {
+	return core.Countries{
+		{ID: 1, Name: "Germany", Code: "DE", Cities: core.Cities{
+			{ID: 11, Name: "Berlin"},
+			{ID: 12, Name: "Frankfurt"},
+		}},
+		{ID: 2, Name: "United States", Code: "US", Cities: core.Cities{
+			{ID: 21, Name: "New York"},
+			{ID: 22, Name: "Los Angeles"},
+		}},
+		{ID: 3, Name: "United Kingdom", Code: "GB", Cities: core.Cities{
+			{ID: 31, Name: "London"},
+		}},
+	}
+}
+
+func migrationTestServers() core.Servers {
+	return core.Servers{
+		{
+			Hostname: "de123.nordvpn.com",
+			Locations: core.Locations{core.Location{Country: core.Country{
+				Name: "Germany", Code: "DE", City: core.City{Name: "Berlin"},
+			}}},
+		},
+		{
+			// dashed hostname + multi-word city
+			Hostname: "us-dv999.nordvpn.com",
+			Locations: core.Locations{core.Location{Country: core.Country{
+				Name: "United States", Code: "US", City: core.City{Name: "Los Angeles"},
+			}}},
+		},
+	}
+}
+
+func newServerTagDataManager(t *testing.T, countries core.Countries, servers core.Servers) *DataManager {
+	t.Helper()
+	dm := &DataManager{}
+	dm.serversData = ServersData{Servers: servers}
+	if countries != nil {
+		path := filepath.Join(t.TempDir(), "countries.dat")
+		assert.NilError(t, os.WriteFile(path, []byte{}, internal.PermUserRW))
+		dm.countryData = CountryData{filePath: path, Countries: countries}
+	} else {
+		dm.countryData = CountryData{filePath: filepath.Join(t.TempDir(), "missing.dat")}
+	}
+	return dm
+}
+
+func TestMigrateAutoconnectTarget(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name            string
+		noCountryData   bool // when true, CountryDataExists reports false
+		inTag           string
+		inCountry       string
+		inCity          string
+		wantCountry     string
+		wantCity        string
+		wantCountryCode string
+	}{
+		{
+			name:  "empty tag is a no-op",
+			inTag: "",
+		},
+		{
+			name:        "empty tag preserves existing country and city",
+			inTag:       "",
+			inCountry:   "spain",
+			inCity:      "madrid",
+			wantCountry: "spain",
+			wantCity:    "madrid",
+		},
+		{
+			name:        "country name sets country and leaves city untouched",
+			inTag:       "germany",
+			inCity:      "preexisting_city",
+			wantCountry: "germany",
+			wantCity:    "preexisting_city",
+		},
+		{
+			name:        "country code sets country and leaves city untouched",
+			inTag:       "de",
+			inCity:      "preexisting_city",
+			wantCountry: "germany",
+			wantCity:    "preexisting_city",
+		},
+		{
+			name:        "uk country code alias resolves to united kingdom",
+			inTag:       "uk",
+			wantCountry: "united_kingdom",
+		},
+		{
+			// a city tag also overwrites Country with the city's parent country.
+			name:        "city overwrites country and sets city",
+			inTag:       "berlin",
+			inCountry:   "preexisting_country",
+			wantCountry: "germany",
+			wantCity:    "berlin",
+		},
+		{
+			name:        "multi-word city is snake cased",
+			inTag:       "los_angeles",
+			wantCountry: "united_states",
+			wantCity:    "los_angeles",
+		},
+		{
+			name:        "matching is case insensitive",
+			inTag:       "GERMANY",
+			wantCountry: "germany",
+		},
+		{
+			name:        "unknown tag is discarded and country/city preserved",
+			inTag:       "atlantis",
+			inCountry:   "keep_country",
+			inCity:      "keep_city",
+			wantCountry: "keep_country",
+			wantCity:    "keep_city",
+		},
+		{
+			name:            "specific server resolves to its country/city",
+			inTag:           "de123",
+			wantCountry:     "germany",
+			wantCity:        "berlin",
+			wantCountryCode: "DE",
+		},
+		{
+			name:            "specific server with dashed hostname and multi-word city",
+			inTag:           "us-dv999",
+			wantCountry:     "united_states",
+			wantCity:        "los_angeles",
+			wantCountryCode: "US",
+		},
+		{
+			name:            "unknown server falls back to its country code",
+			inTag:           "de999",
+			wantCountry:     "germany",
+			wantCountryCode: "DE",
+		},
+		{
+			name:            "unknown server with unknown country code keeps country",
+			inTag:           "zz999",
+			inCountry:       "keep_country",
+			inCity:          "keep_city",
+			wantCountry:     "keep_country",
+			wantCity:        "keep_city",
+			wantCountryCode: "ZZ",
+		},
+		{
+			name:        "invalid server-style tag falls back to fastest",
+			inTag:       "tttt111",
+			inCountry:   "keep_country",
+			inCity:      "keep_city",
+			wantCountry: "keep_country",
+			wantCity:    "keep_city",
+		},
+		{
+			name:          "no country data clears tag and preserves country/city",
+			noCountryData: true,
+			inTag:         "germany",
+			inCountry:     "keep_country",
+			inCity:        "keep_city",
+			wantCountry:   "keep_country",
+			wantCity:      "keep_city",
+		},
+		{
+			// without country data the raw server country/city survive stage 1.
+			name:            "no country data keeps raw server country/city",
+			noCountryData:   true,
+			inTag:           "de123",
+			wantCountry:     "Germany",
+			wantCity:        "Berlin",
+			wantCountryCode: "DE",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			countries := migrationTestCountries()
+			if test.noCountryData {
+				countries = nil
+			}
+			dataManager := newServerTagDataManager(t, countries, migrationTestServers())
+
+			configManager := newMockConfigManager()
+			configManager.c = config.Config{
+				AutoConnectData: config.AutoConnectData{
+					ServerTag: test.inTag,
+					Country:   test.inCountry,
+					City:      test.inCity,
+				},
+			}
+
+			assert.NilError(t, MigrateAutoconnectTarget(configManager, dataManager))
+
+			got := configManager.c.AutoConnectData
+			assert.Equal(t, "", got.ServerTag, "ServerTag must be empty after migration")
+			assert.Equal(t, test.wantCountry, got.Country, "unexpected Country")
+			assert.Equal(t, test.wantCity, got.City, "unexpected City")
+			assert.Equal(t, test.wantCountryCode, got.CountryCode, "unexpected CountryCode")
+		})
+	}
+}
+
 func TestMigrateObfuscatedSettingsToNordWhisper(t *testing.T) {
 	category.Set(t, category.Unit)
 
@@ -317,7 +522,6 @@ func TestMigrateDeprecatedAutoconnectToSpecificServer(t *testing.T) {
 		name                string
 		serversList         core.Servers
 		currentServerTag    string
-		expectedTag         string
 		expectedCountryName string
 		expectedCityName    string
 	}{
@@ -325,7 +529,6 @@ func TestMigrateDeprecatedAutoconnectToSpecificServer(t *testing.T) {
 			name:                "server set to specific, fallback to country",
 			currentServerTag:    testServerTag,
 			serversList:         testServersList,
-			expectedTag:         "test_city",
 			expectedCountryName: testCountryName,
 			expectedCityName:    testCityName,
 		},
@@ -333,7 +536,6 @@ func TestMigrateDeprecatedAutoconnectToSpecificServer(t *testing.T) {
 			name:                "server set to specific double VPN, fallback to country",
 			currentServerTag:    testDoubleVPNServerTag,
 			serversList:         testServersList,
-			expectedTag:         "test_double_vpn_city",
 			expectedCountryName: testDoubleVPNCountryName,
 			expectedCityName:    testDoubleVPNCityName,
 		},
@@ -341,13 +543,11 @@ func TestMigrateDeprecatedAutoconnectToSpecificServer(t *testing.T) {
 			name:             "server set to country, no fallback",
 			currentServerTag: strings.ToLower(testCountryName),
 			serversList:      testServersList,
-			expectedTag:      strings.ToLower(testCountryName),
 		},
 		{
 			name:             "server set to city, no fallback",
 			currentServerTag: strings.ToLower(testCityName),
 			serversList:      testServersList,
-			expectedTag:      strings.ToLower(testCityName),
 		},
 		{
 			name:             "server tag empty, no fallback",
@@ -358,13 +558,11 @@ func TestMigrateDeprecatedAutoconnectToSpecificServer(t *testing.T) {
 			name:             "server set to specific, server not found, fallback to country code",
 			currentServerTag: testServerTag,
 			serversList:      core.Servers{},
-			expectedTag:      "ts",
 		},
 		{
 			name:             "server set to specific, server tag invalid format, fallback to fastest",
 			currentServerTag: "tttt111",
 			serversList:      core.Servers{},
-			expectedTag:      "",
 		},
 	}
 
@@ -384,12 +582,10 @@ func TestMigrateDeprecatedAutoconnectToSpecificServer(t *testing.T) {
 			configManager := newMockConfigManager()
 			configManager.c = cfg
 
-			MigrateDeprecatedAutoconnectToSpecificServer(configManager, &dataManager)
+			MigrateAutoconnectTarget(configManager, &dataManager)
 
 			cfgAfterFallback := configManager.c
 
-			assert.Equal(t, test.expectedTag, cfgAfterFallback.AutoConnectData.ServerTag,
-				"Invalid server tag saved in local config after fallback.")
 			assert.Equal(t, test.expectedCountryName, cfgAfterFallback.AutoConnectData.Country,
 				"Invalid country saved in local config after fallback.")
 			assert.Equal(t, test.expectedCityName, cfgAfterFallback.AutoConnectData.City,

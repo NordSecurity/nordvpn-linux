@@ -772,8 +772,8 @@ func main() {
 			log.Warn("DataManager failed to load data:", err)
 		}
 		log.Info("data successfully loaded from disk")
-		if err := daemon.MigrateDeprecatedAutoconnectToSpecificServer(fsystem, dm); err != nil {
-			log.Warn("failed to migrate autoconnect to a specific server:", err)
+		if err := daemon.MigrateAutoconnectTarget(fsystem, dm); err != nil {
+			log.Warn("failed to migrate autoconnect target:", err)
 		}
 	}()
 

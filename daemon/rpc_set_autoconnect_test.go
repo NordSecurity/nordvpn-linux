@@ -417,7 +417,8 @@ func TestAutoconnect_SavesCorrectAutoconnectData(t *testing.T) {
 			assert.NotNil(t, resp)
 			assert.Equal(t, internal.CodeSuccess, resp.Type)
 
-			assert.Equal(t, test.expected.ServerTag, mockConfigManager.c.AutoConnectData.ServerTag)
+			// keep this as long as `AutoConnectData.ServerTag` is not completely removed from the codebase
+			assert.Equal(t, "", mockConfigManager.c.AutoConnectData.ServerTag)
 			assert.Equal(t, test.expected.Country, mockConfigManager.c.AutoConnectData.Country)
 			assert.Equal(t, test.expected.CountryCode, mockConfigManager.c.AutoConnectData.CountryCode)
 			assert.Equal(t, test.expected.City, mockConfigManager.c.AutoConnectData.City)

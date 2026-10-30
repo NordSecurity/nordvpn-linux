@@ -122,6 +122,7 @@ func TestDoAutoconnectHandlesServerAvailabilityIssues(t *testing.T) {
 	rpc.cm = mockConfigManager
 
 	rpc.dm.SetServersData(time.Now(), []core.Server{}, "")
+	_ = rpc.dm.SetCountryData(time.Now(), core_test.CountriesList(), "")
 
 	err := rpc.doAutoConnect()
 	assert.ErrorIs(t, err, errServersUnavailable, "doAutoconnect has ignored server availability errors")
@@ -194,13 +195,13 @@ func TestDoAutoConnect_ObfuscatedGroupNeedsNordWhisper(t *testing.T) {
 			rpc.serversAPI = core_test.NewMockServersAPI()
 			mockConfigManager := newMockConfigManager()
 			updateAutoconnectData(mockConfigManager, config.AutoConnectData{
-				Group:     config.ServerGroup_OVPN_OBFUSCATED,
+				Group:     config.ServerGroup_NW_OBFUSCATED,
 				ServerTag: "obfuscated_servers",
 			})
 			mockConfigManager.c.VPNProtocol = vpnProtocol
 			rpc.cm = mockConfigManager
 
-			assert.Error(t, rpc.doAutoConnect())
+			assert.ErrorIs(t, rpc.doAutoConnect(), errServersUnavailable)
 		})
 	}
 }
@@ -451,17 +452,16 @@ func TestDoAutoConnect_SetsRequestedConnectionParams(t *testing.T) {
 		{
 			name: "country, city and group",
 			autoConnectData: config.AutoConnectData{
-				Country:   "US",
-				City:      "New York",
-				Group:     config.ServerGroup_DOUBLE_VPN,
-				ServerTag: "double_vpn",
+				Country: "DE",
+				City:    "Berlin",
+				Group:   config.ServerGroup_DOUBLE_VPN,
 			},
 			expectedParams: ConnectionParameters{
 				ConnectionSource: pb.ConnectionSource_AUTO,
 				ServerParameters: serverpicker.ServerParameters{
-					Country:     "US",
-					CountryCode: "US",
-					City:        "New York",
+					Country:     "DE",
+					CountryCode: "DE",
+					City:        "Berlin",
 					Group:       config.ServerGroup_DOUBLE_VPN,
 				},
 			},
