@@ -343,7 +343,9 @@ func (s *Server) DisableMeshnet(context.Context, *pb.Empty) (*pb.MeshnetResponse
 	lastServer := s.netw.LastServer()
 	// try to stop networker only if mesh peer connected before
 	// check if last server is not dedicated, as dedicated servers do not have hostnames
-	if lastServer.Hostname == s.lastConnectedPeer && !lastServer.DedicatedServer {
+	if s.lastConnectedPeer != "" &&
+		!lastServer.DedicatedServer &&
+		lastServer.Hostname == s.lastConnectedPeer {
 		if err := s.netw.Stop(); err != nil {
 			s.pub.Publish(fmt.Errorf("disconnecting: %w", err))
 		}
