@@ -192,7 +192,7 @@ func (c *Client) createClientOptions(
 
 	// Parse endpoint URL to extract hostname for DNS resolution and TLS verification.
 	// Example: "ssl://mqtt.example.com:8883" -> hostname="mqtt.example.com", port="8883"
-	log.NC.Info("try DNS resolution for original endpoint:", credentials.Endpoint)
+	log.NC.Info("try DNS resolution for original endpoint:", log.DoNotSanitize(credentials.Endpoint))
 	u, err := url.Parse(credentials.Endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("NC original endpoint URL parse error: %w", err)

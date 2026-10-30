@@ -46,6 +46,7 @@ message Settings {
   bool                 arp_ignore      = 19;
   bool                 ech             = 20;
   config.VPNProtocol   vpn_protocol    = 21;
+  bool                 log_sanitization = 22;
 }
 
 message UserSpecificSettings {

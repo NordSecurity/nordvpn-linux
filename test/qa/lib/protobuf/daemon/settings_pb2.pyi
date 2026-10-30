@@ -32,7 +32,7 @@ class AutoconnectData(_message.Message):
     def __init__(self, enabled: bool = ..., country: _Optional[str] = ..., city: _Optional[str] = ..., server_group: _Optional[_Union[_group_pb2.ServerGroup, str]] = ..., country_code: _Optional[str] = ...) -> None: ...
 
 class Settings(_message.Message):
-    __slots__ = ("firewall", "kill_switch", "auto_connect_data", "meshnet", "routing", "fwmark", "analytics_consent", "dns", "real_time_protection", "lan_discovery", "allowlist", "postquantum_vpn", "user_settings", "arp_ignore", "ech", "vpn_protocol")
+    __slots__ = ("firewall", "kill_switch", "auto_connect_data", "meshnet", "routing", "fwmark", "analytics_consent", "dns", "real_time_protection", "lan_discovery", "allowlist", "postquantum_vpn", "user_settings", "arp_ignore", "ech", "vpn_protocol", "log_sanitization")
     FIREWALL_FIELD_NUMBER: _ClassVar[int]
     KILL_SWITCH_FIELD_NUMBER: _ClassVar[int]
     AUTO_CONNECT_DATA_FIELD_NUMBER: _ClassVar[int]
@@ -49,6 +49,7 @@ class Settings(_message.Message):
     ARP_IGNORE_FIELD_NUMBER: _ClassVar[int]
     ECH_FIELD_NUMBER: _ClassVar[int]
     VPN_PROTOCOL_FIELD_NUMBER: _ClassVar[int]
+    LOG_SANITIZATION_FIELD_NUMBER: _ClassVar[int]
     firewall: bool
     kill_switch: bool
     auto_connect_data: AutoconnectData
@@ -65,7 +66,8 @@ class Settings(_message.Message):
     arp_ignore: bool
     ech: bool
     vpn_protocol: _vpn_protocol_pb2.VPNProtocol
-    def __init__(self, firewall: bool = ..., kill_switch: bool = ..., auto_connect_data: _Optional[_Union[AutoconnectData, _Mapping]] = ..., meshnet: bool = ..., routing: bool = ..., fwmark: _Optional[int] = ..., analytics_consent: _Optional[_Union[_analytics_consent_pb2.ConsentMode, str]] = ..., dns: _Optional[_Iterable[str]] = ..., real_time_protection: bool = ..., lan_discovery: bool = ..., allowlist: _Optional[_Union[_common_pb2.Allowlist, _Mapping]] = ..., postquantum_vpn: bool = ..., user_settings: _Optional[_Union[UserSpecificSettings, _Mapping]] = ..., arp_ignore: bool = ..., ech: bool = ..., vpn_protocol: _Optional[_Union[_vpn_protocol_pb2.VPNProtocol, str]] = ...) -> None: ...
+    log_sanitization: bool
+    def __init__(self, firewall: bool = ..., kill_switch: bool = ..., auto_connect_data: _Optional[_Union[AutoconnectData, _Mapping]] = ..., meshnet: bool = ..., routing: bool = ..., fwmark: _Optional[int] = ..., analytics_consent: _Optional[_Union[_analytics_consent_pb2.ConsentMode, str]] = ..., dns: _Optional[_Iterable[str]] = ..., real_time_protection: bool = ..., lan_discovery: bool = ..., allowlist: _Optional[_Union[_common_pb2.Allowlist, _Mapping]] = ..., postquantum_vpn: bool = ..., user_settings: _Optional[_Union[UserSpecificSettings, _Mapping]] = ..., arp_ignore: bool = ..., ech: bool = ..., vpn_protocol: _Optional[_Union[_vpn_protocol_pb2.VPNProtocol, str]] = ..., log_sanitization: bool = ...) -> None: ...
 
 class UserSpecificSettings(_message.Message):
     __slots__ = ("uid", "notify", "tray")

@@ -300,6 +300,11 @@ final class MockDaemon extends DaemonServiceBase {
   }
 
   @override
+  Future<Payload> setLogSanitization(ServiceCall call, SetGenericRequest) {
+    throw UnimplementedError();
+  }
+
+  @override
   Future<SettingsResponse> settings(ServiceCall call, Empty request) async {
     if (appSettings.error != null) {
       throw appSettings.error!;

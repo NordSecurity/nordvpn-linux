@@ -915,6 +915,14 @@ func getSetSubcommands(cmd *cmd, isMeshnetEnabled bool) []*cli.Command {
 				"arp-ignore",
 			),
 		},
+		{
+			Name:         "log-sanitization",
+			Usage:        SetLogSanitizationUsageText,
+			Action:       cmd.SetLogSanitization,
+			BashComplete: cmd.SetBoolAutocomplete,
+			ArgsUsage:    MsgSetBoolArgsUsage,
+			Description:  fmt.Sprintf(MsgSetBoolDescription, SetLogSanitizationUsageText, "sanitization", "sanitization"),
+		},
 	}
 
 	if features.NordWhisperEnabled {

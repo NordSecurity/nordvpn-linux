@@ -512,3 +512,19 @@ def test_settings_are_kept_after_reboot():
     app_settings = settings.Settings()
     assert app_settings.get("Real-time protection") == "disabled", "Real-time protection must be disabled, because of custom DNS"
     assert app_settings.get("DNS") == "1.1.1.1", "Custom DNS value is not kept after reboot"
+
+
+def test_only_root_can_change_sanitization_setting():
+    setting = "off"
+    # by default, sanitization is off in dev versions
+    version = sh.nordvpn.version()
+    if "- dev" in version:
+        setting = "on"
+
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+        sh.nordvpn.set("log-sanitization", setting)
+
+    assert "Log sanitization changes require admin access. Run this command as root." in ex.value.stdout.decode("utf-8")
+
+    command_handle = sh.sudo.nordvpn.set("log-sanitization", setting)
+    assert command_handle.exit_code == 0

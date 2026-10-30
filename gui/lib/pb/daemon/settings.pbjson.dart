@@ -116,6 +116,7 @@ const Settings$json = {
       '6': '.config.VPNProtocol',
       '10': 'vpnProtocol'
     },
+    {'1': 'log_sanitization', '3': 22, '4': 1, '5': 8, '10': 'logSanitization'},
   ],
   '9': [
     {'1': 1, '2': 2},
@@ -139,8 +140,9 @@ final $typed_data.Uint8List settingsDescriptor = $convert.base64Decode(
     'X3ZwbhgRIAEoCFIOcG9zdHF1YW50dW1WcG4SPQoNdXNlcl9zZXR0aW5ncxgSIAEoCzIYLnBiLl'
     'VzZXJTcGVjaWZpY1NldHRpbmdzUgx1c2VyU2V0dGluZ3MSHQoKYXJwX2lnbm9yZRgTIAEoCFIJ'
     'YXJwSWdub3JlEhAKA2VjaBgUIAEoCFIDZWNoEjYKDHZwbl9wcm90b2NvbBgVIAEoDjITLmNvbm'
-    'ZpZy5WUE5Qcm90b2NvbFILdnBuUHJvdG9jb2xKBAgBEAJKBAgMEA1KBAgPEBBKBAgQEBFSCnRl'
-    'Y2hub2xvZ3lSCHByb3RvY29sUglvYmZ1c2NhdGU=');
+    'ZpZy5WUE5Qcm90b2NvbFILdnBuUHJvdG9jb2wSKQoQbG9nX3Nhbml0aXphdGlvbhgWIAEoCFIP'
+    'bG9nU2FuaXRpemF0aW9uSgQIARACSgQIDBANSgQIDxAQSgQIEBARUgp0ZWNobm9sb2d5Ughwcm'
+    '90b2NvbFIJb2JmdXNjYXRl');
 
 @$core.Deprecated('Use userSpecificSettingsDescriptor instead')
 const UserSpecificSettings$json = {

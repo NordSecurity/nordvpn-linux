@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
@@ -46,7 +47,7 @@ func (Subscriber) NotifyError(err error) error {
 func (Subscriber) NotifyRequestAPI(data events.DataRequestAPI) error {
 	// do not log attempt events
 	if !data.IsAttempt {
-		log.Infof("HTTP CALL %s", dataRequestAPIToString(data, nil, nil, true))
+		log.Infof("HTTP CALL %s", log.DoNotSanitize(dataRequestAPIToString(data, nil, nil, true)))
 	}
 	return nil
 }
@@ -79,23 +80,33 @@ func (Subscriber) NotifyRequestAPIVerbose(data events.DataRequestAPI) error {
 
 		respBodyBytes, _ = io.ReadAll(io.LimitReader(reader, internal.MaxDecompressedBytesLimit))
 	}
-	log.Infof("HTTP CALL %s", dataRequestAPIToString(data, reqBodyBytes, respBodyBytes, false))
+	log.Infof("HTTP CALL %s", log.DoNotSanitize(
+		dataRequestAPIToString(data,
+			reqBodyBytes,
+			respBodyBytes, false)))
 	return nil
 }
 
 func (s Subscriber) NotifyConnect(data events.DataConnect) error {
+	serverDomainLogLogFunc := func(data events.DataConnect) any {
+		if config.HasSensitiveServerGroup(data.ServerGroups) {
+			return data.TargetServerDomain
+		}
+		return log.DoNotSanitize(data.TargetServerDomain)
+	}
+
 	eventName := "POST_CONNECT"
 	switch data.EventStatus {
 	case events.StatusSuccess:
-		log.Info("connected to", data.TargetServerDomain)
+		log.Info("connected to", serverDomainLogLogFunc(data))
 	case events.StatusFailure:
-		log.Error("failed to connect to", data.TargetServerDomain, ":", data.Error)
+		log.Error("failed to connect to", serverDomainLogLogFunc(data), ":", data.Error)
 	case events.StatusCanceled:
-		log.Info("connection to", data.TargetServerDomain, "was cancelled")
+		log.Info("connection to", serverDomainLogLogFunc(data), "was cancelled")
 	case events.StatusAttempt:
 		eventName = "PRE_CONNECT"
 	}
-	log.Infof("%s system info:\n%s\n%s", eventName, getSystemInfo(), getNetworkInfo())
+	log.Infof("%s system info:\n%s\n%s", eventName, getSystemInfo(), log.DoNotSanitize(getNetworkInfo()))
 	return nil
 }
 
