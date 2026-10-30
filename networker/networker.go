@@ -679,6 +679,9 @@ func (netw *Combined) switchToNextVpn() {
 
 // LastServerName returns last used server hostname
 func (netw *Combined) LastServer() vpn.ServerData {
+	netw.mu.Lock()
+	defer netw.mu.Unlock()
+
 	return netw.lastServer
 }
 
