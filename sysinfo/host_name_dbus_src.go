@@ -41,10 +41,9 @@ func GetHostOSPrettyName() (string, error) {
 	}
 	defer conn.Close()
 
-	client := dbusutil.NewPropertyClient(
+	client := dbusutil.NewObjectClient(
 		conn,
 		"org.freedesktop.hostname1",
-		"/org/freedesktop/hostname1",
 	)
 
 	name, err := dbusutil.GetStringProperty(client, dbusHostname1PropOperatingSystemPrettyName)

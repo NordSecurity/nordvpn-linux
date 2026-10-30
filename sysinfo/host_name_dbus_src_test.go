@@ -6,75 +6,51 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/sysinfo/dbusutil"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	dbusutil_mock "github.com/NordSecurity/nordvpn-linux/test/mock/sysinfo/dbusutil"
 	"github.com/godbus/dbus/v5"
 	"github.com/stretchr/testify/assert"
 )
-
-type mockDBusPropertyClient struct {
-	props map[string]dbus.Variant
-	err   error
-}
-
-func (m *mockDBusPropertyClient) GetProperty(name string) (dbus.Variant, error) {
-	if m.err != nil {
-		return dbus.Variant{}, m.err
-	}
-
-	val, exists := m.props[name]
-	if !exists {
-		return dbus.Variant{}, fmt.Errorf("property %q not found", name)
-	}
-
-	return val, nil
-}
-
-func newMockDBusPropertyClient(props map[string]dbus.Variant, err error) dbusutil.DBusPropertyClient {
-	return &mockDBusPropertyClient{
-		props: props,
-		err:   err,
-	}
-}
 
 func Test_GetPropertyFromDBus(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
 		name      string
-		client    dbusutil.DBusPropertyClient
+		client    dbusutil.DBusObjectClient
 		property  string
 		want      string
 		expectErr bool
 	}{
 		{
 			name:     "Valid Property Retrieval",
-			client:   newMockDBusPropertyClient(map[string]dbus.Variant{"TestProperty": dbus.MakeVariant("test-value")}, nil),
+			client:   dbusutil_mock.NewMockDbusObjectClient(nil, map[string]dbus.Variant{"TestProperty": dbus.MakeVariant("test-value")}, nil),
 			property: "TestProperty",
 			want:     "test-value",
 		},
 		{
 			name:      "Property Not Found",
-			client:    newMockDBusPropertyClient(map[string]dbus.Variant{}, nil),
+			client:    dbusutil_mock.NewMockDbusObjectClient(nil, map[string]dbus.Variant{}, nil),
 			property:  "MissingProperty",
 			want:      "",
 			expectErr: true,
 		},
 		{
 			name:      "DBus Client Error",
-			client:    newMockDBusPropertyClient(nil, fmt.Errorf("DBus failure")),
+			client:    dbusutil_mock.NewMockDbusObjectClient(nil, nil, fmt.Errorf("DBus failure")),
 			property:  "TestProperty",
 			want:      "",
 			expectErr: true,
 		},
 		{
 			name:      "Empty Property Name",
-			client:    newMockDBusPropertyClient(map[string]dbus.Variant{"ValidProperty": dbus.MakeVariant("valid-value")}, nil),
+			client:    dbusutil_mock.NewMockDbusObjectClient(nil, map[string]dbus.Variant{"ValidProperty": dbus.MakeVariant("valid-value")}, nil),
 			property:  "",
 			want:      "",
 			expectErr: true,
 		},
 		{
 			name:      "Different Data Type (int instead of string)",
-			client:    newMockDBusPropertyClient(map[string]dbus.Variant{"NumericProperty": dbus.MakeVariant(42)}, nil),
+			client:    dbusutil_mock.NewMockDbusObjectClient(nil, map[string]dbus.Variant{"NumericProperty": dbus.MakeVariant(42)}, nil),
 			property:  "NumericProperty",
 			want:      "",
 			expectErr: true,
@@ -104,10 +80,9 @@ func Test_GetPropertyFromDBus(t *testing.T) {
 func Test_NewHostname1DBusPropertyClient(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	client := dbusutil.NewPropertyClient(
+	client := dbusutil.NewObjectClient(
 		nil,
 		"org.freedesktop.hostname1",
-		"/org/freedesktop/hostname1",
 	)
 	assert.Nil(t, client, "must be nil")
 }
