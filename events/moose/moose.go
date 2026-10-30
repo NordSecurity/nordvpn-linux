@@ -381,87 +381,58 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 		log.Moose.Warnf("failed to flush changes before setting analytics opt in: %w", err)
 	}
 
+	if err := setUserConsentLevelIntoContext(s, consent); err != nil {
+		return fmt.Errorf("setting user consent level during Init: %w", err)
+	}
+
+	if err := s.InitContext(cfg); err != nil {
+		log.Moose.Error("failed to set some context attributes during Init:", err)
+	}
+
+	return nil
+}
+
+func (s *Subscriber) InitContext(cfg config.Config) error {
+	var errs []error
+
+	add := func(step string, err error) {
+		if err != nil {
+			errs = append(errs, fmt.Errorf("%s, %w", step, err))
+		}
+	}
+
+	set := func(step string, code uint32) {
+		add(step, s.response(code))
+	}
+
 	applicationName := "linux-app"
 	if snapconf.IsUnderSnap() {
 		applicationName = "linux-app-snap"
 	}
 
-	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappName(applicationName)); err != nil {
-		return fmt.Errorf("setting application name: %w", err)
+	if distroVersion, err := sysinfo.GetHostOSPrettyName(); err != nil {
+		add("determining device os pretty-name", err)
+	} else {
+		set("setting device os", moose.NordvpnappSetContextDeviceOs(distroVersion))
 	}
 
-	if err := setUserConsentLevelIntoContext(s, consent); err != nil {
-		return fmt.Errorf("setting user consent level during Init: %w", err)
-	}
+	set("setting application name", moose.NordvpnappSetContextApplicationNordvpnappName(applicationName))
+	set("setting application version", moose.NordvpnappSetContextApplicationNordvpnappVersion(s.buildTarget.Version))
+	set("setting time zone", moose.NordvpnappSetContextDeviceTimeZone(internal.Timezone()))
+	set("setting device fingerprint", moose.NordvpnappSetContextDeviceFp(s.deviceID))
+	set("setting device type", moose.NordvpnappSetContextDeviceType(deviceTypeToInternalType(sysinfo.GetDeviceType())))
+	set("setting is on vpn", s.mooseFuncs.setIsOnVpnCurrentState(false))
+	set("setting is logged in", s.mooseFuncs.setIsLoggedInCurrentState(auth.IsAuthenticated(&cfg)))
+	set("unsetting initial server group", s.mooseFuncs.unsetServerGroupCurrentState())
+	add("setting firewall", s.NotifyFirewall(true))
+	add("setting vpn protocol", s.initVPNProtocol(cfg))
+	set("setting device architecture", moose.NordvpnappSetContextDeviceCpuArchitecture(s.buildTarget.Architecture))
+	add("setting token renew date", s.handleTokenRenewDateChange(nil, &cfg))
+	set("setting real time protection user preferences", s.mooseFuncs.setRTPUserPreference(cfg.AutoConnectData.RealTimeProtection))
+	add("reporting auto-connect target", s.reportAutoConnectTarget(cfg.AutoConnectData))
+	set("cleaning up virtual server location", moose.NordvpnappUnsetContextApplicationNordvpnappConfigUserPreferencesVirtualServerEnabledValue())
 
-	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappVersion(s.buildTarget.Version)); err != nil {
-		return fmt.Errorf("setting application version: %w", err)
-	}
-
-	if err := s.response(moose.NordvpnappSetContextDeviceTimeZone(internal.Timezone())); err != nil {
-		return fmt.Errorf("setting moose time zone: %w", err)
-	}
-
-	distroVersion, err := sysinfo.GetHostOSPrettyName()
-	if err != nil {
-		return fmt.Errorf("determining device os 'pretty-name'")
-	}
-	if err := s.response(moose.NordvpnappSetContextDeviceOs(distroVersion)); err != nil {
-		return fmt.Errorf("setting moose device os: %w", err)
-	}
-	if err := s.response(moose.NordvpnappSetContextDeviceFp(s.deviceID)); err != nil {
-		return fmt.Errorf("setting moose device: %w", err)
-	}
-
-	dt := deviceTypeToInternalType(sysinfo.GetDeviceType())
-	if err := s.response(moose.NordvpnappSetContextDeviceType(dt)); err != nil {
-		return fmt.Errorf("setting moose device type: %w", err)
-	}
-
-	if err := s.response(s.mooseFuncs.setIsOnVpnCurrentState(false)); err != nil {
-		return fmt.Errorf("setting moose is on vpn: %w", err)
-	}
-
-	if err := s.response(s.mooseFuncs.setIsLoggedInCurrentState(auth.IsAuthenticated(&cfg))); err != nil {
-		return fmt.Errorf("setting moose is logged in: %w", err)
-	}
-
-	if err := s.response(s.mooseFuncs.unsetServerGroupCurrentState()); err != nil {
-		return fmt.Errorf("unsetting initial server group: %w", err)
-	}
-
-	if err := s.NotifyFirewall(true); err != nil {
-		return fmt.Errorf("setting moose firewall: %w", err)
-	}
-
-	if err := s.initVPNProtocol(cfg); err != nil {
-		return err
-	}
-
-	if err := s.response(moose.NordvpnappSetContextDeviceCpuArchitecture(s.buildTarget.Architecture)); err != nil {
-		return fmt.Errorf("setting device architecture: %w", err)
-	}
-
-	if err := s.handleTokenRenewDateChange(nil, &cfg); err != nil {
-		log.Moose.Warn("failed to restore token renew date:", err)
-	}
-
-	if err := s.response(s.mooseFuncs.setRTPUserPreference(cfg.AutoConnectData.RealTimeProtection)); err != nil {
-		return fmt.Errorf("setting real time protection in user preferences: %w", err)
-	}
-
-	// Report the configured auto-connect target at startup / on consent so the
-	// attributes are present even before the user changes auto-connect.
-	if err := s.reportAutoConnectTarget(cfg.AutoConnectData); err != nil {
-		log.Moose.Warn("failed to report auto-connect target during Init:", err)
-	}
-
-	// This is just a cleanup and needs to be removed in the near future
-	if err := s.response(moose.NordvpnappUnsetContextApplicationNordvpnappConfigUserPreferencesVirtualServerEnabledValue()); err != nil {
-		log.Moose.Warn("failed to cleanup virtual server location from context: %w", err)
-	}
-
-	return nil
+	return errors.Join(errs...)
 }
 
 func (s *Subscriber) Stop() error {

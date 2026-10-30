@@ -18,7 +18,6 @@ type AccessTokenResponse struct {
 	Token      string
 	RenewToken string
 	ExpiresAt  string
-	UpdatedAt  string
 }
 
 // AccessTokenRenewalAPICall is a function type for renewing access tokens
@@ -210,12 +209,14 @@ func (s *AccessTokenSessionStore) renewToken(
 		return fmt.Errorf("parsing expiry time: %w", err)
 	}
 
+	renewDate := time.Now().UTC().Format(internal.ServerDateFormat)
+
 	err = s.cfgManager.SaveWith(func(c config.Config) config.Config {
 		data := c.TokensData[uid]
 		data.Token = resp.Token
 		data.RenewToken = resp.RenewToken
 		data.TokenExpiry = expTime.Format(internal.ServerDateFormat)
-		data.TokenRenewDate = resp.UpdatedAt
+		data.TokenRenewDate = renewDate
 		c.TokensData[uid] = data
 		return c
 	})

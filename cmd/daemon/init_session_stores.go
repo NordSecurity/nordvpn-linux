@@ -235,7 +235,6 @@ func renewAccessToken(api core.RawClientAPI) session.AccessTokenRenewalAPICall {
 			Token:      resp.Token,
 			RenewToken: resp.RenewToken,
 			ExpiresAt:  resp.ExpiresAt,
-			UpdatedAt:  resp.UpdatedAt,
 		}, nil
 	}
 }
