@@ -102,6 +102,12 @@ class Translations$a11y$en {
 
 	/// en: 'Link $name'
 	String link({required Object name}) => 'Link ${name}';
+
+	/// en: 'Selected'
+	String get selected => 'Selected';
+
+	/// en: 'Not selected'
+	String get notSelected => 'Not selected';
 }
 
 // Path: cities
@@ -2243,6 +2249,8 @@ extension on Translations {
 			'a11y.clear' => 'Clear',
 			'a11y.popupWithContent' => ({required Object title, required Object message}) => '${title}. ${message}',
 			'a11y.link' => ({required Object name}) => 'Link ${name}',
+			'a11y.selected' => 'Selected',
+			'a11y.notSelected' => 'Not selected',
 			'cities.tirana' => 'Tirana',
 			'cities.algiers' => 'Algiers',
 			'cities.addis_ababa' => 'Addis Ababa',
@@ -2737,10 +2745,10 @@ extension on Translations {
 			'ui.routing' => 'Routing',
 			'ui.connectToVpn' => 'Connect to VPN',
 			'ui.connecting' => 'Connecting',
-			'ui.findingServer' => 'Finding server...',
-			'ui.noResultsFound' => 'No results found. Try another keyword.',
 			_ => null,
 		} ?? switch (path) {
+			'ui.findingServer' => 'Finding server...',
+			'ui.noResultsFound' => 'No results found. Try another keyword.',
 			'ui.searchServersHint' => 'Search countries, cities, or servers',
 			'ui.citiesAvailable' => ({required Object n}) => '${n} cities available',
 			'ui.dedicatedIp' => 'Dedicated IP',
