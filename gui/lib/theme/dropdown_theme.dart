@@ -15,6 +15,8 @@ final class DropdownTheme extends ThemeExtension<DropdownTheme>
   final Color errorBorderColor;
   final double borderWidth;
   final double horizontalPadding;
+  final ButtonStyle itemStyle;
+  final MenuStyle menuStyle;
 
   DropdownTheme({
     required this.color,
@@ -24,5 +26,7 @@ final class DropdownTheme extends ThemeExtension<DropdownTheme>
     required this.errorBorderColor,
     required this.borderWidth,
     required this.horizontalPadding,
+    required this.itemStyle,
+    required this.menuStyle,
   });
 }

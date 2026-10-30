@@ -9,6 +9,7 @@ final class Dropdown<T> extends StatefulWidget {
   final void Function(T value) onChanged;
   final bool enabled;
   final bool showError;
+  final String? announcementLabel;
 
   const Dropdown({
     super.key,
@@ -17,6 +18,7 @@ final class Dropdown<T> extends StatefulWidget {
     required this.onChanged,
     this.enabled = true,
     this.showError = false,
+    this.announcementLabel,
   });
 
   @override
@@ -28,6 +30,7 @@ class _DropdownState<T> extends State<Dropdown<T>> {
   late T _value;
   // FocusNode to track focus state for dropdown
   final FocusNode _focusNode = FocusNode();
+  final MenuController _menuController = MenuController();
   bool _isFocused = false;
 
   @override
@@ -55,53 +58,116 @@ class _DropdownState<T> extends State<Dropdown<T>> {
     final dropdownTheme = context.dropdownTheme;
     final appTheme = context.appTheme;
 
+    return LayoutBuilder(
+      builder: (context, constraints) => MenuAnchor(
+        controller: _menuController,
+        childFocusNode: _focusNode,
+        crossAxisUnconstrained: false,
+        onOpen: () => setState(() {}),
+        onClose: () => setState(() {}),
+        style: dropdownTheme.menuStyle.copyWith(
+          minimumSize: WidgetStatePropertyAll(
+            Size(constraints.hasBoundedWidth ? constraints.maxWidth : 0, 0),
+          ),
+        ),
+        menuChildren: _buildMenuItems(dropdownTheme, appTheme),
+        child: _buildTrigger(dropdownTheme, appTheme),
+      ),
+    );
+  }
+
+  List<Widget> _buildMenuItems(DropdownTheme dropdownTheme, AppTheme appTheme) {
+    return widget.items.map((e) {
+      return MenuItemButton(
+        autofocus: e.value == _value,
+        onPressed: () => _onChanged(e.value),
+        style: dropdownTheme.itemStyle,
+        child: Text(
+          e.label,
+          semanticsLabel: _semanticsLabel(e),
+          style: appTheme.body,
+          maxLines: 1,
+        ),
+      );
+    }).toList();
+  }
+
+  Widget _buildTrigger(DropdownTheme dropdownTheme, AppTheme appTheme) {
+    final borderRadius = BorderRadius.circular(dropdownTheme.borderRadius);
+    final selected = widget.items.where((e) => e.value == _value).firstOrNull;
+
     return DecoratedBox(
       decoration: BoxDecoration(
         color: dropdownTheme.color,
         border: Border.all(
-          color: widget.showError
-              ? dropdownTheme.errorBorderColor
-              : _isFocused
-              ? dropdownTheme.focusBorderColor
-              : dropdownTheme.borderColor,
+          color: _borderColor(dropdownTheme),
           width: dropdownTheme.borderWidth,
         ),
-        borderRadius: BorderRadius.circular(dropdownTheme.borderRadius),
+        borderRadius: borderRadius,
       ),
-      child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: dropdownTheme.horizontalPadding,
-        ),
-        child: DropdownButton<T>(
-          key: ValueKey(_value),
+      child: Semantics(
+        button: true,
+        enabled: widget.enabled,
+        expanded: _menuController.isOpen,
+        label: _semanticsLabel(selected),
+        child: InkWell(
           focusNode: _focusNode,
-          dropdownColor: dropdownTheme.color,
+          onTap: widget.enabled ? _toggleMenu : null,
           focusColor: dropdownTheme.focusBorderColor,
-          borderRadius: BorderRadius.circular(dropdownTheme.borderRadius),
-          underline: SizedBox(),
-          isExpanded: true,
-          icon: DynamicThemeImage("dropdown_icon.svg"),
-          value: _value,
-          items: widget.items.map((e) {
-            return DropdownMenuItem<T>(
-              value: e.value,
-              child: Text(e.label, style: appTheme.body, maxLines: 1),
-            );
-          }).toList(),
-          onChanged: widget.enabled ? _onChanged : null,
+          borderRadius: borderRadius,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              minHeight: kMinInteractiveDimension,
+            ),
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: dropdownTheme.horizontalPadding,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: ExcludeSemantics(
+                      child: Text(
+                        selected?.label ?? "",
+                        style: appTheme.body,
+                        maxLines: 1,
+                      ),
+                    ),
+                  ),
+                  DynamicThemeImage("dropdown_icon.svg"),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
 
-  void _onChanged(T? value) {
-    assert(value != null, "dropdown values cannot be null");
-    if (value != null) {
-      widget.onChanged(value);
-      setState(() {
-        _value = value;
-      });
+  String _semanticsLabel(DropdownItem<T>? selected) {
+    final value = selected?.label ?? "";
+    return widget.announcementLabel == null
+        ? value
+        : "${widget.announcementLabel} $value";
+  }
+
+  Color _borderColor(DropdownTheme dropdownTheme) {
+    if (widget.showError) return dropdownTheme.errorBorderColor;
+    if (_isFocused) return dropdownTheme.focusBorderColor;
+    return dropdownTheme.borderColor;
+  }
+
+  void _toggleMenu() {
+    if (_menuController.isOpen) {
+      _menuController.close();
+    } else {
+      _menuController.open();
     }
+  }
+
+  void _onChanged(T value) {
+    widget.onChanged(value);
+    setState(() => _value = value);
   }
 }
 
