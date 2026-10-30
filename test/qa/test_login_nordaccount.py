@@ -1,5 +1,4 @@
 import pytest
-import sh
 
 import lib
 from lib import (
@@ -9,6 +8,7 @@ from lib import (
     login,
     selenium,
 )
+from lib.shell import sh_no_tty
 
 
 def setup_function(function):  # noqa: ARG001
@@ -21,7 +21,7 @@ def teardown_function(function):  # noqa: ARG001
     logging.log(data=info.collect())
     logging.log()
 
-    sh.nordvpn.set.defaults("--logout", "--off-killswitch")
+    sh_no_tty.nordvpn.set.defaults("--logout", "--off-killswitch")
     daemon.stop()
 
 
@@ -40,7 +40,7 @@ def test_selenium_login():
 
     with lib.Defer(sel.browser_kill):
         # Get login link from NordVPN app, trim all spaces & chars after link itself
-        login_link = sh.nordvpn.login(_tty_out=False).strip().split(": ")[1]
+        login_link = sh_no_tty.nordvpn.login(_tty_out=False).strip().split(": ")[1]
         print(f"Login link: {login_link}\n")
 
         # Open login link from NordVPN app
@@ -63,9 +63,9 @@ def test_selenium_login():
             browser.save_screenshot(selenium.BROWSER_LOGS_PATH + "Screenshot.png")
             pytest.fail()
 
-        assert credentials.email in sh.nordvpn.account()
+        assert credentials.email in sh_no_tty.nordvpn.account()
 
-        output = sh.nordvpn.logout(_tty_out=False)
+        output = sh_no_tty.nordvpn.logout(_tty_out=False)
         print(f"Logout action output: {output}\n")
         assert selenium.LOGOUT_MSG_SUCCESS in output, "Logout should show success message"
 
@@ -77,9 +77,9 @@ def test_selenium_login_callback():
     browser = sel.browser_get()
 
     with lib.Defer(sel.browser_kill):
-        sh.nordvpn.set.analytics("on")
+        sh_no_tty.nordvpn.set.analytics("on")
         # Get login link from NordVPN app, trim all spaces & chars after link itself
-        login_link = sh.nordvpn.login(_tty_out=False).strip().split(": ")[1]
+        login_link = sh_no_tty.nordvpn.login(_tty_out=False).strip().split(": ")[1]
         print(f"Login link: {login_link}\n")
 
         # Open login link from NordVPN app
@@ -104,7 +104,7 @@ def test_selenium_login_callback():
             browser.save_screenshot(selenium.BROWSER_LOGS_PATH + "Screenshot.png")
             pytest.fail()
 
-        output = sh.nordvpn.login("--callback", callback_link, _tty_out=False)
+        output = sh_no_tty.nordvpn.login("--callback", callback_link, _tty_out=False)
         print(f"Callback login action output: {output}\n")
         assert selenium.LOGIN_MSG_SUCCESS in output, "Login via callback should show success message"
-        assert credentials.email in sh.nordvpn.account()
+        assert credentials.email in sh_no_tty.nordvpn.account()

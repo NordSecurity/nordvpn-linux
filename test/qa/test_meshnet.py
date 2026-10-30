@@ -277,7 +277,7 @@ def test_direct_connection_rtt_and_loss():
             pass
 
         # RTT & loss
-        ping_output = sh.ping("-c", "20", peer_hostname)
+        ping_output = sh_no_tty.ping("-c", "20", peer_hostname)
         assert get_average_rtt(ping_output) <= meshnet.TELIO_EXPECTED_RTT, "Average RTT should be within expected threshold"
         assert get_loss(ping_output) <= meshnet.TELIO_EXPECTED_PACKET_LOSS, "Packet loss should be within expected threshold"
 
@@ -320,9 +320,9 @@ def test_login_mesh_on_set_defaults_mesh_on_sequence():
     assert "Account information" in sh_no_tty.nordvpn.account(), "Should show account information"
 
     with pytest.raises(sh.ErrorReturnCode_1):
-        sh.nordvpn.mesh.peer.list()
+        sh_no_tty.nordvpn.mesh.peer.list()
 
-    assert "nordlynx" not in sh.ip.a()
+    assert "nordlynx" not in sh_no_tty.ip.a()
 
     assert "Meshnet is set to 'enabled' successfully." in sh_no_tty.nordvpn.set.meshnet.on(), "Should show meshnet enabled message"
 

@@ -1,5 +1,3 @@
-import sh
-
 import pytest
 import lib
 from lib import (
@@ -7,7 +5,7 @@ from lib import (
     logging,
     network,
 )
-
+from lib.shell import sh_no_tty
 
 pytestmark = pytest.mark.usefixtures("nordvpnd_scope_module", "collect_logs")
 
@@ -16,54 +14,54 @@ pytestmark = pytest.mark.usefixtures("nordvpnd_scope_module", "collect_logs")
 # Issue: 491
 def test_default_gateway_is_detected():
     # Create bridge interface
-    sh.sudo.ip.link.add.br0.type.bridge()
+    sh_no_tty.sudo.ip.link.add.br0.type.bridge()
 
     # Get IP address and interface name of your current default gateway
-    output = sh.ip.route.show("default")
+    output = sh_no_tty.ip.route.show("default")
     _, _, ip_addr, _, iface = output.split(None, 5)
     logging.log(ip_addr)
     logging.log(iface)
 
     # Add IP address to a bridge interface, but make sure that the IP is in the same network as default gateway's IP
-    sh.sudo.ip.addr.add.dev.br0(ip_addr)
+    sh_no_tty.sudo.ip.addr.add.dev.br0(ip_addr)
 
     # Up the bridge interface
-    sh.sudo.ip.link.set.br0.up()
+    sh_no_tty.sudo.ip.link.set.br0.up()
 
     # Add current default gateway to bridge
-    sh.sudo.ip.link.set(iface, "master", "br0")
+    sh_no_tty.sudo.ip.link.set(iface, "master", "br0")
 
     # Set bridge as default gateway
-    sh.sudo.ip.route.change.default.dev.br0()
+    sh_no_tty.sudo.ip.route.change.default.dev.br0()
 
-    output = sh.bridge.link()
+    output = sh_no_tty.bridge.link()
     logging.log(output)
 
     # Commands to undo the previous work and return the routing tables to their original state
     # Remove the interface from the bridge
-    remove_iface = sh.sudo.bake("ip", "link", "set", iface, "nomaster")
+    remove_iface = sh_no_tty.sudo.bake("ip", "link", "set", iface, "nomaster")
     # Down the interface
-    down_iface = sh.sudo.bake("ip", "link", "set", iface, "down")
+    down_iface = sh_no_tty.sudo.bake("ip", "link", "set", iface, "down")
     # Delete the bridge
-    remove_br = sh.sudo.bake("ip", "link", "delete", "br0", "type", "bridge")
+    remove_br = sh_no_tty.sudo.bake("ip", "link", "delete", "br0", "type", "bridge")
     # Up the interface
-    up_iface = sh.sudo.bake("ip", "link", "set", iface, "up")
+    up_iface = sh_no_tty.sudo.bake("ip", "link", "set", iface, "up")
     # Add the original default gateway
-    add_dg = sh.sudo.bake("ip", "route", "add", "default", "via", ip_addr, "dev", iface)
+    add_dg = sh_no_tty.sudo.bake("ip", "route", "add", "default", "via", ip_addr, "dev", iface)
 
     with lib.ErrorDefer(add_dg):
         with lib.ErrorDefer(up_iface):
             with lib.ErrorDefer(remove_br):
                 with lib.ErrorDefer(down_iface):
                     with lib.ErrorDefer(remove_iface):
-                        print(sh.ip.route())
+                        print(sh_no_tty.ip.route())
                         # Connect to VPN
-                        output = sh.nordvpn.connect(_tty_out=False)
+                        output = sh_no_tty.nordvpn.connect(_tty_out=False)
                         print(output)
                         assert lib.is_connect_successful(output), "Connection should be successful"
                         assert network.is_connected(), "Network should be connected"
 
-                        output = sh.nordvpn.disconnect()
+                        output = sh_no_tty.nordvpn.disconnect()
                         print(output)
                         assert lib.is_disconnect_successful(output), "Disconnect should be successful"
                         assert daemon.is_disconnected(), "Daemon should be disconnected"

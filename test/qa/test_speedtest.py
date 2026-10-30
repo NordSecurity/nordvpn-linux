@@ -4,10 +4,10 @@ from datetime import datetime
 from statistics import median
 
 import pytest
-import sh
 
 import lib
 from lib import network
+from lib.shell import sh_no_tty
 
 pytestmark = pytest.mark.usefixtures("nordvpnd_scope_function")
 
@@ -54,7 +54,7 @@ def _write_results(path: str, results: dict):
 
 def _measure_ping() -> float:
     """Measure ICMP ping to Cloudflare DNS, return average latency in ms."""
-    output = sh.ping("-c", str(PING_COUNT), "-q", PING_HOST, _timeout=15)
+    output = sh_no_tty.ping("-c", str(PING_COUNT), "-q", PING_HOST, _timeout=15)
     # parse "rtt min/avg/max/mdev = 1.234/5.678/9.012/1.234 ms"
     for line in str(output).splitlines():
         if "avg" in line:
@@ -68,7 +68,7 @@ def _measure_download() -> float:
     """Download test file from Cloudflare, return median speed in Mbps."""
     results = []
     for _ in range(SPEED_TEST_RUNS):
-        output = sh.curl(
+        output = sh_no_tty.curl(
             "-o", "/dev/null",
             "-s", "-w", "%{speed_download}",
             CLOUDFLARE_DOWN_URL,
@@ -82,7 +82,7 @@ def _measure_download() -> float:
 
 def _measure_upload() -> float:
     """Generate temp file and upload to Cloudflare, return median speed in Mbps."""
-    sh.dd(
+    sh_no_tty.dd(
         "if=/dev/zero",
         f"of={UPLOAD_FILE}",
         "bs=1M",
@@ -92,7 +92,7 @@ def _measure_upload() -> float:
 
     results = []
     for _ in range(SPEED_TEST_RUNS):
-        output = sh.curl(
+        output = sh_no_tty.curl(
             "-X", "POST",
             "-o", "/dev/null",
             "-s", "-w", "%{speed_upload}",
@@ -141,8 +141,8 @@ def test_speed_thresholds(speedtest_results_path):
     vpn_protocol = "nordlynx"
     lib.set_vpn_protocol(vpn_protocol)
 
-    with lib.Defer(sh.nordvpn.disconnect):
-        sh.nordvpn.connect()
+    with lib.Defer(sh_no_tty.nordvpn.disconnect):
+        sh_no_tty.nordvpn.connect()
 
         assert network.is_available(), "Network should be available when connected"
 
@@ -189,8 +189,8 @@ def test_speed_degradation(speedtest_results_path):
     vpn_protocol = "nordlynx"
     lib.set_vpn_protocol(vpn_protocol)
 
-    with lib.Defer(sh.nordvpn.disconnect):
-        sh.nordvpn.connect()
+    with lib.Defer(sh_no_tty.nordvpn.disconnect):
+        sh_no_tty.nordvpn.connect()
 
         assert network.is_available(), "Network should be available when connected"
 

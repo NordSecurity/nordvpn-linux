@@ -6,6 +6,7 @@ import sh
 import lib
 from lib import allowlist, firewall
 from lib.dynamic_parametrize import dynamic_parametrize
+from lib.shell import sh_no_tty
 
 pytestmark = pytest.mark.usefixtures("add_and_delete_random_route", "nordvpnd_scope_function")
 
@@ -48,13 +49,13 @@ def test_allowlist_does_not_create_new_routes_when_adding_deleting_port_disconne
     """Manual TC: LVPN-8956"""
 
     lib.set_vpn_protocol(vpn_protocol)
-    output_before_add = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
+    output_before_add = sh_no_tty.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     allowlist.add_ports_to_allowlist([port])
     assert not firewall.is_active(), "Firewall is not configured"
-    output_after_add = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
+    output_after_add = sh_no_tty.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     allowlist.remove_ports_from_allowlist([port])
     assert not firewall.is_active(), "Firewall is not configured"
-    output_after_delete = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
+    output_after_delete = sh_no_tty.ip.route.show.table(firewall.IP_ROUTE_TABLE)
 
     assert output_before_add == output_after_add, "Route table should not change after adding port"
     assert output_after_add == output_after_delete, "Route table should not change after removing port"
@@ -74,16 +75,16 @@ def test_allowlist_does_not_create_new_routes_when_adding_deleting_port_connecte
     """Manual TC: LVPN-8957"""
     lib.set_vpn_protocol(vpn_protocol)
 
-    sh.nordvpn.connect()
+    sh_no_tty.nordvpn.connect()
 
-    output_before_add = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
+    output_before_add = sh_no_tty.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     allowlist.add_ports_to_allowlist([port])
     assert firewall.is_source_port_reachable([port]), "Whitelisted port is sending traffic outside of the tunnel"
-    output_after_add = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
+    output_after_add = sh_no_tty.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     allowlist.remove_ports_from_allowlist([port])
     assert not firewall.is_source_port_reachable([port]), "Port is sending traffic thru the tunnel"
 
-    output_after_delete = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
+    output_after_delete = sh_no_tty.ip.route.show.table(firewall.IP_ROUTE_TABLE)
 
     assert output_before_add == output_after_add, "Route table should not change after adding port"
     assert output_after_add == output_after_delete, "Route table should not change after removing port"
@@ -108,13 +109,13 @@ def test_allowlist_port_twice_disconnected(vpn_protocol, port):
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         if port.protocol == lib.Protocol.ALL:
-            sh.nordvpn("allowlist", "add", "port", port.value)
+            sh_no_tty.nordvpn("allowlist", "add", "port", port.value)
         else:
-            sh.nordvpn("allowlist", "add", "port", port.value, "protocol", port.protocol)
+            sh_no_tty.nordvpn("allowlist", "add", "port", port.value, "protocol", port.protocol)
 
     expected_message = allowlist.MSG_ALLOWLIST_PORT_ADD_ERROR % (port.value, port.protocol)
     assert expected_message in ex.value.stdout.decode("utf-8"), "Error message should indicate port add failed"
-    assert str(sh.nordvpn.settings()).count(port.value) == 1, "Port should appear once in settings"
+    assert str(sh_no_tty.nordvpn.settings()).count(port.value) == 1, "Port should appear once in settings"
     assert not firewall.is_active() and firewall.is_source_port_reachable([port]), "Firewall is not configured and traffic from port is not blocked"
 
 
@@ -133,23 +134,23 @@ def test_allowlist_port_twice_connected(vpn_protocol, port):
 
     lib.set_vpn_protocol(vpn_protocol)
 
-    sh.nordvpn.connect()
+    sh_no_tty.nordvpn.connect()
     assert not firewall.is_source_port_reachable([port])
 
     allowlist.add_ports_to_allowlist([port])
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         if port.protocol == lib.Protocol.ALL:
-            sh.nordvpn("allowlist", "add", "port", port.value)
+            sh_no_tty.nordvpn("allowlist", "add", "port", port.value)
         else:
-            sh.nordvpn("allowlist", "add", "port", port.value, "protocol", port.protocol)
+            sh_no_tty.nordvpn("allowlist", "add", "port", port.value, "protocol", port.protocol)
 
     expected_message = allowlist.MSG_ALLOWLIST_PORT_ADD_ERROR % (port.value, port.protocol)
     assert expected_message in ex.value.stdout.decode("utf-8"), "Error message should indicate port add failed"
-    assert str(sh.nordvpn.settings()).count(port.value) == 1, "Port should appear once in settings"
+    assert str(sh_no_tty.nordvpn.settings()).count(port.value) == 1, "Port should appear once in settings"
     assert firewall.is_active() and firewall.is_source_port_reachable([port]), "Firewall is configured and traffic from the port is reachable"
 
-    sh.nordvpn.disconnect()
+    sh_no_tty.nordvpn.disconnect()
     assert not firewall.is_active() and firewall.is_source_port_reachable([port]), "Firewall is not configured and traffic from the port is reachable"
 
 
@@ -190,7 +191,7 @@ def test_allowlist_port_and_remove_connected(vpn_protocol, port):
 
     lib.set_vpn_protocol(vpn_protocol)
 
-    sh.nordvpn.connect()
+    sh_no_tty.nordvpn.connect()
     assert not firewall.is_source_port_reachable([port])
 
     allowlist.add_ports_to_allowlist([port])
@@ -217,9 +218,9 @@ def test_allowlist_port_remove_nonexistent_disconnected(vpn_protocol, port):
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         if port.protocol == lib.Protocol.ALL:
-            sh.nordvpn("allowlist", "remove", "port", port.value)
+            sh_no_tty.nordvpn("allowlist", "remove", "port", port.value)
         else:
-            sh.nordvpn("allowlist", "remove", "port", port.value, "protocol", port.protocol)
+            sh_no_tty.nordvpn("allowlist", "remove", "port", port.value, "protocol", port.protocol)
 
     expected_message = allowlist.MSG_ALLOWLIST_PORT_REMOVE_ERROR % (port.value, port.protocol)
     assert expected_message in ex.value.stdout.decode("utf-8"), "Error message should indicate port remove failed"
@@ -240,13 +241,13 @@ def test_allowlist_port_remove_nonexistent_connected(vpn_protocol, port):
 
     lib.set_vpn_protocol(vpn_protocol)
 
-    sh.nordvpn.connect()
+    sh_no_tty.nordvpn.connect()
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         if port.protocol == lib.Protocol.ALL:
-            sh.nordvpn("allowlist", "remove", "port", port.value)
+            sh_no_tty.nordvpn("allowlist", "remove", "port", port.value)
         else:
-            sh.nordvpn("allowlist", "remove", "port", port.value, "protocol", port.protocol)
+            sh_no_tty.nordvpn("allowlist", "remove", "port", port.value, "protocol", port.protocol)
 
     expected_message = allowlist.MSG_ALLOWLIST_PORT_REMOVE_ERROR % (port.value, port.protocol)
     assert expected_message in ex.value.stdout.decode("utf-8"), "Error message should indicate port remove failed"
@@ -271,9 +272,9 @@ def test_allowlist_port_range_remove_nonexistent_disconnected(vpn_protocol, port
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         if port.protocol == lib.Protocol.ALL:
-            sh.nordvpn("allowlist", "remove", "ports", port_range[0], port_range[1])
+            sh_no_tty.nordvpn("allowlist", "remove", "ports", port_range[0], port_range[1])
         else:
-            sh.nordvpn("allowlist", "remove", "ports", port_range[0], port_range[1], "protocol", port.protocol)
+            sh_no_tty.nordvpn("allowlist", "remove", "ports", port_range[0], port_range[1], "protocol", port.protocol)
 
     expected_message = allowlist.MSG_ALLOWLIST_PORT_RANGE_REMOVE_ERROR % (port.value.replace(":", " - "), port.protocol)
     assert expected_message in ex.value.stdout.decode("utf-8"), "Error message should indicate port range remove failed"
@@ -296,13 +297,13 @@ def test_allowlist_port_range_remove_nonexistent_connected(vpn_protocol, port):
 
     lib.set_vpn_protocol(vpn_protocol)
 
-    sh.nordvpn.connect()
+    sh_no_tty.nordvpn.connect()
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         if port.protocol == lib.Protocol.ALL:
-            sh.nordvpn("allowlist", "remove", "ports", port_range[0], port_range[1])
+            sh_no_tty.nordvpn("allowlist", "remove", "ports", port_range[0], port_range[1])
         else:
-            sh.nordvpn("allowlist", "remove", "ports", port_range[0], port_range[1], "protocol", port.protocol)
+            sh_no_tty.nordvpn("allowlist", "remove", "ports", port_range[0], port_range[1], "protocol", port.protocol)
 
     expected_message = allowlist.MSG_ALLOWLIST_PORT_RANGE_REMOVE_ERROR % (port.value.replace(":", " - "), port.protocol)
     assert expected_message in ex.value.stdout.decode("utf-8"), "Error message should indicate port range remove failed"
@@ -344,7 +345,7 @@ def test_allowlist_port_range_twice_connected(vpn_protocol, port):
 
     lib.set_vpn_protocol(vpn_protocol)
 
-    sh.nordvpn.connect()
+    sh_no_tty.nordvpn.connect()
 
     for _ in range(2):
         allowlist.add_ports_to_allowlist([port])
@@ -396,7 +397,7 @@ def test_allowlist_port_range_when_port_from_range_already_allowlisted_connected
 
     lib.set_vpn_protocol(vpn_protocol)
 
-    sh.nordvpn.connect()
+    sh_no_tty.nordvpn.connect()
 
     already_allowlisted_port = lib.Port(random_port_from_port_range, port.protocol)
     allowlist.add_ports_to_allowlist([already_allowlisted_port])

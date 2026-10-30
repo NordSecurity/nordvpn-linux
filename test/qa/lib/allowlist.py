@@ -1,4 +1,4 @@
-import sh
+from .shell import sh_no_tty
 
 from . import Port, Protocol, daemon
 from lib import settings
@@ -47,10 +47,10 @@ def add_ports_to_allowlist(ports_list: list[Port]):
             port_value = port.value
             expected_message = MSG_ALLOWLIST_PORT_ADD_SUCCESS % (port_value, port.protocol)
 
-        cmd_message = sh.nordvpn("allowlist", "add", cmd)
+        cmd_message = sh_no_tty.nordvpn("allowlist", "add", cmd)
         print(cmd_message)
 
-        assert sh.nordvpn.settings().count(f" {port_value} ({str(port.protocol)})") == 1, \
+        assert sh_no_tty.nordvpn.settings().count(f" {port_value} ({str(port.protocol)})") == 1, \
             "Port(range) not found or found more than once in `nordvpn settings`"
 
         assert cmd_message is not None and expected_message in cmd_message, \
@@ -78,10 +78,10 @@ def remove_ports_from_allowlist(ports_list: list[Port]):
             port_value = port.value
             expected_message = MSG_ALLOWLIST_PORT_REMOVE_SUCCESS % (port_value, port.protocol)
 
-        cmd_message = sh.nordvpn("allowlist", "remove", cmd)
+        cmd_message = sh_no_tty.nordvpn("allowlist", "remove", cmd)
         print(cmd_message)
 
-        assert sh.nordvpn.settings().count(f" {port_value} ({str(port.protocol)})") == 0, \
+        assert sh_no_tty.nordvpn.settings().count(f" {port_value} ({str(port.protocol)})") == 0, \
             "Port(range) found in `nordvpn settings`"
 
         assert cmd_message is not None and expected_message in cmd_message, \
@@ -90,13 +90,13 @@ def remove_ports_from_allowlist(ports_list: list[Port]):
 
 def add_subnet_to_allowlist(subnet_list: list[str]):
     for subnet in subnet_list:
-        cmd_message = sh.nordvpn("allowlist", "add", "subnet", subnet)
+        cmd_message = sh_no_tty.nordvpn("allowlist", "add", "subnet", subnet)
         expected_message = MSG_ALLOWLIST_SUBNET_ADD_SUCCESS % subnet
 
         assert expected_message in cmd_message, \
             f"Wrong allowlist message.\nExpected: {expected_message}\nGot: {cmd_message}"
 
-        assert sh.nordvpn.settings().count(subnet) == 1, \
+        assert sh_no_tty.nordvpn.settings().count(subnet) == 1, \
             "Subnet not found or found more than once in `nordvpn settings`"
 
         # If subnet /32 whitelisted, only IP Address is visible in `ip route`
@@ -104,34 +104,34 @@ def add_subnet_to_allowlist(subnet_list: list[str]):
             subnet = subnet.replace("/32", "")  # noqa: PLW2901
 
         if daemon.is_connected():
-            iprules = sh.ip.rule.show()
+            iprules = sh_no_tty.ip.rule.show()
             assert subnet in iprules, f"Subnet {subnet} not found in `ip rule show`"
 
 
 def remove_subnet_from_allowlist(subnet_list: list[str]):
     for subnet in subnet_list:
-        cmd_message = sh.nordvpn("allowlist", "remove", "subnet", subnet)
+        cmd_message = sh_no_tty.nordvpn("allowlist", "remove", "subnet", subnet)
         expected_message = MSG_ALLOWLIST_SUBNET_REMOVE_SUCCESS % subnet
 
         assert expected_message in cmd_message, \
             f"Wrong allowlist message.\nExpected: {expected_message}\nGot: {cmd_message}"
 
-        assert sh.nordvpn.settings().count(subnet) == 0, \
+        assert sh_no_tty.nordvpn.settings().count(subnet) == 0, \
             "Subnet found in `nordvpn settings`"
 
         # If subnet /32 whitelisted, only IP Address is visible in `ip route`
         if "/32" in subnet:
             subnet = subnet.replace("/32", "")  # noqa: PLW2901
 
-        iprules = sh.ip.rule.show()
+        iprules = sh_no_tty.ip.rule.show()
         assert subnet not in iprules, "Subnet found in `ip rule show`"
 
 
 def add_wider_subnet_to_allowlist(wider_subnet: str, expected_removed: list[str]):
     """Add wider subnet, auto-confirming the overlap prompt. Verifies narrower ones are removed."""
-    cmd_message = sh.nordvpn("allowlist", "add", "subnet", wider_subnet, _in="y\n")
+    cmd_message = sh_no_tty.nordvpn("allowlist", "add", "subnet", wider_subnet, _in="y\n")
     assert MSG_ALLOWLIST_SUBNET_ADD_SUCCESS % wider_subnet in cmd_message
-    settings_output = str(sh.nordvpn.settings())
+    settings_output = str(sh_no_tty.nordvpn.settings())
     assert settings_output.count(wider_subnet) == 1
     for removed in expected_removed:
         assert settings_output.count(removed) == 0

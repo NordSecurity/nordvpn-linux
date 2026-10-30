@@ -1,10 +1,10 @@
 import time
 
 import pytest
-import sh
 
 import lib
 from lib import allowlist, daemon, firewall, network, settings
+from lib.shell import sh_no_tty
 
 
 pytestmark = pytest.mark.usefixtures("add_and_delete_random_route", "nordvpnd_scope_function")
@@ -37,17 +37,17 @@ def test_routing_enabled_connect(vpn_protocol):
 
     allowlist.add_subnet_to_allowlist([f"{SUBNET_1}/32", f"{SUBNET_2}/32", f"{SUBNET_3}/32"])
 
-    print(sh.nordvpn.connect())
+    print(sh_no_tty.nordvpn.connect())
     assert network.is_available(), "Network should be available when connected"
 
-    assert "fwmark" in sh.ip.rule.show.table(firewall.IP_ROUTE_TABLE), "fwmark should be in policy rules"
+    assert "fwmark" in sh_no_tty.ip.rule.show.table(firewall.IP_ROUTE_TABLE), "fwmark should be in policy rules"
 
-    policy_rules = sh.ip.rule.show()
+    policy_rules = sh_no_tty.ip.rule.show()
     assert SUBNET_1 in policy_rules, f"Subnet {SUBNET_1} should be in policy rules"
     assert SUBNET_2 in policy_rules, f"Subnet {SUBNET_2} should be in policy rules"
     assert SUBNET_3 in policy_rules, f"Subnet {SUBNET_3} should be in policy rules"
 
-    policy_routes = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
+    policy_routes = sh_no_tty.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     assert get_network_interface(vpn_protocol) in policy_routes, "Network interface should be in policy routes"
 
     assert settings.is_routing_enabled(), "Routing should be enabled"
@@ -62,19 +62,19 @@ def test_routing_disabled_connect(vpn_protocol):
 
     allowlist.add_subnet_to_allowlist([f"{SUBNET_1}/32"])
 
-    assert MSG_ROUTING_OFF in sh.nordvpn.set.routing.off(), "Routing should be disabled successfully"
+    assert MSG_ROUTING_OFF in sh_no_tty.nordvpn.set.routing.off(), "Routing should be disabled successfully"
     assert not settings.is_routing_enabled(), "Routing should be disabled"
 
-    print(sh.nordvpn.connect())
+    print(sh_no_tty.nordvpn.connect())
 
     assert network.is_not_available(), "Network should not be available when routing is disabled"
 
-    assert "fwmark" not in sh.ip.rule.show.table(firewall.IP_ROUTE_TABLE), "fwmark should not be in policy rules when routing is disabled"
-    assert SUBNET_1 not in sh.ip.route(), f"Subnet {SUBNET_1} should not be in routes when routing is disabled"
+    assert "fwmark" not in sh_no_tty.ip.rule.show.table(firewall.IP_ROUTE_TABLE), "fwmark should not be in policy rules when routing is disabled"
+    assert SUBNET_1 not in sh_no_tty.ip.route(), f"Subnet {SUBNET_1} should not be in routes when routing is disabled"
 
-    assert get_network_interface(vpn_protocol) not in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE), "Network interface should not be in policy routes when routing is disabled"
+    assert get_network_interface(vpn_protocol) not in sh_no_tty.ip.route.show.table(firewall.IP_ROUTE_TABLE), "Network interface should not be in policy routes when routing is disabled"
 
-    assert MSG_ROUTING_ON_ALREADY in sh.nordvpn.set.routing.on(), "Routing should be enabled (already was enabled)"
+    assert MSG_ROUTING_ON_ALREADY in sh_no_tty.nordvpn.set.routing.on(), "Routing should be enabled (already was enabled)"
     assert settings.is_routing_enabled(), "Routing should be enabled"
 
 
@@ -85,19 +85,19 @@ def test_connected_routing_disable_enable(vpn_protocol):
 
     lib.set_vpn_protocol(vpn_protocol)
 
-    print(sh.nordvpn.connect())
+    print(sh_no_tty.nordvpn.connect())
     assert network.is_available(), "Network should be available when connected"
 
-    assert MSG_ROUTING_OFF in sh.nordvpn.set.routing.off(), "Routing should be disabled successfully"
+    assert MSG_ROUTING_OFF in sh_no_tty.nordvpn.set.routing.off(), "Routing should be disabled successfully"
     assert not settings.is_routing_enabled(), "Routing should be disabled"
-    assert get_network_interface(vpn_protocol) not in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE), "Network interface should not be in policy routes when routing is disabled"
-    assert "mark" not in sh.ip.rule(), "mark should not be in rules when routing is disabled"
+    assert get_network_interface(vpn_protocol) not in sh_no_tty.ip.route.show.table(firewall.IP_ROUTE_TABLE), "Network interface should not be in policy routes when routing is disabled"
+    assert "mark" not in sh_no_tty.ip.rule(), "mark should not be in rules when routing is disabled"
     assert network.is_not_available(), "Network should not be available when routing is disabled"
 
-    assert MSG_ROUTING_ON in sh.nordvpn.set.routing.on(), "Routing should be enabled successfully"
+    assert MSG_ROUTING_ON in sh_no_tty.nordvpn.set.routing.on(), "Routing should be enabled successfully"
     assert settings.is_routing_enabled(), "Routing should be enabled"
-    assert get_network_interface(vpn_protocol) in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE), "Network interface should be in policy routes when routing is enabled"
-    assert "mark" in sh.ip.rule(), "mark should be in rules when routing is enabled"
+    assert get_network_interface(vpn_protocol) in sh_no_tty.ip.route.show.table(firewall.IP_ROUTE_TABLE), "Network interface should be in policy routes when routing is enabled"
+    assert "mark" in sh_no_tty.ip.rule(), "mark should be in rules when routing is enabled"
     assert network.is_available(), "Network should be available when routing is enabled"
 
 
@@ -108,22 +108,22 @@ def test_connected_routing_enable_disable(vpn_protocol):
 
     lib.set_vpn_protocol(vpn_protocol)
 
-    assert MSG_ROUTING_OFF in sh.nordvpn.set.routing.off(), "Routing should be disabled successfully"
+    assert MSG_ROUTING_OFF in sh_no_tty.nordvpn.set.routing.off(), "Routing should be disabled successfully"
     assert not settings.is_routing_enabled(), "Routing should be disabled"
 
-    print(sh.nordvpn.connect())
+    print(sh_no_tty.nordvpn.connect())
     assert network.is_not_available(), "Network should not be available when routing is disabled"
 
-    assert MSG_ROUTING_ON in sh.nordvpn.set.routing.on(), "Routing should be enabled successfully"
+    assert MSG_ROUTING_ON in sh_no_tty.nordvpn.set.routing.on(), "Routing should be enabled successfully"
     assert settings.is_routing_enabled(), "Routing should be enabled"
-    assert get_network_interface(vpn_protocol) in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE), "Network interface should be in policy routes when routing is enabled"
-    assert "mark" in sh.ip.rule(), "mark should be in rules when routing is enabled"
+    assert get_network_interface(vpn_protocol) in sh_no_tty.ip.route.show.table(firewall.IP_ROUTE_TABLE), "Network interface should be in policy routes when routing is enabled"
+    assert "mark" in sh_no_tty.ip.rule(), "mark should be in rules when routing is enabled"
     assert network.is_available(), "Network should be available when routing is enabled"
 
-    assert MSG_ROUTING_OFF in sh.nordvpn.set.routing.off(), "Routing should be disabled successfully"
+    assert MSG_ROUTING_OFF in sh_no_tty.nordvpn.set.routing.off(), "Routing should be disabled successfully"
     assert not settings.is_routing_enabled(), "Routing should be disabled"
-    assert get_network_interface(vpn_protocol) not in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE), "Network interface should not be in policy routes when routing is disabled"
-    assert "mark" not in sh.ip.rule(), "mark should not be in rules when routing is disabled"
+    assert get_network_interface(vpn_protocol) not in sh_no_tty.ip.route.show.table(firewall.IP_ROUTE_TABLE), "Network interface should not be in policy routes when routing is disabled"
+    assert "mark" not in sh_no_tty.ip.rule(), "mark should not be in rules when routing is disabled"
     assert network.is_not_available(), "Network should not be available when routing is disabled"
 
 
@@ -134,8 +134,8 @@ def test_meshnet_on_routing_disable(vpn_protocol):
 
     lib.set_vpn_protocol(vpn_protocol)
 
-    sh.nordvpn.set.mesh.on()
-    assert MSG_ROUTING_USED_BY_MESH in sh.nordvpn.set.routing.off(), "Should not allow disabling routing when meshnet is enabled"
+    sh_no_tty.nordvpn.set.mesh.on()
+    assert MSG_ROUTING_USED_BY_MESH in sh_no_tty.nordvpn.set.routing.off(), "Should not allow disabling routing when meshnet is enabled"
     assert settings.is_routing_enabled(), "Routing should remain enabled when meshnet is active"
 
 
@@ -146,7 +146,7 @@ def test_routing_already_enabled(vpn_protocol):
     lib.set_vpn_protocol(vpn_protocol)
     lib.set_routing("on")
 
-    assert MSG_ROUTING_ON_ALREADY in sh.nordvpn.set.routing.on(), "Should show routing already enabled message"
+    assert MSG_ROUTING_ON_ALREADY in sh_no_tty.nordvpn.set.routing.on(), "Should show routing already enabled message"
     assert settings.is_routing_enabled(), "Routing should be enabled"
 
 
@@ -157,7 +157,7 @@ def test_routing_already_disabled(vpn_protocol):
     lib.set_vpn_protocol(vpn_protocol)
     lib.set_routing("off")
 
-    assert MSG_ROUTING_OFF_ALREADY in sh.nordvpn.set.routing.off(), "Should show routing already disabled message"
+    assert MSG_ROUTING_OFF_ALREADY in sh_no_tty.nordvpn.set.routing.off(), "Should show routing already disabled message"
     assert not settings.is_routing_enabled(), "Routing should be disabled"
 
 
@@ -168,24 +168,24 @@ def test_toggle_routing_in_the_middle_of_the_connection(vpn_protocol):
 
     lib.set_vpn_protocol(vpn_protocol)
 
-    print(sh.nordvpn.connect())
+    print(sh_no_tty.nordvpn.connect())
 
-    routes = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
-    rules = sh.ip.rule()
+    routes = sh_no_tty.ip.route.show.table(firewall.IP_ROUTE_TABLE)
+    rules = sh_no_tty.ip.rule()
     assert get_network_interface(vpn_protocol) in routes, "Network interface should be in policy routes when connected"
     assert "mark" in rules, "mark should be in rules when connected"
     assert network.is_available(), "Network should be available when connected"
 
     lib.set_routing("off")
-    routes = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
-    rules = sh.ip.rule()
+    routes = sh_no_tty.ip.route.show.table(firewall.IP_ROUTE_TABLE)
+    rules = sh_no_tty.ip.rule()
     assert get_network_interface(vpn_protocol) not in routes, "Network interface should not be in policy routes when routing is disabled"
     assert "mark" not in rules, "mark should not be in rules when routing is disabled"
     assert network.is_not_available(), "Network should not be available when routing is disabled"
 
     lib.set_routing("on")
-    routes = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
-    rules = sh.ip.rule()
+    routes = sh_no_tty.ip.route.show.table(firewall.IP_ROUTE_TABLE)
+    rules = sh_no_tty.ip.rule()
     assert get_network_interface(vpn_protocol) in routes, "Network interface should be in policy routes when routing is enabled"
     assert "mark" in rules, "mark should be in rules when routing is enabled"
     assert network.is_available(), "Network should be available when routing is enabled"
@@ -197,10 +197,10 @@ def test_routing_when_iprule_already_exists(vpn_protocol):
 
     lib.set_vpn_protocol(vpn_protocol)
 
-    print(sh.nordvpn.connect())
+    print(sh_no_tty.nordvpn.connect())
 
-    routes = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
-    rules = sh.ip.rule()
+    routes = sh_no_tty.ip.route.show.table(firewall.IP_ROUTE_TABLE)
+    rules = sh_no_tty.ip.rule()
     assert f"default dev {get_network_interface(vpn_protocol)}" in routes, "Default route should include network interface when connected"
     assert "mark" in rules, "mark should be in rules when routing is enabled"
     assert network.is_available(), "Network should be available when connected"
@@ -210,23 +210,23 @@ def test_routing_when_iprule_already_exists(vpn_protocol):
         if "fwmark" in line:
             rule = line.split()[1:]
 
-    print(sh.nordvpn.disconnect())
+    print(sh_no_tty.nordvpn.disconnect())
     daemon.stop()
 
-    with lib.Defer(lambda: sh.sudo.ip.rule('del', *rule, _ok_code=(0, 2))):
-        sh.sudo.ip.rule.add(*rule)
+    with lib.Defer(lambda: sh_no_tty.sudo.ip.rule('del', *rule, _ok_code=(0, 2))):
+        sh_no_tty.sudo.ip.rule.add(*rule)
         daemon.start()
         time.sleep(5)
 
-        print(sh.nordvpn.connect())
+        print(sh_no_tty.nordvpn.connect())
 
-        routes = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
-        rules = sh.ip.rule()
+        routes = sh_no_tty.ip.route.show.table(firewall.IP_ROUTE_TABLE)
+        rules = sh_no_tty.ip.rule()
         assert f"default dev {get_network_interface(vpn_protocol)}" in routes, "Default route should include network interface when connected"
         assert "mark" in rules, "mark should be in rules when routing is enabled"
         assert network.is_available(), "Network should be available when connected"
 
-        routes = sh.ip.route.show.table("main")
+        routes = sh_no_tty.ip.route.show.table("main")
         assert f"default dev {get_network_interface(vpn_protocol)}" not in routes, "Network interface should not be in main route table"
 
 
@@ -237,13 +237,13 @@ def test_routing_applied_after_set_defaults_with_routing_disabled():
     lib.set_routing("off")
     assert not settings.is_routing_enabled(), "Routing should be disabled before setting defaults"
 
-    sh.nordvpn.set.defaults()
+    sh_no_tty.nordvpn.set.defaults()
     assert settings.is_routing_enabled(), "Routing should be enabled after setting defaults"
 
-    print(sh.nordvpn.connect())
+    print(sh_no_tty.nordvpn.connect())
 
-    routes = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
-    rules = sh.ip.rule()
+    routes = sh_no_tty.ip.route.show.table(firewall.IP_ROUTE_TABLE)
+    rules = sh_no_tty.ip.rule()
     assert f"default dev {get_network_interface('nordlynx')}" in routes, "Default route should include network interface when connected"
     assert "fwmark" in rules, "fwmark should be in rules when routing is enabled"
     assert network.is_available(), "Network should be available when connected"

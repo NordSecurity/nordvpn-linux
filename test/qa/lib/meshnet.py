@@ -9,7 +9,7 @@ from enum import Enum
 
 import pytest
 import sh
-from lib.shell import sh_no_tty
+from .shell import sh_no_tty
 from lib import network
 
 from . import daemon, info, logging, login, ssh

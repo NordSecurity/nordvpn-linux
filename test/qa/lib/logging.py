@@ -1,7 +1,7 @@
 """Logging utilities to make it easier to write to daemon logs."""
 import datetime
 import os
-import sh
+from .shell import sh_no_tty
 
 # log file location
 FILE = f"{os.environ['WORKDIR']}/dist/logs/daemon.log"
@@ -15,11 +15,11 @@ def log(data=None):
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     if data:
         # Get the current time and format it
-        sh.sudo.bash("-c", f"""cat <<EOF >> {FILE}
+        sh_no_tty.sudo.bash("-c", f"""cat <<EOF >> {FILE}
 {timestamp}:{data}
 EOF
 """)
     else:
         test_name = os.environ["PYTEST_CURRENT_TEST"]
-        sh.sudo.bash("-c", f"echo '{timestamp}:{test_name}' >> {FILE}")
+        sh_no_tty.sudo.bash("-c", f"echo '{timestamp}:{test_name}' >> {FILE}")
         print(test_name)

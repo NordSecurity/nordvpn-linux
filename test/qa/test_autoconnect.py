@@ -47,7 +47,7 @@ def test_not_autoconnect(vpn_protocol):
 
     lib.set_vpn_protocol(vpn_protocol)
 
-    output = sh.nordvpn.set.autoconnect.off()
+    output = sh_no_tty.nordvpn.set.autoconnect.off()
     print(output)
 
     daemon.restart()
@@ -155,8 +155,8 @@ def test_autoconnect_to_unavailable_groups(vpn_protocol):
 @pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
 def test_autoconnect_off_after_set_defaults_with_autoconnect_enabled(vpn_protocol):
     lib.set_vpn_protocol(vpn_protocol)
-    sh.nordvpn.set.autoconnect.on()
-    sh.nordvpn.set.defaults()
+    sh_no_tty.nordvpn.set.autoconnect.on()
+    sh_no_tty.nordvpn.set.defaults()
     daemon.restart()
     time.sleep(10)
     assert daemon.is_disconnected(), "Autoconnect should not work, after setting defaults"

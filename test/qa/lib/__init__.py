@@ -6,6 +6,7 @@ from enum import Enum
 from functools import wraps
 
 import sh
+from .shell import sh_no_tty
 
 IS_NIGHTLY = (os.getenv("CI_PIPELINE_SCHEDULE_DESCRIPTION") or "").strip().lower() == "nightly"
 FILE_HASH_UTILITY = "sha256sum"
@@ -219,7 +220,7 @@ def set_vpn_protocol(vpn_protocol):
     """
     if vpn_protocol:
         try:
-            print(sh.nordvpn.set.protocol(vpn_protocol))
+            print(sh_no_tty.nordvpn.set.protocol(vpn_protocol))
         except sh.ErrorReturnCode_1 as ex:
             print("WARNING:", ex)
 
@@ -229,49 +230,49 @@ def set_vpn_protocol(vpn_protocol):
 # Tests do not break on reordering when using this.
 def set_real_time_protection(dns):
     try:
-        print(sh.nordvpn.set.protection(dns))
+        print(sh_no_tty.nordvpn.set.protection(dns))
     except sh.ErrorReturnCode_1 as ex:
         print("WARNING:", ex)
 
 
 def set_dns(dns):
     try:
-        print(sh.nordvpn.set.dns(dns))
+        print(sh_no_tty.nordvpn.set.dns(dns))
     except sh.ErrorReturnCode_1 as ex:
         print("WARNING:", ex)
 
 
 def set_firewall(firewall):
     try:
-        print(sh.nordvpn.set.firewall(firewall))
+        print(sh_no_tty.nordvpn.set.firewall(firewall))
     except sh.ErrorReturnCode_1 as ex:
         print("WARNING:", ex)
 
 
 def set_routing(routing):
     try:
-        print(sh.nordvpn.set.routing(routing))
+        print(sh_no_tty.nordvpn.set.routing(routing))
     except sh.ErrorReturnCode_1 as ex:
         print("WARNING:", ex)
 
 
 def set_killswitch(killswitch):
     try:
-        print(sh.nordvpn.set.killswitch(killswitch))
+        print(sh_no_tty.nordvpn.set.killswitch(killswitch))
     except sh.ErrorReturnCode_1 as ex:
         print("WARNING:", ex)
 
 
 def set_notify(dns):
     try:
-        print(sh.nordvpn.set.notify(dns))
+        print(sh_no_tty.nordvpn.set.notify(dns))
     except sh.ErrorReturnCode_1 as ex:
         print("WARNING:", ex)
 
 
 def flush_allowlist():
     try:
-        print(sh.nordvpn.allowlist.remove.all())
+        print(sh_no_tty.nordvpn.allowlist.remove.all())
     except sh.ErrorReturnCode_1 as ex:
         print("WARNING:", ex)
 
@@ -288,7 +289,7 @@ def is_connect_successful(output: str, name: str = "", hostname: str = ""):
 
     # TODO: Under snap, above regex does not work but it is not clear why,
     # so, need to simplify condition. Need to find out why regex is not working.
-    if "snap" in sh.which("nordvpn"):
+    if "snap" in sh_no_tty.which("nordvpn"):
         return (
             "Connecting to" in output
             and "You are connected to" in output

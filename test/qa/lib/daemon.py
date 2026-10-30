@@ -9,7 +9,7 @@ import pytest
 import sh
 
 from . import logging, ssh
-from lib.shell import sh_no_tty
+from .shell import sh_no_tty
 
 
 from .log_reader import LogReader
@@ -31,22 +31,22 @@ def _rewrite_log_path():
     project_root = os.environ["WORKDIR"].replace("/", "\\/")
     pattern = f"s/^LOGFILE=.*/LOGFILE={project_root}\\/dist\\/logs\\/daemon.log/"
     # this fn is executed only in docker (below line would not work under snap)
-    sh.sudo.sed("-i", pattern, "/etc/init.d/nordvpn")
+    sh_no_tty.sudo.sed("-i", pattern, "/etc/init.d/nordvpn")
 
 
 # returns True on SystemD distros
 def is_init_systemd():
-    return "systemd" in sh.ps("--no-headers", "-o", "comm", "1")
+    return "systemd" in sh_no_tty.ps("--no-headers", "-o", "comm", "1")
 
 
 def is_under_snap():
-    return "snap" in sh.which("nordvpn")
+    return "snap" in sh_no_tty.which("nordvpn")
 
 
 def is_connected(ssh_client: ssh.Ssh = None) -> bool:
     """Returns True when connected to VPN server."""
     try:
-        status = ssh_client.exec_command("nordvpn status") if ssh_client else sh.nordvpn.status()
+        status = ssh_client.exec_command("nordvpn status") if ssh_client else sh_no_tty.nordvpn.status()
         connected = "Connected" in status
         if not connected:
             logging.log(f"Not connected {status}")
@@ -59,7 +59,7 @@ def is_disconnected() -> bool:
     """Returns True when not connected to VPN."""
     try:
         print(sh_no_tty.nordvpn.status())
-        return "Disconnected" in sh.nordvpn.status()
+        return "Disconnected" in sh_no_tty.nordvpn.status()
     except sh.ErrorReturnCode as ex:
         logging.log(data=f"is_disconnected: {ex}")
         return True
@@ -68,7 +68,7 @@ def is_disconnected() -> bool:
 def is_killswitch_on():
     """Return True when Killswitch is activated."""
     try:
-        return "Kill Switch: enabled" in sh.nordvpn.settings()
+        return "Kill Switch: enabled" in sh_no_tty.nordvpn.settings()
     except sh.ErrorReturnCode:
         return False
 
@@ -100,7 +100,7 @@ def start():
     else:
         # call to init.d returns before the daemon is actually started
         _rewrite_log_path()
-        sh.sudo("/etc/init.d/nordvpn", "start")
+        sh_no_tty.sudo("/etc/init.d/nordvpn", "start")
     while not is_running():
         time.sleep(1)
 
@@ -108,7 +108,7 @@ def start_with_arg(arg : str):
     if is_under_snap():
         pytest.fail("Passing args to Snap daemon not possible.")
     _rewrite_log_path()
-    sh.sudo("/etc/init.d/nordvpn", "start", arg)
+    sh_no_tty.sudo("/etc/init.d/nordvpn", "start", arg)
 
 
 def start_peer(ssh_client: ssh.Ssh):
@@ -134,7 +134,7 @@ def stop(timeout: int = 10):
             os.popen("sudo systemctl stop nordvpn").read()
         else:
             # call to init.d returns before the daemon is actually stopped
-            sh.sudo("/etc/init.d/nordvpn", "stop")
+            sh_no_tty.sudo("/etc/init.d/nordvpn", "stop")
 
     start_time = time.time()
     while is_running():
@@ -174,7 +174,7 @@ def non_blocking_restart():
         elif is_init_systemd():
             os.popen("sudo systemctl restart nordvpn").read()
         else:
-            sh.sudo("/etc/init.d/nordvpn", "restart")
+            sh_no_tty.sudo("/etc/init.d/nordvpn", "restart")
 
 
 
@@ -203,7 +203,7 @@ def wait_for_autoconnect():
 # returns True when daemon is running
 def is_running():
     try:
-        sh.nordvpn.status()
+        sh_no_tty.nordvpn.status()
     except sh.ErrorReturnCode_1 as ex:
         # if user is not part of the nordvpn group assert
         assert "Permission needed" not in ex.stdout.decode(), "User should be part of the nordvpn group"
@@ -234,13 +234,13 @@ def get_unavailable_groups():
                   'Onion_Over_VPN',
                   'Standard_VPN_Servers']
 
-    current_groups = str(sh.nordvpn.groups(_tty_out=False)).strip().split()
+    current_groups = str(sh_no_tty.nordvpn.groups(_tty_out=False)).strip().split()
 
     return set(all_groups) - set(current_groups)
 
 
 def get_status_data() -> dict:
-    lines = sh.nordvpn.status(_tty_out=False).strip().split('\n')
+    lines = sh_no_tty.nordvpn.status(_tty_out=False).strip().split('\n')
     colon_separated_pairs = (element.split(':', 1) for element in lines if ':' in element)
     formatted_pairs = {(key.lower(), value.strip()) for key, value in colon_separated_pairs}
     return dict(formatted_pairs)
@@ -252,7 +252,7 @@ def get_env() -> str:
 
     :return: the active environment (DEV or PROD)
     """
-    result = sh.nordvpn("--version")
+    result = sh_no_tty.nordvpn("--version")
     if Env.DEV in result:
         return Env.DEV
     return Env.PROD
@@ -267,18 +267,18 @@ def enable_rc_local_config_usage():
     service_path = NORDVPND_CONFIG_FILE.get(SNAP) if is_under_snap() else NORDVPND_CONFIG_FILE.get(DEB)
 
     # Print original service file for reference
-    print(f"Service original:\n {sh.cat(service_path)}")
+    print(f"Service original:\n {sh_no_tty.cat(service_path)}")
 
     sed_command = r'/^\[Service\]/a Environment="RC_USE_LOCAL_CONFIG=1"' if is_under_snap() else r"1a export RC_USE_LOCAL_CONFIG=1"
 
     # Insert environment variable into systemd service file
-    sh.sudo.sed("-i", sed_command, service_path)
+    sh_no_tty.sudo.sed("-i", sed_command, service_path)
 
-    sh.sudo.systemctl("daemon-reload", _ok_code=(0, 1))
+    sh_no_tty.sudo.systemctl("daemon-reload", _ok_code=(0, 1))
 
-    sh.sudo(SNAP, "restart", NORDVPND_SERVICE_NAME.get(SNAP)) if is_under_snap() else restart()
+    sh_no_tty.sudo(SNAP, "restart", NORDVPND_SERVICE_NAME.get(SNAP)) if is_under_snap() else restart()
     # Print service file after modification
-    print(f"Service after:\n {sh.cat(service_path)}")
+    print(f"Service after:\n {sh_no_tty.cat(service_path)}")
 
 
 def disable_rc_local_config_usage():
@@ -291,13 +291,13 @@ def disable_rc_local_config_usage():
     service_path = NORDVPND_CONFIG_FILE.get(SNAP) if is_under_snap() else NORDVPND_CONFIG_FILE.get(DEB)
     # Cleanup: remove the injected environment variable line
     sed_command = r'/^$$Service$$/,/^Environment="RC_USE_LOCAL_CONFIG=1"$/d' if is_under_snap() else r"/^export RC_USE_LOCAL_CONFIG=1$/d"
-    sh.sudo.sed("-i", sed_command, service_path)
+    sh_no_tty.sudo.sed("-i", sed_command, service_path)
 
-    sh.sudo.systemctl("daemon-reload", _ok_code=(0, 1))
+    sh_no_tty.sudo.systemctl("daemon-reload", _ok_code=(0, 1))
 
-    sh.sudo(SNAP, "restart", NORDVPND_SERVICE_NAME.get(SNAP)) if is_under_snap() else restart()
+    sh_no_tty.sudo(SNAP, "restart", NORDVPND_SERVICE_NAME.get(SNAP)) if is_under_snap() else restart()
     # Print restored service file for verification
-    print(f"Service restored:\n {sh.cat(service_path)}")
+    print(f"Service restored:\n {sh_no_tty.cat(service_path)}")
 
 
 def set_rc_retry_custom_time(daemon_log_reader: LogReader, timeout: int = RC_TIMEOUT) -> int:
@@ -311,15 +311,15 @@ def set_rc_retry_custom_time(daemon_log_reader: LogReader, timeout: int = RC_TIM
     service_path = NORDVPND_CONFIG_FILE.get(SNAP) if is_under_snap() else NORDVPND_CONFIG_FILE.get(DEB)
 
     # Print original service file for reference
-    print(f"Service original:\n {sh.cat(service_path)}")
+    print(f"Service original:\n {sh_no_tty.cat(service_path)}")
 
     sed_command = rf'/^\[Service\]/a Environment="RC_LOAD_TIME_MIN={timeout}"' if is_under_snap() else rf"1a export RC_LOAD_TIME_MIN={timeout}"
-    sh.sudo.sed("-i", sed_command, service_path)
+    sh_no_tty.sudo.sed("-i", sed_command, service_path)
 
     cursor = daemon_log_reader.get_cursor()
-    sh.sudo.systemctl("daemon-reload", _ok_code=(0, 1))
+    sh_no_tty.sudo.systemctl("daemon-reload", _ok_code=(0, 1))
 
-    sh.sudo(SNAP, "restart", NORDVPND_SERVICE_NAME.get(SNAP)) if is_under_snap() else restart()
+    sh_no_tty.sudo(SNAP, "restart", NORDVPND_SERVICE_NAME.get(SNAP)) if is_under_snap() else restart()
 
     return cursor
 
@@ -335,7 +335,7 @@ def remove_rc_retry_custom_time(timeout: int = RC_TIMEOUT):
     # Cleanup: remove the injected environment variable line
     sed_command = rf'/^$$Service$$/,/^Environment="RC_LOAD_TIME_MIN={timeout}"$/d' if is_under_snap() else rf"/^export RC_LOAD_TIME_MIN={timeout}$/d"
 
-    sh.sudo.sed("-i", sed_command, service_path)
-    sh.sudo(SNAP, "restart", NORDVPND_SERVICE_NAME.get(SNAP)) if is_under_snap() else restart()
+    sh_no_tty.sudo.sed("-i", sed_command, service_path)
+    sh_no_tty.sudo(SNAP, "restart", NORDVPND_SERVICE_NAME.get(SNAP)) if is_under_snap() else restart()
     # Print restored service file for verification
-    print(f"Service restored:\n {sh.cat(service_path)}")
+    print(f"Service restored:\n {sh_no_tty.cat(service_path)}")

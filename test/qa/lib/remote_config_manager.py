@@ -2,6 +2,7 @@ import os
 import json
 import requests
 import sh
+from .shell import sh_no_tty
 from lib.remote_config import RemoteConfig
 
 from lib.daemon import Env
@@ -32,7 +33,7 @@ class RemoteConfigManager:
         if not os.path.exists(self.cache_dir):
             print(f"Directory '{self.cache_dir}' does not exist.")
             return False
-        sh.sudo.chmod("-R", "775", self.cache_dir)
+        sh_no_tty.sudo.chmod("-R", "775", self.cache_dir)
         print(f"Permissions set recursively to 775 for {self.cache_dir}.")
         return True
 
@@ -168,6 +169,6 @@ class RemoteConfigManager:
         """
         print(f"Deleting file: {file_path}")
         try:
-            sh.sudo.rm(file_path)
+            sh_no_tty.sudo.rm(file_path)
         except sh.ErrorReturnCode as e:
             print(f"Got an error while deleting {file_path}: {e}")

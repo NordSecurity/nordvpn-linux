@@ -40,8 +40,8 @@ def setup_module(module):  # noqa: ARG001
     # will be remove once default download directory setting is implemented
     os.system(f"sudo mkdir -p -m 0777 {default_download_directory}")
 
-    sh.nordvpn.set.notify.off()
-    sh.nordvpn.set.meshnet.on()
+    sh_no_tty.nordvpn.set.notify.off()
+    sh_no_tty.nordvpn.set.meshnet.on()
 
     ssh_client.connect()
     daemon.install_peer(ssh_client)
@@ -53,7 +53,7 @@ def setup_module(module):  # noqa: ARG001
     ssh_client.exec_command("nordvpn set notify off")
     ssh_client.exec_command("nordvpn set mesh on")
 
-    sh.nordvpn.mesh.peer.refresh()
+    sh_no_tty.nordvpn.mesh.peer.refresh()
     ssh_client.exec_command("nordvpn mesh peer refresh")
 
     meshnet.wait_for_peers_connection(ssh_client)
@@ -84,15 +84,15 @@ def teardown_module(module):  # noqa: ARG001
     daemon.stop_peer(ssh_client)
     daemon.uninstall_peer(ssh_client)
 
-    sh.nordvpn.set.meshnet.off()
-    sh.nordvpn.set.notify.on()
-    sh.nordvpn.logout()
+    sh_no_tty.nordvpn.set.meshnet.off()
+    sh_no_tty.nordvpn.set.notify.on()
+    sh_no_tty.nordvpn.logout()
     daemon.stop()
 
 
 def setup_function(function):  # noqa: ARG001
     logging.log()
-    peer_list = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list())
+    peer_list = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
     sh_no_tty.nordvpn.mesh.peer.refresh()
     ssh_client.exec_command("nordvpn mesh peer refresh")
     assert meshnet.is_peer_reachable(peer_list.get_internal_peer()), "Internal peer should be reachable"
@@ -112,7 +112,7 @@ def teardown_function(function):  # noqa: ARG001
                           ["outer", "nested/inner"],
                           ["nested/inner"]])
 def test_accept(accept_directories):
-    output = sh.nordvpn.mesh.peer.list(_tty_out=False)
+    output = sh_no_tty.nordvpn.mesh.peer.list(_tty_out=False)
     address = meshnet.PeerList.from_str(output).get_this_device().ip
 
     # Check peer list on both ends
@@ -147,7 +147,7 @@ def test_accept(accept_directories):
     transfer_files = [f"{nested_dir}/{filename}", f"{nested_dir}/{inner_dir}/{filename}", f"{outer_dir}/{filename}"]
 
     # Check peer list on both ends
-    output = f'{sh.nordvpn.mesh.peer.list(_tty_out=False)}'
+    output = f'{sh_no_tty.nordvpn.mesh.peer.list(_tty_out=False)}'
     logging.log(data="------------------22----------------------------------")
     logging.log(data=output)
     logging.log(data="------------------------------------------------------")
@@ -169,7 +169,7 @@ def test_accept(accept_directories):
 
     peer_transfer_id = fileshare.get_last_transfer(ssh_client=ssh_client)
 
-    sh.nordvpn.fileshare.accept("--background", "--path", "/tmp", local_transfer_id, *accept_directories).stdout.decode("utf-8")
+    sh_no_tty.nordvpn.fileshare.accept("--background", "--path", "/tmp", local_transfer_id, *accept_directories).stdout.decode("utf-8")
 
     def predicate(file_entry: str) -> bool:
         file_entry_columns = file_entry.split(' ')
@@ -180,7 +180,7 @@ def test_accept(accept_directories):
         return "canceled" in file_entry
 
     def check_files_status_receiver():
-        tsfr = sh.nordvpn.fileshare.list(local_transfer_id).stdout.decode("utf-8")
+        tsfr = sh_no_tty.nordvpn.fileshare.list(local_transfer_id).stdout.decode("utf-8")
         return fileshare.for_all_files_in_transfer(tsfr, transfer_files, predicate), tsfr
 
     receiver_files_status_ok = False
@@ -222,7 +222,7 @@ def test_fileshare_transfer(filesystem_entity: fileshare.FileSystemEntity, backg
     """Manual TCs: LVPN-3128, LVPN-3130"""
 
     peer_name = random.choice(list(meshnet.PeerName)[:-1])
-    peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().get_peer_name(peer_name)
+    peer_address = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_internal_peer().get_peer_name(peer_name)
 
     # .
     # ├── wdir
@@ -244,7 +244,7 @@ def test_fileshare_transfer(filesystem_entity: fileshare.FileSystemEntity, backg
         filepath = wfolder.paths
 
     if background_send:
-        command_handle = sh.nordvpn.fileshare.send("--background", peer_address, filepath)
+        command_handle = sh_no_tty.nordvpn.fileshare.send("--background", peer_address, filepath)
         output = command_handle.stdout.decode("utf-8")
         assert len(re.findall(fileshare.SEND_NOWAIT_SUCCESS_MSG_PATTERN, output)) > 0, "Background send should show success message"
     elif filesystem_entity == fileshare.FileSystemEntity.FILES:
@@ -264,7 +264,7 @@ def test_fileshare_transfer(filesystem_entity: fileshare.FileSystemEntity, backg
 
     assert peer_transfer_id is not None, "transfer was not received by peer"
 
-    transfers_local = sh.nordvpn.fileshare.list(_tty_out=False)
+    transfers_local = sh_no_tty.nordvpn.fileshare.list(_tty_out=False)
     assert "request sent" in fileshare.find_transfer_by_id(transfers_local, local_transfer_id), "Transfer status should show 'request sent'"
 
     transfers_remote = ssh_client.exec_command("nordvpn fileshare list")
@@ -280,7 +280,7 @@ def test_fileshare_transfer(filesystem_entity: fileshare.FileSystemEntity, backg
     for transfers_started in poll(
         lambda: (
             fileshare.TransferState.UPLOADING in fileshare.find_transfer_by_id(
-                sh.nordvpn.fileshare.list(),
+                sh_no_tty.nordvpn.fileshare.list(),
                 local_transfer_id
             )
             and
@@ -325,13 +325,13 @@ def test_fileshare_transfer(filesystem_entity: fileshare.FileSystemEntity, backg
     assert command_handle.is_alive() is False, "Transfer command should have completed"
     assert command_handle.exit_code == 0, "Transfer command should exit with success code"
 
-    transfers_local = sh.nordvpn.fileshare.list(_tty_out=False)
+    transfers_local = sh_no_tty.nordvpn.fileshare.list(_tty_out=False)
     assert "completed" in fileshare.find_transfer_by_id(transfers_local, local_transfer_id), "Local transfer should show 'completed' status"
 
     transfers_remote = ssh_client.exec_command("nordvpn fileshare list")
     assert "completed" in fileshare.find_transfer_by_id(transfers_remote, peer_transfer_id), "Remote transfer should show 'completed' status"
 
-    assert "uploaded" in sh.nordvpn.fileshare.list(local_transfer_id), "Files should show 'uploaded' status"
+    assert "uploaded" in sh_no_tty.nordvpn.fileshare.list(local_transfer_id), "Files should show 'uploaded' status"
     shutil.rmtree(wdir.dir_path)
     ssh_client.exec_command(f"sudo rm -rf {peer_filepath}/*tmp*")
 
@@ -341,7 +341,7 @@ def test_fileshare_transfer(filesystem_entity: fileshare.FileSystemEntity, backg
 @pytest.mark.parametrize("background_send", [True, False], ids=["send_bg", "send_int"])
 def test_fileshare_transfer_multiple_files(background_send: bool, path_flag: str, background_accept: str):
     peer_name = random.choice(list(meshnet.PeerName)[:-1])
-    peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().get_peer_name(peer_name)
+    peer_address = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_internal_peer().get_peer_name(peer_name)
 
     file_size = fileshare.FileSize().from_mb(22)
     dir1 = fileshare.create_directory(0, "1")
@@ -365,7 +365,7 @@ def test_fileshare_transfer_multiple_files(background_send: bool, path_flag: str
     files_to_transfer = [dir1.dir_path, dir3.dir_path, *dir4.paths]
 
     if background_send:
-        command_handle = sh.nordvpn.fileshare.send("--background", peer_address, *files_to_transfer)
+        command_handle = sh_no_tty.nordvpn.fileshare.send("--background", peer_address, *files_to_transfer)
         output = command_handle.stdout.decode("utf-8")
         assert len(re.findall(fileshare.SEND_NOWAIT_SUCCESS_MSG_PATTERN, output)) > 0, "Background send should show success message"
     else:
@@ -382,7 +382,7 @@ def test_fileshare_transfer_multiple_files(background_send: bool, path_flag: str
 
     assert peer_transfer_id is not None, "transfer was not received by peer"
 
-    transfers_local = sh.nordvpn.fileshare.list(_tty_out=False)
+    transfers_local = sh_no_tty.nordvpn.fileshare.list(_tty_out=False)
     assert "request sent" in fileshare.find_transfer_by_id(transfers_local, local_transfer_id), "Transfer status should show 'request sent'"
 
     transfers_remote = ssh_client.exec_command("nordvpn fileshare list")
@@ -390,7 +390,7 @@ def test_fileshare_transfer_multiple_files(background_send: bool, path_flag: str
 
     files_in_transfer = dir1.transfer_paths + dir2.transfer_paths + dir3.filenames
 
-    transfer = sh.nordvpn.fileshare.list(local_transfer_id).stdout.decode("utf-8")
+    transfer = sh_no_tty.nordvpn.fileshare.list(local_transfer_id).stdout.decode("utf-8")
     assert fileshare.for_all_files_in_transfer(transfer, files_in_transfer, lambda file_entry: "request sent" in file_entry), "All files should show 'request sent' status"
 
     if path_flag:
@@ -411,7 +411,7 @@ def test_fileshare_transfer_multiple_files(background_send: bool, path_flag: str
 
     time.sleep(1)
 
-    transfer = sh.nordvpn.fileshare.list(local_transfer_id).stdout.decode("utf-8")
+    transfer = sh_no_tty.nordvpn.fileshare.list(local_transfer_id).stdout.decode("utf-8")
     assert fileshare.for_all_files_in_transfer(transfer, files_in_transfer, lambda file_entry: "uploaded" in file_entry), "All files should show 'uploaded' status"
 
     transfer = ssh_client.exec_command(f"nordvpn fileshare list {peer_transfer_id}")
@@ -438,14 +438,14 @@ def test_fileshare_transfer_multiple_files(background_send: bool, path_flag: str
     transfers = ssh_client.exec_command("nordvpn fileshare list")
     assert "completed" in fileshare.find_transfer_by_id(transfers, peer_transfer_id), "Remote transfer should show 'completed' status"
 
-    transfers = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
+    transfers = sh_no_tty.nordvpn.fileshare.list().stdout.decode("utf-8")
     assert "completed" in fileshare.find_transfer_by_id(transfers, local_transfer_id), "Local transfer should show 'completed' status"
 
 
 @pytest.mark.parametrize("accept_entity", list(fileshare.FileSystemEntity)[:-1], ids = [f"accept_{entity.value}" for entity in list(fileshare.FileSystemEntity)[:-1]])
 @pytest.mark.parametrize("background", [True, False], ids=["send_bg", "send_int"])
 def test_fileshare_transfer_multiple_files_selective_accept(background: bool, accept_entity: fileshare.FileSystemEntity):
-    peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
+    peer_address = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_internal_peer().ip
 
     # .
     # ├── wfolder_1
@@ -487,7 +487,7 @@ def test_fileshare_transfer_multiple_files_selective_accept(background: bool, ac
         ]
 
     if background:
-        output = sh.nordvpn.fileshare.send("--background", peer_address, *files_to_transfer).stdout.decode("utf-8")
+        output = sh_no_tty.nordvpn.fileshare.send("--background", peer_address, *files_to_transfer).stdout.decode("utf-8")
         assert len(re.findall(r'File transfer ?([a-z0-9]{8}-(?:[a-z0-9]{4}-){3}[a-z0-9]{12}) has started in the background.', output)) > 0, "Background send should show success message with transfer ID"
     else:
         command_handle = fileshare.start_transfer(peer_address, *files_to_transfer)
@@ -509,7 +509,7 @@ def test_fileshare_transfer_multiple_files_selective_accept(background: bool, ac
         wfolder_4.transfer_paths + \
         wfolder_5.transfer_paths
 
-    transfer = sh.nordvpn.fileshare.list(local_transfer_id).stdout.decode("utf-8")
+    transfer = sh_no_tty.nordvpn.fileshare.list(local_transfer_id).stdout.decode("utf-8")
     assert fileshare.for_all_files_in_transfer(transfer, transfer_paths, lambda file_entry: "request sent" in file_entry), "All files should show 'request sent' status"
 
     peer_filepath = "/tmp/"
@@ -519,7 +519,7 @@ def test_fileshare_transfer_multiple_files_selective_accept(background: bool, ac
         transfer_paths.remove(wfolder_1.filenames[1])
         canceled_transfer_paths = transfer_paths
 
-        transfer_local = sh.nordvpn.fileshare.list(local_transfer_id).stdout.decode("utf-8")
+        transfer_local = sh_no_tty.nordvpn.fileshare.list(local_transfer_id).stdout.decode("utf-8")
         assert fileshare.for_all_files_in_transfer(transfer_local, canceled_transfer_paths, lambda file_entry: "canceled" in file_entry), "Non-selected files should show 'canceled' status"
         assert fileshare.for_all_files_in_transfer(transfer_local, [wfolder_1.filenames[1]], lambda file_entry: "uploaded" in file_entry), "Selected file should show 'uploaded' status"
 
@@ -534,7 +534,7 @@ def test_fileshare_transfer_multiple_files_selective_accept(background: bool, ac
         [transfer_paths.remove(path) for path in wfolder_2.transfer_paths]
         canceled_transfer_paths = transfer_paths
 
-        transfer_local = sh.nordvpn.fileshare.list(local_transfer_id).stdout.decode("utf-8")
+        transfer_local = sh_no_tty.nordvpn.fileshare.list(local_transfer_id).stdout.decode("utf-8")
         assert fileshare.for_all_files_in_transfer(transfer_local, canceled_transfer_paths, lambda file_entry: "canceled" in file_entry), "Non-selected files should show 'canceled' status"
         assert fileshare.for_all_files_in_transfer(transfer_local, wfolder_2.transfer_paths, lambda file_entry: "uploaded" in file_entry), "Selected folder files should show 'uploaded' status"
 
@@ -550,7 +550,7 @@ def test_fileshare_transfer_multiple_files_selective_accept(background: bool, ac
         [transfer_paths.remove(path) for path in wfolder_4.transfer_paths]
         canceled_transfer_paths = transfer_paths
 
-        transfer_local = sh.nordvpn.fileshare.list(local_transfer_id).stdout.decode("utf-8")
+        transfer_local = sh_no_tty.nordvpn.fileshare.list(local_transfer_id).stdout.decode("utf-8")
         assert fileshare.for_all_files_in_transfer(transfer_local, canceled_transfer_paths, lambda file_entry: "canceled" in file_entry), "Non-selected files should show 'canceled' status"
         assert fileshare.for_all_files_in_transfer(transfer_local, wfolder_4.transfer_paths, lambda file_entry: "uploaded" in file_entry), "Selected directory files should show 'uploaded' status"
 
@@ -562,7 +562,7 @@ def test_fileshare_transfer_multiple_files_selective_accept(background: bool, ac
 
     time.sleep(1)
 
-    transfers = sh.nordvpn.fileshare.list()
+    transfers = sh_no_tty.nordvpn.fileshare.list()
     assert "completed" in fileshare.find_transfer_by_id(transfers, peer_transfer_id), "Local transfer should show 'completed' status"
 
     transfers = ssh_client.exec_command("nordvpn fileshare list")
@@ -605,7 +605,7 @@ def test_fileshare_graceful_cancel(transfer_entity: fileshare.FileSystemEntity):
         path = wfolder.paths
         expected_files = wfolder.filenames
 
-    peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
+    peer_address = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_internal_peer().ip
 
     if transfer_entity == fileshare.FileSystemEntity.FILES:
         command_handle = fileshare.start_transfer(peer_address, *path)
@@ -616,7 +616,7 @@ def test_fileshare_graceful_cancel(transfer_entity: fileshare.FileSystemEntity):
         if transfer_id is not None:
             break
 
-    transfers_local = sh.nordvpn.fileshare.list(_tty_out=False)
+    transfers_local = sh_no_tty.nordvpn.fileshare.list(_tty_out=False)
     assert "request sent" in fileshare.find_transfer_by_id(transfers_local, transfer_id), "Transfer status should show 'request sent'"
 
     transfers_remote = ssh_client.exec_command("nordvpn fileshare list")
@@ -624,7 +624,7 @@ def test_fileshare_graceful_cancel(transfer_entity: fileshare.FileSystemEntity):
 
     time.sleep(2)
 
-    sh.kill("-s", "2", command_handle.pid)
+    sh_no_tty.kill("-s", "2", command_handle.pid)
     assert fileshare.MSG_CANCEL_TRANSFER in command_handle.stdout.decode(), "Should show cancel transfer message"
 
     time.sleep(2)
@@ -632,7 +632,7 @@ def test_fileshare_graceful_cancel(transfer_entity: fileshare.FileSystemEntity):
     local_transfer_id = fileshare.get_last_transfer()
     peer_transfer_id = fileshare.get_last_transfer(outgoing=False, ssh_client=ssh_client)
 
-    transfer = sh.nordvpn.fileshare.list(local_transfer_id)
+    transfer = sh_no_tty.nordvpn.fileshare.list(local_transfer_id)
     assert fileshare.for_all_files_in_transfer(transfer, expected_files, lambda file_entry: "canceled" in file_entry), "All files should show 'canceled' status on sender"
 
     transfer = ssh_client.exec_command(f"nordvpn fileshare list {peer_transfer_id}")
@@ -644,7 +644,7 @@ def test_fileshare_graceful_cancel(transfer_entity: fileshare.FileSystemEntity):
     transfers = ssh_client.exec_command("nordvpn fileshare list")
     assert "canceled by peer" in fileshare.find_transfer_by_id(transfers, peer_transfer_id), "Receiver should see 'canceled by peer' status"
 
-    transfers = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
+    transfers = sh_no_tty.nordvpn.fileshare.list().stdout.decode("utf-8")
     assert "canceled" in fileshare.find_transfer_by_id(transfers, local_transfer_id), "Sender should see 'canceled' status"
 
     if transfer_entity == fileshare.FileSystemEntity.FOLDER_WITH_FILES:
@@ -673,7 +673,7 @@ def test_fileshare_graceful_cancel_transfer_ongoing(sender_cancels: bool, transf
         path = wfolder.paths
         expected_files = wfolder.filenames
 
-    peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
+    peer_address = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_internal_peer().ip
 
     if transfer_entity == fileshare.FileSystemEntity.FILES:
         command_handle = fileshare.start_transfer(peer_address, *path)
@@ -684,7 +684,7 @@ def test_fileshare_graceful_cancel_transfer_ongoing(sender_cancels: bool, transf
         if transfer_id is not None:
             break
 
-    transfers_local = sh.nordvpn.fileshare.list(_tty_out=False)
+    transfers_local = sh_no_tty.nordvpn.fileshare.list(_tty_out=False)
     assert "request sent" in fileshare.find_transfer_by_id(transfers_local, transfer_id), "Transfer status should show 'request sent'"
 
     transfers_remote = ssh_client.exec_command("nordvpn fileshare list")
@@ -712,7 +712,7 @@ def test_fileshare_graceful_cancel_transfer_ongoing(sender_cancels: bool, transf
     time.sleep(1) # avoid "downloading 0%"
 
     if sender_cancels:
-        sh.kill("-s", "2", command_handle.pid)
+        sh_no_tty.kill("-s", "2", command_handle.pid)
 
         transfer_accept_thread.join()
 
@@ -743,7 +743,7 @@ def test_fileshare_graceful_cancel_transfer_ongoing(sender_cancels: bool, transf
 
         assert transfer_canceled, "Transfer should be canceled on receiver and marked as canceled by peer on sender"
 
-    transfer = sh.nordvpn.fileshare.list(local_transfer_id)
+    transfer = sh_no_tty.nordvpn.fileshare.list(local_transfer_id)
     assert fileshare.for_all_files_in_transfer(transfer, expected_files, lambda file_entry: "canceled" in file_entry), "All files should show 'canceled' status on sender"
 
     transfer = ssh_client.exec_command(f"nordvpn fileshare list {peer_transfer_id}")
@@ -764,7 +764,7 @@ def test_fileshare_graceful_cancel_transfer_ongoing(sender_cancels: bool, transf
 def test_fileshare_cancel_transfer(background: bool, transfer_entity: bool, sender_cancels: bool):
     """Manual TC: LVPN-3144, LVPN-3146"""
 
-    peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
+    peer_address = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_internal_peer().ip
 
     wdir = fileshare.create_directory(0)
     wfolder = fileshare.create_directory(2, parent_dir=wdir.dir_path)
@@ -784,7 +784,7 @@ def test_fileshare_cancel_transfer(background: bool, transfer_entity: bool, send
         expected_files = wfolder.filenames
 
     if background:
-        command_handle = sh.nordvpn.fileshare.send("--background", peer_address, path)
+        command_handle = sh_no_tty.nordvpn.fileshare.send("--background", peer_address, path)
     elif not background and transfer_entity == fileshare.FileSystemEntity.FILES:
         command_handle = fileshare.start_transfer(peer_address, *path)
     else:
@@ -795,14 +795,14 @@ def test_fileshare_cancel_transfer(background: bool, transfer_entity: bool, send
     local_transfer_id = fileshare.get_last_transfer()
     peer_transfer_id = fileshare.get_last_transfer(outgoing=False, ssh_client=ssh_client)
 
-    transfers_local = sh.nordvpn.fileshare.list(_tty_out=False)
+    transfers_local = sh_no_tty.nordvpn.fileshare.list(_tty_out=False)
     assert "request sent" in fileshare.find_transfer_by_id(transfers_local, local_transfer_id), "Transfer status should show 'request sent'"
 
     transfers_remote = ssh_client.exec_command("nordvpn fileshare list")
     assert "waiting for download" in fileshare.find_transfer_by_id(transfers_remote, peer_transfer_id), "Peer transfer status should show 'waiting for download'"
 
     if sender_cancels:
-        output = sh.nordvpn.fileshare.cancel(local_transfer_id)
+        output = sh_no_tty.nordvpn.fileshare.cancel(local_transfer_id)
         assert fileshare.CANCEL_SUCCESS_SENDER_SIDE_MSG in output, "Should show cancel success message"
         if not background:
             output = command_handle.stdout.decode("utf-8")
@@ -819,7 +819,7 @@ def test_fileshare_cancel_transfer(background: bool, transfer_entity: bool, send
     assert command_handle.is_alive() is False, "Transfer command should have completed"
     assert command_handle.exit_code == 0, "Transfer command should exit with success code"
 
-    transfer = sh.nordvpn.fileshare.list(local_transfer_id)
+    transfer = sh_no_tty.nordvpn.fileshare.list(local_transfer_id)
     assert fileshare.for_all_files_in_transfer(transfer, expected_files, lambda file_entry: "canceled" in file_entry), "All files should show 'canceled' status on sender"
 
     transfer = ssh_client.exec_command(f"nordvpn fileshare list {peer_transfer_id}")
@@ -829,13 +829,13 @@ def test_fileshare_cancel_transfer(background: bool, transfer_entity: bool, send
         transfers = ssh_client.exec_command("nordvpn fileshare list")
         assert "canceled by peer" in fileshare.find_transfer_by_id(transfers, peer_transfer_id), "Receiver should see 'canceled by peer' status"
 
-        transfers = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
+        transfers = sh_no_tty.nordvpn.fileshare.list().stdout.decode("utf-8")
         assert "canceled" in fileshare.find_transfer_by_id(transfers, local_transfer_id), "Sender should see 'canceled' status"
     else:  # receiver cancels
         transfers = ssh_client.exec_command("nordvpn fileshare list")
         assert "canceled" in fileshare.find_transfer_by_id(transfers, peer_transfer_id), "Receiver should see 'canceled' status"
 
-        transfers = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
+        transfers = sh_no_tty.nordvpn.fileshare.list().stdout.decode("utf-8")
         assert "canceled by peer" in fileshare.find_transfer_by_id(transfers, local_transfer_id), "Sender should see 'canceled by peer' status"
 
     if transfer_entity == fileshare.FileSystemEntity.FOLDER_WITH_FILES:
@@ -845,10 +845,10 @@ def test_fileshare_cancel_transfer(background: bool, transfer_entity: bool, send
 
 @pytest.mark.parametrize("sender_cancels", [True, False], ids=["sender_cancels", "receiver_cancels"])
 def test_fileshare_cancel_file_not_in_flight(sender_cancels: bool):
-    peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
+    peer_address = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_internal_peer().ip
 
     wdir = fileshare.create_directory(5)
-    sh.nordvpn.fileshare.send("--background", peer_address, wdir.dir_path)
+    sh_no_tty.nordvpn.fileshare.send("--background", peer_address, wdir.dir_path)
 
     time.sleep(1)
 
@@ -857,10 +857,10 @@ def test_fileshare_cancel_file_not_in_flight(sender_cancels: bool):
 
     file_to_cancel = wdir.transfer_paths[2]
     if sender_cancels:
-        with pytest.raises(sh.ErrorReturnCode_1) as ex:
-            sh.nordvpn.fileshare.cancel(local_transfer_id, file_to_cancel)
+        with pytest.raises(sh_no_tty.ErrorReturnCode_1) as ex:
+            sh_no_tty.nordvpn.fileshare.cancel(local_transfer_id, file_to_cancel)
         assert "This file is not in progress." in ex.value.stdout.decode("utf-8"), "Should show error for non-in-flight file cancel on sender"
-        sh.nordvpn.fileshare.cancel(local_transfer_id)
+        sh_no_tty.nordvpn.fileshare.cancel(local_transfer_id)
     else:  # receiver cancels
         with pytest.raises(RuntimeError) as ex:
             ssh_client.exec_command(f"nordvpn fileshare cancel {peer_transfer_id} {file_to_cancel}")
@@ -872,7 +872,7 @@ def test_fileshare_cancel_file_not_in_flight(sender_cancels: bool):
 @pytest.mark.parametrize("multiple_directories", [True, False], ids=["single_dir", "multi_dir"])
 @pytest.mark.parametrize("background", [True, False], ids=["send_bg", "send_int"])
 def test_fileshare_file_limit_exceeded(background: bool, multiple_directories: bool):
-    peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
+    peer_address = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_internal_peer().ip
 
     if not multiple_directories:
         wdir = fileshare.create_directory(1001)
@@ -885,9 +885,9 @@ def test_fileshare_file_limit_exceeded(background: bool, multiple_directories: b
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         if background:
-            sh.nordvpn.fileshare.send("--background", peer_address, *dirs)
+            sh_no_tty.nordvpn.fileshare.send("--background", peer_address, *dirs)
         else:
-            sh.nordvpn.fileshare.send(peer_address, *dirs)
+            sh_no_tty.nordvpn.fileshare.send(peer_address, *dirs)
 
     assert "Number of files in a transfer cannot exceed 1000. Try archiving the directory." in ex.value.stdout.decode("utf-8"), "Should show file limit exceeded error"
 
@@ -902,22 +902,22 @@ def test_fileshare_file_directory_depth_exceeded(background: bool):
     for _ in range(5):
         path = tempfile.mkdtemp(dir=path)
 
-    peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer()
+    peer_address = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_internal_peer()
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         if background:
-            sh.nordvpn.fileshare.send("--background", peer_address, src_path)
+            sh_no_tty.nordvpn.fileshare.send("--background", peer_address, src_path)
         else:
-            sh.nordvpn.fileshare.send(peer_address, src_path)
+            sh_no_tty.nordvpn.fileshare.send(peer_address, src_path)
 
     assert "File depth cannot exceed 5 directories. Try archiving the directory." in ex.value.stdout.decode("utf-8"), "Should show file depth exceeded error"
 
     shutil.rmtree(src_path)
 
 def test_transfers_persistence():
-    peer = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer()
+    peer = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_internal_peer()
 
-    sh.nordvpn.fileshare.send("--background", peer.ip, f"{workdir}/{test_files[0]}")
+    sh_no_tty.nordvpn.fileshare.send("--background", peer.ip, f"{workdir}/{test_files[0]}")
 
     time.sleep(1)
 
@@ -926,12 +926,12 @@ def test_transfers_persistence():
 
     ssh_client.exec_command(f"nordvpn fileshare accept --path {workdir} {peer_transfer_id}")
 
-    sh.nordvpn.set.mesh.off()
-    sh.nordvpn.set.mesh.on()
+    sh_no_tty.nordvpn.set.mesh.off()
+    sh_no_tty.nordvpn.set.mesh.on()
     time.sleep(1)
 
-    assert local_transfer_id in sh.nordvpn.fileshare.list(), "Transfer should be persisted after meshnet restart"
-    sh.nordvpn.mesh.peer.refresh()
+    assert local_transfer_id in sh_no_tty.nordvpn.fileshare.list(), "Transfer should be persisted after meshnet restart"
+    sh_no_tty.nordvpn.mesh.peer.refresh()
 
 
 @pytest.mark.skip("load test, to be moved into a separate job")
@@ -944,8 +944,8 @@ def test_transfers_persistence_load():
     nordfileshared_pid = ""
     for pid in pids:
         # process should have valid parent
-        ppid = sh.ps("-o", "ppid=", "-p", pid).strip()
-        if len(sh.ps("-hp", ppid)) > 0:
+        ppid = sh_no_tty.ps("-o", "ppid=", "-p", pid).strip()
+        if len(sh_no_tty.ps("-hp", ppid)) > 0:
             nordfileshared_pid = pid
             break
 
@@ -959,7 +959,7 @@ def test_transfers_persistence_load():
     # give time to start and connect
     time.sleep(1)
 
-    peer = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer()
+    peer = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_internal_peer()
     assert len(peer.ip.strip()) != 0, "Peer should have a valid IP address"
     assert meshnet.is_peer_reachable(peer), "Peer should be reachable"
 
@@ -981,7 +981,7 @@ def test_transfers_persistence_load():
     for i in range(transfers_count):
         start2_time_ns = time.time_ns()
         logging.log(f"[{i:5d}/{transfers_count}]a peer_address[ {peer.ip} ] file[ {filepath} ]")
-        output = sh.nordvpn.fileshare.send("--background", peer.ip, filepath)
+        output = sh_no_tty.nordvpn.fileshare.send("--background", peer.ip, filepath)
         logging.log(f"[{i:5d}/{transfers_count}]b fileshare send output[ {output} ]")
         time.sleep(sleep_s)
 
@@ -1060,19 +1060,19 @@ def format_time(nanoseconds):
 @pytest.mark.parametrize("background", [True, False], ids=["send_bg", "send_int"])
 @pytest.mark.parametrize("peer_name", list(meshnet.PeerName)[:-1])
 def test_permissions_send(peer_name, background):
-    tester_peer_list = sh.nordvpn.mesh.peer.list()
+    tester_peer_list = sh_no_tty.nordvpn.mesh.peer.list()
     tester_data = meshnet.PeerList.from_str(tester_peer_list).get_this_device()
     tester_address = tester_data.get_peer_name(peer_name)
 
     with lib.Defer(lambda: meshnet.set_permissions(tester_address, fileshare=True)):
         fileshare_denied_message = ssh_client.exec_command(f"nordvpn mesh peer fileshare deny {tester_address}")
-        sh.nordvpn.mesh.peer.refresh()
+        sh_no_tty.nordvpn.mesh.peer.refresh()
 
         tester_hostname = tester_data.get_peer_name(meshnet.PeerName.Hostname)
         assert meshnet.MSG_PEER_FILESHARE_DENY_SUCCESS % tester_hostname in fileshare_denied_message, "Should show fileshare deny success message"
 
         qa_peer_permission = meshnet.PeerList.from_str(ssh_client.exec_command("nordvpn mesh peer list")).get_internal_peer().allow_sending_files
-        tester_permission = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().allows_sending_files
+        tester_permission = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_internal_peer().allows_sending_files
         assert tester_permission is not True, "Peer should not allow sending files"
         assert qa_peer_permission is not True, "QA peer should not allow sending files"
 
@@ -1083,26 +1083,26 @@ def test_permissions_send(peer_name, background):
 
         with pytest.raises(sh.ErrorReturnCode_1) as ex:
             if background:
-                sh.nordvpn.fileshare.send("--background", peer_address, filename).stdout.decode("utf-8")
+                sh_no_tty.nordvpn.fileshare.send("--background", peer_address, filename).stdout.decode("utf-8")
             else:
-                sh.nordvpn.fileshare.send(peer_address, filename).stdout.decode("utf-8")
+                sh_no_tty.nordvpn.fileshare.send(peer_address, filename).stdout.decode("utf-8")
 
         assert "This peer does not allow file transfers from you." in ex.value.stdout.decode("utf-8"), "Should show permission denied error for file transfer"
 
         # Revert to the state before test
         fileshare_allowed_message = ssh_client.exec_command(f"nordvpn mesh peer fileshare allow {tester_address}")
-        sh.nordvpn.mesh.peer.refresh()
+        sh_no_tty.nordvpn.mesh.peer.refresh()
 
         assert meshnet.MSG_PEER_FILESHARE_ALLOW_SUCCESS % tester_hostname in fileshare_allowed_message, "Should show fileshare allow success message"
 
         qapeer_permission = meshnet.PeerList.from_str(ssh_client.exec_command("nordvpn mesh peer list")).get_internal_peer().allow_sending_files
-        tester_permission = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().allows_sending_files
+        tester_permission = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_internal_peer().allows_sending_files
         assert tester_permission is True, "Peer should allow sending files"
         assert qapeer_permission is True, "QA peer should allow sending files"
 
         fileshare.start_transfer(peer_address, filename)
         transfer_id = fileshare.get_last_transfer()
-        sh.nordvpn.fileshare.cancel(transfer_id)
+        sh_no_tty.nordvpn.fileshare.cancel(transfer_id)
 
         shutil.rmtree(directory.dir_path)
 
@@ -1114,19 +1114,19 @@ def test_permissions_fileshare_deny_receive_no_packets():
     file_name = "/tmp/file_allowed"
     ssh_client.exec_command(f"echo > {file_name}")
     tester_address = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_this_device().hostname
-    sh.nordvpn.mesh.peer.fileshare.deny(peer_address, _ok_code=[0, 1]).stdout.decode("utf-8")
+    sh_no_tty.nordvpn.mesh.peer.fileshare.deny(peer_address, _ok_code=[0, 1]).stdout.decode("utf-8")
     ssh_client.exec_command(f"nordvpn fileshare send --background {tester_address} {file_name}")
     actual_transfer_list = sh_no_tty.nordvpn.fileshare.list().stdout.decode("utf-8")
 
     assert expected_transfer_list == actual_transfer_list, "Transfer list is not empty even after disallowing fileshare"
-    sh.nordvpn.mesh.peer.fileshare.allow(peer_address, _ok_code=[0, 1]).stdout.decode("utf-8")
+    sh_no_tty.nordvpn.mesh.peer.fileshare.allow(peer_address, _ok_code=[0, 1]).stdout.decode("utf-8")
 
 
 @pytest.mark.parametrize("peer_name", list(meshnet.PeerName)[:-1])
 def test_permissions_meshnet_receive_forbidden(peer_name):
     peer_address = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_internal_peer().get_peer_name(peer_name)
 
-    sh.nordvpn.mesh.peer.fileshare.deny(peer_address, _ok_code=[0, 1]).stdout.decode("utf-8")
+    sh_no_tty.nordvpn.mesh.peer.fileshare.deny(peer_address, _ok_code=[0, 1]).stdout.decode("utf-8")
     ssh_client.exec_command("nordvpn mesh peer refresh")
 
     for local_permissions_refreshed in poll(lambda: ("Allow Sending Files: disabled" in sh_no_tty.nordvpn.mesh.peer.list())):
@@ -1160,12 +1160,12 @@ def test_permissions_meshnet_receive_forbidden(peer_name):
 
     assert expected_transfer_list == actual_transfer_list, "Transfer list should not change when transfer was properly blocked"
 
-    sh.nordvpn.mesh.peer.fileshare.allow(peer_address, _ok_code=[0, 1]).stdout.decode("utf-8")
+    sh_no_tty.nordvpn.mesh.peer.fileshare.allow(peer_address, _ok_code=[0, 1]).stdout.decode("utf-8")
     ssh_client.exec_command("nordvpn mesh peer refresh")
 
 
 def test_accept_destination_directory_does_not_exist():
-    address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_this_device().ip
+    address = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_this_device().ip
 
     filename = "file"
 
@@ -1181,16 +1181,16 @@ def test_accept_destination_directory_does_not_exist():
     assert local_transfer_id is not None, error_message
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.fileshare.accept("--background", "--path", "invalid_dir", local_transfer_id).stdout.decode("utf-8")
+        sh_no_tty.nordvpn.fileshare.accept("--background", "--path", "invalid_dir", local_transfer_id).stdout.decode("utf-8")
 
     expected_dir = os.getcwd() + "/invalid_dir"
     assert f"Download directory \"{expected_dir}\" does not exist. Make sure the directory exists or provide an alternative via --path" in ex.value.stdout.decode("utf-8"), "Should show error for non-existent download directory"
 
-    sh.nordvpn.fileshare.cancel(local_transfer_id)
+    sh_no_tty.nordvpn.fileshare.cancel(local_transfer_id)
 
 
 def test_accept_destination_directory_symlink():
-    address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_this_device().ip
+    address = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_this_device().ip
 
     filename = "file"
 
@@ -1212,14 +1212,14 @@ def test_accept_destination_directory_symlink():
     os.symlink(dirpath, linkpath)
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.fileshare.accept("--background", "--path", linkpath, local_transfer_id).stdout.decode("utf-8")
+        sh_no_tty.nordvpn.fileshare.accept("--background", "--path", linkpath, local_transfer_id).stdout.decode("utf-8")
     assert "A download path can’t be a symbolic link. Please provide a directory as a download path to accept the transfer" in ex.value.stdout.decode("utf-8"), "Expected message to provide download path not found in the logs."
 
-    sh.nordvpn.fileshare.cancel(local_transfer_id)
+    sh_no_tty.nordvpn.fileshare.cancel(local_transfer_id)
 
 
 def test_accept_destination_directory_not_a_directory():
-    address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_this_device().ip
+    address = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_this_device().ip
 
     filename = "file"
 
@@ -1237,13 +1237,13 @@ def test_accept_destination_directory_not_a_directory():
     _, path = tempfile.mkstemp()
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.fileshare.accept("--background", "--path", path, local_transfer_id).stdout.decode("utf-8")
+        sh_no_tty.nordvpn.fileshare.accept("--background", "--path", path, local_transfer_id).stdout.decode("utf-8")
     assert "Please provide a directory as a download path to accept the transfer" in ex.value.stdout.decode("utf-8"), "Expected message to provide download path not found in the logs."
 
 
-    sh.nordvpn.fileshare.cancel(local_transfer_id)
+    sh_no_tty.nordvpn.fileshare.cancel(local_transfer_id)
 
-    sh.rm(path)
+    sh_no_tty.rm(path)
 
 
 @pytest.mark.core_meshnet
@@ -1251,13 +1251,13 @@ def test_accept_destination_directory_not_a_directory():
 def test_autoaccept(transfer_entity: fileshare.FileSystemEntity):
     """Manual TC: LVPN-3471"""
 
-    peer_list = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list())
+    peer_list = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
 
     peer_name = peer_list.get_internal_peer().ip
     peer_hostname = peer_list.get_internal_peer().hostname
-    msg = sh.nordvpn.mesh.peer("auto-accept", "enable", peer_name)
+    msg = sh_no_tty.nordvpn.mesh.peer("auto-accept", "enable", peer_name)
     assert meshnet.MSG_PEER_AUTOACCEPT_ALLOW_SUCCESS % peer_hostname in msg, "Should show autoaccept enable success message"
-    assert meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().accept_fileshare_automatically is True, "Autoaccept should be enabled"
+    assert meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_internal_peer().accept_fileshare_automatically is True, "Autoaccept should be enabled"
 
     host_address = peer_list.get_this_device().ip
 
@@ -1282,7 +1282,7 @@ def test_autoaccept(transfer_entity: fileshare.FileSystemEntity):
 
     transfer_id = re.findall(f"({fileshare.TRANSFER_ID_REGEX})(?!.*(?:completed))", send_message)[0]
 
-    for peer_got_transfer in poll(lambda: (transfer_id in sh.nordvpn.fileshare.list())):
+    for peer_got_transfer in poll(lambda: (transfer_id in sh_no_tty.nordvpn.fileshare.list())):
         if peer_got_transfer:
             break
 
@@ -1290,7 +1290,7 @@ def test_autoaccept(transfer_entity: fileshare.FileSystemEntity):
 
     for files_downloaded in poll(
         lambda: fileshare.for_all_files_in_transfer(
-            sh.nordvpn.fileshare.list(transfer_id),
+            sh_no_tty.nordvpn.fileshare.list(transfer_id),
             expected_files,
             lambda file_entry: "downloaded" in file_entry,
         )
@@ -1317,12 +1317,12 @@ def test_autoaccept(transfer_entity: fileshare.FileSystemEntity):
     transfers = ssh_client.exec_command("nordvpn fileshare list")
     assert "completed" in fileshare.find_transfer_by_id(transfers, transfer_id), "Remote transfer should show 'completed' status"
 
-    transfers = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
+    transfers = sh_no_tty.nordvpn.fileshare.list().stdout.decode("utf-8")
     assert "completed" in fileshare.find_transfer_by_id(transfers, transfer_id), "Local transfer should show 'completed' status"
 
-    msg = sh.nordvpn.mesh.peer("auto-accept", "disable", peer_name)
+    msg = sh_no_tty.nordvpn.mesh.peer("auto-accept", "disable", peer_name)
     assert meshnet.MSG_PEER_AUTOACCEPT_DENY_SUCCESS % peer_hostname in msg, "Should show autoaccept disable success message"
-    assert meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().accept_fileshare_automatically is False, "Autoaccept should be disabled"
+    assert meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_internal_peer().accept_fileshare_automatically is False, "Autoaccept should be disabled"
 
     shutil.rmtree('/home/qa/Downloads')
     os.system(f"sudo mkdir -p -m 0777 {default_download_directory}")
@@ -1330,15 +1330,15 @@ def test_autoaccept(transfer_entity: fileshare.FileSystemEntity):
 
 
 def test_peers_autocomplete():
-    peer_hostname = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().hostname
-    output = sh.nordvpn.fileshare.send("--generate-bash-completion")
+    peer_hostname = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_internal_peer().hostname
+    output = sh_no_tty.nordvpn.fileshare.send("--generate-bash-completion")
     assert peer_hostname in output, "Peer hostname should appear in autocomplete output"
-    output = sh.nordvpn.fileshare.send(peer_hostname, "--generate-bash-completion")
+    output = sh_no_tty.nordvpn.fileshare.send(peer_hostname, "--generate-bash-completion")
     assert peer_hostname not in output, "Only first argument should be autocompleted"
 
 
 def test_transfers_autocomplete():
-    peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
+    peer_address = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_internal_peer().ip
     wdir = fileshare.create_directory(2)
     fileshare.start_transfer(peer_address, *wdir.paths)
 
@@ -1384,9 +1384,9 @@ def test_transfers_autocomplete():
 
 
 def test_clear():
-    peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
+    peer_address = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_internal_peer().ip
 
-    sh.nordvpn.fileshare.send("--background", peer_address, f"{workdir}/{test_files[0]}")
+    sh_no_tty.nordvpn.fileshare.send("--background", peer_address, f"{workdir}/{test_files[0]}")
     time.sleep(1)
     local_transfer_id0 = fileshare.get_last_transfer()
 
@@ -1396,7 +1396,7 @@ def test_clear():
 
     ssh_client.exec_command(f"nordvpn fileshare accept --path {workdir} {peer_transfer_id0}")
 
-    transfers = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
+    transfers = sh_no_tty.nordvpn.fileshare.list().stdout.decode("utf-8")
     assert "completed" in fileshare.find_transfer_by_id(transfers, local_transfer_id0), "Local transfer should show 'completed' status"
 
     transfers = ssh_client.exec_command("nordvpn fileshare list")
@@ -1405,7 +1405,7 @@ def test_clear():
     transfer_time0 = time.time()
     time.sleep(3)
 
-    sh.nordvpn.fileshare.send("--background", peer_address, f"{workdir}/{test_files[1]}")
+    sh_no_tty.nordvpn.fileshare.send("--background", peer_address, f"{workdir}/{test_files[1]}")
     time.sleep(1)
     transfer_id_1 = fileshare.get_last_transfer()
 
@@ -1417,7 +1417,7 @@ def test_clear():
 
     ssh_client.exec_command(f"nordvpn fileshare accept --path {workdir} {transfer_id_1}")
 
-    transfers = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
+    transfers = sh_no_tty.nordvpn.fileshare.list().stdout.decode("utf-8")
     assert "completed" in fileshare.find_transfer_by_id(transfers, local_transfer_id0), "First local transfer should show 'completed' status"
     assert "completed" in fileshare.find_transfer_by_id(transfers, transfer_id_1), "Second local transfer should show 'completed' status"
 
@@ -1427,7 +1427,7 @@ def test_clear():
 
     fileshare.clear_history(f"{int(time.time() - transfer_time0)}")
 
-    transfers = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
+    transfers = sh_no_tty.nordvpn.fileshare.list().stdout.decode("utf-8")
     assert fileshare.find_transfer_by_id(transfers, local_transfer_id0) is None, "Cleared transfer should be removed from local list"
     assert "completed" in fileshare.find_transfer_by_id(transfers, transfer_id_1), "Newer transfer should still be in local list"
 
@@ -1444,14 +1444,14 @@ def test_clear():
     time.sleep(3)
     fileshare.clear_history("1")
 
-    transfers = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
+    transfers = sh_no_tty.nordvpn.fileshare.list().stdout.decode("utf-8")
     assert fileshare.find_transfer_by_id(transfers, local_transfer_id0) is None, "Cleared transfer should be removed"
     assert fileshare.find_transfer_by_id(transfers, transfer_id_1) is None, "All older transfers should be cleared"
     assert len(transfers.split("\n")) == 6, "Should have only header rows left"
 
-    lines_incoming = sh.nordvpn.fileshare.list("--incoming", _tty_out=False).split("\n")
+    lines_incoming = sh_no_tty.nordvpn.fileshare.list("--incoming", _tty_out=False).split("\n")
     assert len(lines_incoming) == 3, str(lines_incoming)
-    lines_outgoing = sh.nordvpn.fileshare.list("--outgoing", _tty_out=False).split("\n")
+    lines_outgoing = sh_no_tty.nordvpn.fileshare.list("--outgoing", _tty_out=False).split("\n")
     assert len(lines_outgoing) == 3, str(lines_outgoing)
 
     fileshare.clear_history("all", ssh_client)
@@ -1469,7 +1469,7 @@ def test_clear():
 
 def test_fileshare_process_monitoring_manages_fileshare_rules_on_process_state_changes():
     try:
-        peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
+        peer_address = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_internal_peer().ip
         # port is open when fileshare is running
         assert fileshare.port_is_allowed(peer_address), "Port should be allowed when fileshare is running"
 
@@ -1493,9 +1493,9 @@ def test_fileshare_process_monitoring_manages_fileshare_rules_on_process_state_c
 @pytest.mark.skip(reason="LVPN-6691")
 def test_fileshare_process_monitoring_cuts_the_port_access_even_when_it_was_taken_before():
     try:
-        peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
+        peer_address = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_internal_peer().ip
         # stop meshnet to bind to 49111 first
-        sh.nordvpn.set.meshnet.off()
+        sh_no_tty.nordvpn.set.meshnet.off()
         time.sleep(2)
         assert fileshare.port_is_blocked(peer_address), "Port should be blocked when meshnet is off"
 
@@ -1504,7 +1504,7 @@ def test_fileshare_process_monitoring_cuts_the_port_access_even_when_it_was_take
         assert sock is not None, "Should be able to bind to port"
 
         # start meshnet
-        sh.nordvpn.set.meshnet.on() # now fileshare tries to start but fails because the port is taken
+        sh_no_tty.nordvpn.set.meshnet.on() # now fileshare tries to start but fails because the port is taken
         time.sleep(2)
 
         # port should not be allowed (fileshare is down)
@@ -1528,7 +1528,7 @@ def test_no_stale_fileshare_process_after_mesh_off():
         assert fileshare.is_process_running(), \
             "nordfileshare should be running when meshnet is on"
 
-        sh.nordvpn.set.meshnet.off()
+        sh_no_tty.nordvpn.set.meshnet.off()
 
         # Poll for process death. The shutdown sequence needs time:
         # Stop RPC -> Disable() (up to 5s) -> cleanup() -> confirmProcessDeath (up to 5s).
@@ -1550,7 +1550,7 @@ def test_no_stale_fileshare_process_after_mesh_off():
 def test_all_permissions_denied_send_file(background_send: bool, background_accept: bool):
     """Manual TC: LVPN-3339"""
 
-    local_peer_list = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list())
+    local_peer_list = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
     local_address = local_peer_list.get_this_device().hostname
 
     with lib.Defer(lambda: ssh_client.meshnet.set_permissions(local_address, routing=True, local=True, incoming=True)):
@@ -1560,7 +1560,7 @@ def test_all_permissions_denied_send_file(background_send: bool, background_acce
         peer_address = local_peer_list.get_internal_peer().hostname
 
         if background_send:
-            sh.nordvpn.fileshare.send("--background", peer_address, wdir.paths[0])
+            sh_no_tty.nordvpn.fileshare.send("--background", peer_address, wdir.paths[0])
         else:
             fileshare.start_transfer(peer_address, wdir.paths[0])
 

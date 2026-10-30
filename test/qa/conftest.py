@@ -7,7 +7,6 @@ import subprocess
 import signal
 import threading
 import time
-import sh
 
 import dns.resolver
 import pytest
@@ -16,6 +15,7 @@ import sys
 import os
 
 from lib import logging, network, daemon, login, info, firewall, IS_NIGHTLY
+from lib.shell import sh_no_tty
 
 from lib.remote_config_manager import RemoteConfigManager, LOCAL_CACHE_DIR, REMOTE_DIR
 from lib.logging import FILE
@@ -97,7 +97,7 @@ def _set_custom_config_for_rc(daemon_log_reader, string_to_be_added: str) -> int
         sed_command = rf"1a export {string_to_be_added}"
         target_file = NORDVPND_CONFIG_FILE.get(DEB)
 
-    sh.sudo.sed("-i", sed_command, target_file)
+    sh_no_tty.sudo.sed("-i", sed_command, target_file)
 
     time_mark = daemon_log_reader.get_cursor()
 
@@ -213,8 +213,8 @@ def _capture_traffic(stop_event):
 def _restart_daemon_after_changing_config():
     """Method to restart daemon after changing config according to system"""
     if daemon.is_under_snap():
-        sh.sudo.systemctl("daemon-reload")
-        sh.sudo(SNAP, "restart", NORDVPND_SERVICE_NAME.get(SNAP))
+        sh_no_tty.sudo.systemctl("daemon-reload")
+        sh_no_tty.sudo(SNAP, "restart", NORDVPND_SERVICE_NAME.get(SNAP))
     else:
         daemon.restart()
 
@@ -238,7 +238,7 @@ def nordvpnd_scope_function(collect_logs):  # noqa: ARG001
 
     yield
 
-    sh.nordvpn.set.defaults("--logout", "--off-killswitch")
+    sh_no_tty.nordvpn.set.defaults("--logout", "--off-killswitch")
     daemon.stop()
 
 
@@ -250,7 +250,7 @@ def nordvpnd_scope_module():
 
     yield
 
-    sh.nordvpn.set.defaults("--logout", "--off-killswitch")
+    sh_no_tty.nordvpn.set.defaults("--logout", "--off-killswitch")
     daemon.stop()
 
 
@@ -397,7 +397,7 @@ def backup_restore_rc_config_files(nordvpnd_scope_function):  # noqa: ARG001
     os.makedirs(TMP_DAEMON_PATH_BACKUP, exist_ok=True)
 
     print("Copy original remote monitoring config files as back up")
-    sh.sudo.cp("-r", LOCAL_CACHE_DIR, TMP_DAEMON_PATH_BACKUP)
+    sh_no_tty.sudo.cp("-r", LOCAL_CACHE_DIR, TMP_DAEMON_PATH_BACKUP)
     yield
     print("Restore original remote monitoring config files")
-    sh.sudo.cp("-r", TMP_DAEMON_PATH_BACKUP, LOCAL_CACHE_DIR)
+    sh_no_tty.sudo.cp("-r", TMP_DAEMON_PATH_BACKUP, LOCAL_CACHE_DIR)

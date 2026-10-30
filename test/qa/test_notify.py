@@ -1,8 +1,8 @@
 import pytest
-import sh
 
 import lib
 from lib import notify, settings
+from lib.shell import sh_no_tty
 
 
 pytestmark = pytest.mark.usefixtures("nordvpnd_scope_module", "collect_logs", "disable_notifications")
@@ -29,7 +29,7 @@ def test_notifications_disabled_connect(vpn_protocol):
 def test_notifications_enabled_connect(vpn_protocol):
     lib.set_vpn_protocol(vpn_protocol)
 
-    sh.nordvpn.set.notify.on()
+    sh_no_tty.nordvpn.set.notify.on()
     assert settings.is_notify_enabled(), "Notifications should be enabled"
 
     connect_notification = notify.connect_and_capture_notifications(vpn_protocol)
@@ -48,7 +48,7 @@ def test_notifications_enabled_connect(vpn_protocol):
 def test_notifications_enabled_connected_disable(vpn_protocol):
     lib.set_vpn_protocol(vpn_protocol)
 
-    sh.nordvpn.set.notify.on()
+    sh_no_tty.nordvpn.set.notify.on()
     assert settings.is_notify_enabled(), "Notifications should be enabled"
 
     connect_notification = notify.connect_and_capture_notifications(vpn_protocol)
@@ -57,7 +57,7 @@ def test_notifications_enabled_connected_disable(vpn_protocol):
     assert connect_notification == notify.NOTIFICATION_DETECTED, \
         notify.print_tidy_exception(connect_notification, notify.NOTIFICATION_DETECTED)
 
-    sh.nordvpn.set.notify.off()
+    sh_no_tty.nordvpn.set.notify.off()
     assert not settings.is_notify_enabled(), "Notifications should be disabled"
 
     disconnect_notification = notify.disconnect_and_capture_notifications()
@@ -76,7 +76,7 @@ def test_notifications_disabled_connected_enable(vpn_protocol):
     assert connect_notification == notify.NOTIFICATION_NOT_DETECTED, \
         notify.print_tidy_exception(connect_notification, notify.NOTIFICATION_NOT_DETECTED)
 
-    sh.nordvpn.set.notify.on()
+    sh_no_tty.nordvpn.set.notify.on()
     assert settings.is_notify_enabled(), "Notifications should be enabled"
 
     # Should fail here, if tested with 3.16.6, since notification icon is missing
@@ -89,10 +89,10 @@ def test_notifications_disabled_connected_enable(vpn_protocol):
 def test_notify_already_enabled_disconnected(vpn_protocol):
     lib.set_vpn_protocol(vpn_protocol)
 
-    sh.nordvpn.set.notify.on()
+    sh_no_tty.nordvpn.set.notify.on()
     assert settings.is_notify_enabled(), "Notifications should be enabled"
 
-    output = sh.nordvpn.set.notify.on()
+    output = sh_no_tty.nordvpn.set.notify.on()
     assert notify.NOTIFY_MSG_ERROR_ALREADY_ENABLED in str(output), "Error message should indicate notifications are already enabled"
     assert settings.is_notify_enabled(), "Notifications should be enabled"
 
@@ -101,13 +101,13 @@ def test_notify_already_enabled_disconnected(vpn_protocol):
 def test_notify_already_enabled_connected(vpn_protocol):
     lib.set_vpn_protocol(vpn_protocol)
 
-    with lib.Defer(sh.nordvpn.disconnect):
-        sh.nordvpn.connect()
+    with lib.Defer(sh_no_tty.nordvpn.disconnect):
+        sh_no_tty.nordvpn.connect()
 
-        sh.nordvpn.set.notify.on()
+        sh_no_tty.nordvpn.set.notify.on()
         assert settings.is_notify_enabled(), "Notifications should be enabled"
 
-        output = sh.nordvpn.set.notify.on()
+        output = sh_no_tty.nordvpn.set.notify.on()
         assert notify.NOTIFY_MSG_ERROR_ALREADY_ENABLED in str(output), "Error message should indicate notifications are already enabled"
         assert settings.is_notify_enabled(), "Notifications should be enabled"
 
@@ -118,7 +118,7 @@ def test_notify_already_disabled_disconnected(vpn_protocol):
 
     assert not settings.is_notify_enabled(), "Notifications should be disabled"
 
-    output = sh.nordvpn.set.notify.off()
+    output = sh_no_tty.nordvpn.set.notify.off()
     assert notify.NOTIFY_MSG_ERROR_ALREADY_DISABLED in str(output), "Error message should indicate notifications are already disabled"
     assert not settings.is_notify_enabled(), "Notifications should be disabled"
 
@@ -127,11 +127,11 @@ def test_notify_already_disabled_disconnected(vpn_protocol):
 def test_notify_already_disabled_connected(vpn_protocol):
     lib.set_vpn_protocol(vpn_protocol)
 
-    with lib.Defer(sh.nordvpn.disconnect):
-        sh.nordvpn.connect()
+    with lib.Defer(sh_no_tty.nordvpn.disconnect):
+        sh_no_tty.nordvpn.connect()
 
         assert not settings.is_notify_enabled(), "Notifications should be disabled"
 
-        output = sh.nordvpn.set.notify.off()
+        output = sh_no_tty.nordvpn.set.notify.off()
         assert notify.NOTIFY_MSG_ERROR_ALREADY_DISABLED in str(output), "Error message should indicate notifications are already disabled"
         assert not settings.is_notify_enabled(), "Notifications should be disabled"

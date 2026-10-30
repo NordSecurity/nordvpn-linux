@@ -1,6 +1,6 @@
 import os
 
-import sh
+from .shell import sh_no_tty
 from lib import logging
 
 def collect():
@@ -12,7 +12,7 @@ def collect():
     nameserver_info = os.popen("sudo cat /etc/resolv.conf").read() #sh.sudo.cat("/etc/resolv.conf")
 
     # without `ww` we cannot see full process lines, as it is cut off early
-    processes = sh.ps("-efww")
+    processes = sh_no_tty.ps("-efww")
 
     # If there are too many connections reduce to max 100000, otherwise logger will fail
     # TODO: LVPN-11148

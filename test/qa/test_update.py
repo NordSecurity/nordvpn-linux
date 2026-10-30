@@ -3,7 +3,6 @@ import os
 import shutil
 
 import pytest
-import sh
 
 import lib
 from lib import daemon, fileshare, login, meshnet, network, poll, ssh, logging
@@ -49,20 +48,20 @@ def setup_module(module):  # noqa: ARG001
 def setup_function(function):  # noqa: ARG001
     TestData.INVOLVES_MESHNET = any(keyword in os.environ["PYTEST_CURRENT_TEST"] for keyword in ["meshnet", "fileshare"])
 
-    sh.sudo.apt.purge("-y", "nordvpn")
+    sh_no_tty.sudo.apt.purge("-y", "nordvpn")
 
     # in order to simulate actual upgrade, always install current-but-one version
     # the exact version to be installed, is determined based on the presence of changelogs in the repository.
     # finally, use the fetched previous version and provide it to the installation script
     previous_version = _previous_app_version()
     logging.log(data=f"Installing previous production version: {previous_version}")
-    sh.sh("-s", "--", "-n", "-v", previous_version, _in=sh.curl("-sSf", "https://downloads.nordcdn.com/apps/linux/install.sh"))
-    ProductionApplicationData.APP_VERSION = sh.nordvpn("-v").split()[2]
+    sh_no_tty.sh("-s", "--", "-n", "-v", previous_version, _in=sh_no_tty.curl("-sSf", "https://downloads.nordcdn.com/apps/linux/install.sh"))
+    ProductionApplicationData.APP_VERSION = sh_no_tty.nordvpn("-v").split()[2]
 
     daemon.start()
 
     daemon.stop() # TODO: LVPN-6403
-    sh.sudo.apt.install(DEB_PATH, "-y")
+    sh_no_tty.sudo.apt.install(DEB_PATH, "-y")
 
     daemon.start() # TODO: LVPN-6403
 
@@ -70,8 +69,8 @@ def setup_function(function):  # noqa: ARG001
     login.login_as("default")
 
     if TestData.INVOLVES_MESHNET:
-        sh.nordvpn.set.notify.off()
-        assert "Meshnet is set to 'enabled' successfully." in sh.nordvpn.set.meshnet.on(), "Meshnet should be successfully enabled"
+        sh_no_tty.nordvpn.set.notify.off()
+        assert "Meshnet is set to 'enabled' successfully." in sh_no_tty.nordvpn.set.meshnet.on(), "Meshnet should be successfully enabled"
 
         meshnet.remove_all_peers()
 
@@ -80,7 +79,7 @@ def setup_function(function):  # noqa: ARG001
         login.login_as("default", ssh_client)
         ssh_client.exec_command("nordvpn set notify off")
         ssh_client.exec_command("nordvpn set mesh on")
-        sh.nordvpn.mesh.peer.refresh()
+        sh_no_tty.nordvpn.mesh.peer.refresh()
 
         meshnet.wait_for_peers_connection(ssh_client)
 
@@ -90,7 +89,7 @@ def teardown_function(function):  # noqa: ARG001
         logging.log(data="Disable meshnet")
         ssh_client.exec_command("rm -rf /root/Downloads/*")
 
-        sh.nordvpn.set.mesh.off()
+        sh_no_tty.nordvpn.set.mesh.off()
         ssh_client.exec_command("nordvpn set mesh off")
 
         daemon.stop_peer(ssh_client)
@@ -111,19 +110,19 @@ def test_meshnet_available_after_update():
     meshnet_help_page = sh_no_tty.nordvpn.meshnet("--help")
     assert "Learn more: https://meshnet.nordvpn.com/" in meshnet_help_page, "Meshnet help page should contain meshnet.nordvpn.com reference"
 
-    parsed_peer_list = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list())
+    parsed_peer_list = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
 
     local_hostname = parsed_peer_list.get_this_device().hostname
     ssh_client.exec_command(f"nordvpn mesh peer routing allow {local_hostname}")
-    sh.nordvpn.mesh.peer.refresh()
+    sh_no_tty.nordvpn.mesh.peer.refresh()
 
     peer_hostname = parsed_peer_list.get_internal_peer().hostname
-    output = sh.nordvpn.mesh.peer.connect(peer_hostname)
+    output = sh_no_tty.nordvpn.mesh.peer.connect(peer_hostname)
     assert meshnet.is_connect_successful(output, peer_hostname), "Meshnet peer connect should be successful"
     assert daemon.is_connected(), "Daemon should be connected after meshnet peer connect"
     assert network.is_available(), "Network should be available when connected to meshnet peer"
 
-    output = sh.nordvpn.disconnect()
+    output = sh_no_tty.nordvpn.disconnect()
     assert lib.is_disconnect_successful(output), "Disconnect should be successful"
     assert not daemon.is_connected(), "Daemon should be disconnected after disconnect"
     assert network.is_available(), "Network should be available after disconnect"
@@ -133,12 +132,12 @@ def test_meshnet_available_after_update():
 def test_fileshare_available_after_update():
     """Manual TC: LVPN-3205"""
 
-    fileshare_help_page = sh.nordvpn.fileshare("--help", _tty_out=False)
+    fileshare_help_page = sh_no_tty.nordvpn.fileshare("--help", _tty_out=False)
     assert "Learn more: https://meshnet.nordvpn.com/features/sharing-files-in-meshnet" in fileshare_help_page, "Fileshare help page should contain meshnet sharing reference"
 
     wdir = fileshare.create_directory(5)
 
-    peer_hostname = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().hostname
+    peer_hostname = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_internal_peer().hostname
 
     fileshare.start_transfer(peer_hostname, wdir.dir_path)
 
@@ -166,13 +165,13 @@ def test_quick_connect_after_update(vpn_protocol):
 def test_changelog_after_update():
     """Manual TC: LVPN-4152"""
 
-    if ProductionApplicationData.APP_VERSION in sh.nordvpn("-v"):
+    if ProductionApplicationData.APP_VERSION in sh_no_tty.nordvpn("-v"):
         pytest.skip("Changelog not implemented yet.")
 
     changelog_path = "/usr/share/doc/nordvpn/changelog.Debian.gz"
-    changelog = sh.dpkg_parsechangelog("-l", changelog_path)
+    changelog = sh_no_tty.dpkg_parsechangelog("-l", changelog_path)
 
     # take version without checksum as it will never be present in the changelog
-    nordvpn_version = sh.nordvpn("-v").split()[2].split('+')[0]
+    nordvpn_version = sh_no_tty.nordvpn("-v").split()[2].split('+')[0]
     assert nordvpn_version in changelog, f"Version {nordvpn_version} should be present in changelog"
     assert "*" in changelog, "Changelog should contain entry markers"

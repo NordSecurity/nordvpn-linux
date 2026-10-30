@@ -7,6 +7,7 @@ import time
 import sh
 
 from . import Port, Protocol, ssh
+from .shell import sh_no_tty
 
 IP_ROUTE_TABLE = 205
 ENDPOINTS = "endpoints"
@@ -54,15 +55,15 @@ def setup_port_sock_server(ssh_client : ssh.Ssh | None):
 
 def is_active() -> bool:
     """Returns True when nft finds the default nordvpn table"""
-    print(sh.ip.route())
+    print(sh_no_tty.ip.route())
     try:
-        out = sh.sudo.nft("list", "table", "inet", "nordvpn")
+        out = sh_no_tty.sudo.nft("list", "table", "inet", "nordvpn")
     except Exception: # noqa: BLE001
         return False
 
     print(out)
     with contextlib.suppress(Exception):
-        print(sh.nordvpn.settings())
+        print(sh_no_tty.nordvpn.settings())
     return "nordvpn" in out
 
 tun_interface_names = [
@@ -74,9 +75,9 @@ tun_interface_names = [
 def is_ip_routed_via_VPN(subnets: list[str]) -> bool:
     bool_array = []
     for subnet in subnets:
-        print(sh.ip.route.get(subnet))
+        print(sh_no_tty.ip.route.get(subnet))
         # Allowlisted subnet should not return tunnel interface name when using ip route get
-        bool_array.append(any(iface_name in sh.ip.route.get(subnet) for iface_name in tun_interface_names))
+        bool_array.append(any(iface_name in sh_no_tty.ip.route.get(subnet) for iface_name in tun_interface_names))
     return all(bool_array)
 
 
@@ -96,10 +97,10 @@ def is_source_port_reachable(ports: list[Port]) -> bool:
             try:
                 print("deleting ", protocol)
                 if ":" in port.value:
-                    sh.sudo.conntrack("-D", "-p", protocol, "--sport", port_range_start)
-                    sh.sudo.conntrack("-D", "-p", protocol, "--sport", port_range_end)
+                    sh_no_tty.sudo.conntrack("-D", "-p", protocol, "--sport", port_range_start)
+                    sh_no_tty.sudo.conntrack("-D", "-p", protocol, "--sport", port_range_end)
                 else:
-                    sh.sudo.conntrack("-D", "-p", protocol, "--sport", port.value)
+                    sh_no_tty.sudo.conntrack("-D", "-p", protocol, "--sport", port.value)
             except sh.ErrorReturnCode_1:
                 print("nothing to delete")
                 continue

@@ -3,6 +3,8 @@ import random
 import dns.resolver
 import sh
 
+from .shell import sh_no_tty
+
 # Used for test parametrization.
 DNS_NORD = ["103.86.96.100", "103.86.99.100"]
 
@@ -62,7 +64,7 @@ def is_set_for(dns_set_in_app: list) -> bool:
 def get_dns_servers():
     dns_status = ""
     try:
-        dns_status = sh.resolvectl("status")
+        dns_status = sh_no_tty.resolvectl("status")
     except sh.ErrorReturnCode_1:
         dns_status = ""
 

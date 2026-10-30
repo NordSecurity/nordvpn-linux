@@ -31,11 +31,11 @@ def test_allowlist_incoming_connection():
     ssh_client.exec_command("nordvpn set killswitch on")
     # We should not have direct connection anymore after connecting to VPN
     with pytest.raises(sh.ErrorReturnCode_1):
-        assert "icmp_seq=" not in sh.ping("-c", "1", "qa-peer"), "Direct connection should not work with killswitch enabled"
+        assert "icmp_seq=" not in sh_no_tty.ping("-c", "1", "qa-peer"), "Direct connection should not work with killswitch enabled"
 
         ssh_client.exec_command(f"nordvpn allowlist add subnet {my_ip}/32")
         # Direct connection should work again after allowlisting
-        assert "icmp_seq=" in sh.ping("-c", "1", "qa-peer"), "Direct connection should work after allowlisting IP"
+        assert "icmp_seq=" in sh_no_tty.ping("-c", "1", "qa-peer"), "Direct connection should work after allowlisting IP"
     ssh_client.exec_command("nordvpn set killswitch off")
 
 

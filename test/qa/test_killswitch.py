@@ -1,7 +1,6 @@
 import subprocess
 
 import pytest
-import sh
 import os
 import glob
 import time
@@ -17,6 +16,7 @@ from lib import (
     network,
     IS_NIGHTLY
 )
+from lib.shell import sh_no_tty
 from lib.dynamic_parametrize import dynamic_parametrize
 from lib.log_reader import LogReader
 
@@ -40,13 +40,13 @@ def test_killswitch_on_disconnected(vpn_protocol):
     lib.set_vpn_protocol(vpn_protocol)
     assert network.is_available(), "Network should be available"
 
-    assert MSG_KILLSWITCH_ON in sh.nordvpn.set.killswitch("on"), "Kill switch enable message should be shown"
+    assert MSG_KILLSWITCH_ON in sh_no_tty.nordvpn.set.killswitch("on"), "Kill switch enable message should be shown"
     assert daemon.is_killswitch_on(), "Kill switch should be enabled"
 
-    with lib.ErrorDefer(sh.nordvpn.set.killswitch.off):
+    with lib.ErrorDefer(sh_no_tty.nordvpn.set.killswitch.off):
         assert network.is_not_available(2), "Network should not be available when kill switch is on"
 
-    assert MSG_KILLSWITCH_OFF in sh.nordvpn.set.killswitch("off"), "Kill switch disable message should be shown"
+    assert MSG_KILLSWITCH_OFF in sh_no_tty.nordvpn.set.killswitch("off"), "Kill switch disable message should be shown"
     assert not daemon.is_killswitch_on(), "Kill switch should be disabled"
     assert network.is_available(), "Network should be available"
 
@@ -58,24 +58,24 @@ def test_killswitch_on_connect(vpn_protocol):
     lib.set_vpn_protocol(vpn_protocol)
     assert network.is_available(), "Network should be available"
 
-    assert MSG_KILLSWITCH_ON in sh.nordvpn.set.killswitch("on"), "Kill switch enable message should be shown"
+    assert MSG_KILLSWITCH_ON in sh_no_tty.nordvpn.set.killswitch("on"), "Kill switch enable message should be shown"
     assert daemon.is_killswitch_on(), "Kill switch should be enabled"
 
-    with lib.ErrorDefer(sh.nordvpn.set.killswitch.off):
+    with lib.ErrorDefer(sh_no_tty.nordvpn.set.killswitch.off):
         assert network.is_not_available(2), "Network should not be available when kill switch is on"
 
-        with lib.ErrorDefer(sh.nordvpn.disconnect):
-            output = sh.nordvpn.connect()
+        with lib.ErrorDefer(sh_no_tty.nordvpn.disconnect):
+            output = sh_no_tty.nordvpn.connect()
             print(output)
             assert network.is_connected(), "Network should be connected"
 
-    output = sh.nordvpn.disconnect()
+    output = sh_no_tty.nordvpn.disconnect()
     print(output)
 
-    with lib.ErrorDefer(sh.nordvpn.set.killswitch.off):
+    with lib.ErrorDefer(sh_no_tty.nordvpn.set.killswitch.off):
         assert network.is_not_available(2), "Network should not be available when kill switch is on"
 
-    assert MSG_KILLSWITCH_OFF in sh.nordvpn.set.killswitch("off"), "Kill switch disable message should be shown"
+    assert MSG_KILLSWITCH_OFF in sh_no_tty.nordvpn.set.killswitch("off"), "Kill switch disable message should be shown"
     assert not daemon.is_killswitch_on(), "Kill switch should be disabled"
     assert network.is_available(), "Network should be available"
 
@@ -87,18 +87,18 @@ def test_killswitch_on_connected(vpn_protocol):
     lib.set_vpn_protocol(vpn_protocol)
     assert network.is_available(), "Network should be available"
 
-    with lib.Defer(sh.nordvpn.disconnect):
-        output = sh.nordvpn.connect()
+    with lib.Defer(sh_no_tty.nordvpn.disconnect):
+        output = sh_no_tty.nordvpn.connect()
         print(output)
         assert network.is_connected(), "Network should be connected"
 
-        assert MSG_KILLSWITCH_ON in sh.nordvpn.set.killswitch("on"), "Kill switch enable message should be shown"
+        assert MSG_KILLSWITCH_ON in sh_no_tty.nordvpn.set.killswitch("on"), "Kill switch enable message should be shown"
         assert daemon.is_killswitch_on(), "Kill switch should be enabled"
 
-    with lib.ErrorDefer(sh.nordvpn.set.killswitch.off):
+    with lib.ErrorDefer(sh_no_tty.nordvpn.set.killswitch.off):
         assert network.is_not_available(2), "Network should not be available when kill switch is on"
 
-    assert MSG_KILLSWITCH_OFF in sh.nordvpn.set.killswitch("off"), "Kill switch disable message should be shown"
+    assert MSG_KILLSWITCH_OFF in sh_no_tty.nordvpn.set.killswitch("off"), "Kill switch disable message should be shown"
     assert not daemon.is_killswitch_on(), "Kill switch should be disabled"
     assert network.is_available(), "Network should be available"
 
@@ -110,18 +110,18 @@ def test_killswitch_off_connected(vpn_protocol):
     lib.set_vpn_protocol(vpn_protocol)
     assert network.is_available(), "Network should be available"
 
-    assert MSG_KILLSWITCH_ON in sh.nordvpn.set.killswitch("on"), "Kill switch enable message should be shown"
+    assert MSG_KILLSWITCH_ON in sh_no_tty.nordvpn.set.killswitch("on"), "Kill switch enable message should be shown"
     assert daemon.is_killswitch_on(), "Kill switch should be enabled"
 
-    with lib.ErrorDefer(sh.nordvpn.set.killswitch.off):
+    with lib.ErrorDefer(sh_no_tty.nordvpn.set.killswitch.off):
         assert network.is_not_available(2), "Network should not be available when kill switch is on"
 
-        with lib.Defer(sh.nordvpn.disconnect):
-            output = sh.nordvpn.connect()
+        with lib.Defer(sh_no_tty.nordvpn.disconnect):
+            output = sh_no_tty.nordvpn.connect()
             print(output)
             assert network.is_connected(), "Network should be connected"
 
-            assert MSG_KILLSWITCH_OFF in sh.nordvpn.set.killswitch("off"), "Kill switch disable message should be shown"
+            assert MSG_KILLSWITCH_OFF in sh_no_tty.nordvpn.set.killswitch("off"), "Kill switch disable message should be shown"
             assert not daemon.is_killswitch_on(), "Kill switch should be disabled"
             assert network.is_available(), "Network should be available"
 
@@ -145,31 +145,31 @@ def test_killswitch_reconnect(vpn_protocol_from, vpn_protocol_to):
     lib.set_vpn_protocol(vpn_protocol_from)
     assert network.is_available(), "Network should be available"
 
-    assert MSG_KILLSWITCH_ON in sh.nordvpn.set.killswitch("on"), "Kill switch enable message should be shown"
+    assert MSG_KILLSWITCH_ON in sh_no_tty.nordvpn.set.killswitch("on"), "Kill switch enable message should be shown"
     assert daemon.is_killswitch_on(), "Kill switch should be enabled"
 
-    with lib.ErrorDefer(sh.nordvpn.set.killswitch.off):
+    with lib.ErrorDefer(sh_no_tty.nordvpn.set.killswitch.off):
         assert network.is_not_available(2), "Network should not be available when kill switch is on"
 
-        with lib.ErrorDefer(sh.nordvpn.disconnect):
-            output = sh.nordvpn.connect()
+        with lib.ErrorDefer(sh_no_tty.nordvpn.disconnect):
+            output = sh_no_tty.nordvpn.connect()
             print(output)
             assert network.is_connected(), "Network should be connected"
 
             lib.set_vpn_protocol(vpn_protocol_to)
             assert network.is_connected(), "Network should be connected after changing protocol"
-            output = sh.nordvpn.connect()
+            output = sh_no_tty.nordvpn.connect()
             print(output)
             assert network.is_connected(), "Network should be connected"
 
-    output = sh.nordvpn.disconnect()
+    output = sh_no_tty.nordvpn.disconnect()
     print(output)
     assert daemon.is_disconnected(), "Daemon should be disconnected"
 
-    with lib.ErrorDefer(sh.nordvpn.set.killswitch.off):
+    with lib.ErrorDefer(sh_no_tty.nordvpn.set.killswitch.off):
         assert network.is_not_available(2), "Network should not be available when kill switch is on"
 
-    assert MSG_KILLSWITCH_OFF in sh.nordvpn.set.killswitch("off"), "Kill switch disable message should be shown"
+    assert MSG_KILLSWITCH_OFF in sh_no_tty.nordvpn.set.killswitch("off"), "Kill switch disable message should be shown"
     assert not daemon.is_killswitch_on(), "Kill switch should be disabled"
     assert network.is_available(), "Network should be available"
 
@@ -179,47 +179,47 @@ def test_killswitch_reconnect(vpn_protocol_from, vpn_protocol_to):
 def test_fancy_transport():
     """Manual TC: LVPN-8717"""
 
-    sh.nordvpn.logout()
-    output = sh.nordvpn.set.killswitch("on")
+    sh_no_tty.nordvpn.logout()
+    output = sh_no_tty.nordvpn.set.killswitch("on")
     assert MSG_KILLSWITCH_ON in output, "Kill switch enable message should be shown"
 
     output = login.login_as("default")
     print(output)
     assert "Welcome to NordVPN!" in output, "Login should show welcome message"
 
-    with lib.ErrorDefer(sh.nordvpn.set.killswitch.off):
-        output = sh.nordvpn.account()
+    with lib.ErrorDefer(sh_no_tty.nordvpn.set.killswitch.off):
+        output = sh_no_tty.nordvpn.account()
         print(output)
         assert "Account information" in output, "Account command should display account information"
 
-    sh.nordvpn.set.killswitch("off")
+    sh_no_tty.nordvpn.set.killswitch("off")
     assert network.is_available(), "Network should be available"
 
 
 # This test assumes being run on docker
 @pytest.mark.skipif(not Path("/.dockerenv").exists() and not Path("/vagrant").exists(), reason="Test must be executed in either a Docker or Vagrant environment")
 def test_killswitch_on_after_update():
-    sh.nordvpn.set.killswitch.on()
+    sh_no_tty.nordvpn.set.killswitch.on()
     assert daemon.is_killswitch_on(), "Kill switch should be enabled"
-    logging.log(f"Settings before update {sh.nordvpn.settings()}")
+    logging.log(f"Settings before update {sh_no_tty.nordvpn.settings()}")
     assert network.is_not_available(2), "Network should not be available when kill switch is on"
 
     if daemon.is_under_snap():
         # Need to kill norduserd, as otherwise we cannot install Snap package on top
-        pid = sh.pgrep("norduserd").strip()
-        sh.sudo.kill("-9", pid)
-        sh.sudo.snap.install("--dangerous", SNAP_PATH)
+        pid = sh_no_tty.pgrep("norduserd").strip()
+        sh_no_tty.sudo.kill("-9", pid)
+        sh_no_tty.sudo.snap.install("--dangerous", SNAP_PATH)
     else:
         # Mocking ps to pretend as if we are in an initd system
-        with lib.Defer(lambda: sh.sudo.mv("/usr/bin/pso", "/usr/bin/ps")):
-            sh.sudo.mv("/usr/bin/ps", "/usr/bin/pso")
-            sh.sudo.cp("/etc/mock_ps.sh", "/usr/bin/ps")
-            sh.sudo.dpkg("-i", DEB_PATH)
+        with lib.Defer(lambda: sh_no_tty.sudo.mv("/usr/bin/pso", "/usr/bin/ps")):
+            sh_no_tty.sudo.mv("/usr/bin/ps", "/usr/bin/pso")
+            sh_no_tty.sudo.cp("/etc/mock_ps.sh", "/usr/bin/ps")
+            sh_no_tty.sudo.dpkg("-i", DEB_PATH)
     daemon.wait_until_daemon_is_running()
-    logging.log(f"Settings after app update {sh.nordvpn.settings()}")
+    logging.log(f"Settings after app update {sh_no_tty.nordvpn.settings()}")
     assert network.is_not_available(2), "Network should not be available when kill switch is on"
     assert daemon.is_killswitch_on(), "Kill switch should remain enabled after update"
-    sh.nordvpn.set.killswitch.off()
+    sh_no_tty.nordvpn.set.killswitch.off()
     assert network.is_available(), "Network should be available"
 
 
@@ -236,11 +236,11 @@ def test_nc_mqtt_connection_with_killswitch():
     assert network.is_available(), "Network should be available before test"
 
     # Enable kill switch - blocks all non-marked traffic
-    output = sh.nordvpn.set.killswitch("on")
+    output = sh_no_tty.nordvpn.set.killswitch("on")
     assert MSG_KILLSWITCH_ON in output, "Kill switch enable message should be shown"
     assert daemon.is_killswitch_on(), "Kill switch should be enabled"
 
-    with lib.ErrorDefer(sh.nordvpn.set.killswitch.off):
+    with lib.ErrorDefer(sh_no_tty.nordvpn.set.killswitch.off):
         # Verify network is blocked for regular traffic
         assert network.is_not_available(2), "Network should be blocked by kill switch"
 
@@ -269,14 +269,14 @@ def test_nc_mqtt_connection_with_killswitch():
         assert nc_connected, "NC client should connect successfully with kill switch enabled"
 
     # Cleanup
-    output = sh.nordvpn.set.killswitch("off")
+    output = sh_no_tty.nordvpn.set.killswitch("off")
     assert MSG_KILLSWITCH_OFF in output, "Kill switch disable message should be shown"
     assert network.is_available(), "Network should be available after test"
 
 
 @pytest.mark.skipif(daemon.is_under_snap(), reason="Passing args to Snap daemon not possible.")
 def test_killswitch_mode_daemon():
-    sh.nordvpn.set.killswitch.on()
+    sh_no_tty.nordvpn.set.killswitch.on()
     daemon.stop()
     daemon.start_with_arg("--killswitch-mode")
     assert firewall.is_active(), "Firewall should have been setup by the killswitch mode daemon"
@@ -285,15 +285,15 @@ def test_killswitch_mode_daemon():
     daemon.start()
     assert firewall.is_active(), "Firewall should still be up after running regular daemon"
     assert network.is_not_available(), "Killswitch should still be blocking network after running regular daemon"
-    sh.nordvpn.set.killswitch.off()
+    sh_no_tty.nordvpn.set.killswitch.off()
     assert network.is_available(), "Network should be available"
 
 
 def test_killswitch_autoconnect_to_fastest():
     device_country = network.get_external_device_country()
     assert device_country in ["Germany", "Finland"], "Perhaps device country changed?"
-    sh.nordvpn.set.killswitch.on()
-    sh.nordvpn.set.autoconnect.on()
+    sh_no_tty.nordvpn.set.killswitch.on()
+    sh_no_tty.nordvpn.set.autoconnect.on()
     daemon.restart()
     start_time =  time.monotonic()
     daemon.wait_for_autoconnect()
@@ -303,19 +303,19 @@ def test_killswitch_autoconnect_to_fastest():
     # list of closest countries that surround Germany
     allowed_countries = ["Germany", "Poland", "Czech_Republic", "Austria", "Switzerland", "France", "Belgium", "Netherlands", "Denmark", "Finland"]
     assert status_data["country"] in allowed_countries, "Fastest server should be in the same country"
-    sh.nordvpn.set.killswitch.off()
-    sh.nordvpn.set.autoconnect.off()
+    sh_no_tty.nordvpn.set.killswitch.off()
+    sh_no_tty.nordvpn.set.autoconnect.off()
 
 
 @pytest.mark.skipif(daemon.is_under_snap(), reason="feature is not supported on snap")
 def test_killswitch_on_during_restart():
-    sh.nordvpn.set.killswitch.on()
+    sh_no_tty.nordvpn.set.killswitch.on()
     daemon.non_blocking_restart()
     for _ in range(5):
         # doing five consecutive checks, to see if the table is not gone during the stopping and restarting
         assert firewall.is_active()
     assert network.is_not_available()
-    sh.nordvpn.set.killswitch.off()
+    sh_no_tty.nordvpn.set.killswitch.off()
     assert network.is_available(), "Network should be available"
 
 
@@ -338,9 +338,9 @@ def test_killswitch_lan():
     qapeer_ip = firewall.IP
 
     assert is_host_reachable(qapeer_ip), "LAN device should be reachable"
-    with lib.Defer(sh.nordvpn.set.killswitch.off):
-        sh.nordvpn.set.killswitch.on()
+    with lib.Defer(sh_no_tty.nordvpn.set.killswitch.off):
+        sh_no_tty.nordvpn.set.killswitch.on()
         assert not is_host_reachable(qapeer_ip), "LAN device should not be reachable with Kill Switch enabled"
-        with lib.Defer(lambda: sh.nordvpn.set("lan-discovery", "off")):
-            sh.nordvpn.set("lan-discovery", "on")
+        with lib.Defer(lambda: sh_no_tty.nordvpn.set("lan-discovery", "off")):
+            sh_no_tty.nordvpn.set("lan-discovery", "on")
             assert is_host_reachable(qapeer_ip), "LAN device should be reachable with Kill Switch enabled and LAN Discovery enabled"

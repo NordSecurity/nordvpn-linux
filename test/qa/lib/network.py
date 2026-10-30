@@ -8,6 +8,7 @@ import requests
 import sh
 
 from . import daemon, firewall, info, logging, retry_on_exc, API_EXTERNAL_IP
+from .shell import sh_no_tty
 
 # private variable for storing routes
 _blackholes = []
@@ -53,7 +54,7 @@ class RouteInfo:
         return f"<RouteInfo destination={self.destination}, gateway={self.gateway}, interface={self.interface}, metric={self.metric}, src={self.src}, scope={self.scope}, proto={self.proto}, type={self.type}>"
 
     def routes_ip(self, ip: str) -> bool:
-        result = sh.ip.route.get(ip).stdout.decode().strip()
+        result = sh_no_tty.ip.route.get(ip).stdout.decode().strip()
         tokens = result.split()
 
         resolved_dev = self._extract_token(tokens, "dev")
@@ -68,7 +69,7 @@ class RouteInfo:
 
     @staticmethod
     def default_route_info() -> "RouteInfo":
-        output = sh.ip.route.show("default").stdout.decode()
+        output = sh_no_tty.ip.route.show("default").stdout.decode()
         return RouteInfo(output)
 
 
@@ -80,7 +81,7 @@ def is_internet_reachable(ip_address="1.1.1.1", port=443, retry=5) -> bool:
             return True
         except Exception as e:  # noqa: BLE001
             logging.log(f"is_internet_reachable failed {ip_address}: {e}")
-            res = sh.sudo.nft.list.ruleset()
+            res = sh_no_tty.sudo.nft.list.ruleset()
             logging.log(f"is_internet_reachable {res}")
             raise
     result = retry_on_exc(attempts=retry, delay=1, raise_exc=False)(_check)()
@@ -91,7 +92,7 @@ def is_internet_reachable_outside_vpn(retry=5, ip_address="1.0.0.1") -> bool:
     """Returns True when remote host is reachable by its public IP outside VPN tunnel."""
     def _check():
         try:
-            response = sh.sudo.ping("-c", "1", "-m", f"{FWMARK}", "-w", "1", ip_address)
+            response = sh_no_tty.sudo.ping("-c", "1", "-m", f"{FWMARK}", "-w", "1", ip_address)
             return "icmp_seq=" in response
         except sh.ErrorReturnCode as ex:
             print(f"is_internet_reachable_outside_vpn - failed {ex}")
@@ -120,7 +121,7 @@ def is_not_available(retry=5) -> bool:
     """Returns True when network access is not available."""
 
     if daemon.is_init_systemd():
-        sh.sudo("resolvectl", "flush-caches")
+        sh_no_tty.sudo("resolvectl", "flush-caches")
 
     # If assert below fails, and you are running Kill Switch tests on your machine, inside of Docker,
     # set DNS in resolv.conf of your system to anything else but 127.0.0.53
@@ -162,14 +163,14 @@ def start(default_gateway: dict):
     """Must pass default_gateway returned from stop()."""
     if daemon.is_init_systemd():
         for interface, gateway in default_gateway.items():
-            sh.sudo.ip.route.add.default.via(gateway, "dev", interface)
+            sh_no_tty.sudo.ip.route.add.default.via(gateway, "dev", interface)
     else:
-        sh.sudo.ip.link.set.dev.eth0.up()
-        cmd = sh.sudo.ip.route.add.default.via.bake(default_gateway["eth0"])
+        sh_no_tty.sudo.ip.link.set.dev.eth0.up()
+        cmd = sh_no_tty.sudo.ip.route.add.default.via.bake(default_gateway["eth0"])
         cmd.dev.eth0()
 
     logging.log("starting network")
-    logging.log(f"State of default route after start: {sh.sudo.ip.route.show.default()}")
+    logging.log(f"State of default route after start: {sh_no_tty.sudo.ip.route.show.default()}")
     while is_not_available():
         time.sleep(1)
 
@@ -180,17 +181,17 @@ def start(default_gateway: dict):
 def stop() -> dict:
     """Returns default_gateway to be used when starting network again."""
     default_gateway = {}
-    for line in sh.ip.route().split("\n"):
+    for line in sh_no_tty.ip.route().split("\n"):
         if line.startswith("default"):
             default_gateway[line.split()[4]] = line.split()[2]
-    assert default_gateway, f"Couldn't find default gateway. Ip route are next: {sh.ip.route()}"
+    assert default_gateway, f"Couldn't find default gateway. Ip route are next: {sh_no_tty.ip.route()}"
 
-    logging.log(f"Default routing before stopping network {sh.sudo.ip.route.show.default()}")
+    logging.log(f"Default routing before stopping network {sh_no_tty.sudo.ip.route.show.default()}")
     if daemon.is_init_systemd():
-        sh.sudo.ip.route("del", "default")
-        logging.log(f"State of default route after stop: {sh.ip.route.show.default()}")
+        sh_no_tty.sudo.ip.route("del", "default")
+        logging.log(f"State of default route after stop: {sh_no_tty.ip.route.show.default()}")
     else:
-        sh.sudo.ip.link.set.dev.eth0.down()
+        sh_no_tty.sudo.ip.link.set.dev.eth0.down()
 
     logging.log(f"stopping network {default_gateway}")
     assert is_not_available(), "Network should not be available after stopping it"
@@ -215,14 +216,14 @@ def block(url):
     for ip in ips:
         destination = f"{ip}/32"
         if destination not in _blackholes:
-            sh.sudo.ip.route.add.blackhole(destination)
+            sh_no_tty.sudo.ip.route.add.blackhole(destination)
             _blackholes.append(destination)
 
 
 # unblock all blocker domains
 def unblock():
     for destination in reversed(_blackholes):
-        sh.sudo.ip.route.delete(destination)
+        sh_no_tty.sudo.ip.route.delete(destination)
         _blackholes.pop()
 
 

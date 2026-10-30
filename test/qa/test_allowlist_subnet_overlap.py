@@ -5,6 +5,7 @@ from lib import (
     allowlist,
     firewall,
 )
+from lib.shell import sh_no_tty
 
 pytestmark = pytest.mark.usefixtures("add_and_delete_random_route", "nordvpnd_scope_function")
 
@@ -38,9 +39,9 @@ def test_add_wider_subnet_declined_leaves_state_unchanged():
     allowlist.add_subnet_to_allowlist([NARROWER_A])
 
     # Decline the confirmation prompt
-    sh.nordvpn(allowlist.get_alias(), "add", "subnet", WIDER, _in="n\n", _ok_code=(0,))
+    sh_no_tty.nordvpn(allowlist.get_alias(), "add", "subnet", WIDER, _in="n\n", _ok_code=(0,))
 
-    settings_output = str(sh.nordvpn.settings())
+    settings_output = str(sh_no_tty.nordvpn.settings())
     assert settings_output.count(NARROWER_A) == 1
     assert settings_output.count(WIDER) == 0
 
@@ -50,29 +51,29 @@ def test_add_narrower_subnet_when_wider_exists_rejected():
     allowlist.add_subnet_to_allowlist([WIDER])
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn(allowlist.get_alias(), "add", "subnet", NARROWER_A)
+        sh_no_tty.nordvpn(allowlist.get_alias(), "add", "subnet", NARROWER_A)
 
     expected_message = allowlist.MSG_ALLOWLIST_SUBNET_ADD_ERROR % NARROWER_A
     assert expected_message in ex.value.stdout.decode("utf-8")
 
-    settings_output = str(sh.nordvpn.settings())
+    settings_output = str(sh_no_tty.nordvpn.settings())
     assert settings_output.count(WIDER) == 1
     assert settings_output.count(NARROWER_A) == 0
 
 
 def test_add_subnet_too_wide_shows_warning_and_succeeds():
-    cmd_message = sh.nordvpn(allowlist.get_alias(), "add", "subnet", TOO_WIDE)
+    cmd_message = sh_no_tty.nordvpn(allowlist.get_alias(), "add", "subnet", TOO_WIDE)
 
     assert allowlist.MSG_ALLOWLIST_SUBNET_TOO_WIDE_WARNING in cmd_message
     assert allowlist.MSG_ALLOWLIST_SUBNET_ADD_SUCCESS % TOO_WIDE in cmd_message
 
-    assert str(sh.nordvpn.settings()).count(TOO_WIDE) == 1
+    assert str(sh_no_tty.nordvpn.settings()).count(TOO_WIDE) == 1
 
 
 def test_add_non_overlapping_subnets_no_prompt():
     allowlist.add_subnet_to_allowlist([NON_OVERLAPPING_A])
     allowlist.add_subnet_to_allowlist([NON_OVERLAPPING_B])
 
-    settings_output = str(sh.nordvpn.settings())
+    settings_output = str(sh_no_tty.nordvpn.settings())
     assert settings_output.count(NON_OVERLAPPING_A) == 1
     assert settings_output.count(NON_OVERLAPPING_B) == 1

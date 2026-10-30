@@ -12,6 +12,7 @@ from lib import (
     daemon,
     network,
 )
+from lib.shell import sh_no_tty
 
 pytestmark = pytest.mark.usefixtures("nordvpnd_scope_module", "unblock_network", "collect_logs")
 
@@ -46,20 +47,20 @@ def test_api_call_after_vpn_connect():
     """Manual TC: LVPN-8775"""
 
     # call api
-    output = sh.nordvpn.account()
+    output = sh_no_tty.nordvpn.account()
     print(output)
     assert "Account information" in output, "Account command should display account information"
     # connect vpn
-    output = sh.nordvpn.connect(_tty_out=False)
+    output = sh_no_tty.nordvpn.connect(_tty_out=False)
     print(output)
     assert lib.is_connect_successful(output), "VPN connection should be successful"
     assert network.is_connected(), "Network should be connected"
     # call api again
-    output = sh.nordvpn.account()
+    output = sh_no_tty.nordvpn.account()
     print(output)
     assert "Account information" in output, "Account command should display account information"
     # disconnect vpn
-    output = sh.nordvpn.disconnect()
+    output = sh_no_tty.nordvpn.disconnect()
     print(output)
     assert lib.is_disconnect_successful(output), "VPN disconnection should be successful"
     assert network.is_disconnected(), "Network should be disconnected"
@@ -84,7 +85,7 @@ def test_cmd_not_found_error():
     invalid_cmd = "kinect"
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn(invalid_cmd)
+        sh_no_tty.nordvpn(invalid_cmd)
 
     print(ex.value)
     assert f"Command '{invalid_cmd}' doesn't exist." in ex.value.stdout.decode(), "Invalid command should show error message"
@@ -98,7 +99,7 @@ def test_account_output_contains_all_fields():
     This test ensures that the account command displays all required fields
     without checking their specific values.
     """
-    output = sh.nordvpn.account()
+    output = sh_no_tty.nordvpn.account()
 
     # Header
     assert "Account information" in output, "Account command should display account information"
@@ -116,10 +117,10 @@ def test_account_output_contains_all_fields():
 
 def test_account_not_logged_in():
     """Verify account command shows error when not logged in."""
-    sh.nordvpn.logout(_ok_code=[0, 1])
+    sh_no_tty.nordvpn.logout(_ok_code=[0, 1])
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.account()
+        sh_no_tty.nordvpn.account()
 
     assert "You're not logged in." in ex.value.stdout.decode("utf-8"), "Account command should show error when not logged in"
 
@@ -164,7 +165,7 @@ def _run_diagnostics() -> str:
     Assert the success banner, and return the zip path the daemon reports.
     """
 
-    output = str(sh.nordvpn.diagnostics())
+    output = str(sh_no_tty.nordvpn.diagnostics())
     assert "Diagnostics collected successfully." in output, output
     match = re.search(r"File saved to:\s*(\S+)", output)
     assert match, f"Could not find zip path in output:\n{output}"

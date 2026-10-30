@@ -11,6 +11,7 @@ import lib
 from lib import daemon, info, logging, network, server, IS_NIGHTLY
 from lib.protobuf.daemon import (common_pb2, service_pb2_grpc)
 from lib.dynamic_parametrize import dynamic_parametrize
+from lib.shell import sh_no_tty
 from test_grpc import pause_connection
 
 pytestmark = pytest.mark.usefixtures("nordvpnd_scope_function")
@@ -34,7 +35,7 @@ def get_alias() -> str:
 
 def connect_base_test(connection_settings, group=(), name="", hostname=""):
     print(connection_settings)
-    output = sh.nordvpn(get_alias(), group, _tty_out=False)
+    output = sh_no_tty.nordvpn(get_alias(), group, _tty_out=False)
     print(output)
 
     assert lib.is_connect_successful(output, name, hostname), "Connection should be successful"
@@ -42,11 +43,11 @@ def connect_base_test(connection_settings, group=(), name="", hostname=""):
 
 
 def disconnect_base_test():
-    output = sh.nordvpn.disconnect()
+    output = sh_no_tty.nordvpn.disconnect()
     print(output)
     assert lib.is_disconnect_successful(output), "Disconnect should be successful"
     assert network.is_disconnected(), "Network should be disconnected"
-    assert "nordlynx" not in sh.ip.a() and "nordtun" not in sh.ip.a() and "qtun" not in sh.ip.a(), "VPN interfaces should be removed"
+    assert "nordlynx" not in sh_no_tty.ip.a() and "nordtun" not in sh_no_tty.ip.a() and "qtun" not in sh_no_tty.ip.a(), "VPN interfaces should be removed"
 
 
 @pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
@@ -66,7 +67,7 @@ def test_connect_to_server_absent(vpn_protocol):
     lib.set_vpn_protocol(vpn_protocol)
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn(get_alias(), "moon")
+        sh_no_tty.nordvpn(get_alias(), "moon")
 
     print(ex.value)
     assert lib.is_connect_unsuccessful(ex), "Connection to non-existent server should fail"
@@ -186,7 +187,7 @@ def test_connect_network_gone(vpn_protocol):
     default_gateway = network.stop()
     with lib.Defer(lambda: network.start(default_gateway)):
         with pytest.raises(sh.ErrorReturnCode_1) as ex:
-            sh.nordvpn(get_alias())
+            sh_no_tty.nordvpn(get_alias())
         print(ex.value)
 
 
@@ -252,7 +253,7 @@ def test_connect_to_flag_group_additional(vpn_protocol, group):
     disconnect_base_test()
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn(get_alias(), "--group", group, group)
+        sh_no_tty.nordvpn(get_alias(), "--group", group, group)
 
     print(ex.value)
     assert lib.is_connect_unsuccessful(ex), "Connection with duplicate group should fail"
@@ -269,7 +270,7 @@ def test_nordwhisper_connect_to_flag_group_additional(vpn_protocol, group):
     disconnect_base_test()
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn(get_alias(), "--group", group, group)
+        sh_no_tty.nordvpn(get_alias(), "--group", group, group)
 
     print(ex.value)
     assert lib.is_connect_unsuccessful(ex), "Connection with duplicate group should fail"
@@ -286,7 +287,7 @@ def test_connect_to_flag_group_ovpn(vpn_protocol, group):
     disconnect_base_test()
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn(get_alias(), "--group", group, group)
+        sh_no_tty.nordvpn(get_alias(), "--group", group, group)
 
     print(ex.value)
     assert lib.is_connect_unsuccessful(ex), "Connection with duplicate group should fail"
@@ -303,7 +304,7 @@ def test_connect_to_flag_group_obfuscated(vpn_protocol, group):
     disconnect_base_test()
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn(get_alias(), "--group", group, group)
+        sh_no_tty.nordvpn(get_alias(), "--group", group, group)
 
     print(ex.value)
     assert lib.is_connect_unsuccessful(ex), "Connection with duplicate group should fail"
@@ -316,7 +317,7 @@ def test_connect_to_group_invalid(vpn_protocol):
     lib.set_vpn_protocol(vpn_protocol)
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn(get_alias(), "--group", "nonexistent_group")
+        sh_no_tty.nordvpn(get_alias(), "--group", "nonexistent_group")
 
     print(ex.value)
     assert lib.is_connect_unsuccessful(ex), "Connection with invalid group should fail"
@@ -393,7 +394,7 @@ def test_connect_to_unavailable_groups(vpn_protocol):
             continue
 
         with pytest.raises(sh.ErrorReturnCode_1) as ex:
-            sh.nordvpn(get_alias(), group)
+            sh_no_tty.nordvpn(get_alias(), group)
 
         print(ex.value)
         assert lib.is_connect_unsuccessful(ex), "Connection to unavailable group should fail"
@@ -417,7 +418,7 @@ def test_connect_to_unavailable_servers(vpn_protocol):
         name = server_info.hostname.split(".")[0]
 
         with pytest.raises(sh.ErrorReturnCode_1) as ex:
-            sh.nordvpn(get_alias(), name)
+            sh_no_tty.nordvpn(get_alias(), name)
 
         print(ex.value)
         assert lib.is_connect_unsuccessful(ex), "Connection to unavailable server should fail"
@@ -430,10 +431,10 @@ def test_status_connected(vpn_protocol):
     lib.set_vpn_protocol(vpn_protocol)
 
     assert network.is_disconnected(), "Network should be disconnected initially"
-    assert "Disconnected" in sh.nordvpn.status(), "Status should show Disconnected initially"
+    assert "Disconnected" in sh_no_tty.nordvpn.status(), "Status should show Disconnected initially"
 
     server_info = server.get_hostname_by(vpn_protocol=vpn_protocol)
-    sh.nordvpn(get_alias(), server_info.hostname.split(".")[0])
+    sh_no_tty.nordvpn(get_alias(), server_info.hostname.split(".")[0])
 
     connect_time = time.monotonic()
 
@@ -443,7 +444,7 @@ def test_status_connected(vpn_protocol):
     status_time = time.monotonic()
 
     print("status_info: " + str(status_info))
-    print("actual_status: " + str(sh.nordvpn.status()))
+    print("actual_status: " + str(sh_no_tty.nordvpn.status()))
 
     assert "Connected" in status_info["status"], "Status should show Connected"
 
@@ -480,11 +481,11 @@ def test_connect_to_post_quantum_server(vpn_protocol):
 
     lib.set_vpn_protocol(vpn_protocol)
 
-    sh.nordvpn.set.pq("on")
+    sh_no_tty.nordvpn.set.pq("on")
 
     connect_base_test(vpn_protocol)
 
-    assert "preshared key" in sh.sudo.wg.show(), "Wireguard should have preshared key configured"
+    assert "preshared key" in sh_no_tty.sudo.wg.show(), "Wireguard should have preshared key configured"
 
     disconnect_base_test()
 
@@ -499,7 +500,7 @@ def test_check_routing_table_for_lan():
     connect_base_test(("nordlynx", ""))
 
     # check the tunnel IP
-    nordlynx_route = network.RouteInfo(sh.ip.route.show.dev("nordlynx").stdout.decode())
+    nordlynx_route = network.RouteInfo(sh_no_tty.ip.route.show.dev("nordlynx").stdout.decode())
     assert nordlynx_route.destination == "10.5.0.0/16", "Nordlynx route destination should be correct"
     assert nordlynx_route.src == "10.5.0.2", "Nordlynx source IP should be correct"
 
@@ -518,7 +519,7 @@ def test_check_routing_table_for_lan():
     assert nordlynx_route.routes_ip(private_vpn_ip), "Private VPN IP should be routed through nordlynx interface"
 
     # enable LAN discovery
-    sh.nordvpn.set("lan-discovery", "on")
+    sh_no_tty.nordvpn.set("lan-discovery", "on")
 
     # check LAN IP is routed thru main
     assert all(default_route.routes_ip(ip) for ip in lan_ips), "LAN IPs should be routed through default route when LAN discovery is on"
@@ -542,22 +543,22 @@ def test_connect_to_dedicated_ip(vpn_protocol):
     disconnect_base_test()
 
     assert network.is_disconnected(), "Network should be disconnected after disconnect"
-    assert "nordlynx" not in sh.ip.a() and "nordtun" not in sh.ip.a(), "VPN interfaces should be removed"
+    assert "nordlynx" not in sh_no_tty.ip.a() and "nordtun" not in sh_no_tty.ip.a(), "VPN interfaces should be removed"
 
 
 @pytest.mark.parametrize(("reconnect", "pause"), [(True, True), (True, False), (False, False)])
 def test_ens_connection_limit(reconnect: bool, pause: bool):
     """Test ENS connection limit"""
-    if "dev" not in sh.nordvpn.version():
+    if "dev" not in sh_no_tty.nordvpn.version():
         pytest.skip("can run only for dev builds")
 
     ens_conn_limit_reached = 2
 
     lib.set_vpn_protocol("nordlynx")
 
-    with lib.Defer(sh.nordvpn.disconnect):
+    with lib.Defer(sh_no_tty.nordvpn.disconnect):
         if reconnect:
-            sh.nordvpn.connect()
+            sh_no_tty.nordvpn.connect()
 
         if pause:
             pause_connection(1)
@@ -567,11 +568,11 @@ def test_ens_connection_limit(reconnect: bool, pause: bool):
             stub.InjectVpnConnectionError(common_pb2.InjectVpnConnectionErrorRequest(telio_code=ens_conn_limit_reached))
 
         if pause:
-            while any(state in sh.nordvpn.status() for state in ["Pause", "Connecting"]):
+            while any(state in sh_no_tty.nordvpn.status() for state in ["Pause", "Connecting"]):
                 time.sleep(1)
         else:
             with pytest.raises(sh.ErrorReturnCode_1) as ex:
-                sh.nordvpn.connect()
+                sh_no_tty.nordvpn.connect()
 
             ens_conn_limit_reached_msg = (
                 "Too many connection attempts. Wait a while before trying again. "
@@ -584,15 +585,15 @@ def test_ens_connection_limit(reconnect: bool, pause: bool):
             )
             assert ens_conn_limit_reached_msg in ex.value.stdout.decode("utf-8"), "Wrong error message"
 
-        assert "Disconnected" in sh.nordvpn.status(), "Wrong status"
+        assert "Disconnected" in sh_no_tty.nordvpn.status(), "Wrong status"
         assert network.is_available(), "Network should be available"
 
 
 @pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS_BASIC1)
 def test_pq_off_after_set_defaults_with_pq_enabled(vpn_protocol):
     lib.set_vpn_protocol(vpn_protocol)
-    sh.nordvpn.set.pq.on()
-    sh.nordvpn.set.defaults()
-    with lib.Defer(sh.nordvpn.disconnect):
-        sh.nordvpn.connect()
-        assert "preshared key" not in sh.sudo.wg.show(), "Wireguard should not have preshared key configured"
+    sh_no_tty.nordvpn.set.pq.on()
+    sh_no_tty.nordvpn.set.defaults()
+    with lib.Defer(sh_no_tty.nordvpn.disconnect):
+        sh_no_tty.nordvpn.connect()
+        assert "preshared key" not in sh_no_tty.sudo.wg.show(), "Wireguard should not have preshared key configured"

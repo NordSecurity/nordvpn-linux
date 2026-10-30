@@ -1,7 +1,7 @@
 import subprocess
 from threading import Thread
 
-import sh
+from .shell import sh_no_tty
 
 from . import server
 
@@ -71,7 +71,7 @@ def connect_and_capture_notifications(vpn_protocol) -> NotificationCaptureThread
     t_connect = NotificationCaptureThread(expected_msg)
     t_connect.start()
 
-    sh.nordvpn.connect(server_info.hostname.split(".")[0])
+    sh_no_tty.nordvpn.connect(server_info.hostname.split(".")[0])
 
     t_connect.join()
 
@@ -88,7 +88,7 @@ def disconnect_and_capture_notifications() -> NotificationCaptureThreadResult:
     t_disconnect = NotificationCaptureThread(expected_msg)
     t_disconnect.start()
 
-    sh.nordvpn.disconnect()
+    sh_no_tty.nordvpn.disconnect()
 
     t_disconnect.join()
 

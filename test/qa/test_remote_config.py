@@ -19,6 +19,7 @@ from lib.daemon import (
     remove_rc_retry_custom_time,
     set_rc_retry_custom_time,
 )
+from lib.shell import sh_no_tty
 from constants import RC_TIMEOUT
 from test_killswitch import MSG_KILLSWITCH_ON
 
@@ -82,7 +83,7 @@ def set_ech_for_local_config(enabled: bool = True,
     with open(config_path, "w", encoding="utf-8") as config_file:
         json.dump(config_data, config_file, indent=4)
 
-    sha256 = sh.sha256sum(config_path).stdout.decode("utf-8").split()[0]
+    sha256 = sh_no_tty.sha256sum(config_path).stdout.decode("utf-8").split()[0]
     with open(hash_path, "w", encoding="utf-8") as hash_file:
         json.dump({"hash": sha256}, hash_file)
 
@@ -635,7 +636,7 @@ def test_remote_config_download_config_on_start(
 
     assert not missed_feature_config, f"Couldn't found download logs related to {missed_feature_config}"
 
-    conf_files_data = sh.sudo.find(LOCAL_CACHE_DIR, "-type", "f", "-exec", "stat", "-c", "%a %y %n", "{}", ";")
+    conf_files_data = sh_no_tty.sudo.find(LOCAL_CACHE_DIR, "-type", "f", "-exec", "stat", "-c", "%a %y %n", "{}", ";")
 
     wrong_permissions_files = []
     for line in conf_files_data.stdout.decode("utf-8").splitlines():
@@ -684,7 +685,7 @@ def test_remote_config_attempts_config(
         - # After 1 min, in next iteration, nordvpn daemon still checks and shows download logs related to remote config
         - # Files are downloaded/not downloaded according to remote config files
     """
-    conf_files_data = sh.sudo.find.bake(LOCAL_CACHE_DIR, "-type", "f", "-exec", "stat", "-c", "%a", "%y", "%n", "{}", ";")
+    conf_files_data = sh_no_tty.sudo.find.bake(LOCAL_CACHE_DIR, "-type", "f", "-exec", "stat", "-c", "%a", "%y", "%n", "{}", ";")
     chmod_to_be_found = "600"
     missed_local_config = []
 
@@ -792,7 +793,7 @@ def test_remote_config_change_local_meshnet_config_settings(
         json.dump(config, file, indent=4)
 
     # Calculate new hash sum
-    sha_sum_hash = sh.sha256sum(f"{LOCAL_CACHE_DIR}/{RC_MESHNET_CONFIG_FILE}").stdout.decode("utf-8").split()[0]
+    sha_sum_hash = sh_no_tty.sha256sum(f"{LOCAL_CACHE_DIR}/{RC_MESHNET_CONFIG_FILE}").stdout.decode("utf-8").split()[0]
 
     # Write new hash sum in meshnet hash file
     with open(f"{LOCAL_CACHE_DIR}/{RC_MESHNET_HASH_FILE}", "w") as file:
@@ -815,10 +816,10 @@ def test_remote_config_change_local_meshnet_config_settings(
     # Verification if service works with incorrect config
     if value is False:
         with pytest.raises(sh.ErrorReturnCode):
-            sh.nordvpn("meshnet")
+            sh_no_tty.nordvpn("meshnet")
     elif value is None:
         try:
-            sh.nordvpn("meshnet")
+            sh_no_tty.nordvpn("meshnet")
         except sh.ErrorReturnCode:
             pytest.fail(reason="nordvpn meshnet is not enabled")
 
@@ -848,10 +849,10 @@ def test_killswitch_enabled_does_not_affect_cdn_with_firewall_mark(
         os.system(f"cd {conf_dir}/../ && ls -la && ls {conf_dir} -a")
 
     # enabling killswitch should not affect http transport of the remote config
-    assert MSG_KILLSWITCH_ON in sh.nordvpn.set.killswitch("on"), "Couldn't enable killswitch"
+    assert MSG_KILLSWITCH_ON in sh_no_tty.nordvpn.set.killswitch("on"), "Couldn't enable killswitch"
     assert daemon.is_killswitch_on(), "Daemon should report that killswitch is on"
 
-    sh.nordvpn.disconnect()
+    sh_no_tty.nordvpn.disconnect()
     assert daemon.is_disconnected(), "Daemon should report that it's disconnected"
     print("--- before manual files removal")
     printdir()
@@ -901,13 +902,13 @@ def test_ech_disabled_for_not_allowed_protocol(
    """
     set_vpn_protocol(vpn_protocol)
 
-    sh.nordvpn.connect()
+    sh_no_tty.nordvpn.connect()
 
     assert not daemon_log_reader.wait_for_messages(
         messages=RC_USE_ECH_MESSAGE, cursor=daemon_log_cursor
     ), f"Expected {RC_USE_ECH_MESSAGE} to be absent in the daemon log."
 
-    sh.nordvpn.disconnect()
+    sh_no_tty.nordvpn.disconnect()
 
 
 def test_ech_enabled_for_allowed_protocol(
@@ -929,13 +930,13 @@ def test_ech_enabled_for_allowed_protocol(
    """
     set_vpn_protocol("nordwhisper")
 
-    sh.nordvpn.connect()
+    sh_no_tty.nordvpn.connect()
 
     assert daemon_log_reader.wait_for_messages(
         messages=RC_USE_ECH_MESSAGE, cursor=daemon_log_cursor
     ), f"Expected {RC_USE_ECH_MESSAGE} to appear in the daemon log."
 
-    sh.nordvpn.disconnect()
+    sh_no_tty.nordvpn.disconnect()
 
 
 @pytest.mark.parametrize(
@@ -991,7 +992,7 @@ def test_local_config_usage_ech_state(
 
         set_vpn_protocol("nordwhisper")
 
-        sh.nordvpn.connect()
+        sh_no_tty.nordvpn.connect()
 
         if enable_ech:
             assert daemon_log_reader.wait_for_messages(
@@ -1002,7 +1003,7 @@ def test_local_config_usage_ech_state(
                 messages=RC_USE_ECH_MESSAGE, cursor=cursor
             ), f"Expected {RC_USE_ECH_MESSAGE} to be absent in the daemon log."
 
-        sh.nordvpn.disconnect()
+        sh_no_tty.nordvpn.disconnect()
 
 
 @pytest.mark.skipif(daemon.get_env() == Env.PROD, reason="Not applicable in prod environment")
@@ -1055,13 +1056,13 @@ def test_ech_disabled_with_local_rc_usage_then_reenabled_after_revert(
 
         set_vpn_protocol("nordwhisper")
 
-        sh.nordvpn.connect()
+        sh_no_tty.nordvpn.connect()
 
         assert not daemon_log_reader.wait_for_messages(
             messages=RC_USE_ECH_MESSAGE, cursor=cursor
         ), f"Expected {RC_USE_ECH_MESSAGE} to be absent in the daemon log."
 
-        sh.nordvpn.disconnect()
+        sh_no_tty.nordvpn.disconnect()
 
     cursor = daemon_log_reader.get_cursor()
 
@@ -1072,13 +1073,13 @@ def test_ech_disabled_with_local_rc_usage_then_reenabled_after_revert(
         cursor=cursor,
     ), f"Expected {RC_USE_LOCAL_CONFIG_MESSAGE} message to be absent in the logs after disabling local config usage."
 
-    sh.nordvpn.connect()
+    sh_no_tty.nordvpn.connect()
 
     assert daemon_log_reader.wait_for_messages(
         messages=RC_USE_ECH_MESSAGE, cursor=cursor
     ), f"Expected {RC_USE_ECH_MESSAGE} to be present in the daemon log after reverting."
 
-    sh.nordvpn.disconnect()
+    sh_no_tty.nordvpn.disconnect()
 
 
 @pytest.mark.parametrize(
@@ -1142,7 +1143,7 @@ def test_local_config_usage_missing_enable_ech_field(
 
         set_vpn_protocol("nordwhisper")
 
-        sh.nordvpn.connect()
+        sh_no_tty.nordvpn.connect()
 
         missing_ech_field_message = \
             "[Warning] fetching remote enable_ech, defaulting to: true err: feature [nordwhisper] param [enable_ech] not found"
@@ -1155,4 +1156,4 @@ def test_local_config_usage_missing_enable_ech_field(
             messages=RC_USE_ECH_MESSAGE, cursor=cursor
         ), f"Expected {RC_USE_ECH_MESSAGE} to be present in the daemon log."
 
-        sh.nordvpn.disconnect()
+        sh_no_tty.nordvpn.disconnect()

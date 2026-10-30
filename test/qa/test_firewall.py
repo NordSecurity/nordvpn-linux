@@ -6,13 +6,13 @@ import subprocess
 import time
 
 import requests
-import sh
 
 import lib
 from lib import IS_NIGHTLY, allowlist, daemon, firewall, network, settings
 from lib.dynamic_parametrize import dynamic_parametrize
 from lib import capture_utils
 from lib.firewall import tun_interface_names
+from lib.shell import sh_no_tty
 from test_routing import get_network_interface
 from scripts.is_host_alive import is_host_alive
 
@@ -29,13 +29,13 @@ def setup_module(module):  # noqa: ARG001
 def test_connected_firewall_disable(vpn_protocol):
     """Manual TC: LVPN-693"""
 
-    with lib.Defer(sh.nordvpn.disconnect):
+    with lib.Defer(sh_no_tty.nordvpn.disconnect):
         lib.set_vpn_protocol(vpn_protocol)
 
         lib.set_firewall("on")
         assert not firewall.is_active(), "Firewall should not be active before connecting"
 
-        sh.nordvpn.connect()
+        sh_no_tty.nordvpn.connect()
         assert network.is_connected(), "Network should be connected"
         assert firewall.is_active(), "Firewall should be active when connected"
 
@@ -49,13 +49,13 @@ def test_connected_firewall_disable(vpn_protocol):
 def test_connected_firewall_enable(vpn_protocol):
     """Manual TC: LVPN-693"""
 
-    with lib.Defer(sh.nordvpn.disconnect):
+    with lib.Defer(sh_no_tty.nordvpn.disconnect):
         lib.set_vpn_protocol(vpn_protocol)
 
         lib.set_firewall("off")
         assert not firewall.is_active(), "Firewall should not be active when disabled"
 
-        sh.nordvpn.connect()
+        sh_no_tty.nordvpn.connect()
         assert network.is_connected(), "Network should be connected"
         assert not firewall.is_active(), "Firewall should remain inactive when disabled"
 
@@ -69,13 +69,13 @@ def test_connected_firewall_enable(vpn_protocol):
 def test_firewall_disable_connect(vpn_protocol):
     """Manual TC: LVPN-598"""
 
-    with lib.Defer(sh.nordvpn.disconnect):
+    with lib.Defer(sh_no_tty.nordvpn.disconnect):
         lib.set_vpn_protocol(vpn_protocol)
 
         lib.set_firewall("off")
         assert not firewall.is_active(), "Firewall should not be active when disabled"
 
-        sh.nordvpn.connect()
+        sh_no_tty.nordvpn.connect()
         assert network.is_connected(), "Network should be connected"
         assert not firewall.is_active(), "Firewall should remain inactive when disabled"
     assert network.is_disconnected(), "Network should be disconnected after context"
@@ -86,13 +86,13 @@ def test_firewall_disable_connect(vpn_protocol):
 def test_firewall_enable_connect(vpn_protocol):
     """Manual TC: LVPN-593"""
 
-    with lib.Defer(sh.nordvpn.disconnect):
+    with lib.Defer(sh_no_tty.nordvpn.disconnect):
         lib.set_vpn_protocol(vpn_protocol)
 
         lib.set_firewall("on")
         assert not firewall.is_active(), "Firewall should not be active before connecting"
 
-        sh.nordvpn.connect()
+        sh_no_tty.nordvpn.connect()
         assert network.is_connected(), "Network should be connected"
         assert firewall.is_active(), "Firewall should be active when connected"
     assert network.is_disconnected(), "Network should be disconnected after context"
@@ -114,7 +114,7 @@ def test_firewall_02_allowlist_port(vpn_protocol, port):
     """Manual TC: LVPN-8722"""
 
     with lib.Defer(lib.flush_allowlist):
-        with lib.Defer(sh.nordvpn.disconnect):
+        with lib.Defer(sh_no_tty.nordvpn.disconnect):
             lib.set_vpn_protocol(vpn_protocol)
 
             lib.set_firewall("on")
@@ -122,7 +122,7 @@ def test_firewall_02_allowlist_port(vpn_protocol, port):
             assert not firewall.is_active(), "Firewall is not configured"
             assert firewall.is_source_port_reachable([port]), "Whitelisted port is not blocked"
 
-            sh.nordvpn.connect()
+            sh_no_tty.nordvpn.connect()
             assert network.is_connected(), "VPN is connected and there is internet"
             assert firewall.is_active(), "Firewall is configured"
             assert firewall.is_source_port_reachable([port]), "Whitelisted port is not blocked"
@@ -150,7 +150,7 @@ def test_firewall_03_allowlist_ports_range(vpn_protocol, ports):
     """Manual TC: LVPN-8725"""
 
     with lib.Defer(lib.flush_allowlist):
-        with lib.Defer(sh.nordvpn.disconnect):
+        with lib.Defer(sh_no_tty.nordvpn.disconnect):
             lib.set_vpn_protocol(vpn_protocol)
 
             lib.set_firewall("on")
@@ -158,7 +158,7 @@ def test_firewall_03_allowlist_ports_range(vpn_protocol, ports):
             assert not firewall.is_active(), "Firewall is not configured"
             assert firewall.is_source_port_reachable([ports]), "Port is reachable"
 
-            sh.nordvpn.connect()
+            sh_no_tty.nordvpn.connect()
             assert network.is_connected(), "VPN is connected"
             assert firewall.is_active(), "Firewall is configured"
             assert firewall.is_source_port_reachable([ports]), "Port is reachable outside of the tunnel"
@@ -176,14 +176,14 @@ def test_firewall_05_allowlist_subnet(vpn_protocol, subnet):
     """Manual TC: LVPN-8724"""
 
     with lib.Defer(lib.flush_allowlist):
-        with lib.Defer(sh.nordvpn.disconnect):
+        with lib.Defer(sh_no_tty.nordvpn.disconnect):
             lib.set_vpn_protocol(vpn_protocol)
 
             lib.set_firewall("on")
             allowlist.add_subnet_to_allowlist([subnet])
             assert not firewall.is_ip_routed_via_VPN([subnet]), "Whitelisted IP not routed thru VPN"
 
-            sh.nordvpn.connect()
+            sh_no_tty.nordvpn.connect()
             assert network.is_connected(), "VPN is connected"
             assert not firewall.is_ip_routed_via_VPN([subnet]), "Whitelisted port is not routed thru VPN"
 
@@ -197,7 +197,7 @@ def test_firewall_05_allowlist_subnet(vpn_protocol, subnet):
 def test_firewall_06_with_killswitch(vpn_protocol):
     """Manual TC: LVPN-8727"""
 
-    with lib.Defer(sh.nordvpn.set.killswitch.off):
+    with lib.Defer(sh_no_tty.nordvpn.set.killswitch.off):
         lib.set_vpn_protocol(vpn_protocol)
 
         lib.set_firewall("on")
@@ -212,8 +212,8 @@ def test_firewall_06_with_killswitch(vpn_protocol):
 def test_firewall_07_with_killswitch_while_connected(vpn_protocol):
     """Manual TC: LVPN-8727"""
 
-    with lib.Defer(sh.nordvpn.set.killswitch.off):
-        with lib.Defer(sh.nordvpn.disconnect):
+    with lib.Defer(sh_no_tty.nordvpn.set.killswitch.off):
+        with lib.Defer(sh_no_tty.nordvpn.disconnect):
             lib.set_vpn_protocol(vpn_protocol)
 
             lib.set_firewall("on")
@@ -222,7 +222,7 @@ def test_firewall_07_with_killswitch_while_connected(vpn_protocol):
             lib.set_killswitch("on")
             assert firewall.is_active(), "Firewall should be active when killswitch is enabled"
 
-            sh.nordvpn.connect()
+            sh_no_tty.nordvpn.connect()
             assert network.is_connected(), "Network should be connected"
             assert firewall.is_active(), "Firewall should remain active when connected with killswitch"
 
@@ -239,11 +239,11 @@ def test_firewall_active_with_killswitch_after_set_defaults_with_firewall_disabl
     lib.set_firewall("off")
     assert not settings.is_firewall_enabled(), "Firewall should be disabled before setting defaults"
 
-    sh.nordvpn.set.defaults()
+    sh_no_tty.nordvpn.set.defaults()
     assert settings.is_firewall_enabled(), "Firewall should be enabled after setting defaults"
     assert not firewall.is_active(), "Firewall should not be active before killswitch is enabled"
 
-    with lib.Defer(sh.nordvpn.set.killswitch.off):
+    with lib.Defer(sh_no_tty.nordvpn.set.killswitch.off):
         lib.set_killswitch("on")
         assert firewall.is_active(), "Firewall should be active when killswitch is enabled"
     assert not firewall.is_active(), "Firewall should be inactive after killswitch is disabled"
@@ -254,22 +254,22 @@ def test_firewall_active_with_vpn_on_after_set_defaults_with_firewall_disabled(v
     lib.set_vpn_protocol(vpn_protocol)
 
     custom_fwmark = "0x5"
-    sh.nordvpn.set.fwmark(custom_fwmark)
+    sh_no_tty.nordvpn.set.fwmark(custom_fwmark)
     lib.set_firewall("off")
     assert not settings.is_firewall_enabled(), "Firewall should be disabled before setting defaults"
 
-    sh.nordvpn.set.defaults()
+    sh_no_tty.nordvpn.set.defaults()
     assert settings.is_firewall_enabled(), "Firewall should be enabled after setting defaults"
     assert not firewall.is_active(), "Firewall should not be active before VPN connection"
 
-    with lib.Defer(sh.nordvpn.disconnect):
-        sh.nordvpn.connect()
+    with lib.Defer(sh_no_tty.nordvpn.disconnect):
+        sh_no_tty.nordvpn.connect()
         assert firewall.is_active(), "Firewall should be active when connected to VPN"
-        routes = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
-        rules = sh.ip.rule()
+        routes = sh_no_tty.ip.route.show.table(firewall.IP_ROUTE_TABLE)
+        rules = sh_no_tty.ip.rule()
         assert f"default dev {get_network_interface('nordlynx')}" in routes, "Default route should include network interface when connected"
         assert "fwmark" in rules, "fwmark should be in rules when routing is enabled"
-        assert custom_fwmark not in sh.ip.rule()
+        assert custom_fwmark not in sh_no_tty.ip.rule()
 
     assert not firewall.is_active(), "Firewall should be inactive after disconnecting from VPN"
 
@@ -279,23 +279,23 @@ def test_firewall_active_with_vpn_on_after_set_defaults_with_firewall_disabled(v
 def test_firewall_lan_discovery(vpn_protocol, before_connect):
     """Manual TC: LVPN-8947"""
 
-    with lib.Defer(lambda: sh.nordvpn.set("lan-discovery", "off", _ok_code=(0, 1))):
-        with lib.Defer(sh.nordvpn.disconnect):
+    with lib.Defer(lambda: sh_no_tty.nordvpn.set("lan-discovery", "off", _ok_code=(0, 1))):
+        with lib.Defer(sh_no_tty.nordvpn.disconnect):
             lib.set_vpn_protocol(vpn_protocol)
 
             if before_connect:
-                sh.nordvpn.set("lan-discovery", "on")
+                sh_no_tty.nordvpn.set("lan-discovery", "on")
 
-            sh.nordvpn.connect()
+            sh_no_tty.nordvpn.connect()
 
             if not before_connect:
-                sh.nordvpn.set("lan-discovery", "on")
+                sh_no_tty.nordvpn.set("lan-discovery", "on")
 
             for ip in firewall.LAN_DISCOVERY_IPS:
                 assert not firewall.is_ip_routed_via_VPN([ip]), f"{ip} is routed via VPN with LAN discovery on"
             assert firewall.is_ip_routed_via_VPN(firewall.NON_LAN_DISCOVERY_MULTICAST_IPS), "Multicast outside LAN discovery ranges bypasses VPN"
 
-            sh.nordvpn.set("lan-discovery", "off")
+            sh_no_tty.nordvpn.set("lan-discovery", "off")
 
             assert firewall.is_ip_routed_via_VPN(firewall.LAN_DISCOVERY_IPS), "LAN discovery IPs are not routed via VPN with LAN discovery off"
 
@@ -304,22 +304,22 @@ def test_firewall_lan_discovery(vpn_protocol, before_connect):
 def test_firewall_lan_allowlist_interaction(vpn_protocol):
     """Manual TC: LVPN-8941"""
 
-    with lib.Defer(lambda: sh.nordvpn.set("lan-discovery", "off", _ok_code=(0, 1))):
-        with lib.Defer(sh.nordvpn.disconnect):
+    with lib.Defer(lambda: sh_no_tty.nordvpn.set("lan-discovery", "off", _ok_code=(0, 1))):
+        with lib.Defer(sh_no_tty.nordvpn.disconnect):
             lib.set_vpn_protocol(vpn_protocol)
 
-            sh.nordvpn.connect()
+            sh_no_tty.nordvpn.connect()
 
             subnet = "192.168.0.0/18"
             # 192.168.200.255 is routed through tunnel iface since it it not in the 192.168.0.0/18 subnet
             ip_not_in_subnet = "192.168.200.255"
-            sh.nordvpn.allowlist.add.subnet(subnet)
+            sh_no_tty.nordvpn.allowlist.add.subnet(subnet)
             assert firewall.is_ip_routed_via_VPN([ip_not_in_subnet])
-            sh.nordvpn.set("lan-discovery", "on")
+            sh_no_tty.nordvpn.set("lan-discovery", "on")
             # with lan discovery on 192.168.200.255 is in the lan discovery 192.168.0.0/16 subnet
             assert not firewall.is_ip_routed_via_VPN([ip_not_in_subnet]), "LAN discovery did not replace existing smaller subnet"
 
-            sh.nordvpn.set("lan-discovery", "off")
+            sh_no_tty.nordvpn.set("lan-discovery", "off")
 
             assert firewall.is_ip_routed_via_VPN([ip_not_in_subnet])
 
@@ -328,15 +328,15 @@ def test_firewall_lan_allowlist_interaction(vpn_protocol):
 def test_firewall_lan_allowlist_work_together(vpn_protocol):
     """Manual TC: LVPN-10010"""
 
-    with lib.Defer(lambda: sh.nordvpn.set("lan-discovery", "off", _ok_code=(0, 1))):
-        with lib.Defer(sh.nordvpn.disconnect):
+    with lib.Defer(lambda: sh_no_tty.nordvpn.set("lan-discovery", "off", _ok_code=(0, 1))):
+        with lib.Defer(sh_no_tty.nordvpn.disconnect):
             subnet = "1.1.1.1/32"
-            with lib.Defer(lambda: sh.nordvpn.allowlist.remove.subnet(subnet, _ok_code=(0, 1))):
+            with lib.Defer(lambda: sh_no_tty.nordvpn.allowlist.remove.subnet(subnet, _ok_code=(0, 1))):
                 lib.set_vpn_protocol(vpn_protocol)
 
-                sh.nordvpn.allowlist.add.subnet(subnet)
-                sh.nordvpn.set("lan-discovery", "on")
-                sh.nordvpn.connect()
+                sh_no_tty.nordvpn.allowlist.add.subnet(subnet)
+                sh_no_tty.nordvpn.set("lan-discovery", "on")
+                sh_no_tty.nordvpn.connect()
                 assert not firewall.is_ip_routed_via_VPN(["1.1.1.1"]), "Allowlisted subnet is not going through VPN"
                 assert firewall.is_ip_routed_via_VPN(["1.0.0.1"]), "Not whitelisted subnet is going through VPN"
 
@@ -360,8 +360,8 @@ def test_firewall_dns_udp_53_to_lan_resolver_dropped(vpn_protocol):
     """
     lib.set_vpn_protocol(vpn_protocol)
 
-    with lib.Defer(sh.nordvpn.disconnect):
-        sh.nordvpn.connect()
+    with lib.Defer(sh_no_tty.nordvpn.disconnect):
+        sh_no_tty.nordvpn.connect()
 
         assert not firewall.is_port_accessible_UDP(src_port=53), (
             "UDP port 53 must be blocked by the firewall when VPN is connected"
@@ -392,8 +392,8 @@ def test_firewall_dns_tcp_53_to_lan_resolver_dropped(vpn_protocol):
     """
     lib.set_vpn_protocol(vpn_protocol)
 
-    with lib.Defer(sh.nordvpn.disconnect):
-        sh.nordvpn.connect()
+    with lib.Defer(sh_no_tty.nordvpn.disconnect):
+        sh_no_tty.nordvpn.connect()
 
         assert not firewall.is_port_accessible_TCP(src_port=53, dst_ip=firewall.IP, dst_port=firewall.TCP_DST_PORT), (
             "TCP port 53 must be blocked by the firewall when VPN is connected"
@@ -424,8 +424,8 @@ def test_firewall_tcp_established_connection_response_accepted_via_tunnel(vpn_pr
     lib.set_vpn_protocol(vpn_protocol)
     host = "nordvpn.com"
 
-    with lib.Defer(sh.nordvpn.disconnect):
-        sh.nordvpn.connect()
+    with lib.Defer(sh_no_tty.nordvpn.disconnect):
+        sh_no_tty.nordvpn.connect()
 
         nordvpn_ip = socket.gethostbyname(host)
 
@@ -476,8 +476,8 @@ def test_firewall_outgoing_and_incoming_loopback_accepted(vpn_protocol):
 
     lib.set_vpn_protocol(vpn_protocol)
 
-    with lib.Defer(sh.nordvpn.disconnect):
-        sh.nordvpn.connect()
+    with lib.Defer(sh_no_tty.nordvpn.disconnect):
+        sh_no_tty.nordvpn.connect()
 
         http_server = subprocess.Popen(
             ["python3", "-m", "http.server", str(local_http_port)],
@@ -524,8 +524,8 @@ def test_firewall_tcp_to_lan_host_goes_via_tunnel(vpn_protocol):
 
     lib.set_vpn_protocol(vpn_protocol)
 
-    with lib.Defer(sh.nordvpn.disconnect):
-        sh.nordvpn.connect()
+    with lib.Defer(sh_no_tty.nordvpn.disconnect):
+        sh_no_tty.nordvpn.connect()
 
         cap = capture_utils.BackgroundCapture(
             "any",
@@ -552,10 +552,10 @@ def test_firewall_tcp_to_lan_host_goes_via_tunnel(vpn_protocol):
 def test_lan_discovery_off_after_set_defaults_with_lan_discovery_enabled(vpn_protocol):
     lib.set_vpn_protocol(vpn_protocol)
 
-    sh.nordvpn.set("lan-discovery", "on")
+    sh_no_tty.nordvpn.set("lan-discovery", "on")
     assert is_host_alive(firewall.IP), "LAN peer should be reachable, while disconnected"
-    sh.nordvpn.set.defaults()
+    sh_no_tty.nordvpn.set.defaults()
 
-    with lib.Defer(sh.nordvpn.disconnect):
-        sh.nordvpn.connect()
+    with lib.Defer(sh_no_tty.nordvpn.disconnect):
+        sh_no_tty.nordvpn.connect()
         assert not is_host_alive(firewall.IP), "LAN peer should not be reachable, with LAN Discovery disabled and VPN on"

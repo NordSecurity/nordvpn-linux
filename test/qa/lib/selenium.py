@@ -1,6 +1,6 @@
 import os
 
-import sh
+from .shell import sh_no_tty
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.expected_conditions import presence_of_element_located
@@ -34,7 +34,7 @@ LOGIN_FLAG = ["", "--nordaccount"]
 class SeleniumBrowser:
     def __init__(self, preferences:list | None=None):
         self.options = webdriver.FirefoxOptions()
-        self.options.binary_location = str(sh.which("firefox"))
+        self.options.binary_location = str(sh_no_tty.which("firefox"))
         self.options.add_argument('--headless')
         self.options.add_argument('--no-sandbox')
 

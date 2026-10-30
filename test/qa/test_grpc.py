@@ -1,11 +1,11 @@
 import pytest
 import threading
-import sh
 import grpc
 from collections.abc import Sequence
 from constants import NORDVPND_SOCKET
 from lib import logging
 from lib.protobuf.daemon import (common_pb2, service_pb2_grpc, state_pb2, status_pb2, pause_pb2)
+from lib.shell import sh_no_tty
 from threading import Barrier
 
 
@@ -36,7 +36,7 @@ def test_multiple_state_subscribers():
 
         [thread.start() for thread in threads]
         all_threads_subscribed.wait(timeout=10)
-        sh.nordvpn.connect()
+        sh_no_tty.nordvpn.connect()
         [thread.join() for thread in threads]
 
         for i in range(num_threads):
@@ -59,8 +59,8 @@ def test_tunnel_update_notifications_before_and_after_connect():
         len(expected_states), ['connection_status'], subscription_barrier)))
     thread.start()
     subscription_barrier.wait(timeout=10)
-    sh.nordvpn.connect()
-    sh.nordvpn.disconnect()
+    sh_no_tty.nordvpn.connect()
+    sh_no_tty.nordvpn.disconnect()
     thread.join()
     assert all(a.connection_status.state == b for a,
                b in zip(result, expected_states, strict=True)), "Connection state sequence should match expected states before and after connect"
@@ -103,8 +103,8 @@ def test_manual_connection_source_is_present_in_response():
         len(expected_states), ['connection_status'], subscribtion_barrier)))
     thread.start()
     subscribtion_barrier.wait(timeout=10)
-    sh.nordvpn.connect()
-    sh.nordvpn.disconnect()
+    sh_no_tty.nordvpn.connect()
+    sh_no_tty.nordvpn.disconnect()
     thread.join()
     assert result.pop().connection_status.parameters.source == status_pb2.ConnectionSource.MANUAL, f"Connection source status should be {status_pb2.ConnectionSource.MANUAL}"
 
@@ -138,7 +138,7 @@ def test_connection_is_resumed_after_a_pause():
     thread.start()
     subscribtion_barrier.wait(timeout=10)
 
-    sh.nordvpn.connect()
+    sh_no_tty.nordvpn.connect()
 
     pause_result = pause_connection()
     assert pause_result == SUCCESS_RESPONSE_TYPE
@@ -175,12 +175,12 @@ def test_pause_is_ignored_after_reconnecting():
     thread.start()
     subscribtion_barrier.wait(timeout=10)
 
-    sh.nordvpn.connect()
+    sh_no_tty.nordvpn.connect()
 
     pause_result = pause_connection()
     assert pause_result == SUCCESS_RESPONSE_TYPE
 
-    sh.nordvpn.connect()
+    sh_no_tty.nordvpn.connect()
 
     thread.join()
 

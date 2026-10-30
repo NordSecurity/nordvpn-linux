@@ -1,6 +1,6 @@
 import random
 
-import sh
+from .shell import sh_no_tty
 
 from . import UserConsentMode
 
@@ -13,7 +13,7 @@ MULTI_LINE_PARAM_SEP = "#"
 
 class Settings:
     def __init__(self):
-        output = sh.nordvpn("settings", _tty_out=False)
+        output = sh_no_tty.nordvpn("settings", _tty_out=False)
 
         self.settings = {}
         prev_key = ""
@@ -69,7 +69,7 @@ def get_set_subcommands() -> set:
     Shell-completion list prints one command name per line and skips the hidden ones
     for the active protocol.
     """
-    completions = sh.nordvpn.set("--generate-bash-completion", _tty_out=False)
+    completions = sh_no_tty.nordvpn.set("--generate-bash-completion", _tty_out=False)
 
     result = set()
     for line in str(completions).splitlines():
@@ -158,7 +158,7 @@ def is_post_quantum_disabled():
 def app_has_defaults_settings(expectedKillswitch = False):
     expected_killswitch_string = "enabled" if expectedKillswitch else "disabled"
     """Returns True, if application settings match the default settings."""
-    settings = sh.nordvpn.settings()
+    settings = sh_no_tty.nordvpn.settings()
     return (
         "Protocol: NordLynx" in settings and
         "Firewall: enabled" in settings and

@@ -5,6 +5,7 @@ import dns.resolver as dnspy
 import lib
 from lib import dns, settings, IS_NIGHTLY
 from lib.dynamic_parametrize import dynamic_parametrize
+from lib.shell import sh_no_tty
 
 pytestmark = pytest.mark.usefixtures("nordvpnd_scope_module", "collect_logs", "disable_dns_and_real_time_protection")
 
@@ -18,18 +19,18 @@ def test_set_rtp_on_off_connected(vpn_protocol):
     # Make sure, that DNS is unset before we connect to VPN server
     assert dns.is_unset(), "DNS should be unset before connecting to VPN server"
 
-    with lib.Defer(sh.nordvpn.disconnect):
-        sh.nordvpn.connect()
+    with lib.Defer(sh_no_tty.nordvpn.disconnect):
+        sh_no_tty.nordvpn.connect()
 
         rtp_alias = dns.get_rtp_alias()
-        assert "Real-time protection has been successfully set to 'enabled'" in sh.nordvpn.set(rtp_alias, "on"), "RTP enable should show success message"
+        assert "Real-time protection has been successfully set to 'enabled'" in sh_no_tty.nordvpn.set(rtp_alias, "on"), "RTP enable should show success message"
 
         assert settings.is_rtp_enabled(), "RTP should be enabled after setting it to on"
         assert settings.dns_visible_in_settings(["disabled"]), "DNS should show as disabled in settings when RTP is enabled"
         assert dns.is_set_for(dns.DNS_RTP), "DNS should be set for RTP when connected with RTP enabled"
 
         rtp_alias = dns.get_rtp_alias()
-        assert "Real-time protection has been successfully set to 'disabled'." in sh.nordvpn.set(rtp_alias, "off"), "RTP disable should show success message"
+        assert "Real-time protection has been successfully set to 'disabled'." in sh_no_tty.nordvpn.set(rtp_alias, "off"), "RTP disable should show success message"
 
         assert not settings.is_rtp_enabled(), "RTP should be disabled after setting it to off"
         assert settings.dns_visible_in_settings(["disabled"]), "DNS should show as disabled in settings after RTP is disabled"
@@ -46,14 +47,14 @@ def test_set_rtp_on_and_connect(vpn_protocol):
     lib.set_vpn_protocol(vpn_protocol)
 
     rtp_alias = dns.get_rtp_alias()
-    assert "Real-time protection has been successfully set to 'enabled'." in sh.nordvpn.set(rtp_alias, "on"), "RTP enable should show success message"
+    assert "Real-time protection has been successfully set to 'enabled'." in sh_no_tty.nordvpn.set(rtp_alias, "on"), "RTP enable should show success message"
 
     assert settings.is_rtp_enabled(), "RTP should be enabled after setting it to on"
     assert settings.dns_visible_in_settings(["disabled"]), "DNS should show as disabled in settings when RTP is enabled"
     assert dns.is_unset(), "DNS should be unset before connecting to VPN server"
 
-    with lib.Defer(sh.nordvpn.disconnect):
-        sh.nordvpn.connect()
+    with lib.Defer(sh_no_tty.nordvpn.disconnect):
+        sh_no_tty.nordvpn.connect()
 
         assert dns.is_set_for(dns.DNS_RTP), "DNS should be set for RTP when connected with RTP enabled"
 
@@ -67,16 +68,16 @@ def test_set_rtp_off_and_connect(vpn_protocol):
     lib.set_vpn_protocol(vpn_protocol)
 
     rtp_alias = dns.get_rtp_alias()
-    sh.nordvpn.set(rtp_alias, "on")
+    sh_no_tty.nordvpn.set(rtp_alias, "on")
 
-    assert "Real-time protection has been successfully set to 'disabled'." in sh.nordvpn.set(rtp_alias, "off")
+    assert "Real-time protection has been successfully set to 'disabled'." in sh_no_tty.nordvpn.set(rtp_alias, "off")
 
     assert not settings.is_rtp_enabled(), "RTP should be disabled after setting it to off"
     assert settings.dns_visible_in_settings(["disabled"]), "DNS should show as disabled in settings after RTP is disabled"
     assert dns.is_unset(), "DNS should be unset before connecting to VPN server"
 
-    with lib.Defer(sh.nordvpn.disconnect):
-        sh.nordvpn.connect()
+    with lib.Defer(sh_no_tty.nordvpn.disconnect):
+        sh_no_tty.nordvpn.connect()
 
         assert dns.is_set_for(dns.DNS_NORD), "DNS should be set for Nord DNS when connected with RTP disabled"
 
@@ -100,10 +101,10 @@ def test_rtp_on_set_custom_dns_disconnected(vpn_protocol, nameserver):
     lib.set_vpn_protocol(vpn_protocol)
 
     rtp_alias = dns.get_rtp_alias()
-    sh.nordvpn.set(rtp_alias, "on")
+    sh_no_tty.nordvpn.set(rtp_alias, "on")
     assert settings.is_rtp_enabled(), "RTP should be enabled after setting it to on"
 
-    output = sh.nordvpn.set.dns(nameserver)
+    output = sh_no_tty.nordvpn.set.dns(nameserver)
 
     assert dns.RTP_MSG_WARNING_DISABLING in output, "RTP warning message should appear when setting custom DNS with RTP enabled"
     assert not settings.is_rtp_enabled(), "RTP should be disabled when custom DNS is set"
@@ -127,13 +128,13 @@ def test_rtp_on_set_custom_dns_connected(vpn_protocol, nameserver):
 
     lib.set_vpn_protocol(vpn_protocol)
 
-    with lib.Defer(sh.nordvpn.disconnect):
-        sh.nordvpn.connect()
+    with lib.Defer(sh_no_tty.nordvpn.disconnect):
+        sh_no_tty.nordvpn.connect()
         rtp_alias = dns.get_rtp_alias()
-        sh.nordvpn.set(rtp_alias, "on")
+        sh_no_tty.nordvpn.set(rtp_alias, "on")
         assert settings.is_rtp_enabled(), "RTP should be enabled after setting it to on while connected"
 
-        output = sh.nordvpn.set.dns(nameserver)
+        output = sh_no_tty.nordvpn.set.dns(nameserver)
         assert dns.RTP_MSG_WARNING_DISABLING in output, "RTP warning message should appear when setting custom DNS with RTP enabled while connected"
         assert not settings.is_rtp_enabled(), "RTP should be disabled when custom DNS is set while connected"
         assert settings.dns_visible_in_settings(nameserver), "Custom nameserver should be visible in settings while connected"
@@ -157,12 +158,12 @@ def test_custom_dns_connect(vpn_protocol, nameserver):
     nameserver = nameserver.split(" ")
 
     lib.set_vpn_protocol(vpn_protocol)
-    sh.nordvpn.set.dns(nameserver)
+    sh_no_tty.nordvpn.set.dns(nameserver)
 
     assert dns.is_unset(), "DNS should be unset before connecting to VPN server"
 
-    with lib.Defer(sh.nordvpn.disconnect):
-        sh.nordvpn.connect()
+    with lib.Defer(sh_no_tty.nordvpn.disconnect):
+        sh_no_tty.nordvpn.connect()
 
         assert not settings.is_rtp_enabled(), "RTP should not be enabled after setting custom DNS"
         assert settings.dns_visible_in_settings(nameserver), "Custom nameserver should be visible in settings when connected"
@@ -187,16 +188,16 @@ def test_custom_dns_off_connect(vpn_protocol, nameserver):
 
     lib.set_vpn_protocol(vpn_protocol)
 
-    sh.nordvpn.set.dns(nameserver)
+    sh_no_tty.nordvpn.set.dns(nameserver)
     assert settings.dns_visible_in_settings(nameserver), "Custom nameserver should be visible in settings"
     assert dns.is_unset(), "DNS should be unset before connecting to VPN server"
 
-    sh.nordvpn.set.dns("off")
+    sh_no_tty.nordvpn.set.dns("off")
     assert settings.dns_visible_in_settings(["disabled"]), "DNS should show as disabled in settings after setting to off"
     assert dns.is_unset(), "DNS should still be unset after setting to off"
 
-    with lib.Defer(sh.nordvpn.disconnect):
-        sh.nordvpn.connect()
+    with lib.Defer(sh_no_tty.nordvpn.disconnect):
+        sh_no_tty.nordvpn.connect()
         assert dns.is_set_for(dns.DNS_NORD), "DNS should be set for Nord DNS when connected after disabling custom DNS"
 
     assert dns.is_unset(), "DNS should be unset after disconnecting from VPN server"
@@ -218,9 +219,9 @@ def test_set_custom_dns_connected(vpn_protocol, nameserver):
 
     lib.set_vpn_protocol(vpn_protocol)
 
-    with lib.Defer(sh.nordvpn.disconnect):
-        sh.nordvpn.connect()
-        sh.nordvpn.set.dns(nameserver)
+    with lib.Defer(sh_no_tty.nordvpn.disconnect):
+        sh_no_tty.nordvpn.connect()
+        sh_no_tty.nordvpn.set.dns(nameserver)
 
         assert settings.dns_visible_in_settings(nameserver), "Custom nameserver should be visible in settings when connected"
         assert dns.is_set_for(nameserver), "DNS should be set for custom nameserver when connected"
@@ -244,14 +245,14 @@ def test_set_custom_dns_off_connected(vpn_protocol, nameserver):
 
     lib.set_vpn_protocol(vpn_protocol)
 
-    with lib.Defer(sh.nordvpn.disconnect):
-        sh.nordvpn.connect()
+    with lib.Defer(sh_no_tty.nordvpn.disconnect):
+        sh_no_tty.nordvpn.connect()
 
-        sh.nordvpn.set.dns(nameserver)
+        sh_no_tty.nordvpn.set.dns(nameserver)
         assert settings.dns_visible_in_settings(nameserver), "Custom nameserver should be visible in settings when connected"
         assert dns.is_set_for(nameserver), "DNS should be set for custom nameserver when connected"
 
-        sh.nordvpn.set.dns("off")
+        sh_no_tty.nordvpn.set.dns("off")
         assert settings.dns_visible_in_settings(["disabled"]), "DNS should show as disabled in settings after setting to off while connected"
         assert dns.is_set_for(dns.DNS_NORD), "DNS should be set for Nord DNS when set to off while connected"
 
@@ -266,7 +267,7 @@ def test_custom_dns_errors_disconnected(vpn_protocol, nameserver, expected_error
     lib.set_vpn_protocol(vpn_protocol)
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.set.dns(nameserver)
+        sh_no_tty.nordvpn.set.dns(nameserver)
 
     assert expected_error in ex.value.stdout.decode("utf-8"), "Expected DNS error message should be present"
     assert settings.dns_visible_in_settings(["disabled"]), "DNS should show as disabled in settings after error"
@@ -280,11 +281,11 @@ def test_custom_dns_errors_connected(vpn_protocol, nameserver, expected_error):
 
     lib.set_vpn_protocol(vpn_protocol)
 
-    with lib.Defer(sh.nordvpn.disconnect):
-        sh.nordvpn.connect()
+    with lib.Defer(sh_no_tty.nordvpn.disconnect):
+        sh_no_tty.nordvpn.connect()
 
         with pytest.raises(sh.ErrorReturnCode_1) as ex:
-            sh.nordvpn.set.dns(nameserver)
+            sh_no_tty.nordvpn.set.dns(nameserver)
 
         assert expected_error in ex.value.stdout.decode("utf-8"), "Expected DNS error message should be present when connected"
         assert settings.dns_visible_in_settings(["disabled"]), "DNS should show as disabled in settings after error while connected"
@@ -308,11 +309,11 @@ def test_custom_dns_already_set_disconnected(vpn_protocol, nameserver):
     nameserver = nameserver.split(" ")
     lib.set_vpn_protocol(vpn_protocol)
 
-    sh.nordvpn.set.dns(nameserver)
+    sh_no_tty.nordvpn.set.dns(nameserver)
     assert dns.is_unset(), "DNS should be unset before connecting to VPN server"
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.set.dns(nameserver)
+        sh_no_tty.nordvpn.set.dns(nameserver)
 
     full_error_message = dns.DNS_MSG_ERROR_ALREADY_SET % ", ".join(nameserver)
 
@@ -337,14 +338,14 @@ def test_custom_dns_already_set_connected(vpn_protocol, nameserver):
 
     lib.set_vpn_protocol(vpn_protocol)
 
-    sh.nordvpn.set.dns(nameserver)
+    sh_no_tty.nordvpn.set.dns(nameserver)
     assert dns.is_unset(), "DNS should be unset before connecting to VPN server"
 
-    with lib.Defer(sh.nordvpn.disconnect):
-        sh.nordvpn.connect()
+    with lib.Defer(sh_no_tty.nordvpn.disconnect):
+        sh_no_tty.nordvpn.connect()
 
         with pytest.raises(sh.ErrorReturnCode_1) as ex:
-            sh.nordvpn.set.dns(nameserver)
+            sh_no_tty.nordvpn.set.dns(nameserver)
 
         full_error_message = dns.DNS_MSG_ERROR_ALREADY_SET % ", ".join(nameserver)
         assert full_error_message in ex.value.stdout.decode("utf-8"), "Error message should indicate DNS is already set while connected"
@@ -361,7 +362,7 @@ def test_custom_dns_already_disabled_disconnected(vpn_protocol):
     lib.set_vpn_protocol(vpn_protocol)
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.set.dns("off")
+        sh_no_tty.nordvpn.set.dns("off")
 
     assert dns.DNS_MSG_ERROR_ALREADY_DISABLED in ex.value.stdout.decode("utf-8"), "Error message should indicate DNS is already disabled"
     assert settings.dns_visible_in_settings(["disabled"]), "DNS should show as disabled in settings after error"
@@ -374,11 +375,11 @@ def test_custom_dns_already_disabled_connected(vpn_protocol):
 
     lib.set_vpn_protocol(vpn_protocol)
 
-    with lib.Defer(sh.nordvpn.disconnect):
-        sh.nordvpn.connect()
+    with lib.Defer(sh_no_tty.nordvpn.disconnect):
+        sh_no_tty.nordvpn.connect()
 
         with pytest.raises(sh.ErrorReturnCode_1) as ex:
-            sh.nordvpn.set.dns("off")
+            sh_no_tty.nordvpn.set.dns("off")
 
         assert settings.dns_visible_in_settings(["disabled"]), "DNS should show as disabled in settings after error"
         assert dns.DNS_MSG_ERROR_ALREADY_DISABLED in ex.value.stdout.decode("utf-8"), "Error message should indicate DNS is already disabled while connected"
@@ -393,16 +394,16 @@ def test_custom_dns_order_is_kept(vpn_protocol):
 
     lib.set_vpn_protocol(vpn_protocol)
     nameserver_list = ["8.8.8.8", "1.1.1.1"]
-    sh.nordvpn.set.dns(nameserver_list)
-    with lib.Defer(sh.nordvpn.disconnect):
-        sh.nordvpn.connect()
+    sh_no_tty.nordvpn.set.dns(nameserver_list)
+    with lib.Defer(sh_no_tty.nordvpn.disconnect):
+        sh_no_tty.nordvpn.connect()
         resolver = dnspy.Resolver()
         if "127.0.0.53" in resolver.nameservers:
             found = False
             if vpn_protocol == "nordlynx":
-                output = sh.resolvectl.status.nordlynx()
+                output = sh_no_tty.resolvectl.status.nordlynx()
             if vpn_protocol.startswith("openvpn"):
-                output = sh.resolvectl.status.nordtun()
+                output = sh_no_tty.resolvectl.status.nordtun()
             for line in output:
                 print(line)
                 if 'DNS Servers' in line:
@@ -432,12 +433,12 @@ def test_custom_dns_removed_when_rtp_enabled_disconnected(vpn_protocol, nameserv
 
     nameserver = nameserver.split(" ")
 
-    sh.nordvpn.set.dns(nameserver)
+    sh_no_tty.nordvpn.set.dns(nameserver)
 
     assert settings.dns_visible_in_settings(nameserver), "Custom nameserver should be visible in settings"
 
     rtp_alias = dns.get_rtp_alias()
-    output = sh.nordvpn.set(rtp_alias, "on")
+    output = sh_no_tty.nordvpn.set(rtp_alias, "on")
 
     assert dns.DNS_MSG_WARNING_DISABLING in output, "RTP warning message should appear when enabling RTP with custom DNS set"
     assert settings.is_rtp_enabled(), "RTP should be enabled after setting it to on"
@@ -461,18 +462,18 @@ def test_custom_dns_removed_when_rtp_enabled_connected(vpn_protocol, nameserver)
 
     nameserver = nameserver.split(" ")
 
-    sh.nordvpn.set.dns(nameserver)
+    sh_no_tty.nordvpn.set.dns(nameserver)
 
     assert settings.dns_visible_in_settings(nameserver), "Custom nameserver should be visible in settings"
     assert dns.is_unset(), "DNS should be unset before connecting to VPN server"
 
-    with lib.Defer(sh.nordvpn.disconnect):
-        sh.nordvpn.connect()
+    with lib.Defer(sh_no_tty.nordvpn.disconnect):
+        sh_no_tty.nordvpn.connect()
 
         assert dns.is_set_for(nameserver), "DNS should be set for custom nameserver when connected"
 
         rtp_alias = dns.get_rtp_alias()
-        output = sh.nordvpn.set(rtp_alias, "on")
+        output = sh_no_tty.nordvpn.set(rtp_alias, "on")
 
         assert dns.DNS_MSG_WARNING_DISABLING in output, "RTP warning message should appear when enabling RTP with custom DNS set while connected"
         assert settings.is_rtp_enabled(), "RTP should be enabled after setting it to on while connected"
@@ -487,11 +488,11 @@ def test_dns_after_set_defaults_with_custom_dns(vpn_protocol):
     lib.set_vpn_protocol(vpn_protocol)
     custom_dns = "1.1.1.1"
 
-    sh.nordvpn.set.dns(custom_dns)
-    sh.nordvpn.set.defaults()
+    sh_no_tty.nordvpn.set.dns(custom_dns)
+    sh_no_tty.nordvpn.set.defaults()
 
-    with lib.Defer(sh.nordvpn.disconnect):
-        sh.nordvpn.connect()
+    with lib.Defer(sh_no_tty.nordvpn.disconnect):
+        sh_no_tty.nordvpn.connect()
         assert custom_dns not in dns.get_dns_servers(), "Custom DNS should not be set, after resetting to defaults"
         assert all(server in dns.get_dns_servers() for server in dns.DNS_NORD)
 
@@ -500,9 +501,9 @@ def test_dns_after_set_defaults_with_custom_dns(vpn_protocol):
 def test_dns_after_set_defaults_with_rtp(vpn_protocol):
     lib.set_vpn_protocol(vpn_protocol)
 
-    sh.nordvpn.set.protect.on()
-    sh.nordvpn.set.defaults()
+    sh_no_tty.nordvpn.set.protect.on()
+    sh_no_tty.nordvpn.set.defaults()
 
-    with lib.Defer(sh.nordvpn.disconnect):
-        sh.nordvpn.connect()
+    with lib.Defer(sh_no_tty.nordvpn.disconnect):
+        sh_no_tty.nordvpn.connect()
         assert not any(item in dns.DNS_RTP for item in dns.get_dns_servers()), "RTP DNS should not be set after setting defaults"

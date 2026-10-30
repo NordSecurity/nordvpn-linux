@@ -12,6 +12,7 @@ import sh
 import socket
 
 from . import firewall, FILE_HASH_UTILITY, CommandExecutor, logging, ssh
+from .shell import sh_no_tty
 
 class FileSize:
     """
@@ -146,7 +147,7 @@ def start_transfer(peer_address: str, *filepaths: str) -> sh.RunningCommand:
     Further code execution is blocked, until this function finds "Waiting for the peer to accept your transfer..."
     string, indicating, that the transfer process has started and is waiting for peer confirmation.
     """
-    command = sh.nordvpn.fileshare.send(peer_address, filepaths, _iter=True, _out_bufsize=0)
+    command = sh_no_tty.nordvpn.fileshare.send(peer_address, filepaths, _iter=True, _out_bufsize=0)
     buffer = ""
 
     # Read the output character by character, we cannot read it line by line because send prints some
@@ -163,7 +164,7 @@ def start_transfer(peer_address: str, *filepaths: str) -> sh.RunningCommand:
 def get_last_transfer(outgoing: bool = True, ssh_client: ssh.Ssh = None) -> str | None:
     """Return last id of the last received or sent transfer."""
     if ssh_client is None:
-        transfers = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
+        transfers = sh_no_tty.nordvpn.fileshare.list().stdout.decode("utf-8")
     else:
         transfers = ssh_client.exec_command("nordvpn fileshare list")
     outgoing_index = transfers.index("Outgoing")
@@ -178,7 +179,7 @@ def get_last_transfer(outgoing: bool = True, ssh_client: ssh.Ssh = None) -> str 
 
 def get_transfer(transfer_id: str, ssh_client: ssh.Ssh = None) -> str | None:
     if ssh_client is None:
-        transfers = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
+        transfers = sh_no_tty.nordvpn.fileshare.list().stdout.decode("utf-8")
     else:
         transfers = ssh_client.exec_command("nordvpn fileshare list")
 
@@ -232,7 +233,7 @@ def cancel_not_finished_transfers():
     transfers = get_not_finished_transfers()
     for transfer_id in transfers:
         try:
-            sh.nordvpn.fileshare.cancel(transfer_id).stdout.decode("utf-8")
+            sh_no_tty.nordvpn.fileshare.cancel(transfer_id).stdout.decode("utf-8")
         except sh.ErrorReturnCode_1 as ex:
             logging.log(f"failed to cancel transfer {transfer_id}: {ex}")
 
@@ -240,7 +241,7 @@ def cancel_not_finished_transfers():
 def get_not_finished_transfers(ssh_client: ssh.Ssh = None) -> list[str]:
     """Return IDs of of all transfers which are not: completed or  canceled."""
     if ssh_client is None:
-        transfers = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
+        transfers = sh_no_tty.nordvpn.fileshare.list().stdout.decode("utf-8")
     else:
         transfers = ssh_client.exec_command("nordvpn fileshare list")
     # all transfer IDs without "completed" or "canceled" following the ID
@@ -265,7 +266,7 @@ def clear_history(time_period: str, ssh_client: ssh.Ssh = None):
         AssertionError: If the history clearing message is not found.
     """
     if ssh_client is None:
-        msg = sh.nordvpn.fileshare.clear(time_period)
+        msg = sh_no_tty.nordvpn.fileshare.clear(time_period)
     else:
         msg = ssh_client.exec_command(f"nordvpn fileshare clear {time_period}")
 
@@ -350,7 +351,7 @@ def validate_transfer_progress_bg(transfer_id: str, ssh_client: ssh.Ssh, expecte
         if ssh_client:
             transfers = ssh_client.exec_command("nordvpn fileshare list")
         else:
-            transfers = sh.nordvpn.fileshare.list(_tty_out=False)
+            transfers = sh_no_tty.nordvpn.fileshare.list(_tty_out=False)
 
         transfer = find_transfer_by_id(transfers, transfer_id)
 
@@ -459,7 +460,7 @@ def port_is_blocked(peer_address: str, port: int = 49111) -> bool:
 
 def ensure_mesh_is_on() -> None:
     try:
-        sh.nordvpn.set.meshnet.on()
+        sh_no_tty.nordvpn.set.meshnet.on()
     except sh.ErrorReturnCode_1 as e:
         if "Meshnet is already enabled." not in str(e):
             raise e
