@@ -496,12 +496,14 @@ def test_dns_after_set_defaults_with_custom_dns(vpn_protocol):
         assert all(server in dns.get_dns_servers() for server in dns.DNS_NORD)
 
 
-@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS_BASIC1)
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS_BASIC2)
 def test_dns_after_set_defaults_with_rtp(vpn_protocol):
     lib.set_vpn_protocol(vpn_protocol)
 
     sh.nordvpn.set.protect.on()
     sh.nordvpn.set.defaults()
+
+    lib.set_vpn_protocol(vpn_protocol)
 
     with lib.Defer(sh.nordvpn.disconnect):
         sh.nordvpn.connect()

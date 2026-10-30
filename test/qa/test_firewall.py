@@ -249,7 +249,7 @@ def test_firewall_active_with_killswitch_after_set_defaults_with_firewall_disabl
     assert not firewall.is_active(), "Firewall should be inactive after killswitch is disabled"
 
 
-@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS)
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS_BASIC2)
 def test_firewall_active_with_vpn_on_after_set_defaults_with_firewall_disabled(vpn_protocol):
     lib.set_vpn_protocol(vpn_protocol)
 
@@ -262,12 +262,14 @@ def test_firewall_active_with_vpn_on_after_set_defaults_with_firewall_disabled(v
     assert settings.is_firewall_enabled(), "Firewall should be enabled after setting defaults"
     assert not firewall.is_active(), "Firewall should not be active before VPN connection"
 
+    lib.set_vpn_protocol(vpn_protocol)
+
     with lib.Defer(sh.nordvpn.disconnect):
         sh.nordvpn.connect()
         assert firewall.is_active(), "Firewall should be active when connected to VPN"
         routes = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
         rules = sh.ip.rule()
-        assert f"default dev {get_network_interface('nordlynx')}" in routes, "Default route should include network interface when connected"
+        assert f"default dev {get_network_interface('openvpn')}" in routes, "Default route should include network interface when connected"
         assert "fwmark" in rules, "fwmark should be in rules when routing is enabled"
         assert custom_fwmark not in sh.ip.rule()
 
@@ -548,13 +550,15 @@ def test_firewall_tcp_to_lan_host_goes_via_tunnel(vpn_protocol):
         )
 
 
-@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS_BASIC1)
+@pytest.mark.parametrize("vpn_protocol", lib.VPN_PROTOCOLS_BASIC2)
 def test_lan_discovery_off_after_set_defaults_with_lan_discovery_enabled(vpn_protocol):
     lib.set_vpn_protocol(vpn_protocol)
 
     sh.nordvpn.set("lan-discovery", "on")
     assert is_host_alive(firewall.IP), "LAN peer should be reachable, while disconnected"
     sh.nordvpn.set.defaults()
+
+    lib.set_vpn_protocol(vpn_protocol)
 
     with lib.Defer(sh.nordvpn.disconnect):
         sh.nordvpn.connect()
