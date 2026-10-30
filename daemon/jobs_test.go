@@ -52,6 +52,8 @@ func (failingLoginChecker) GetDedicatedServerService() (auth.DedicatedServerServ
 
 func updateAutoconnectData(c *mockConfigManager, data config.AutoConnectData) {
 	c.c.AutoConnect = true
+	// TODO(LVPN-11319): remove ServerTag from config with v7
+	//nolint:staticcheck
 	c.c.AutoConnectData.ServerTag = data.ServerTag
 	c.c.AutoConnectData.Country = data.Country
 	c.c.AutoConnectData.CountryCode = data.CountryCode
@@ -222,6 +224,8 @@ func TestDoAutoConnect_DedicatedServerFallback_ServiceExpired(t *testing.T) {
 	// Verify that settings are not modified if service is available
 	assert.Equal(t, config.ServerGroup_DEDICATED_SERVER, mockConfigManager.c.AutoConnectData.Group,
 		"Unexpected autoconnect group target change after doAutoConnect. Group should remain set to %s.", config.ServerGroup_DEDICATED_SERVER.String())
+	// TODO(LVPN-11319): remove ServerTag from config with v7
+	//nolint:staticcheck
 	assert.Equal(t, "Dedicated Server", mockConfigManager.c.AutoConnectData.ServerTag,
 		"Unexpected autoconnect target ServerTag change after doAutoConnect. ServerTag should remain set to DedicatedServer.")
 
@@ -232,6 +236,8 @@ func TestDoAutoConnect_DedicatedServerFallback_ServiceExpired(t *testing.T) {
 	// Verify that setting are not modified if service fetch failed
 	assert.Equal(t, config.ServerGroup_DEDICATED_SERVER, mockConfigManager.c.AutoConnectData.Group,
 		"Unexpected autoconnect group target change after doAutoConnect. Group should remain set to %s.", config.ServerGroup_DEDICATED_SERVER.String())
+	// TODO(LVPN-11319): remove ServerTag from config with v7
+	//nolint:staticcheck
 	assert.Equal(t, "Dedicated Server", mockConfigManager.c.AutoConnectData.ServerTag,
 		"Unexpected autoconnect target ServerTag change after doAutoConnect. ServerTag should remain set to DedicatedServer.")
 
@@ -243,6 +249,8 @@ func TestDoAutoConnect_DedicatedServerFallback_ServiceExpired(t *testing.T) {
 	// Verify that settings are  modified if service is not available
 	assert.NotEqual(t, config.ServerGroup_DEDICATED_SERVER, mockConfigManager.c.AutoConnectData.Group,
 		"Group should be unset when dedicated servers service is not available.")
+	// TODO(LVPN-11319): remove ServerTag from config with v7
+	//nolint:staticcheck
 	assert.Equal(t, "", mockConfigManager.c.AutoConnectData.ServerTag,
 		"ServerTag should be unset when dedicated servers service is not available.")
 }
@@ -266,6 +274,8 @@ func TestDoAutoConnect_DedicatedServerFallback_FeatureDisabledInRemoteConfig(t *
 	rpc.doAutoConnect()
 	assert.NotEqual(t, config.ServerGroup_DEDICATED_SERVER, mockConfigManager.c.AutoConnectData.Group,
 		"Group should be unset when dedicated servers feature is disabled in remote config.")
+	// TODO(LVPN-11319): remove ServerTag from config with v7
+	//nolint:staticcheck
 	assert.Equal(t, "", mockConfigManager.c.AutoConnectData.ServerTag,
 		"ServerTag should be unset when dedicated servers feature is disabled in remote config.")
 }

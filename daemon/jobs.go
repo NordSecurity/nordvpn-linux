@@ -331,6 +331,8 @@ func (r *RPC) fallbackDedicatedServer(cfg config.Config) config.Config {
 
 	if !serviceData.Active || !r.remoteConfigGetter.IsFeatureEnabled(remote.FeatureDedicatedServer) {
 		cfg.AutoConnectData.Group = config.ServerGroup_UNDEFINED
+		// TODO(LVPN-11319): remove ServerTag from config with v7
+		//nolint:staticcheck
 		cfg.AutoConnectData.ServerTag = ""
 		cfg.AutoConnectData.Country = ""
 		cfg.AutoConnectData.CountryCode = ""
@@ -386,7 +388,9 @@ func (r *RPC) doAutoConnect() error {
 		return errAutoConnectDisabled
 	}
 
+	// TODO(LVPN-11319): remove ServerTag from config with v7
 	// Migration of deprecated groups failed at init
+	//nolint:staticcheck
 	if config.IsDeprecatedP2PGroup(cfg.AutoConnectData.Group) || serverpicker.IsP2PGroup(cfg.AutoConnectData.ServerTag, "") {
 		// Try to migrate again
 		err := MigrateDeprecatedGroupsAutoconnect(r.cm)

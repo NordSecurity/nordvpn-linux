@@ -417,7 +417,8 @@ func TestAutoconnect_SavesCorrectAutoconnectData(t *testing.T) {
 			assert.NotNil(t, resp)
 			assert.Equal(t, internal.CodeSuccess, resp.Type)
 
-			// keep this as long as `AutoConnectData.ServerTag` is not completely removed from the codebase
+			// TODO(LVPN-11319): remove ServerTag from config with v7
+			//nolint:staticcheck
 			assert.Equal(t, "", mockConfigManager.c.AutoConnectData.ServerTag)
 			assert.Equal(t, test.expected.Country, mockConfigManager.c.AutoConnectData.Country)
 			assert.Equal(t, test.expected.CountryCode, mockConfigManager.c.AutoConnectData.CountryCode)

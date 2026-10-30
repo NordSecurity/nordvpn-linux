@@ -28,6 +28,8 @@ func MigrateDeprecatedGroupsAutoconnect(cm config.Manager) error {
 	return cm.SaveWith(func(c config.Config) config.Config {
 		c.AutoConnectData.Group = config.ServerGroup_UNDEFINED
 		if c.AutoConnectData.Country == "" && c.AutoConnectData.City == "" {
+			// TODO(LVPN-11319): remove ServerTag from config with v7
+			//nolint:staticcheck
 			c.AutoConnectData.ServerTag = ""
 			c.AutoConnectData.CountryCode = ""
 		}
@@ -104,11 +106,15 @@ func MigrateAutoconnectTarget(configManager config.Manager, dataManager *DataMan
 		return fmt.Errorf("loading config: %w", err)
 	}
 
+	// TODO(LVPN-11319): remove ServerTag from config with v7
+	//nolint:staticcheck
 	if cfg.AutoConnectData.ServerTag == "" {
 		return nil
 	}
 
+	// TODO(LVPN-11319): remove ServerTag from config with v7
 	// Stage 1: resolve a specific-server target to its country/city
+	//nolint:staticcheck
 	serverTag := serverpicker.UnitedKingdomServerTagFix(cfg.AutoConnectData.ServerTag)
 	if serverpicker.IsServerTag(serverTag) {
 		serversData := dataManager.GetServersData()
@@ -125,6 +131,8 @@ func MigrateAutoconnectTarget(configManager config.Manager, dataManager *DataMan
 			cfg.AutoConnectData.City = serversCountry.City.Name
 			cfg.AutoConnectData.Country = serversCountry.Name
 			cfg.AutoConnectData.CountryCode = serversCountry.Code
+			// TODO(LVPN-11319): remove ServerTag from config with v7
+			//nolint:staticcheck
 			cfg.AutoConnectData.ServerTag = strToServerTag(serversCountry.City.Name)
 		} else {
 			serverNameRegEx := regexp.MustCompile(`^([a-zA-Z]{2}(?:-[a-zA-Z]{2})?)(\d+)$`)
@@ -137,6 +145,8 @@ func MigrateAutoconnectTarget(configManager config.Manager, dataManager *DataMan
 					countryCode,
 				)
 
+				// TODO(LVPN-11319): remove ServerTag from config with v7
+				//nolint:staticcheck
 				cfg.AutoConnectData.ServerTag = countryCode
 				cfg.AutoConnectData.CountryCode = strings.ToUpper(countryCode)
 
@@ -150,14 +160,18 @@ func MigrateAutoconnectTarget(configManager config.Manager, dataManager *DataMan
 					}
 				}
 			} else {
+				// TODO(LVPN-11319): remove ServerTag from config with v7
+				//nolint:staticcheck
 				cfg.AutoConnectData.ServerTag = ""
 				log.Warn("failed to extract country code out of the server name, will fall back to fastest server")
 			}
 		}
 	}
 
+	// TODO(LVPN-11319): remove ServerTag from config with v7
 	// Stage 2: resolve a country/city tag into the Country/City fields.
 	//          Anything that's left unresolved is discarded and connect to fastest as fallback.
+	//nolint:staticcheck
 	tag := cfg.AutoConnectData.ServerTag
 	if tag != "" && dataManager.CountryDataExists() {
 		countries := dataManager.GetCountryData().Countries
@@ -172,6 +186,8 @@ func MigrateAutoconnectTarget(configManager config.Manager, dataManager *DataMan
 			log.Warn("Failed to migrate Country/City property for ServerTag:", tag, " - migrating to empty")
 		}
 	}
+	// TODO(LVPN-11319): remove ServerTag from config with v7
+	//nolint:staticcheck
 	cfg.AutoConnectData.ServerTag = ""
 
 	if err := configManager.SaveWith(func(c config.Config) config.Config {

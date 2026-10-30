@@ -72,7 +72,9 @@ func (c Config) withAnalyticsConsent(value AnalyticsConsent) Config {
 
 type AutoConnectData struct {
 	ID int64 `json:"id,omitempty"`
-	// TODO: remove this in v4 and only use the country, city and group fields
+	// TODO: remove this in ~v4~ v7 and only use the country, city and group fields
+	//
+	// Deprecated: autoconnect targets Country/City; kept only to migrate older configs.
 	ServerTag   string `json:"server_tag,omitempty"`
 	Country     string
 	CountryCode string
