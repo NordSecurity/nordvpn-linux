@@ -1090,24 +1090,13 @@ func TestNewSearchParams(t *testing.T) {
 		expected       SearchParams
 	}{
 		{
-			name:           "plain values are kept as is",
-			tag:            "it rome",
-			group:          "Double_VPN",
-			excludedServer: "it1.nordvpn.com",
-			expected: SearchParams{
-				Tag:            "it rome",
-				Group:          "Double_VPN",
-				ExcludedServer: "it1.nordvpn.com",
-			},
-		},
-		{
-			name:           "leading and trailing whitespace is trimmed from tag and group",
-			tag:            "  it rome  ",
+			name:           "strings are always normalized for tag and group, but not for excluded servers",
+			tag:            "  I.taLy  ",
 			group:          "  Double_VPN ",
 			excludedServer: "it1.nordvpn.com",
 			expected: SearchParams{
-				Tag:            "it rome",
-				Group:          "Double_VPN",
+				Tag:            "italy",
+				Group:          "double_vpn",
 				ExcludedServer: "it1.nordvpn.com",
 			},
 		},

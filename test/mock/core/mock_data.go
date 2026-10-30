@@ -115,6 +115,13 @@ func ServersList() core.Servers {
 		},
 	}
 
+	nwGroups := core.Groups{
+		core.Group{
+			ID:    config.ServerGroup_STANDARD_VPN_SERVERS,
+			Title: "Standard VPN Servers",
+		},
+	}
+
 	obfuscatedGroups := core.Groups{
 		core.Group{
 			ID:    config.ServerGroup_OVPN_OBFUSCATED,
@@ -191,7 +198,7 @@ func ServersList() core.Servers {
 					},
 				},
 			},
-			Groups: standardGroups,
+			Groups: nwGroups,
 		},
 		core.Server{
 			ID:        3,

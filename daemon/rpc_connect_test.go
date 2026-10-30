@@ -235,7 +235,7 @@ func TestRPCConnect(t *testing.T) {
 		},
 		{
 			name:      "Connects using country name",
-			serverTag: "germany",
+			serverTag: "GermanY",
 			factory: func(config.VPNProtocol) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
@@ -378,7 +378,16 @@ func TestRPCConnect(t *testing.T) {
 			resp: internal.CodeDedicatedIPServiceButNoServers,
 		},
 		{
-			name:        "Connects using p2p group as flag",
+			name:        "connects for group name",
+			serverTag:   "",
+			serverGroup: "Double_vpn",
+			factory: func(config.VPNProtocol) (vpn.VPN, error) {
+				return &mock.WorkingVPN{}, nil
+			},
+			resp: internal.CodeConnected,
+		},
+		{
+			name:        "fails using p2p group as flag",
 			serverTag:   "",
 			serverGroup: "p2p",
 			factory: func(config.VPNProtocol) (vpn.VPN, error) {
@@ -387,7 +396,7 @@ func TestRPCConnect(t *testing.T) {
 			resp: internal.CodeP2PDeprecated,
 		},
 		{
-			name:        "Connects using p2p group as tag",
+			name:        "fails using p2p group as tag",
 			serverTag:   "p2p",
 			serverGroup: "",
 			factory: func(config.VPNProtocol) (vpn.VPN, error) {
@@ -396,7 +405,7 @@ func TestRPCConnect(t *testing.T) {
 			resp: internal.CodeP2PDeprecated,
 		},
 		{
-			name:        "Connects using p2p group and country as tag",
+			name:        "fails using p2p group and country as tag",
 			serverTag:   "de p2p",
 			serverGroup: "",
 			factory: func(config.VPNProtocol) (vpn.VPN, error) {
@@ -405,7 +414,7 @@ func TestRPCConnect(t *testing.T) {
 			resp: internal.CodeP2PDeprecated,
 		},
 		{
-			name:        "Connects using p2p group as flag and country as tag",
+			name:        "fails using p2p group as flag and country as tag",
 			serverTag:   "de",
 			serverGroup: "p2p",
 			factory: func(config.VPNProtocol) (vpn.VPN, error) {
