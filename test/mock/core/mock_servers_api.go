@@ -11,10 +11,12 @@ import (
 const TestRecommendedUUID string = "c0b4c990-3000-457f-8b81-6850b8cdb54e"
 
 type MockServersAPI struct {
-	Error                error
-	ServersList          core.Servers
-	CountriesList        core.Countries
-	ServerEndpointCalled bool
+	Error                  error
+	ServersList            core.Servers
+	CountriesList          core.Countries
+	ServerEndpointCalled   bool
+	RecommendedCalls       int
+	DropRecommendationUUID bool
 }
 
 func NewMockServersAPI() *MockServersAPI {
@@ -35,6 +37,7 @@ func (m *MockServersAPI) Servers() (core.Servers, http.Header, error) {
 }
 
 func (m *MockServersAPI) RecommendedServers(filter core.ServersFilter, _ float64, _ float64) (core.Servers, http.Header, error) {
+	m.RecommendedCalls++
 	if m.Error != nil {
 		return nil, nil, m.Error
 	}
@@ -52,7 +55,9 @@ func (m *MockServersAPI) RecommendedServers(filter core.ServersFilter, _ float64
 	}
 
 	header := http.Header{}
-	header.Set("X-Recommendation-Uuid", TestRecommendedUUID)
+	if !m.DropRecommendationUUID {
+		header.Set("X-Recommendation-Uuid", TestRecommendedUUID)
+	}
 
 	return servers, header, nil
 }

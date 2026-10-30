@@ -2,6 +2,7 @@ package serverpicker
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"slices"
 	"testing"
@@ -13,6 +14,7 @@ import (
 	core_test "github.com/NordSecurity/nordvpn-linux/test/mock/core"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestFilterServers(t *testing.T) {
@@ -22,19 +24,20 @@ func TestFilterServers(t *testing.T) {
 		name          string
 		servers       core.Servers
 		vpnProtocol   config.VPNProtocol
-		group         config.ServerGroup
 		expectedCount int
 		hasError      bool
 	}{
 		{
 			name:          "nil servers",
 			servers:       nil,
+			vpnProtocol:   config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			expectedCount: 0,
 			hasError:      true,
 		},
 		{
 			name:          "0 servers",
 			servers:       core.Servers{},
+			vpnProtocol:   config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
 			expectedCount: 0,
 			hasError:      true,
 		},
@@ -42,7 +45,9 @@ func TestFilterServers(t *testing.T) {
 			name: "NordLynx 0 servers",
 			servers: core.Servers{
 				core.Server{
-					Status: core.Online,
+					Hostname: "lt1.nordvpn.com",
+					Keys:     []string{"lt"},
+					Status:   core.Online,
 					Technologies: core.Technologies{
 						core.Technology{
 							ID:    core.OpenVPNUDP,
@@ -62,7 +67,9 @@ func TestFilterServers(t *testing.T) {
 			name: "NordLynx several online servers",
 			servers: core.Servers{
 				core.Server{
-					Status: core.Online,
+					Hostname: "lt2.nordvpn.com",
+					Keys:     []string{"lt"},
+					Status:   core.Online,
 					Technologies: core.Technologies{
 						core.Technology{
 							ID:    core.WireguardTech,
@@ -74,7 +81,9 @@ func TestFilterServers(t *testing.T) {
 					},
 				},
 				core.Server{
-					Status: core.Online,
+					Hostname: "lt3.nordvpn.com",
+					Keys:     []string{"lt"},
+					Status:   core.Online,
 					Technologies: core.Technologies{
 						core.Technology{
 							ID:    core.WireguardTech,
@@ -91,7 +100,9 @@ func TestFilterServers(t *testing.T) {
 			name: "NordLynx several mixed status servers",
 			servers: core.Servers{
 				core.Server{
-					Status: core.Online,
+					Hostname: "lt4.nordvpn.com",
+					Keys:     []string{"lt"},
+					Status:   core.Online,
 					Technologies: core.Technologies{
 						core.Technology{
 							ID:    core.WireguardTech,
@@ -103,7 +114,9 @@ func TestFilterServers(t *testing.T) {
 					},
 				},
 				core.Server{
-					Status: core.Offline,
+					Hostname: "lt5.nordvpn.com",
+					Keys:     []string{"lt"},
+					Status:   core.Offline,
 					Technologies: core.Technologies{
 						core.Technology{
 							ID:    core.WireguardTech,
@@ -115,7 +128,9 @@ func TestFilterServers(t *testing.T) {
 					},
 				},
 				core.Server{
-					Status: core.Maintenance,
+					Hostname: "lt6.nordvpn.com",
+					Keys:     []string{"lt"},
+					Status:   core.Maintenance,
 					Technologies: core.Technologies{
 						core.Technology{
 							ID:    core.WireguardTech,
@@ -135,12 +150,8 @@ func TestFilterServers(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			localSelFn := selectFilterForLocalServers("", test.group)
-			filterFn := func(s core.Server) bool {
-				return core.IsConnectableWithProtocol(test.vpnProtocol)(s) &&
-					localSelFn(s)
-			}
-			servers, err := findServersLocally(test.servers, core.ServerTag{Action: core.ServerByUnknown}, filterFn)
+			search := newTestServerSearch(t, test.vpnProtocol, SearchParams{}, nil, test.servers)
+			servers, err := search.findLocally(test.servers)
 			assert.Equal(t, test.hasError, err != nil)
 			assert.Equal(t, test.expectedCount, len(servers))
 		})
@@ -877,6 +888,61 @@ func TestPickServer(t *testing.T) {
 			tag:           "lt17",
 			expectedError: internal.ErrServerIsUnavailable,
 		},
+		{
+			name:          "unknown technology",
+			api:           core_test.NewMockServersAPI(),
+			servers:       core_test.ServersList(),
+			vpnProtocol:   config.VPNProtocol_VPN_PROTOCOL_UNSPECIFIED,
+			expectedError: ErrUnknownTechnology,
+		},
+		{
+			name:          "group given both as the tag and the flag",
+			api:           core_test.NewMockServersAPI(),
+			servers:       core_test.ServersList(),
+			vpnProtocol:   config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+			tag:           "onion_over_vpn",
+			group:         "double_vpn",
+			expectedError: internal.ErrDoubleGroup,
+		},
+		{
+			name:          "group flag does not exist",
+			api:           core_test.NewMockServersAPI(),
+			servers:       core_test.ServersList(),
+			vpnProtocol:   config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+			group:         "not_a_group",
+			expectedError: internal.ErrGroupDoesNotExist,
+		},
+		{
+			name:          "dedicated IP group is handled by the caller",
+			api:           core_test.NewMockServersAPI(),
+			servers:       core_test.ServersList(),
+			vpnProtocol:   config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+			group:         "dedicated_ip",
+			expectedError: ErrDedicatedIPServer,
+		},
+		{
+			name:          "dedicated server group is handled by the caller",
+			api:           core_test.NewMockServersAPI(),
+			servers:       core_test.ServersList(),
+			vpnProtocol:   config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+			group:         "dedicated_server",
+			expectedError: ErrDedicatedServer,
+		},
+		{
+			name:          "tag does not exist",
+			api:           core_test.NewMockServersAPI(),
+			servers:       core_test.ServersList(),
+			vpnProtocol:   config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+			tag:           "not a tag",
+			expectedError: internal.ErrTagDoesNotExist,
+		},
+		{
+			name:          "local servers are all dedicated IP servers",
+			api:           core_test.NewMockFailingServersAPI(errors.New("500")),
+			servers:       core_test.ServersList("lt7.nordvpn.com", "lt8.nordvpn.com"),
+			vpnProtocol:   config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+			expectedError: internal.ErrServerIsUnavailable,
+		},
 	}
 
 	for _, test := range tests {
@@ -1151,4 +1217,336 @@ func TestNewSearchParams(t *testing.T) {
 			assert.Equal(t, tt.expected, NewSearchParams(tt.tag, tt.group, tt.excludedServer))
 		})
 	}
+}
+
+func TestPickServer_ServerSelectionOrder(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name                       string
+		apiServers                 core.Servers
+		excludedServer             string
+		expectedServerName         string
+		expectedRemoteServer       bool
+		expectedRecommendationUUID RecommendationUUID
+	}{
+		{
+			name:                       "first server from the API is selected",
+			apiServers:                 core_test.ServersList("fr1.nordvpn.com", "de3.nordvpn.com", "lt15.nordvpn.com"),
+			expectedServerName:         "France #1",
+			expectedRemoteServer:       true,
+			expectedRecommendationUUID: RecommendationUUID(core_test.TestRecommendedUUID),
+		},
+		{
+			name:                       "API order is respected",
+			apiServers:                 core_test.ServersList("lt15.nordvpn.com", "de3.nordvpn.com", "fr1.nordvpn.com"),
+			expectedServerName:         "Lithuania #15",
+			expectedRemoteServer:       true,
+			expectedRecommendationUUID: RecommendationUUID(core_test.TestRecommendedUUID),
+		},
+		{
+			name:                       "next server from the API is selected when the first one is excluded",
+			apiServers:                 core_test.ServersList("fr1.nordvpn.com", "de3.nordvpn.com", "lt15.nordvpn.com"),
+			excludedServer:             "fr1.nordvpn.com",
+			expectedServerName:         "Germany #3",
+			expectedRemoteServer:       true,
+			expectedRecommendationUUID: RecommendationUUID(core_test.TestRecommendedUUID),
+		},
+		{
+			name:                       "local servers are used when no API server matches the user settings",
+			apiServers:                 core_test.ServersList("de4.nordvpn.com"),
+			expectedRemoteServer:       false,
+			expectedRecommendationUUID: emptyUUID,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			api := &core_test.MockServersAPI{ServersList: test.apiServers}
+			cfg := config.Config{VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX}
+
+			serverSelection, err := PickServer(
+				api,
+				core_test.ServersList(),
+				core_test.CountriesList(),
+				core.Insights{},
+				cfg,
+				NewSearchParams("", "", test.excludedServer),
+			)
+
+			assert.NoError(t, err)
+			assert.Equal(t, test.expectedRemoteServer, serverSelection.Remote)
+			assert.Equal(t, test.expectedRecommendationUUID, serverSelection.RecommendationUUID)
+			if len(test.expectedServerName) > 0 {
+				assert.Equal(t, test.expectedServerName, serverSelection.Server.Name)
+			}
+		})
+	}
+}
+
+func TestFindServersLocally_VirtualServers(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name             string
+		physicalCount    int
+		virtualCount     int
+		expectedPhysical int
+		expectedVirtual  int
+	}{
+		{
+			name:             "only physical servers",
+			physicalCount:    5,
+			expectedPhysical: 5,
+		},
+		{
+			name:             "enough physical servers, virtual ones are removed",
+			physicalCount:    25,
+			virtualCount:     5,
+			expectedPhysical: 25,
+		},
+		{
+			name:             "exactly enough physical servers, virtual ones are removed",
+			physicalCount:    20,
+			virtualCount:     5,
+			expectedPhysical: 20,
+		},
+		{
+			name:             "not enough physical servers, filled with virtual ones",
+			physicalCount:    15,
+			virtualCount:     10,
+			expectedPhysical: 15,
+			expectedVirtual:  5,
+		},
+		{
+			name:             "not enough physical and virtual servers, all are used",
+			physicalCount:    5,
+			virtualCount:     3,
+			expectedPhysical: 5,
+			expectedVirtual:  3,
+		},
+		{
+			name:            "no physical servers, virtual ones are used",
+			virtualCount:    3,
+			expectedVirtual: 3,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			servers := append(newServers(test.physicalCount, false), newServers(test.virtualCount, true)...)
+
+			search := newTestServerSearch(t, config.VPNProtocol_VPN_PROTOCOL_NORDLYNX, SearchParams{}, nil, servers)
+			selected, err := search.findLocally(servers)
+
+			assert.NoError(t, err)
+			virtualCount := len(internal.Filter(selected, func(s core.Server) bool { return s.IsVirtualLocation() }))
+			assert.Equal(t, test.expectedVirtual, virtualCount)
+			assert.Equal(t, test.expectedPhysical, len(selected)-virtualCount)
+		})
+	}
+}
+
+func newServers(count int, virtual bool) core.Servers {
+	servers := make(core.Servers, 0, count)
+	for i := range count {
+		server := core.Server{
+			ID:       int64(i),
+			Hostname: fmt.Sprintf("physical%d", i),
+			Status:   core.Online,
+			Technologies: core.Technologies{
+				core.Technology{ID: core.WireguardTech, Pivot: core.Pivot{Status: core.Online}},
+			},
+		}
+		if virtual {
+			server.Hostname = fmt.Sprintf("virtual%d", i)
+			server = withVirtualLocation(server)
+		}
+		servers = append(servers, server)
+	}
+	return servers
+}
+
+func withVirtualLocation(server core.Server) core.Server {
+	server.Specifications = append(slices.Clone(server.Specifications), core.Specification{
+		Identifier: core.VirtualLocation,
+		Values: []struct {
+			Value string `json:"value"`
+		}{{Value: "true"}},
+	})
+	return server
+}
+
+func TestFindServersLocally_DedicatedIPServers(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name              string
+		servers           core.Servers
+		tag               string
+		expectedHostnames []string
+	}{
+		{
+			name:              "dedicated IP servers are removed",
+			servers:           core_test.ServersList("lt15.nordvpn.com", "lt8.nordvpn.com"),
+			tag:               "lt",
+			expectedHostnames: []string{"lt15.nordvpn.com"},
+		},
+		{
+			name: "dedicated IP servers are kept when searching by server name",
+			// keys are cleared so the name tag doesn't narrow the list down to a single server
+			servers:           withoutKeys(core_test.ServersList("lt15.nordvpn.com", "lt8.nordvpn.com")),
+			tag:               "lt8",
+			expectedHostnames: []string{"lt15.nordvpn.com", "lt8.nordvpn.com"},
+		},
+		{
+			name:              "single dedicated IP server is kept",
+			servers:           core_test.ServersList("lt8.nordvpn.com"),
+			tag:               "lt",
+			expectedHostnames: []string{"lt8.nordvpn.com"},
+		},
+		{
+			name:              "only dedicated IP servers results in an empty list",
+			servers:           core_test.ServersList("lt7.nordvpn.com", "lt8.nordvpn.com"),
+			tag:               "lt",
+			expectedHostnames: []string{},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			countries := core.Countries{{ID: 1, Name: "Lithuania", Code: "LT"}}
+			search := newTestServerSearch(
+				t,
+				config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+				SearchParams{Tag: test.tag},
+				countries, test.servers,
+			)
+			selected, err := search.findLocally(test.servers)
+
+			assert.NoError(t, err)
+			hostnames := []string{}
+			for _, server := range selected {
+				hostnames = append(hostnames, server.Hostname)
+			}
+			assert.Equal(t, test.expectedHostnames, hostnames)
+		})
+	}
+}
+
+func TestPickServer_Fallback(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	// a server with a different technology from the API than in the local cache
+	apiDe3 := core_test.ServersList("de3.nordvpn.com")[0]
+	apiDe3.Technologies = core_test.ServersList("de4.nordvpn.com")[0].Technologies
+
+	// a server without keys matches every local search
+	keylessFr1 := core_test.ServersList("fr1.nordvpn.com")[0]
+	keylessFr1.Keys = nil
+
+	tests := []struct {
+		name                       string
+		api                        *core_test.MockServersAPI
+		servers                    core.Servers
+		tag                        string
+		expectedError              error
+		expectedServerName         string
+		expectedRemoteServer       bool
+		expectedRecommendationUUID RecommendationUUID
+		expectedRecommendedCalls   int
+		expectedServerCalled       bool
+	}{
+		{
+			name:                     "API error is not returned when local servers are found",
+			api:                      core_test.NewMockFailingServersAPI(core.ErrUnauthorized),
+			servers:                  core_test.ServersList("fr1.nordvpn.com"),
+			expectedServerName:       "France #1",
+			expectedRecommendedCalls: 1,
+		},
+		{
+			name:                     "local error is returned when both API and local servers fail",
+			api:                      core_test.NewMockFailingServersAPI(core.ErrUnauthorized),
+			servers:                  core.Servers{},
+			expectedError:            internal.ErrServerIsUnavailable,
+			expectedRecommendedCalls: 1,
+		},
+		{
+			name: "server by name from the API not matching the settings falls back to local servers",
+			api: &core_test.MockServersAPI{
+				ServersList: core.Servers{apiDe3},
+			},
+			servers:              core_test.ServersList(),
+			tag:                  "de3",
+			expectedServerName:   "Germany #3",
+			expectedServerCalled: true,
+		},
+		{
+			name: "API servers are used without the recommendation UUID header",
+			api: &core_test.MockServersAPI{
+				ServersList:            core_test.ServersList("fr1.nordvpn.com"),
+				DropRecommendationUUID: true,
+			},
+			servers:                  core_test.ServersList(),
+			expectedServerName:       "France #1",
+			expectedRemoteServer:     true,
+			expectedRecommendedCalls: 1,
+		},
+		{
+			name:                     "unrecognized tag skips the API and uses local servers",
+			api:                      core_test.NewMockServersAPI(),
+			servers:                  core.Servers{keylessFr1},
+			tag:                      "xx99",
+			expectedServerName:       "France #1",
+			expectedRecommendedCalls: 0,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			cfg := config.Config{VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX}
+
+			serverSelection, err := PickServer(
+				test.api,
+				test.servers,
+				core_test.CountriesList(),
+				core.Insights{},
+				cfg,
+				NewSearchParams(test.tag, "", ""),
+			)
+
+			assert.Equal(t, test.expectedError, err)
+			assert.Equal(t, test.expectedRemoteServer, serverSelection.Remote)
+			assert.Equal(t, test.expectedRecommendationUUID, serverSelection.RecommendationUUID)
+			assert.Equal(t, test.expectedRecommendedCalls, test.api.RecommendedCalls)
+			assert.Equal(t, test.expectedServerCalled, test.api.ServerEndpointCalled)
+			if test.expectedError != nil {
+				return
+			}
+			if len(test.expectedServerName) > 0 {
+				assert.Equal(t, test.expectedServerName, serverSelection.Server.Name)
+			}
+		})
+	}
+}
+
+func withoutKeys(servers core.Servers) core.Servers {
+	for i := range servers {
+		servers[i].Keys = nil
+	}
+	return servers
+}
+
+func newTestServerSearch(
+	t *testing.T,
+	vpnProtocol config.VPNProtocol,
+	input SearchParams,
+	countries core.Countries,
+	servers core.Servers,
+) *serverSearch {
+	t.Helper()
+	cfg := config.Config{VPNProtocol: vpnProtocol}
+	search, err := newServerSearch(cfg, input, countries, servers)
+	require.NoError(t, err)
+	return search
 }
