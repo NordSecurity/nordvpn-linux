@@ -3,6 +3,7 @@ package daemon
 import (
 	"errors"
 	"reflect"
+	"slices"
 	"testing"
 	"time"
 
@@ -103,13 +104,7 @@ func TestJobServers(t *testing.T) {
 	assert.NoError(t, err)
 
 	t.Run("legacy XOR server is kept in the cache", func(t *testing.T) {
-		xorExists := false
-		for _, s := range dm.GetServersData().Servers {
-			if isLegacyXOR(s) {
-				xorExists = true
-				break
-			}
-		}
+		xorExists := slices.ContainsFunc(dm.GetServersData().Servers, isLegacyXOR)
 		assert.True(t, xorExists)
 	})
 

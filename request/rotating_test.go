@@ -191,14 +191,12 @@ func TestRotatingRoundTripper_RoundTripThreadSafety(t *testing.T) {
 					}
 					continue
 				}
-				wg.Add(1)
-				go func() {
-					defer wg.Done()
+				wg.Go(func() {
 					resp, err := tt.roundTripper.RoundTrip(&http.Request{})
 					if err != nil {
 						defer resp.Body.Close()
 					}
-				}()
+				})
 			}
 			wg.Wait()
 			now := time.Now()

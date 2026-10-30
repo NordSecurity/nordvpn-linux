@@ -131,7 +131,7 @@ func populateMapFs(t *testing.T, mapfs *fstest.MapFS, directoryName string, file
 	t.Helper()
 
 	(*mapfs)[directoryName] = &fstest.MapFile{Mode: fs.ModeDir}
-	for filename := 0; filename < fileCount; filename++ {
+	for filename := range fileCount {
 		(*mapfs)[directoryName+"/"+strconv.Itoa(filename)] = &fstest.MapFile{}
 	}
 }
@@ -189,7 +189,7 @@ func getTransfers(t *testing.T, numberOfTransfers int) map[string]*pb.Transfer {
 	t.Helper()
 
 	transfersMap := make(map[string]*pb.Transfer, numberOfTransfers)
-	for transfer := 0; transfer < numberOfTransfers; transfer++ {
+	for transfer := range numberOfTransfers {
 		transferID := strconv.Itoa(transfer)
 		pbTransfer := &pb.Transfer{
 			Id: transferID,
@@ -375,7 +375,8 @@ func TestSend(t *testing.T) {
 				&pb.SendRequest{
 					Peer:   test.peer,
 					Paths:  []string{test.path},
-					Silent: test.transferSilent},
+					Silent: test.transferSilent,
+				},
 				&sendServer,
 			)
 			assert.Equal(t, nil, err)
@@ -394,7 +395,7 @@ func TestSendDirectoryFilesystemErrorHandling(t *testing.T) {
 
 	directoryTooDeepName := "directory_too_deep"
 	currentDir := directoryTooDeepName
-	for directory := 0; directory < 8; directory++ {
+	for directory := range 8 {
 		mockFs.MapFS[currentDir] = &fstest.MapFile{Mode: fs.ModeDir}
 		currentDir = currentDir + "/" + strconv.Itoa(directory)
 	}
@@ -507,13 +508,13 @@ func TestAccept(t *testing.T) {
 		Uid: currentUserUID,
 		Gid: currentUserGID,
 	}
-	mockFs.MapFS[acceptDirName] = &fstest.MapFile{Mode: os.ModeDir | 0777, Sys: statCurrentUserOwner}
+	mockFs.MapFS[acceptDirName] = &fstest.MapFile{Mode: os.ModeDir | 0o777, Sys: statCurrentUserOwner}
 
 	acceptSymlinkName := "link"
-	mockFs.MapFS[acceptSymlinkName] = &fstest.MapFile{Mode: os.ModeSymlink | 0777, Sys: statCurrentUserOwner}
+	mockFs.MapFS[acceptSymlinkName] = &fstest.MapFile{Mode: os.ModeSymlink | 0o777, Sys: statCurrentUserOwner}
 
 	acceptNotDirName := "not_dir"
-	mockFs.MapFS[acceptNotDirName] = &fstest.MapFile{Mode: 0777, Sys: statCurrentUserOwner}
+	mockFs.MapFS[acceptNotDirName] = &fstest.MapFile{Mode: 0o777, Sys: statCurrentUserOwner}
 
 	currentUserUIDStr := strconv.Itoa(int(currentUserUID))
 	currentUserGIDStr := strconv.Itoa(int(currentUserGID))
@@ -535,10 +536,10 @@ func TestAccept(t *testing.T) {
 	}
 
 	directoryGroupWriteName := "group_write"
-	mockFs.MapFS[directoryGroupWriteName] = &fstest.MapFile{Mode: os.ModeDir | 0220, Sys: statCurrentUserGroupOwner}
+	mockFs.MapFS[directoryGroupWriteName] = &fstest.MapFile{Mode: os.ModeDir | 0o220, Sys: statCurrentUserGroupOwner}
 
 	directoryGroupNoWrite := "group_no_write"
-	mockFs.MapFS[directoryGroupNoWrite] = &fstest.MapFile{Mode: os.ModeDir | 0200, Sys: statCurrentUserGroupOwner}
+	mockFs.MapFS[directoryGroupNoWrite] = &fstest.MapFile{Mode: os.ModeDir | 0o200, Sys: statCurrentUserGroupOwner}
 
 	statNoOwner := &syscall.Stat_t{
 		Uid: 2000,
@@ -546,11 +547,11 @@ func TestAccept(t *testing.T) {
 	}
 
 	directoryOtherWriteName := "other_write"
-	mockFs.MapFS[directoryOtherWriteName] = &fstest.MapFile{Mode: os.ModeDir | 0002, Sys: statNoOwner}
+	mockFs.MapFS[directoryOtherWriteName] = &fstest.MapFile{Mode: os.ModeDir | 0o002, Sys: statNoOwner}
 
 	directoryNoPermissionsName := "no_permissions"
 	//nolint:staticcheck
-	mockFs.MapFS[directoryNoPermissionsName] = &fstest.MapFile{Mode: os.ModeDir | 0000, Sys: statNoOwner}
+	mockFs.MapFS[directoryNoPermissionsName] = &fstest.MapFile{Mode: os.ModeDir | 0o000, Sys: statNoOwner}
 
 	fileshareTests := []struct {
 		testName          string
@@ -695,7 +696,8 @@ func TestAccept(t *testing.T) {
 				},
 			},
 			filesystem: &mockFs,
-			osInfo:     &mockOsInfo}
+			osInfo:     &mockOsInfo,
+		}
 		server := NewServer(
 			&mockServerFileshare{},
 			&eventManager,
@@ -773,7 +775,7 @@ func TestAcceptDirectory(t *testing.T) {
 	}
 
 	mockFs := newMockFilesystem()
-	mockFs.MapFS["tmp"] = &fstest.MapFile{Mode: fs.ModeDir | 0777, Sys: stat_t}
+	mockFs.MapFS["tmp"] = &fstest.MapFile{Mode: fs.ModeDir | 0o777, Sys: stat_t}
 
 	currentUserUIDStr := strconv.Itoa(int(currentUserUID))
 	currentUserGIDStr := strconv.Itoa(int(currentUserGID))
@@ -870,7 +872,8 @@ func TestAcceptDirectory(t *testing.T) {
 				},
 			},
 			filesystem: &mockFs,
-			osInfo:     &mockOsInfo}
+			osInfo:     &mockOsInfo,
+		}
 
 		fileshare := &mockServerFileshare{
 			acceptedFiles:          []string{},

@@ -102,10 +102,10 @@ func (e *ConfigureEvent) ToDebuggerEvent() *events.DebuggerEvent {
 	if err != nil {
 		log.Error("failed to marshal firewall configure event:", err)
 		// Fallback: provide basic information we know for certain
-		jsonData = []byte(fmt.Sprintf(
+		jsonData = fmt.Appendf(nil,
 			`{"namespace":"%s","subscope":"%s","event":"%s","status":"%s","purpose":[],"error":"marshal_error"}`,
 			e.Namespace, e.Subscope, e.Event, e.Status,
-		))
+		)
 	}
 	return events.NewDebuggerEvent(string(jsonData)).
 		WithKeyBasedContextPaths(
@@ -162,10 +162,10 @@ func (e *MigrationEvent) ToDebuggerEvent() *events.DebuggerEvent {
 	if err != nil {
 		log.Error("failed to marshal migration event:", err)
 		// Fallback: provide basic information we know for certain
-		jsonData = []byte(fmt.Sprintf(
+		jsonData = fmt.Appendf(nil,
 			`{"namespace":"%s","subscope":"%s","event":"%s","status":"%s","error":"marshal_error"}`,
 			e.Namespace, e.Subscope, e.Event, e.Status,
-		))
+		)
 	}
 	return events.NewDebuggerEvent(string(jsonData)).
 		WithKeyBasedContextPaths(

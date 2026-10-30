@@ -40,10 +40,7 @@ func RetryWithBackoff(
 		maxDelay = time.Minute
 	}
 
-	maxRetries := cfg.MaxRetries
-	if maxRetries <= 0 {
-		maxRetries = 0
-	}
+	maxRetries := max(cfg.MaxRetries, 0)
 
 	var lastErr error
 	for i := 0; maxRetries == 0 || i < maxRetries; i++ {

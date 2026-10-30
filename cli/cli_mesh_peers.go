@@ -49,36 +49,43 @@ func filterOnline(peers *pb.PeerList) *pb.PeerList {
 	peers.External = internal.Filter(peers.External, func(p *pb.Peer) bool { return p.Status == 1 })
 	return peers
 }
+
 func filterOffline(peers *pb.PeerList) *pb.PeerList {
 	peers.Local = internal.Filter(peers.Local, func(p *pb.Peer) bool { return p.Status == 0 })
 	peers.External = internal.Filter(peers.External, func(p *pb.Peer) bool { return p.Status == 0 })
 	return peers
 }
+
 func filterAllowsIncomingTraffic(peers *pb.PeerList) *pb.PeerList {
 	peers.Local = internal.Filter(peers.Local, func(p *pb.Peer) bool { return p.IsInboundAllowed })
 	peers.External = internal.Filter(peers.External, func(p *pb.Peer) bool { return p.IsInboundAllowed })
 	return peers
 }
+
 func filterAllowsRouting(peers *pb.PeerList) *pb.PeerList {
 	peers.Local = internal.Filter(peers.Local, func(p *pb.Peer) bool { return p.IsRoutable })
 	peers.External = internal.Filter(peers.External, func(p *pb.Peer) bool { return p.IsRoutable })
 	return peers
 }
+
 func filterIncomingTrafficAllowed(peers *pb.PeerList) *pb.PeerList {
 	peers.Local = internal.Filter(peers.Local, func(p *pb.Peer) bool { return p.DoIAllowInbound })
 	peers.External = internal.Filter(peers.External, func(p *pb.Peer) bool { return p.DoIAllowInbound })
 	return peers
 }
+
 func filterRoutingAllowed(peers *pb.PeerList) *pb.PeerList {
 	peers.Local = internal.Filter(peers.Local, func(p *pb.Peer) bool { return p.DoIAllowRouting })
 	peers.External = internal.Filter(peers.External, func(p *pb.Peer) bool { return p.DoIAllowRouting })
 	return peers
 }
+
 func filterSendingFilesAllowed(peers *pb.PeerList) *pb.PeerList {
 	peers.Local = internal.Filter(peers.Local, func(p *pb.Peer) bool { return p.DoIAllowFileshare })
 	peers.External = internal.Filter(peers.External, func(p *pb.Peer) bool { return p.DoIAllowFileshare })
 	return peers
 }
+
 func filterInternalExternal(peers *pb.PeerList) *pb.PeerList {
 	return peers
 }
@@ -111,7 +118,7 @@ func (c *cmd) MeshPeerList(ctx *cli.Context) error {
 	}
 	if ctx.IsSet(flagFilter) {
 		condition := ""
-		for _, value := range strings.Split(ctx.String(flagFilter), ",") {
+		for value := range strings.SplitSeq(ctx.String(flagFilter), ",") {
 			filtersFunc, ok := availableFilters[value]
 			if !ok {
 				return formatError(errors.New(internal.FilterNonExistentErrorMessage))
@@ -223,6 +230,7 @@ func titledKeyvalListToColoredString(
 		"\n" +
 		keyvalListToColoredString(kvs)
 }
+
 func keyvalListToColoredString(kvs []keyval) string {
 	builder := strings.Builder{}
 	for _, kv := range kvs {
@@ -280,7 +288,7 @@ func (c *cmd) MeshPeerDenyRouting(ctx *cli.Context) error {
 		return formatError(err)
 	}
 
-	//TODO - LVPN-9412: reavaulate error handling
+	// TODO - LVPN-9412: reavaulate error handling
 	resp, _ := c.meshClient.DenyRouting(
 		context.Background(),
 		&pb.UpdatePeerRequest{
@@ -414,7 +422,6 @@ func (c *cmd) MeshPeerAllowFileshare(ctx *cli.Context) error {
 			Identifier: peer.Identifier,
 		},
 	)
-
 	if err != nil {
 		return errors.New(AccountInternalError)
 	}
@@ -443,7 +450,6 @@ func (c *cmd) MeshPeerDenyFileshare(ctx *cli.Context) error {
 			Identifier: peer.Identifier,
 		},
 	)
-
 	if err != nil {
 		return errors.New(AccountInternalError)
 	}
@@ -477,7 +483,6 @@ func (c *cmd) MeshPeerEnableAutomaticFileshare(ctx *cli.Context) error {
 			Identifier: peer.Identifier,
 		},
 	)
-
 	if err != nil {
 		return errors.New(AccountInternalError)
 	}
@@ -506,7 +511,6 @@ func (c *cmd) MeshPeerDisableAutomaticFileshare(ctx *cli.Context) error {
 			Identifier: peer.Identifier,
 		},
 	)
-
 	if err != nil {
 		return errors.New(AccountInternalError)
 	}
@@ -649,7 +653,6 @@ func (c *cmd) changeMeshnetPeerNickname(peer *pb.Peer, nickname string) error {
 		Identifier: peer.Identifier,
 		Nickname:   nickname,
 	})
-
 	if err != nil {
 		return formatError(err)
 	}
@@ -680,7 +683,6 @@ func (c *cmd) MeshSetMachineNickname(ctx *cli.Context) error {
 	resp, err := c.meshClient.ChangeMachineNickname(context.Background(), &pb.ChangeMachineNicknameRequest{
 		Nickname: nickname,
 	})
-
 	if err != nil {
 		return formatError(err)
 	}
@@ -703,7 +705,6 @@ func (c *cmd) MeshRemoveMachineNickname(ctx *cli.Context) error {
 	resp, err := c.meshClient.ChangeMachineNickname(context.Background(), &pb.ChangeMachineNicknameRequest{
 		Nickname: "",
 	})
-
 	if err != nil {
 		return formatError(err)
 	}
