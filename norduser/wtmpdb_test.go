@@ -12,7 +12,7 @@ import (
 
 // mockBusObject implements dbus.BusObject
 type mockBusObject struct {
-	callFn       func(method string, args ...interface{}) *dbus.Call
+	callFn       func(method string, args ...any) *dbus.Call
 	getPropFn    func(prop string) (dbus.Variant, error)
 	getAllPropFn func(iface string) (map[string]dbus.Variant, error)
 }
@@ -53,14 +53,14 @@ func (m *mockBusObject) GetAllProperties(iface string) (map[string]dbus.Variant,
 
 func (m *mockBusObject) StoreProperty(p string, value any) error { return nil }
 
-func (m *mockBusObject) SetProperty(_ string, _ interface{}) error { return nil }
+func (m *mockBusObject) SetProperty(_ string, _ any) error { return nil }
 
 func (m *mockBusObject) Destination() string { return "org.freedesktop.login1" }
 
 func (m *mockBusObject) Path() dbus.ObjectPath { return "/" }
 
-func sessionTuple(id, uid, user, seat string, path dbus.ObjectPath) []interface{} {
-	return []interface{}{id, uid, user, seat, path}
+func sessionTuple(id, uid, user, seat string, path dbus.ObjectPath) []any {
+	return []any{id, uid, user, seat, path}
 }
 
 func TestHasGUISession(t *testing.T) {
@@ -77,19 +77,19 @@ func TestHasGUISession(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		sessions       [][]interface{}
+		sessions       [][]any
 		properties     map[dbus.ObjectPath]dbus.Variant
 		expectedResult bool
 	}{
 		{
 			name:           "x11 session",
-			sessions:       [][]interface{}{sessionTuple("1", "1000", "alice", "seat0", x11Path)},
+			sessions:       [][]any{sessionTuple("1", "1000", "alice", "seat0", x11Path)},
 			properties:     map[dbus.ObjectPath]dbus.Variant{x11Path: x11Prop},
 			expectedResult: true,
 		},
 		{
 			name:           "wayland session",
-			sessions:       [][]interface{}{sessionTuple("1", "1000", "alice", "seat0", waylandPath)},
+			sessions:       [][]any{sessionTuple("1", "1000", "alice", "seat0", waylandPath)},
 			properties:     map[dbus.ObjectPath]dbus.Variant{waylandPath: waylandProp},
 			expectedResult: true,
 		},
@@ -133,7 +133,7 @@ func TestHasGUISession(t *testing.T) {
 		},
 		{
 			name: "second session is gui",
-			sessions: [][]interface{}{
+			sessions: [][]any{
 				sessionTuple("1", "1000", "alice", "seat0", otherPath),
 				sessionTuple("2", "1000", "alice", "seat0", x11Path),
 			},
@@ -145,8 +145,8 @@ func TestHasGUISession(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			manager := &mockBusObject{
-				callFn: func(string, ...interface{}) *dbus.Call {
-					return &dbus.Call{Body: []interface{}{test.sessions}}
+				callFn: func(string, ...any) *dbus.Call {
+					return &dbus.Call{Body: []any{test.sessions}}
 				},
 			}
 
