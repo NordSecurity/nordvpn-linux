@@ -18,7 +18,7 @@ func Test_GetStringProperty_Success(t *testing.T) {
 		map[string]dbus.Variant{"SomeProp": dbus.MakeVariant("hello")},
 		nil)
 
-	result, err := dbusutil.GetStringProperty(client, "SomeProp")
+	result, err := dbusutil.GetStringProperty(client, "SomeProp", "")
 	assert.NoError(t, err)
 	assert.Equal(t, "hello", result)
 }
@@ -30,7 +30,7 @@ func Test_GetStringProperty_InvalidType(t *testing.T) {
 		map[string]dbus.Variant{"SomeProp": dbus.MakeVariant(1234)},
 		nil)
 
-	result, err := dbusutil.GetStringProperty(client, "SomeProp")
+	result, err := dbusutil.GetStringProperty(client, "SomeProp", "")
 	assert.Error(t, err)
 	assert.Empty(t, result)
 }
@@ -42,7 +42,7 @@ func Test_GetStringProperty_ErrorFromClient(t *testing.T) {
 		map[string]dbus.Variant{},
 		errors.New("DBus failure"))
 
-	result, err := dbusutil.GetStringProperty(client, "SomeProp")
+	result, err := dbusutil.GetStringProperty(client, "SomeProp", "")
 	assert.Error(t, err)
 	assert.Empty(t, result)
 }
@@ -50,7 +50,7 @@ func Test_GetStringProperty_ErrorFromClient(t *testing.T) {
 func Test_GetStringProperty_NilClient(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	result, err := dbusutil.GetStringProperty(nil, "AnyProp")
+	result, err := dbusutil.GetStringProperty(nil, "AnyProp", "")
 	assert.Error(t, err)
 	assert.Empty(t, result)
 }

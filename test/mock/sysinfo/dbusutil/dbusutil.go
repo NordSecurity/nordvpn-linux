@@ -25,7 +25,7 @@ func (m *MockDbusObjectClient) GetObject(name dbus.ObjectPath) dbus.BusObject {
 	return m.Objects[name]
 }
 
-func (m *MockDbusObjectClient) GetProperty(name string) (dbus.Variant, error) {
+func (m *MockDbusObjectClient) GetProperty(name string, objectPath dbus.ObjectPath) (dbus.Variant, error) {
 	if m.GetPropertyErr != nil {
 		return dbus.Variant{}, m.GetPropertyErr
 	}

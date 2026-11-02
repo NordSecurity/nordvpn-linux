@@ -46,7 +46,7 @@ func GetHostOSPrettyName() (string, error) {
 		"org.freedesktop.hostname1",
 	)
 
-	name, err := dbusutil.GetStringProperty(client, dbusHostname1PropOperatingSystemPrettyName)
+	name, err := dbusutil.GetStringProperty(client, dbusHostname1PropOperatingSystemPrettyName, "/org/freedesktop/hostname1")
 	if err != nil {
 		log.Sysinfo.Warnf("retrieving OS pretty name: %s", err)
 		log.Sysinfo.Warn("falling back to alternative OS detection method")

@@ -66,7 +66,7 @@ func Test_GetPropertyFromDBus(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := dbusutil.GetStringProperty(tt.client, tt.property)
+			got, err := dbusutil.GetStringProperty(tt.client, tt.property, "/org/freedesktop/hostname1")
 			if (err != nil) != tt.expectErr {
 				t.Errorf("Expected error: %v, got: %v", tt.expectErr, err)
 			}
