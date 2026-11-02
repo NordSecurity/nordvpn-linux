@@ -15,6 +15,7 @@ import 'package:nordvpn/widgets/accessible_item.dart';
 import 'package:nordvpn/theme/app_theme.dart';
 import 'package:nordvpn/theme/custom_dns_theme.dart';
 import 'package:nordvpn/widgets/advanced_list_tile.dart';
+import 'package:nordvpn/widgets/announce_on_show.dart';
 import 'package:nordvpn/widgets/bin_button.dart';
 import 'package:nordvpn/widgets/custom_error_widget.dart';
 import 'package:nordvpn/widgets/loading_button.dart';
@@ -132,11 +133,13 @@ class _CustomDnsState extends ConsumerState<CustomDns> {
                 valueListenable: _controller,
                 builder: (context, value, child) {
                   final isValid = _isValid(settings);
-                  return LoadingTextButton(
-                    key: CustomDnsKeys.dnsAddButton,
-                    controller: _buttonController,
-                    onPressed: isValid ? () => _addServer(settings) : null,
-                    child: Text(t.ui.add, style: appTheme.body),
+                  return ExcludeSemantics(
+                    child: LoadingTextButton(
+                      key: CustomDnsKeys.dnsAddButton,
+                      controller: _buttonController,
+                      onPressed: isValid ? () => _addServer(settings) : null,
+                      child: Text(t.ui.add, style: appTheme.body),
+                    ),
                   );
                 },
               ),
@@ -145,13 +148,19 @@ class _CustomDnsState extends ConsumerState<CustomDns> {
                   settings.customDnsServers.length < maxCustomDnsServers,
             );
           case _CustomDnsSections.warningMessage:
-            return SettingsWrapperWidget.buildListItem(
+            final warning = SettingsWrapperWidget.buildListItem(
               key: CustomDnsKeys.dnsWarningMessage,
               context,
               color: customDnsTheme.formBackground,
               iconName: "warning_sign.svg",
               titleStyle: appTheme.caption,
               title: t.ui.customDnsWarning,
+            );
+            if (!isCustomDnsEnabled) return warning;
+            return AnnounceOnShow(
+              announcement: () =>
+                  t.a11y.warningMessage(message: t.ui.customDnsWarning),
+              child: warning,
             );
           case _CustomDnsSections.dnsList:
             if (settings.customDnsServers.isEmpty) {

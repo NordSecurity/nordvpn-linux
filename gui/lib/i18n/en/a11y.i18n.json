@@ -17,5 +17,6 @@
   "link": "Link $name",
   "selected": "Selected",
   "notSelected": "Not selected",
-  "appVersion": "NordVPN version $version"
+  "appVersion": "NordVPN version $version",
+  "warningMessage": "Warning. $message"
 }
