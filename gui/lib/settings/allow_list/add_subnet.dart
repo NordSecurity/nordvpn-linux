@@ -71,6 +71,7 @@ class _AddSubnetState extends State<AddSubnet> {
                       Expanded(
                         child: Input(
                           controller: _textController,
+                          semanticsLabel: t.ui.enterSubnet,
                           hintText: "192.168.1.0/24",
                           validateInput: (_) => isStartValid && !isDuplicated,
                           onErrorMessage: _errorForPort,

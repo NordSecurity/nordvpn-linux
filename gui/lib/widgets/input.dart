@@ -21,6 +21,7 @@ final class Input extends StatefulWidget {
   final SubmitDisplay submitDisplay;
   final Function(String)? onSubmitted;
   final TextEditingController? controller;
+  final String? semanticsLabel;
 
   const Input({
     super.key,
@@ -34,6 +35,7 @@ final class Input extends StatefulWidget {
     required this.submitDisplay,
     this.onSubmitted,
     this.controller,
+    this.semanticsLabel,
   }) : assert(
          (onSubmitted != null) || (onChanged != null),
          "submit or change callback must not be null",
@@ -94,51 +96,54 @@ final class InputState extends State<Input> {
       spacing: appTheme.verticalSpaceSmall,
       children: [
         Expanded(
-          child: TextField(
-            style: inputTheme.textStyle,
-            controller: _controller,
-            focusNode: _focus,
-            onSubmitted: (value) async {
-              if (_btnController != null) {
-                _btnController!.triggerTap();
-              } else {
-                await _submit(value);
-              }
-            },
-            decoration: InputDecoration(
-              helperText: "", // hack to make room for error message
-              hintText: widget.hintText,
-              constraints: BoxConstraints(minHeight: inputTheme.height),
-              errorStyle: inputTheme.errorStyle,
-              helperStyle: inputTheme.errorStyle,
-              errorText: _errorText.isEmpty ? null : _errorText,
-              enabledBorder: OutlineInputBorder(
-                borderSide: BorderSide(
-                  color: inputTheme.enabled.borderColor,
-                  width: inputTheme.enabled.borderWidth,
+          child: Semantics(
+            label: widget.semanticsLabel,
+            child: TextField(
+              style: inputTheme.textStyle,
+              controller: _controller,
+              focusNode: _focus,
+              onSubmitted: (value) async {
+                if (_btnController != null) {
+                  _btnController!.triggerTap();
+                } else {
+                  await _submit(value);
+                }
+              },
+              decoration: InputDecoration(
+                helperText: "", // hack to make room for error message
+                hintText: widget.hintText,
+                constraints: BoxConstraints(minHeight: inputTheme.height),
+                errorStyle: inputTheme.errorStyle,
+                helperStyle: inputTheme.errorStyle,
+                errorText: _errorText.isEmpty ? null : _errorText,
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(
+                    color: inputTheme.enabled.borderColor,
+                    width: inputTheme.enabled.borderWidth,
+                  ),
                 ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(
-                  color: inputTheme.focused.borderColor,
-                  width: inputTheme.focused.borderWidth,
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(
+                    color: inputTheme.focused.borderColor,
+                    width: inputTheme.focused.borderWidth,
+                  ),
                 ),
-              ),
-              errorBorder: OutlineInputBorder(
-                borderSide: BorderSide(
-                  color: inputTheme.error.borderColor,
-                  width: inputTheme.error.borderWidth,
+                errorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(
+                    color: inputTheme.error.borderColor,
+                    width: inputTheme.error.borderWidth,
+                  ),
                 ),
-              ),
-              focusedErrorBorder: OutlineInputBorder(
-                borderSide: BorderSide(
-                  color: inputTheme.focusedError.borderColor,
-                  width: inputTheme.focusedError.borderWidth,
+                focusedErrorBorder: OutlineInputBorder(
+                  borderSide: BorderSide(
+                    color: inputTheme.focusedError.borderColor,
+                    width: inputTheme.focusedError.borderWidth,
+                  ),
                 ),
+                suffixIcon: _controller.text.isNotEmpty
+                    ? _buildClearIcon(inputTheme)
+                    : const SizedBox.shrink(),
               ),
-              suffixIcon: _controller.text.isNotEmpty
-                  ? _buildClearIcon(inputTheme)
-                  : const SizedBox.shrink(),
             ),
           ),
         ),

@@ -18,5 +18,7 @@
   "selected": "Selected",
   "notSelected": "Not selected",
   "appVersion": "NordVPN version $version",
-  "warningMessage": "Warning. $message"
+  "warningMessage": "Warning. $message",
+  "startPort": "Start port",
+  "endPort": "End port"
 }

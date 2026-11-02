@@ -114,6 +114,12 @@ class Translations$a11y$en {
 
 	/// en: 'Warning. $message'
 	String warningMessage({required Object message}) => 'Warning. ${message}';
+
+	/// en: 'Start port'
+	String get startPort => 'Start port';
+
+	/// en: 'End port'
+	String get endPort => 'End port';
 }
 
 // Path: cities
@@ -2259,6 +2265,8 @@ extension on Translations {
 			'a11y.notSelected' => 'Not selected',
 			'a11y.appVersion' => ({required Object version}) => 'NordVPN version ${version}',
 			'a11y.warningMessage' => ({required Object message}) => 'Warning. ${message}',
+			'a11y.startPort' => 'Start port',
+			'a11y.endPort' => 'End port',
 			'cities.tirana' => 'Tirana',
 			'cities.algiers' => 'Algiers',
 			'cities.addis_ababa' => 'Addis Ababa',
@@ -2749,10 +2757,10 @@ extension on Translations {
 			'ui.nordLayerDescription' => 'Get a powerful security solution for your business network.',
 			'ui.learnMore' => 'Learn more',
 			'ui.emailSupport' => 'Email Support',
-			'ui.knowledgeBase' => 'Knowledge Base',
-			'ui.routing' => 'Routing',
 			_ => null,
 		} ?? switch (path) {
+			'ui.knowledgeBase' => 'Knowledge Base',
+			'ui.routing' => 'Routing',
 			'ui.connectToVpn' => 'Connect to VPN',
 			'ui.connecting' => 'Connecting',
 			'ui.findingServer' => 'Finding server...',
