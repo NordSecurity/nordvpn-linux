@@ -17,21 +17,21 @@ type mockBusObject struct {
 	getAllPropFn func(iface string) (map[string]dbus.Variant, error)
 }
 
-func (m *mockBusObject) Call(method string, _ dbus.Flags, args ...interface{}) *dbus.Call {
+func (m *mockBusObject) Call(method string, _ dbus.Flags, args ...any) *dbus.Call {
 	return m.callFn(method, args...)
 }
 
-func (m *mockBusObject) CallWithContext(ctx context.Context, method string, flags dbus.Flags, args ...interface{}) *dbus.Call {
+func (m *mockBusObject) CallWithContext(ctx context.Context, method string, flags dbus.Flags, args ...any) *dbus.Call {
 	return m.Call(method, flags, args...)
 }
 
-func (m *mockBusObject) Go(method string, flags dbus.Flags, ch chan *dbus.Call, args ...interface{}) *dbus.Call {
+func (m *mockBusObject) Go(method string, flags dbus.Flags, ch chan *dbus.Call, args ...any) *dbus.Call {
 	call := m.Call(method, flags, args...)
 	ch <- call
 	return call
 }
 
-func (m *mockBusObject) GoWithContext(ctx context.Context, method string, flags dbus.Flags, ch chan *dbus.Call, args ...interface{}) *dbus.Call {
+func (m *mockBusObject) GoWithContext(ctx context.Context, method string, flags dbus.Flags, ch chan *dbus.Call, args ...any) *dbus.Call {
 	return m.Go(method, flags, ch, args...)
 }
 
@@ -100,42 +100,42 @@ func TestHasGUISession(t *testing.T) {
 		},
 		{
 			name:           "tty session only",
-			sessions:       [][]interface{}{sessionTuple("1", "1000", "alice", "seat0", otherPath)},
+			sessions:       [][]any{sessionTuple("1", "1000", "alice", "seat0", otherPath)},
 			properties:     map[dbus.ObjectPath]dbus.Variant{otherPath: ttyProp},
 			expectedResult: false,
 		},
 		{
 			name:           "different user",
-			sessions:       [][]interface{}{sessionTuple("1", "1000", "bob", "seat0", x11Path)},
+			sessions:       [][]any{sessionTuple("1", "1000", "bob", "seat0", x11Path)},
 			properties:     map[dbus.ObjectPath]dbus.Variant{x11Path: x11Prop},
 			expectedResult: false,
 		},
 		{
 			name:           "malformed short tuple",
-			sessions:       [][]interface{}{{"1", "1000"}},
+			sessions:       [][]any{{"1", "1000"}},
 			expectedResult: false,
 		},
 		{
 			name:           "malformed username",
-			sessions:       [][]interface{}{{"1", "1000", 42, "seat0", dbus.ObjectPath(x11Path)}},
+			sessions:       [][]any{{"1", "1000", 42, "seat0", x11Path}},
 			expectedResult: false,
 		},
 		{
 			name:           "malformed path",
-			sessions:       [][]interface{}{{"1", "1000", "alice", "seat0", "not-a-path"}},
+			sessions:       [][]any{{"1", "1000", "alice", "seat0", "not-a-path"}},
 			expectedResult: false,
 		},
 		{
 			name:           "get property fails",
-			sessions:       [][]interface{}{sessionTuple("1", "1000", "alice", "seat0", x11Path)},
+			sessions:       [][]any{sessionTuple("1", "1000", "alice", "seat0", x11Path)},
 			properties:     map[dbus.ObjectPath]dbus.Variant{x11Path: failProp},
 			expectedResult: false,
 		},
 		{
 			name: "second session is gui",
 			sessions: [][]interface{}{
-				sessionTuple("1", "1000", "alice", "seat0", dbus.ObjectPath(otherPath)),
-				sessionTuple("2", "1000", "alice", "seat0", dbus.ObjectPath(x11Path)),
+				sessionTuple("1", "1000", "alice", "seat0", otherPath),
+				sessionTuple("2", "1000", "alice", "seat0", x11Path),
 			},
 			properties:     map[dbus.ObjectPath]dbus.Variant{otherPath: ttyProp, x11Path: x11Prop},
 			expectedResult: true,

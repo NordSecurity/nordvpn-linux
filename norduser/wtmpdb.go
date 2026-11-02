@@ -92,7 +92,7 @@ func (w *wtmpdbSessionGetter) hasGUISession(username string) (bool, error) {
 
 	loginManager := w.dbusLoginClient.GetObject("/org/freedesktop/login1")
 
-	var sessions [][]interface{}
+	var sessions [][]any
 	if err := loginManager.Call("org.freedesktop.login1.Manager.ListSessions", 0).Store(&sessions); err != nil {
 		return false, fmt.Errorf("calling login manager: %w", err)
 	}
