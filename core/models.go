@@ -13,6 +13,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
+	"github.com/NordSecurity/nordvpn-linux/nstrings"
 )
 
 // ServerTechnology represents the nordvpn server technology
@@ -73,6 +74,8 @@ const (
 	Offline     = "offline"
 	Maintenance = "maintenance"
 )
+
+const VirtualLocation = "virtual_location"
 
 type UserCreateRequest struct {
 	Email    string `json:"email"`
@@ -340,6 +343,19 @@ func (s *Server) Version() string {
 		return version[0]
 	}
 	return ""
+}
+
+func (s *Server) IsVirtualLocation() bool {
+	virtualLocation := s.getSpecificationsForIdentifier(VirtualLocation)
+
+	if len(virtualLocation) > 0 {
+		value, err := nstrings.BoolFromString(virtualLocation[0])
+		if err == nil {
+			return value
+		}
+		log.Debug("cannot convert server virtual location", virtualLocation, err)
+	}
+	return false
 }
 
 // IsDedicatedIP reports whether the server belongs to the dedicated IP group.

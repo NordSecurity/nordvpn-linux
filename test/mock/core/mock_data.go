@@ -1,6 +1,9 @@
 package core_test
 
 import (
+	"fmt"
+	"slices"
+
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 )
@@ -64,7 +67,26 @@ func CountriesList() core.Countries {
 	}
 }
 
-func ServersList() core.Servers {
+// ServersList returns the mocked servers. When hostnames are given, only those servers are
+// returned, in the given order. It panics if a hostname is not part of the mocked servers.
+func ServersList(hostnames ...string) core.Servers {
+	servers := allServers()
+	if len(hostnames) == 0 {
+		return servers
+	}
+
+	selected := make(core.Servers, 0, len(hostnames))
+	for _, hostname := range hostnames {
+		index := slices.IndexFunc(servers, func(s core.Server) bool { return s.Hostname == hostname })
+		if index == -1 {
+			panic(fmt.Sprintf("server %q not found in the mocked servers", hostname))
+		}
+		selected = append(selected, servers[index])
+	}
+	return selected
+}
+
+func allServers() core.Servers {
 	// legacy XOR technologies, still returned by the API. Kept so tests can prove these servers are
 	// filtered out
 	obfuscatedTechnologies := core.Technologies{
