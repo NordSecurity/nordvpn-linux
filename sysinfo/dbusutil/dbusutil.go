@@ -7,45 +7,48 @@ import (
 	"github.com/godbus/dbus/v5"
 )
 
-// DBusPropertyClient defines the interface for interacting with DBus properties.
-type DBusPropertyClient interface {
-	GetProperty(name string) (dbus.Variant, error)
+// DBusObjectClient defines the interface for interacting with DBus objects.
+type DBusObjectClient interface {
+	GetProperty(name string, objectPath dbus.ObjectPath) (dbus.Variant, error)
+	GetObject(objectPath dbus.ObjectPath) dbus.BusObject
 }
 
-// genericDBusPropertyClient provides shared DBus functionality.
-type genericDBusPropertyClient struct {
-	conn       *dbus.Conn
-	service    string
-	objectPath dbus.ObjectPath
+// genericDBusObjectClient provides shared DBus functionality.
+type genericDBusObjectClient struct {
+	conn    *dbus.Conn
+	service string
+}
+
+func (c *genericDBusObjectClient) GetObject(objectPath dbus.ObjectPath) dbus.BusObject {
+	return c.conn.Object(c.service, objectPath)
 }
 
 // GetProperty retrieves a specified DBus property.
-func (c *genericDBusPropertyClient) GetProperty(name string) (dbus.Variant, error) {
-	return c.conn.Object(c.service, c.objectPath).GetProperty(c.service + "." + name)
+func (c *genericDBusObjectClient) GetProperty(name string, objectPath dbus.ObjectPath) (dbus.Variant, error) {
+	return c.GetObject(objectPath).GetProperty(c.service + "." + name)
 }
 
-// NewPropertyClient returns a generic D-Bus property client.
+// NewObjectClient returns a generic D-Bus object client.
 // This can be used for any service and object path.
-func NewPropertyClient(conn *dbus.Conn, service string, objectPath dbus.ObjectPath) DBusPropertyClient {
+func NewObjectClient(conn *dbus.Conn, service string) DBusObjectClient {
 	if conn == nil {
 		log.DBusUtil.Errorf("D-Bus connection is nil; cannot create property client")
 		return nil
 	}
 
-	return &genericDBusPropertyClient{
-		conn:       conn,
-		service:    service,
-		objectPath: objectPath,
+	return &genericDBusObjectClient{
+		conn:    conn,
+		service: service,
 	}
 }
 
 // GetStringProperty retrieves a property from the DBus client.
-func GetStringProperty(client DBusPropertyClient, property string) (string, error) {
+func GetStringProperty(client DBusObjectClient, property string, objectPath dbus.ObjectPath) (string, error) {
 	if client == nil {
 		return "", fmt.Errorf("invalid DBus client")
 	}
 
-	out, err := client.GetProperty(property)
+	out, err := client.GetProperty(property, objectPath)
 	if err != nil {
 		return "", fmt.Errorf("failed to get DBus property %q: %w", property, err)
 	}
