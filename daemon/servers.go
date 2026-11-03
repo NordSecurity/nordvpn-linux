@@ -5,6 +5,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/serverpicker"
 	"github.com/NordSecurity/nordvpn-linux/events"
@@ -70,4 +71,31 @@ func selectServer(
 	}
 
 	return selection, nil
+}
+
+func (r *RPC) validateServerInput(
+	serverTag string,
+	serverGroup string,
+	cfg config.Config,
+) (serverpicker.ServerSelection, error) {
+	if serverpicker.IsP2PGroup(serverTag, serverGroup) {
+		return serverpicker.ServerSelection{}, internal.NewErrorWithCode(internal.CodeP2PDeprecated)
+	}
+
+	if serverpicker.IsDedicatedServer(serverTag, serverGroup) {
+		if !r.remoteConfigGetter.IsFeatureEnabled(remote.FeatureDedicatedServer) {
+			return serverpicker.ServerSelection{}, internal.NewErrorWithCode(internal.CodeGroupNonexisting)
+		}
+
+		if !cfg.VPNProtocol.IsNordLynx() {
+			return serverpicker.ServerSelection{}, internal.NewErrorWithCode(internal.CodeDedicatedServersNoNordlynx)
+		}
+
+		if cfg.AutoConnectData.PostquantumVpn {
+			return serverpicker.ServerSelection{}, internal.NewErrorWithCode(internal.CodeDedicatedServersPq)
+		}
+	}
+
+	insights := r.dm.GetInsightsData().Insights
+	return selectServer(r, &insights, cfg, serverTag, serverGroup, "")
 }
