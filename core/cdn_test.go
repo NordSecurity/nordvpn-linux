@@ -58,7 +58,7 @@ func setupCdnApi() (*CDNAPI, context.CancelFunc) {
 		}
 	}
 
-	userAgent := request.GetUserAgentValue(Version, sysinfo.NewHostInfo().OSPrettyName)
+	userAgent := request.NewClientIdentity(Version, "", sysinfo.NewHostInfo()).UserAgent()
 
 	httpGlobalCtx, httpCancel := context.WithCancel(context.Background())
 
