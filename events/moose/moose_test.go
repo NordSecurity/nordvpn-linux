@@ -2410,7 +2410,7 @@ func TestNotifyConnect_ReportsTechnologyAndProtocolFromVPNProtocol(t *testing.T)
 	}
 
 	for _, test := range tests {
-		sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
+		sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, sysinfo.HostInfo{}, "", "", "")
 		var additional moose.TargetConnectionAdditionalParams
 		sub.mooseFuncs.sendConnect = func(
 			_ moose.EventParams,
