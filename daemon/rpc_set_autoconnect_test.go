@@ -353,23 +353,23 @@ func TestAutoconnect_SavesCorrectAutoconnectData(t *testing.T) {
 			testName:    "group name is in tag",
 			serverGroup: "",
 			tag:         "double_vpn",
-			expected:    config.AutoConnectData{Group: config.ServerGroup_DOUBLE_VPN, ServerTag: "double_vpn"},
+			expected:    config.AutoConnectData{Group: config.ServerGroup_DOUBLE_VPN},
 		},
 		{
 			testName: "for country name",
 			tag:      "germany",
-			expected: config.AutoConnectData{Group: config.ServerGroup_UNDEFINED, Country: "Germany", CountryCode: "DE", ServerTag: "germany"},
+			expected: config.AutoConnectData{Group: config.ServerGroup_UNDEFINED, Country: "Germany", CountryCode: "DE"},
 		},
 		{
 			testName: "for country code and city name",
 			tag:      "de berlin",
-			expected: config.AutoConnectData{Group: config.ServerGroup_UNDEFINED, Country: "Germany", CountryCode: "DE", City: "Berlin", ServerTag: "de berlin"},
+			expected: config.AutoConnectData{Group: config.ServerGroup_UNDEFINED, Country: "Germany", CountryCode: "DE", City: "Berlin"},
 		},
 		{
 			testName:    "for country code, city name and group",
 			tag:         "de berlin",
 			serverGroup: "double_vpn",
-			expected:    config.AutoConnectData{Group: config.ServerGroup_DOUBLE_VPN, Country: "Germany", CountryCode: "DE", City: "Berlin", ServerTag: "de berlin"},
+			expected:    config.AutoConnectData{Group: config.ServerGroup_DOUBLE_VPN, Country: "Germany", CountryCode: "DE", City: "Berlin"},
 		},
 	}
 

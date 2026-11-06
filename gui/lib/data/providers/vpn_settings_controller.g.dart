@@ -34,7 +34,7 @@ final class VpnSettingsControllerProvider
 }
 
 String _$vpnSettingsControllerHash() =>
-    r'fbf0e824cb8b03725085835974ad71c026e402e4';
+    r'afe28afa487a2cf6ec4fa50fa9f264dda0e9d646';
 
 abstract class _$VpnSettingsController
     extends $AsyncNotifier<ApplicationSettings> {

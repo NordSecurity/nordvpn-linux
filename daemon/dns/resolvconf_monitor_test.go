@@ -9,6 +9,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/fsnotify/fsnotify"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type mockErrorEvent struct {
@@ -133,6 +134,7 @@ func Test_ResolvConfMonitoring(t *testing.T) {
 			getMockWatcherFunc := func(...string) (*fsnotify.Watcher, error) {
 				watcher, err := fsnotify.NewWatcher()
 				assert.NoError(t, err)
+				require.NotNil(t, watcher)
 				watcher.Events = eventsChan
 				watcher.Errors = errorChan
 				return watcher, nil

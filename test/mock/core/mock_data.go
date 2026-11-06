@@ -64,6 +64,14 @@ func CountriesList() core.Countries {
 				{ID: 1, Name: "Rome"},
 			},
 		},
+		{
+			Name: "United States",
+			Code: "US",
+			ID:   151,
+			Cities: []core.City{
+				{ID: 60, Name: "New York"},
+			},
+		},
 	}
 }
 
@@ -131,6 +139,13 @@ func allServers() core.Servers {
 			ID:    config.ServerGroup_ONION_OVER_VPN,
 			Title: "Double VPN",
 		},
+		core.Group{
+			ID:    config.ServerGroup_STANDARD_VPN_SERVERS,
+			Title: "Standard VPN Servers",
+		},
+	}
+
+	nwGroups := core.Groups{
 		core.Group{
 			ID:    config.ServerGroup_STANDARD_VPN_SERVERS,
 			Title: "Standard VPN Servers",
@@ -213,7 +228,7 @@ func allServers() core.Servers {
 					},
 				},
 			},
-			Groups: standardGroups,
+			Groups: nwGroups,
 		},
 		core.Server{
 			ID:        3,
@@ -408,6 +423,26 @@ func allServers() core.Servers {
 						Code: "IT",
 						ID:   150,
 						City: core.City{ID: 1, Name: "Rome"},
+					},
+				},
+			},
+			Groups: standardGroups,
+		},
+		core.Server{
+			ID:           15,
+			Name:         "United States #15",
+			Hostname:     "us15.nordvpn.com",
+			Status:       core.Online,
+			Technologies: technologies,
+			CreatedAt:    "2006-01-02 15:04:05",
+			Station:      "127.0.0.1",
+			Locations: core.Locations{
+				core.Location{
+					Country: core.Country{
+						Name: "United States",
+						ID:   133,
+						Code: "US",
+						City: core.City{Name: "New York", ID: 28},
 					},
 				},
 			},
