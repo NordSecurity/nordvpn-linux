@@ -6,7 +6,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
-const NordAgentHeader = "X-Nord-Agent"
+const NordAgentHeader = "Nord-Agent"
 
 type NordAgentRoundTripper struct {
 	inner http.RoundTripper
