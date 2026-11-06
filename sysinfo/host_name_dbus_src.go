@@ -1,7 +1,8 @@
 package sysinfo
 
 import (
-	"github.com/NordSecurity/nordvpn-linux/log"
+	"fmt"
+
 	"github.com/NordSecurity/nordvpn-linux/sysinfo/dbusutil"
 	"github.com/godbus/dbus/v5"
 )
@@ -30,14 +31,12 @@ const (
 	dbusHostname1PropFirmwareVendor            string = "FirmwareVendor"
 )
 
-// GetHostOSPrettyName retrieves user-friendly OS name using D-Bus communication with the system
+// getHostOSPrettyName retrieves user-friendly OS name using D-Bus communication with the system
 // hostname service.
-func GetHostOSPrettyName() (string, error) {
+func getHostOSPrettyName() (string, error) {
 	conn, err := dbus.SystemBus()
 	if err != nil {
-		log.Sysinfo.Errorf("connecting to system dbus: %s", err)
-		log.Sysinfo.Warn("falling back to alternative OS detection method")
-		return GetHostOSName()
+		return "", fmt.Errorf("connecting to system dbus: %w", err)
 	}
 	defer conn.Close()
 
@@ -47,12 +46,5 @@ func GetHostOSPrettyName() (string, error) {
 		"/org/freedesktop/hostname1",
 	)
 
-	name, err := dbusutil.GetStringProperty(client, dbusHostname1PropOperatingSystemPrettyName)
-	if err != nil {
-		log.Sysinfo.Warnf("retrieving OS pretty name: %s", err)
-		log.Sysinfo.Warn("falling back to alternative OS detection method")
-		return GetHostOSName()
-	}
-
-	return name, nil
+	return dbusutil.GetStringProperty(client, dbusHostname1PropOperatingSystemPrettyName)
 }
