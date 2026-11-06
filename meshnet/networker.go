@@ -26,7 +26,7 @@ type Networker interface {
 	// ForbidFileshare removes a rules enabling fileshare port for all available peers and sets fileshare as forbidden
 	ForbidFileshare() error
 	StatusMap() (map[string]string, error)
-	LastServerName() string
+	LastServer() vpn.ServerData
 	Start(
 		context.Context,
 		vpn.Credentials,
