@@ -60,6 +60,7 @@ type state struct {
 var publicKeyExprContextQuotes = regexp.MustCompile(`"PublicKey":(\s)*"(.*?)"`)
 var publicKeyExprContextNoQuotes = regexp.MustCompile(`PublicKey:(\s)*([^\s,}\]]+)`)
 var publicKeyNoContextExpr = regexp.MustCompile(`[A-Za-z0-9+/]{43}=`)
+var ipArrayTelioOutputExpr = regexp.MustCompile(`Ipv4Addr\(\[\d+,\s*\d+,\s*\d+,\s*\d+\]\)`)
 
 // maskPublicKey relies on surrounding context to mask the public key. It replaces all "PublicKey:<key>" substrings with
 // "PublicKey:***".
@@ -72,6 +73,12 @@ func maskPublicKey(in string) string {
 // potential cost of precision.
 func maskPublicKeyNoContext(in string) string {
 	return publicKeyNoContextExpr.ReplaceAllString(in, "***")
+}
+
+// maskIPAddressInArrayFormat masks IP address in a rust array format, i.e IpAddress(V4(Ipv4Addr([<address>]))).
+// telio logs IP addresses in this format. We filter it here at the log site because having such filter globally would be too aggressive.
+func maskIPAddressInArrayFormat(in string) string {
+	return ipArrayTelioOutputExpr.ReplaceAllString(in, `Ipv4Addr([***])`)
 }
 
 type eventCb func(teliogo.Event) error
@@ -354,6 +361,7 @@ func (cb *telioLoggerCb) Log(logLevel teliogo.TelioLogLevel, payload string) err
 	msg := "TELIO(" + teliogo.GetVersionTag() + "): " + payload
 	// Use no-context, greedy masking because we have less control over the logs
 	msg = maskPublicKeyNoContext(msg)
+	msg = maskIPAddressInArrayFormat(msg)
 	//exhaustive:ignore
 	switch logLevel {
 	case teliogo.TelioLogLevelError:
@@ -363,7 +371,7 @@ func (cb *telioLoggerCb) Log(logLevel teliogo.TelioLogLevel, payload string) err
 	case teliogo.TelioLogLevelDebug, teliogo.TelioLogLevelTrace:
 		log.Debug(msg)
 	default:
-		log.Info(msg)
+		log.Info(log.DoNotSanitize(msg))
 	}
 	return nil
 }

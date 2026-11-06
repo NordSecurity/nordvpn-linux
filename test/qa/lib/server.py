@@ -42,6 +42,14 @@ class ServerInfo:
         self.hostname = server_info["hostname"]
         self.city = server_info["locations"][0]["country"]["city"]["name"]
         self.country = server_info["locations"][0]["country"]["name"]
+        self.ip = server_info["ips"][0]["ip"]["ip"]
+
+        for technology in server_info["technologies"]:
+            if technology["name"] != "Wireguard":
+                continue
+            for metadata in technology["metadata"]:
+                if metadata["name"] == "public_key":
+                    self.nordlynx_public_key = metadata["value"]
 
 
 def _server_is_dedicated_ip(server: dict) -> bool:
@@ -214,6 +222,7 @@ def get_request_parameters(vpn_protocol="", group_name=""):
         tech_id = ""
 
     return (tech_id, group_id)
+
 
 def validate_server(server_json="", tech_id=0, group_id=0):
     if tech_id in TECH_OPENVPN_LIST:

@@ -412,4 +412,12 @@ Your browsing activities remain private, regardless of your choice.
 	MsgDiagnosticsSuccess    = "Diagnostics collected successfully.\nFile saved to: %s"
 	MsgDiagnosticsFailure    = "We couldn't collect diagnostic logs. Please try again or contact our support team."
 	MsgDiagnosticsDisclaimer = "WARNING: This file contains sensitive information about your system and configuration. Share it only with our support team through a secure channel."
+
+	// Log sanitization
+	SetLogSanitizationUsageText = "Log sanitization masks sensitive values in logs. Enabled by default. Disabling requires root and lasts until the next reboot. Disable only when requested by NordVPN support for debugging."
+
+	MsgDisableLogSanitizationNothingToDo = "Log sanitization is already set to '%s'."
+	MsgDisableLogSanitizationNonRoot     = "You need root privileges to change log sanitization."
+	MsgDisableLogSanitizationWarning     = "Log sanitization disabled until reboot. Logs may now contain sensitive data. Run 'nordvpn set log-sanitization on' to re-enable it."
+	MsgDisableLogSanitizationSuccess     = "Log sanitization has been successfully set to '%s'."
 )

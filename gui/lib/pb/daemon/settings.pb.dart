@@ -212,6 +212,7 @@ class Settings extends $pb.GeneratedMessage {
     $core.bool? arpIgnore,
     $core.bool? ech,
     $3.VPNProtocol? vpnProtocol,
+    $core.bool? logSanitization,
   }) {
     final result = create();
     if (firewall != null) result.firewall = firewall;
@@ -231,6 +232,7 @@ class Settings extends $pb.GeneratedMessage {
     if (arpIgnore != null) result.arpIgnore = arpIgnore;
     if (ech != null) result.ech = ech;
     if (vpnProtocol != null) result.vpnProtocol = vpnProtocol;
+    if (logSanitization != null) result.logSanitization = logSanitization;
     return result;
   }
 
@@ -268,6 +270,7 @@ class Settings extends $pb.GeneratedMessage {
     ..aOB(20, _omitFieldNames ? '' : 'ech')
     ..aE<$3.VPNProtocol>(21, _omitFieldNames ? '' : 'vpnProtocol',
         enumValues: $3.VPNProtocol.values)
+    ..aOB(22, _omitFieldNames ? '' : 'logSanitization')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -431,6 +434,15 @@ class Settings extends $pb.GeneratedMessage {
   $core.bool hasVpnProtocol() => $_has(15);
   @$pb.TagNumber(21)
   void clearVpnProtocol() => $_clearField(21);
+
+  @$pb.TagNumber(22)
+  $core.bool get logSanitization => $_getBF(16);
+  @$pb.TagNumber(22)
+  set logSanitization($core.bool value) => $_setBool(16, value);
+  @$pb.TagNumber(22)
+  $core.bool hasLogSanitization() => $_has(16);
+  @$pb.TagNumber(22)
+  void clearLogSanitization() => $_clearField(22);
 }
 
 class UserSpecificSettings extends $pb.GeneratedMessage {

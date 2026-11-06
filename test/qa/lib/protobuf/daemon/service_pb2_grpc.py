@@ -284,6 +284,11 @@ class DaemonStub(object):
                 request_serializer=common__pb2.Empty.SerializeToString,
                 response_deserializer=common__pb2.DiagnosticsProgress.FromString,
                 _registered_method=True)
+        self.SetLogSanitization = channel.unary_unary(
+                '/pb.Daemon/SetLogSanitization',
+                request_serializer=set__pb2.SetGenericRequest.SerializeToString,
+                response_deserializer=common__pb2.Payload.FromString,
+                _registered_method=True)
 
 
 class DaemonServicer(object):
@@ -579,6 +584,12 @@ class DaemonServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def SetLogSanitization(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_DaemonServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -811,6 +822,11 @@ def add_DaemonServicer_to_server(servicer, server):
                     servicer.CollectDiagnostics,
                     request_deserializer=common__pb2.Empty.FromString,
                     response_serializer=common__pb2.DiagnosticsProgress.SerializeToString,
+            ),
+            'SetLogSanitization': grpc.unary_unary_rpc_method_handler(
+                    servicer.SetLogSanitization,
+                    request_deserializer=set__pb2.SetGenericRequest.FromString,
+                    response_serializer=common__pb2.Payload.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -2055,6 +2071,33 @@ class Daemon(object):
             '/pb.Daemon/CollectDiagnostics',
             common__pb2.Empty.SerializeToString,
             common__pb2.DiagnosticsProgress.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SetLogSanitization(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/pb.Daemon/SetLogSanitization',
+            set__pb2.SetGenericRequest.SerializeToString,
+            common__pb2.Payload.FromString,
             options,
             channel_credentials,
             insecure,

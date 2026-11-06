@@ -352,6 +352,7 @@ func main() {
 		internal.UserLogOutput(internal.NorduserdLogFileName, internal.MaxUserLogSizeMB),
 		internal.LogLevelFile,
 		log.DefaultLevel(),
+		internal.IsDevEnv(Environment),
 	)
 	defer stopLevelWatcher()
 

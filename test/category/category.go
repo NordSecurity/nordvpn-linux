@@ -2,10 +2,10 @@ package category
 
 import (
 	"flag"
+	//nolint:depguard // non-prod code, used for unit tests
+	"log"
 	"strings"
 	"testing"
-
-	"github.com/NordSecurity/nordvpn-linux/log"
 
 	"golang.org/x/exp/slices"
 )

@@ -66,6 +66,7 @@ func (r *RPC) Settings(ctx context.Context, in *pb.Empty) (*pb.SettingsResponse,
 	cfg.AutoConnectData.ECH = r.getECHEnabledField(cfg)
 
 	settings := configToProtobuf(&cfg, uid)
+	settings.LogSanitization = log.GetSanitization()
 
 	return &pb.SettingsResponse{
 		Type: internal.CodeSuccess,

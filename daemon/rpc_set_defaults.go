@@ -88,6 +88,8 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.P
 		}, nil
 	}
 
+	log.ResetSanitization()
+
 	if err := r.recentVPNConnStore.Clean(); err != nil {
 		return &pb.Payload{
 			Type: internal.CodeCleanRecentConnectionError,

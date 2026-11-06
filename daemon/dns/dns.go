@@ -387,7 +387,7 @@ func NewSetter(methods ...Method) *DNSMethodSetter {
 // Also, backup current DNS settings (only in case of direct resolv.conf edit).
 // Backup is not overridden, so its safe to call this function multiple times in a row.
 func (d *DNSMethodSetter) Set(iface string, nameservers []string) error {
-	log.DNS.Info("setting dns to " + strings.Join(nameservers, " "))
+	log.DNS.Info("setting dns to ", log.DoNotSanitize(strings.Join(nameservers, " ")))
 
 	if len(nameservers) == 0 {
 		return errors.New("nameservers not provided")
