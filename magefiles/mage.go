@@ -26,19 +26,21 @@ const (
 	imagePackager          = registryPrefix + "packager:1.3.7"
 	imageDepender          = registryPrefix + "depender:1.4.6"
 	imageSnapPackager      = registryPrefix + "snaper:1.2.2"
-	imageProtobufGenerator = registryPrefix + "generator:1.5.3"
+	imageProtobufGenerator = registryPrefix + "generator:1.5.4"
 	imageScanner           = registryPrefix + "scanner:1.1.0"
 	imageTester            = registryPrefix + "tester:1.6.5"
 	imageQAPeer            = registryPrefix + "qa-peer:1.0.5"
 	imageRuster            = registryPrefix + "ruster:1.4.2"
 	imageCodeQL            = registryPrefix + "codeql:1.0.1"
 
-	dockerWorkDir    = "/opt"
-	guiDockerWorkDir = dockerWorkDir + "/gui"
-	devPackageType   = "source"
+	dockerWorkDir  = "/opt"
+	devPackageType = "source"
 
 	qaPeerAddress = "http://qa-peer:8000/exec"
 )
+
+var guiDockerWorkDir = dockerWorkDir + "/gui"
+var scriptPathPrefix = "."
 
 const (
 	packageTypeSnap = "snap"
@@ -113,6 +115,18 @@ func installHookIfNordsec() error {
 
 	if _, err := exec.Command("git", "secrets", "--install", "--force").CombinedOutput(); err != nil {
 		return fmt.Errorf("installing git-secrets hook: %w", err)
+	}
+
+	hookPath, err := exec.Command("git", "rev-parse", "--git-path", "hooks/pre-commit").Output()
+	if err != nil {
+		return fmt.Errorf("resolving pre-commit hook path: %w", err)
+	}
+
+	const preCommitHook = `#!/usr/bin/env bash
+git secrets --scan --cached -- app
+`
+	if err := internal.FileWrite(strings.TrimSpace(string(hookPath)), []byte(preCommitHook), internal.PermUserRWXGroupRXOthersRX); err != nil {
+		return fmt.Errorf("overwriting pre-commit hook: %w", err)
 	}
 
 	return nil
@@ -294,13 +308,17 @@ func (Build) NoticesDocker(ctx context.Context) error {
 	}
 	env["WORKDIR"] = dockerWorkDir
 	env["GOCACHE"] = "/tmp/go-cache"
-
+	if env["MOUNT_ROOT_GIT"] == "1" {
+		newWorkdir := dockerWorkDir + "/app"
+		scriptPathPrefix = newWorkdir
+		env["WORKDIR"] = newWorkdir
+	}
 	return RunDocker(
 		ctx,
 		env,
 		imageDepender,
-		[]string{"ci/licenses.sh"},
-		dockerWorkDir,
+		[]string{scriptPathPrefix + "/ci/licenses.sh"},
+		env["WORKDIR"],
 	)
 }
 
@@ -383,7 +401,12 @@ func buildPackageDocker(ctx context.Context, packageType string, buildFlags stri
 	env["PACKAGE"] = devPackageType
 	// TODO (LVPN-9228) remove usage of ENABLE_GUI_BUILD variable, once the way of building is unified
 	env["ENABLE_GUI_BUILD"] = "1"
-
+	if env["MOUNT_ROOT_GIT"] == "1" {
+		newWorkdir := dockerWorkDir + "/app"
+		scriptPathPrefix = newWorkdir
+		env["WORKDIR"] = newWorkdir
+		env["GIT_ROOT"] = dockerWorkDir
+	}
 	switch packageType {
 	case packageTypeSnap:
 		env["DOCKER_ENV"] = "1"
@@ -391,8 +414,8 @@ func buildPackageDocker(ctx context.Context, packageType string, buildFlags stri
 			ctx,
 			env,
 			imageSnapPackager,
-			[]string{"ci/build_snap.sh"},
-			DockerSettings{Privileged: true, WorkDir: dockerWorkDir},
+			[]string{scriptPathPrefix + "/ci/build_snap.sh"},
+			DockerSettings{Privileged: true, WorkDir: env["WORKDIR"]},
 		); err != nil {
 			return err
 		}
@@ -402,8 +425,8 @@ func buildPackageDocker(ctx context.Context, packageType string, buildFlags stri
 			ctx,
 			env,
 			imagePackager,
-			[]string{"ci/nfpm/build_packages_resources.sh", packageType},
-			dockerWorkDir,
+			[]string{scriptPathPrefix + "/ci/nfpm/build_packages_resources.sh", packageType},
+			env["WORKDIR"],
 		)
 	}
 
@@ -479,14 +502,19 @@ func buildBinariesDocker(ctx context.Context, buildFlags string) error {
 	env["ENVIRONMENT"] = string(internal.Development)
 	env["PACKAGE"] = devPackageType
 	env["BUILD_FLAGS"] = buildFlags
+	if env["MOUNT_ROOT_GIT"] == "1" {
+		newWorkdir := dockerWorkDir + "/app"
+		scriptPathPrefix = newWorkdir
+		env["WORKDIR"] = newWorkdir
+	}
 
 	// build core part
 	if err = RunDocker(
 		ctx,
 		env,
 		imageBuilder,
-		[]string{"ci/compile.sh"},
-		dockerWorkDir,
+		[]string{scriptPathPrefix + "/ci/compile.sh"},
+		env["WORKDIR"],
 	); err != nil {
 		return fmt.Errorf("error while compiling core: %w", err)
 	}
@@ -515,13 +543,19 @@ func buildGuiBinariesInDocker(ctx context.Context, buildFlags string) error {
 	env["ENVIRONMENT"] = string(internal.Development)
 	env["PACKAGE"] = devPackageType
 	env["BUILD_FLAGS"] = buildFlags
+	if env["MOUNT_ROOT_GIT"] == "1" {
+		newWorkdir := dockerWorkDir + "/app"
+		guiDockerWorkDir = newWorkdir + "/gui"
+		scriptPathPrefix = guiDockerWorkDir
+		env["WORKDIR"] = newWorkdir
+	}
 
 	// build GUI binaries
 	return RunDocker(
 		ctx,
 		env,
 		imageGUIFlutter,
-		[]string{"scripts/build_application.sh", "release"},
+		[]string{scriptPathPrefix + "/scripts/build_application.sh", "release"},
 		guiDockerWorkDir,
 	)
 }
@@ -564,12 +598,17 @@ func (Build) OpenvpnDocker(ctx context.Context) error {
 	}
 
 	env["WORKDIR"] = dockerWorkDir
+	if env["MOUNT_ROOT_GIT"] == "1" {
+		newWorkdir := dockerWorkDir + "/app"
+		scriptPathPrefix = newWorkdir
+		env["WORKDIR"] = newWorkdir
+	}
 	return RunDockerWithSettings(
 		ctx,
 		env,
 		imageBuilder,
-		[]string{"sh", "-c", "ci/openvpn/fix_dependencies.sh; ci/openvpn/build.sh"},
-		DockerSettings{Privileged: true, WorkDir: dockerWorkDir},
+		[]string{"sh", "-c", fmt.Sprintf("%s/ci/openvpn/fix_dependencies.sh; %s/ci/openvpn/build.sh", scriptPathPrefix, scriptPathPrefix)},
+		DockerSettings{Privileged: true, WorkDir: env["WORKDIR"]},
 	)
 }
 
@@ -613,19 +652,23 @@ func (Build) RustDocker(ctx context.Context) error {
 
 	// build only for host architecture by default
 	env["WORKDIR"] = dockerWorkDir
-
+	if env["MOUNT_ROOT_GIT"] == "1" {
+		newWorkdir := dockerWorkDir + "/app"
+		scriptPathPrefix = newWorkdir
+		env["WORKDIR"] = newWorkdir
+	}
 	features, ok := env["FEATURES"]
 	if !ok {
 		features = "telio drop"
 	}
 
 	if strings.Contains(features, "telio") {
-		if err := RunDocker(ctx, env, imageRuster, []string{"ci/build_libtelio.sh"}, dockerWorkDir); err != nil {
+		if err := RunDocker(ctx, env, imageRuster, []string{scriptPathPrefix + "/ci/build_libtelio.sh"}, env["WORKDIR"]); err != nil {
 			return err
 		}
 	}
 	if strings.Contains(features, "drop") {
-		if err := RunDocker(ctx, env, imageRuster, []string{"ci/build_libdrop.sh"}, dockerWorkDir); err != nil {
+		if err := RunDocker(ctx, env, imageRuster, []string{scriptPathPrefix + "/ci/build_libdrop.sh"}, env["WORKDIR"]); err != nil {
 			return err
 		}
 	}
@@ -682,6 +725,11 @@ func (Test) CgoDocker(ctx context.Context) error {
 	}
 	env["WORKDIR"] = dockerWorkDir
 	env["ENVIRONMENT"] = string(internal.Development)
+	if env["MOUNT_ROOT_GIT"] == "1" {
+		newWorkdir := dockerWorkDir + "/app"
+		scriptPathPrefix = newWorkdir
+		env["WORKDIR"] = newWorkdir
+	}
 	if v := os.Getenv(golden.UpdateGoldenFilesEnvVar); v != "" {
 		env[golden.UpdateGoldenFilesEnvVar] = v
 	}
@@ -690,8 +738,8 @@ func (Test) CgoDocker(ctx context.Context) error {
 		ctx,
 		env,
 		imageBuilder,
-		[]string{"ci/test.sh", "full"},
-		DockerSettings{Privileged: true, WorkDir: dockerWorkDir},
+		[]string{scriptPathPrefix + "/ci/test.sh", "full"},
+		DockerSettings{Privileged: true, WorkDir: env["WORKDIR"]},
 	)
 }
 
@@ -789,6 +837,11 @@ func qaDocker(ctx context.Context, testGroup, testPattern string) (err error) {
 	}
 	env["WORKDIR"] = dockerWorkDir
 	env["QA_PEER_ADDRESS"] = qaPeerAddress
+	if env["MOUNT_ROOT_GIT"] == "1" {
+		newWorkdir := dockerWorkDir + "/app"
+		scriptPathPrefix = newWorkdir
+		env["WORKDIR"] = newWorkdir
+	}
 
 	_ = RemoveDockerNetwork(context.Background(), "qa") // Needed if job was killed
 	networkID, err := CreateDockerNetwork(ctx, "qa")
@@ -824,8 +877,8 @@ func qaDocker(ctx context.Context, testGroup, testPattern string) (err error) {
 
 	return RunDockerWithSettings(ctx, env,
 		imageTester,
-		[]string{"ci/test_deb.sh", testGroup, testPattern},
-		DockerSettings{Privileged: true, Network: networkID, WorkDir: dockerWorkDir},
+		[]string{scriptPathPrefix + "/ci/test_deb.sh", testGroup, testPattern},
+		DockerSettings{Privileged: true, Network: networkID, WorkDir: env["WORKDIR"]},
 	)
 }
 

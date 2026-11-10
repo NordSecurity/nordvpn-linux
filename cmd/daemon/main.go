@@ -58,7 +58,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events/meshunsetter"
 	"github.com/NordSecurity/nordvpn-linux/events/refresher"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
-	"github.com/NordSecurity/nordvpn-linux/features"
 	grpcmiddleware "github.com/NordSecurity/nordvpn-linux/grpc_middleware"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/ipv6"
@@ -257,10 +256,11 @@ func main() {
 		}
 	}
 
-	hostInfo := sysinfo.NewHostInfo()
-
-	identity := request.NewClientIdentity(Version, features.BuildType, hostInfo)
-	userAgent := identity.UserAgent()
+	userAgent, err := request.GetUserAgentValue(Version, sysinfo.GetHostOSPrettyName)
+	if err != nil {
+		userAgent = fmt.Sprintf("%s/%s (unknown)", request.AppName, Version)
+		log.Errorf("Error while constructing UA value: %s. Falls back to default: %s\n", err, userAgent)
+	}
 
 	httpGlobalCtx, httpCancel := context.WithCancel(context.Background())
 
@@ -270,16 +270,9 @@ func main() {
 	h1SimpleTransport := request.NewHTTPReTransport(
 		1, 1, "HTTP/1.1", createSimpleH1Transport(Environment), nil, simpleTransportNeedsRecreate)
 	daemonEvents.Service.Connect.Subscribe(h1SimpleTransport.NotifyConnect)
-
-	nordAgent := identity.NordAgent()
-	log.Info(request.NordAgentHeader+":", nordAgent)
-
-	httpClientSimple.Transport = request.NewNordAgentRoundTripper(
-		request.NewPublishingRoundTripper(
-			request.NewContextRoundTripper(h1SimpleTransport, httpGlobalCtx),
-			httpCallsSubject,
-		),
-		nordAgent,
+	httpClientSimple.Transport = request.NewPublishingRoundTripper(
+		request.NewContextRoundTripper(h1SimpleTransport, httpGlobalCtx),
+		httpCallsSubject,
 	)
 
 	cdnUrl := core.CDNURL
@@ -299,16 +292,13 @@ func main() {
 	)
 
 	httpClientWithRotator := request.NewStdHTTP()
-	httpClientWithRotator.Transport = request.NewNordAgentRoundTripper(
-		createTimedOutTransport(
-			resolver,
-			cfg.FirewallMark,
-			httpCallsSubject,
-			daemonEvents.Service.Connect,
-			httpGlobalCtx,
-			Environment,
-		),
-		nordAgent,
+	httpClientWithRotator.Transport = createTimedOutTransport(
+		resolver,
+		cfg.FirewallMark,
+		httpCallsSubject,
+		daemonEvents.Service.Connect,
+		httpGlobalCtx,
+		Environment,
 	)
 
 	cdnAPI := core.NewCDNAPI(
@@ -365,10 +355,8 @@ func main() {
 		Environment:  Environment,
 		Architecture: Arch,
 	}
-	if hostInfo.Architecture != "" {
-		if archVariant, err := machineIdGenerator.GetArchitectureVariantName(hostInfo.Architecture); err == nil {
-			buildTarget.Architecture = archVariant
-		}
+	if archVariant, err := machineIdGenerator.GetArchitectureVariantName(sysinfo.GetHostArchitecture()); err == nil {
+		buildTarget.Architecture = archVariant
 	}
 
 	analytics := newAnalytics(
@@ -377,9 +365,7 @@ func main() {
 		clientAPI,
 		httpClientSimple,
 		buildTarget,
-		hostInfo,
-		deviceID,
-	)
+		deviceID)
 
 	heartBeatSubject.Subscribe(analytics.NotifyHeartBeat)
 	httpCallsSubject.Subscribe(analytics.NotifyRequestAPI)
@@ -529,7 +515,6 @@ func main() {
 		keygen,
 		meshRegistry,
 		clientAPI,
-		hostInfo,
 	)
 
 	meshMapper := mapper.NewNotifyingMapper(

@@ -15,7 +15,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/events"
-	"github.com/NordSecurity/nordvpn-linux/sysinfo"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	"gotest.tools/v3/assert"
@@ -24,7 +23,7 @@ import (
 func TestNewSubscriber_AllMooseFuncsSet(t *testing.T) {
 	category.Set(t, category.Unit)
 	// values are not important, `mooseFuncs` field needs to be set properly
-	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, sysinfo.HostInfo{}, "", "", "")
+	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 
 	v := reflect.ValueOf(sub.mooseFuncs)
 	for i := 0; i < v.NumField(); i++ {
@@ -966,7 +965,7 @@ func TestSetDedicatedServerServiceStatus(t *testing.T) {
 
 func TestNotifyConnect_DedicatedIP_StripsBodyAndUnsetsContext(t *testing.T) {
 	category.Set(t, category.Unit)
-	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, sysinfo.HostInfo{}, "", "", "")
+	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 
 	var capturedDomain, capturedUUID string
 	var calls []string
@@ -1016,7 +1015,7 @@ func TestNotifyConnect_DedicatedIP_StripsBodyAndUnsetsContext(t *testing.T) {
 
 func TestNotifyConnect_DedicatedIPByHostname_StripsBodyAndUnsetsContext(t *testing.T) {
 	category.Set(t, category.Unit)
-	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, sysinfo.HostInfo{}, "", "", "")
+	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 
 	var capturedDomain, capturedUUID string
 	var calls []string
@@ -1066,7 +1065,7 @@ func TestNotifyConnect_DedicatedIPByHostname_StripsBodyAndUnsetsContext(t *testi
 
 func TestNotifyConnect_Success_DedicatedIPByHostname_ContextValueIsUserTarget(t *testing.T) {
 	category.Set(t, category.Unit)
-	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, sysinfo.HostInfo{}, "", "", "")
+	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 	noopDisconnectAmbientMooseFuncs(sub)
 
 	var capturedGroup moose.NordvpnappServerGroup
@@ -1110,7 +1109,7 @@ func TestNotifyConnect_Success_DedicatedIPByHostname_ContextValueIsUserTarget(t 
 
 func TestNotifyConnect_Success_EmptyTargetServerGroup_UnsetsServerGroupContext(t *testing.T) {
 	category.Set(t, category.Unit)
-	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, sysinfo.HostInfo{}, "", "", "")
+	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 	noopDisconnectAmbientMooseFuncs(sub)
 
 	var setCalls, unsetCalls int
@@ -1147,7 +1146,7 @@ func TestNotifyConnect_Success_EmptyTargetServerGroup_UnsetsServerGroupContext(t
 
 func TestNotifyConnect_StandardVPN_PreservesBodyAndSkipsUnsets(t *testing.T) {
 	category.Set(t, category.Unit)
-	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, sysinfo.HostInfo{}, "", "", "")
+	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 
 	var capturedDomain, capturedUUID string
 	var domainUnsets, uuidUnsets, groupSetCalls int
@@ -1194,7 +1193,7 @@ func TestNotifyConnect_StandardVPN_PreservesBodyAndSkipsUnsets(t *testing.T) {
 
 func TestNotifyConnect_DedicatedIP_UnsetContinuesAfterFirstError(t *testing.T) {
 	category.Set(t, category.Unit)
-	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, sysinfo.HostInfo{}, "", "", "")
+	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 
 	sub.mooseFuncs.sendConnect = func(
 		_ moose.EventParams,
@@ -1229,7 +1228,7 @@ func TestNotifyConnect_DedicatedIP_UnsetContinuesAfterFirstError(t *testing.T) {
 
 func TestNotifyConnect_MeshnetPeerWithSensitiveGroup_DoesNotSetFlag(t *testing.T) {
 	category.Set(t, category.Unit)
-	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, sysinfo.HostInfo{}, "", "", "")
+	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 
 	_ = sub.NotifyConnect(events.DataConnect{
 		IsMeshnetPeer: true,
@@ -1242,7 +1241,7 @@ func TestNotifyConnect_MeshnetPeerWithSensitiveGroup_DoesNotSetFlag(t *testing.T
 
 func TestNotifyConnect_Success_InvokesPostConnectContextSetters(t *testing.T) {
 	category.Set(t, category.Unit)
-	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, sysinfo.HostInfo{}, "", "", "")
+	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 
 	sub.mooseFuncs.sendConnect = func(
 		_ moose.EventParams,
@@ -1302,7 +1301,7 @@ func TestNotifyConnect_Success_InvokesPostConnectContextSetters(t *testing.T) {
 
 func TestNotifyConnect_MeshnetPeer_PreservesPriorSensitiveFlag(t *testing.T) {
 	category.Set(t, category.Unit)
-	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, sysinfo.HostInfo{}, "", "", "")
+	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 
 	// simulate a prior server connect to a sensitive group that set the flag.
 	sub.connectionToSensitiveServerGroup = true
@@ -1445,7 +1444,7 @@ func TestReportAutoConnectTarget(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, sysinfo.HostInfo{}, "", "", "")
+			sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 			captured := captureAutoConnectTargetFuncs(sub)
 
 			err := sub.reportAutoConnectTarget(tt.ac)
@@ -1524,7 +1523,7 @@ func TestHandleAutoConnectChange(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, sysinfo.HostInfo{}, "", "", "")
+			sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 			captured := captureAutoConnectTargetFuncs(sub)
 
 			err := sub.handleAutoConnectChange(tt.prev, tt.curr)
@@ -1547,7 +1546,7 @@ func TestHandleAutoConnectChange(t *testing.T) {
 func TestReportAutoConnectTarget_AccumulatesErrors(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, sysinfo.HostInfo{}, "", "", "")
+	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 	captured := captureAutoConnectTargetFuncs(sub)
 	// Response code 7 "context set error"
 	sub.mooseFuncs.setUserPrefServerCountry = func(string) uint32 {
@@ -1581,7 +1580,7 @@ func noopDisconnectAmbientMooseFuncs(sub *Subscriber) {
 
 func TestNotifyDisconnect_AfterSensitiveConnect_SkipsRecommendationUuidContext(t *testing.T) {
 	category.Set(t, category.Unit)
-	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, sysinfo.HostInfo{}, "", "", "")
+	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 	noopDisconnectAmbientMooseFuncs(sub)
 
 	// simulate the state left by a prior connect to a sensitive group.
@@ -1622,7 +1621,7 @@ func TestNotifyDisconnect_AfterSensitiveConnect_SkipsRecommendationUuidContext(t
 
 func TestNotifyDisconnect_AfterNonSensitiveConnect_SetsAndUnsetsRecommendationUuidContext(t *testing.T) {
 	category.Set(t, category.Unit)
-	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, sysinfo.HostInfo{}, "", "", "")
+	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 	noopDisconnectAmbientMooseFuncs(sub)
 
 	var capturedUUID string
@@ -1663,7 +1662,7 @@ func TestNotifyDisconnect_AfterNonSensitiveConnect_SetsAndUnsetsRecommendationUu
 
 func TestNotifyDisconnect_EmptyRecommendationUuid_SkipsBothCalls(t *testing.T) {
 	category.Set(t, category.Unit)
-	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, sysinfo.HostInfo{}, "", "", "")
+	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 	noopDisconnectAmbientMooseFuncs(sub)
 
 	var sendDisconnectCalls, setCalls, unsetCalls int
@@ -1701,7 +1700,7 @@ func TestNotifyDisconnect_EmptyRecommendationUuid_SkipsBothCalls(t *testing.T) {
 
 func TestNotifyConnect_Success_DedicatedIP_SetsGroupAndKeepsDependentsEmpty(t *testing.T) {
 	category.Set(t, category.Unit)
-	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, sysinfo.HostInfo{}, "", "", "")
+	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 	noopDisconnectAmbientMooseFuncs(sub)
 
 	var capturedGroup moose.NordvpnappServerGroup
@@ -1760,7 +1759,7 @@ func TestNotifyConnect_Success_DedicatedIP_SetsGroupAndKeepsDependentsEmpty(t *t
 
 func TestNotifyConnect_Failure_DoesNotWriteServerGroupContext(t *testing.T) {
 	category.Set(t, category.Unit)
-	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, sysinfo.HostInfo{}, "", "", "")
+	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 
 	var groupSetCalls, domainUnsets, uuidUnsets int
 	sub.mooseFuncs.sendConnect = func(
@@ -1801,7 +1800,7 @@ func TestNotifyConnect_Failure_DoesNotWriteServerGroupContext(t *testing.T) {
 
 func TestNotifyDisconnect_UnsetsServerGroupValueAfterEvent(t *testing.T) {
 	category.Set(t, category.Unit)
-	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, sysinfo.HostInfo{}, "", "", "")
+	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 	noopDisconnectAmbientMooseFuncs(sub)
 
 	var groupUnsetOrder, sendDisconnectCallOrder int
@@ -1838,7 +1837,7 @@ func TestNotifyDisconnect_UnsetsServerGroupValueAfterEvent(t *testing.T) {
 
 func TestNotifyConnect_Success_StandardVPN_SetsServerDomainAndCity(t *testing.T) {
 	category.Set(t, category.Unit)
-	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, sysinfo.HostInfo{}, "", "", "")
+	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 	noopDisconnectAmbientMooseFuncs(sub)
 	sub.mooseFuncs.setRTPCurrentState = func(_ bool) uint32 { return 0 }
 	sub.mooseFuncs.sendConnect = func(
@@ -1884,7 +1883,7 @@ func TestNotifyConnect_Success_StandardVPN_SetsServerDomainAndCity(t *testing.T)
 
 func TestNotifyConnect_Success_SensitiveGroup_SuppressesServerDomainButSetsCity(t *testing.T) {
 	category.Set(t, category.Unit)
-	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, sysinfo.HostInfo{}, "", "", "")
+	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 	noopDisconnectAmbientMooseFuncs(sub)
 	sub.mooseFuncs.setRTPCurrentState = func(_ bool) uint32 { return 0 }
 	sub.mooseFuncs.unsetServerDomainCurrentState = func() uint32 { return 0 }
@@ -1934,7 +1933,7 @@ func TestNotifyConnect_Success_SensitiveGroup_SuppressesServerDomainButSetsCity(
 
 func TestNotifyConnect_Success_NonSensitiveEmptyDomain_RefreshesServerDomain(t *testing.T) {
 	category.Set(t, category.Unit)
-	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, sysinfo.HostInfo{}, "", "", "")
+	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 	noopDisconnectAmbientMooseFuncs(sub)
 	sub.mooseFuncs.setRTPCurrentState = func(_ bool) uint32 { return 0 }
 	sub.mooseFuncs.sendConnect = func(
@@ -1973,7 +1972,7 @@ func TestNotifyConnect_Success_NonSensitiveEmptyDomain_RefreshesServerDomain(t *
 
 func TestNotifyDisconnect_UnsetsServerDomainAndCityAfterEvent(t *testing.T) {
 	category.Set(t, category.Unit)
-	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, sysinfo.HostInfo{}, "", "", "")
+	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 	noopDisconnectAmbientMooseFuncs(sub)
 	sub.mooseFuncs.sendDisconnect = func(
 		_ moose.EventParams,
@@ -2234,7 +2233,7 @@ func TestNotifyConnect_TriggerAndExceptionFields(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, sysinfo.HostInfo{}, "", "", "")
+			sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 			var gotEvent moose.EventParams
 			var gotConn moose.ConnectionParams
 			var gotExceptionCode int32
@@ -2350,7 +2349,7 @@ func TestNotifyDisconnect_TriggerAndExceptionFields(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, sysinfo.HostInfo{}, "", "", "")
+			sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 			var gotEvent moose.EventParams
 			var gotConn moose.ConnectionParams
 			var gotCode int32
@@ -2410,7 +2409,7 @@ func TestNotifyConnect_ReportsTechnologyAndProtocolFromVPNProtocol(t *testing.T)
 	}
 
 	for _, test := range tests {
-		sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, sysinfo.HostInfo{}, "", "", "")
+		sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 		var additional moose.TargetConnectionAdditionalParams
 		sub.mooseFuncs.sendConnect = func(
 			_ moose.EventParams,
@@ -2663,7 +2662,7 @@ func TestLoginLogout_IsLoggedInContextSetBeforeEvent(t *testing.T) {
 }
 
 func newAuthorizationTestSubscriber() *Subscriber {
-	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, sysinfo.HostInfo{}, "", "", "")
+	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 	configManagerMock := mock.NewMockConfigManager()
 	// undefined consent makes fetchSubscriptions a no-op
 	configManagerMock.Cfg.AnalyticsConsent = config.ConsentUndefined

@@ -137,11 +137,17 @@ func runDocker(
 	if err != nil {
 		return err
 	}
+	source := cwd
+
+	if env["MOUNT_ROOT_GIT"] == "1" {
+		source = cwd + "/.."
+		env["WORKDIR"] = dockerWorkDir + "/app"
+	}
 
 	mounts := []mount.Mount{
 		{
 			Type:   mount.TypeBind,
-			Source: cwd,
+			Source: source,
 			Target: dockerWorkDir,
 		},
 		{

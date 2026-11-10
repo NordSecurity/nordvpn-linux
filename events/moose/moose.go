@@ -150,7 +150,6 @@ type Subscriber struct {
 	eventsDbPath                     string
 	config                           config.Manager
 	buildTarget                      config.BuildTarget
-	hostInfo                         sysinfo.HostInfo
 	domain                           string
 	subdomain                        string
 	deviceID                         string
@@ -177,7 +176,6 @@ func NewSubscriber(
 	clientAPI core.ClientAPI,
 	httpClient *http.Client,
 	buildTarget config.BuildTarget,
-	hostInfo sysinfo.HostInfo,
 	id string,
 	eventsDomain string,
 	eventsSubdomain string,
@@ -186,7 +184,6 @@ func NewSubscriber(
 		eventsDbPath: eventsDbPath,
 		config:       fs,
 		buildTarget:  buildTarget,
-		hostInfo:     hostInfo,
 		domain:       eventsDomain,
 		subdomain:    eventsSubdomain,
 		deviceID:     id,
@@ -405,8 +402,8 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 		return fmt.Errorf("setting moose time zone: %w", err)
 	}
 
-	distroVersion := s.hostInfo.OSPrettyName
-	if distroVersion == "" {
+	distroVersion, err := sysinfo.GetHostOSPrettyName()
+	if err != nil {
 		return fmt.Errorf("determining device os 'pretty-name'")
 	}
 	if err := s.response(moose.NordvpnappSetContextDeviceOs(distroVersion)); err != nil {
@@ -416,7 +413,7 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 		return fmt.Errorf("setting moose device: %w", err)
 	}
 
-	dt := deviceTypeToInternalType(s.hostInfo.DeviceType)
+	dt := deviceTypeToInternalType(sysinfo.GetDeviceType())
 	if err := s.response(moose.NordvpnappSetContextDeviceType(dt)); err != nil {
 		return fmt.Errorf("setting moose device type: %w", err)
 	}

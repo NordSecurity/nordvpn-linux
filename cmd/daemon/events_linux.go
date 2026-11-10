@@ -10,7 +10,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/telemetry"
 	"github.com/NordSecurity/nordvpn-linux/events"
-	"github.com/NordSecurity/nordvpn-linux/sysinfo"
 )
 
 type dummyAnalytics struct{}
@@ -42,8 +41,7 @@ func (*dummyAnalytics) NotifyUiItemsShow(events.UiItemsAction) error   { return 
 func (*dummyAnalytics) NotifyHeartBeat(time.Duration) error            { return nil }
 func (*dummyAnalytics) NotifyDeviceLocation(core.Insights) error       { return nil }
 func (*dummyAnalytics) NotifyDedicatedServerStatus(
-	events.DataDedicatedServerStatus,
-) error {
+	events.DataDedicatedServerStatus) error {
 	return nil
 }
 func (*dummyAnalytics) NotifyLANDiscovery(bool) error                    { return nil }
@@ -61,8 +59,6 @@ func newAnalytics(
 	clientAPI core.ClientAPI,
 	httpClient *http.Client,
 	buildTarget config.BuildTarget,
-	hostInfo sysinfo.HostInfo,
-	id string,
-) *dummyAnalytics {
+	id string) *dummyAnalytics {
 	return &dummyAnalytics{}
 }

@@ -31,9 +31,9 @@ type deviceTypeDetector interface {
 	Get() (SystemDeviceType, error)
 }
 
-// getDeviceType returns the system's device type by checking systemd target,
+// GetDeviceType returns the system's device type by checking systemd target,
 // desktop environment presence, and session type, in that order.
-func getDeviceType() SystemDeviceType {
+func GetDeviceType() SystemDeviceType {
 	detectors := []deviceTypeDetector{
 		newContainerDetector(),
 		newSystemdTargetDetector(),

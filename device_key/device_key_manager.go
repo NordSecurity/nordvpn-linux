@@ -63,7 +63,6 @@ type DeviceKeyManagerImpl struct {
 	keyGenerator        KeyGenerator
 	meshnetRegistry     cmesh.Registry
 	dedicatedServersAPI core.DedicatedServersAPI
-	hostInfo            sysinfo.HostInfo
 	mu                  sync.Mutex
 	delayFunc           DelayFunc
 }
@@ -74,16 +73,13 @@ func NewDeviceKeyManager(
 	keyGenerator KeyGenerator,
 	meshnetRegistery cmesh.Registry,
 	dedicatedServersAPI core.DedicatedServersAPI,
-	hostInfo sysinfo.HostInfo,
 ) *DeviceKeyManagerImpl {
 	return &DeviceKeyManagerImpl{
 		configManager:       configManager,
 		keyGenerator:        keyGenerator,
 		meshnetRegistry:     meshnetRegistery,
 		dedicatedServersAPI: dedicatedServersAPI,
-		hostInfo:            hostInfo,
-		delayFunc:           time.Sleep,
-	}
+		delayFunc:           time.Sleep}
 }
 
 func isMeshnetRegistrationInfoCorrect(cfg config.Config) error {
@@ -272,19 +268,18 @@ func (d *DeviceKeyManagerImpl) InvalidateDeviceKeyData() error {
 // registerKey reads the device key from local config(or generates it if it doesn't exist) and registers it using the
 // provided registerFunc.
 func (d *DeviceKeyManagerImpl) registerKey(cfg *config.Config,
-	registerFunc registerFunc,
-) (*config.Config, error) {
+	registerFunc registerFunc) (*config.Config, error) {
 	deviceKey, newKey := d.getDeviceKey(*cfg)
 	if newKey {
 		cfg = invalidateKeyData(cfg)
 	}
 
-	distroName := d.hostInfo.OSName
-	if distroName == "" {
-		return nil, fmt.Errorf("OS name is unknown")
+	distroName, err := sysinfo.GetHostOSName()
+	if err != nil {
+		return nil, err
 	}
 
-	cfg, err := registerFunc(deviceKey, distroName, newKey, cfg)
+	cfg, err = registerFunc(deviceKey, distroName, newKey, cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -295,8 +290,7 @@ func (d *DeviceKeyManagerImpl) registerKey(cfg *config.Config,
 func (d *DeviceKeyManagerImpl) registerMeshnet(deviceKey string,
 	distroName string,
 	isKeyNew bool,
-	cfg *config.Config,
-) (*config.Config, error) {
+	cfg *config.Config) (*config.Config, error) {
 	token := cfg.TokensData[cfg.AutoConnectData.ID].Token
 	peer, err := d.meshnetRegistry.Register(token, cmesh.Machine{
 		HardwareID:      cfg.MachineID,
@@ -340,8 +334,7 @@ func (d *DeviceKeyManagerImpl) registerMeshnet(deviceKey string,
 func (d *DeviceKeyManagerImpl) registerDedicatedServerKey(deviceKey string,
 	distroName string,
 	_ bool,
-	cfg *config.Config,
-) (*config.Config, error) {
+	cfg *config.Config) (*config.Config, error) {
 	resp, err := d.dedicatedServersAPI.RegisterDevice(core.DevicesRequest{
 		HardwareIdentifier: cfg.MachineID.String(),
 		PublicKey:          d.keyGenerator.Public(deviceKey),
@@ -366,8 +359,7 @@ func (d *DeviceKeyManagerImpl) registerDedicatedServerKey(deviceKey string,
 
 		resp, err = d.dedicatedServersAPI.UpdateDevice(uuid, core.UpdateDeviceRequest{
 			PublicKey: d.keyGenerator.Public(deviceKey),
-			Name:      fmt.Sprintf("Linux %s", distroName),
-		})
+			Name:      fmt.Sprintf("Linux %s", distroName)})
 	}
 
 	if err != nil {
