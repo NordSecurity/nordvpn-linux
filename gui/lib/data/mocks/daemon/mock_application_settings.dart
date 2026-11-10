@@ -285,6 +285,36 @@ final class MockApplicationSettings extends CancelableDelayed {
       return Payload(type: Int64(DaemonStatusCode.nothingToDo));
     }
 
+    if (currentSettings.autoConnectData.enabled) {
+      if ((vpnProtocol == VPNProtocol.VPN_PROTOCOL_NORDWHISPER) &&
+          !currentSettings.autoConnectData.hasServerGroup()) {
+        return Payload(
+          type: Int64(DaemonStatusCode.protocolIsIncompatibleWithAutoconnect),
+        );
+      }
+
+      if ((vpnProtocol != VPNProtocol.VPN_PROTOCOL_NORDWHISPER) &&
+          currentSettings.autoConnectData.serverGroup.name.isNotEmpty) {
+        return Payload(
+          type: Int64(DaemonStatusCode.protocolIsIncompatibleWithAutoconnect),
+        );
+      }
+
+      final tag =
+          "${currentSettings.autoConnectData.countryCode} ${currentSettings.autoConnectData.city}";
+      final params = ConnectRequest(
+        serverTag: tag,
+        serverGroup: currentSettings.autoConnectData.serverGroup.toString(),
+      );
+      final server = serversList.findServer(params);
+
+      if (server == null) {
+        return Payload(
+          type: Int64(DaemonStatusCode.protocolIsIncompatibleWithAutoconnect),
+        );
+      }
+    }
+
     return await setSettings(vpnProtocol: vpnProtocol);
   }
 

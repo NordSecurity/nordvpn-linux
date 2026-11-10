@@ -81,6 +81,7 @@ class VpnSettingsController extends _$VpnSettingsController
     // Apply the protocol change
     final status = await _setValue(
       (repository) => repository.setVpnProtocol(pendingVPNProtocol),
+      userData: pendingVPNProtocol.displayName(),
     );
     if (status != DaemonStatusCode.success &&
         status != DaemonStatusCode.nothingToDo) {
