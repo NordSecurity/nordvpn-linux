@@ -184,30 +184,6 @@ func TestSetVPNProtocol_Success_SavesPublishesAndReportsReconnect(t *testing.T) 
 	}
 }
 
-func TestSetVPNProtocol_DedicatedServerAutoconnect_RejectsNonNordLynx(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	targets := []config.VPNProtocol{
-		config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP,
-		config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP,
-	}
-	if features.NordWhisperEnabled {
-		targets = append(targets, config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER)
-	}
-
-	for _, target := range targets {
-		env := newSetVPNProtocolEnv(config.VPNProtocol_VPN_PROTOCOL_NORDLYNX)
-		env.cm.Cfg.AutoConnect = true
-		env.cm.Cfg.AutoConnectData.Group = config.ServerGroup_DEDICATED_SERVER
-
-		resp := env.setVPNProtocol(t, target)
-
-		msg := fmt.Sprintf("target %v", target)
-		assert.Equal(t, internal.CodeDedicatedServersNoNordlynx, resp.Type, msg)
-		env.assertUnchanged(t, config.VPNProtocol_VPN_PROTOCOL_NORDLYNX, msg)
-	}
-}
-
 func TestSetVPNProtocol_PostQuantumEnabled_RejectsNonNordLynx(t *testing.T) {
 	category.Set(t, category.Unit)
 
@@ -412,6 +388,20 @@ func TestSetVPNProtocolCheckAutoConnectData(t *testing.T) {
 				Data: []string{"false"},
 			},
 		},
+		{
+			name: "fails for dedicated servers",
+			cfg: config.Config{
+				VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+				AutoConnect: true,
+				AutoConnectData: config.AutoConnectData{
+					Group: config.ServerGroup_DEDICATED_SERVER,
+				},
+			},
+			changeToProtocol: config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP,
+			expectedResponse: &pb.Payload{
+				Type: internal.CodeProtocolIncompatibleWithAutoconnect,
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -421,6 +411,7 @@ func TestSetVPNProtocolCheckAutoConnectData(t *testing.T) {
 
 			remoteConfigGetter := mock.NewRemoteConfigMock()
 			remoteConfigGetter.NordWhisperEnabled = true
+			remoteConfigGetter.FeatureToggles[remote.FeatureDedicatedServer] = true
 			dm := DataManager{serversData: ServersData{Servers: core_test.ServersList()}}
 
 			r := RPC{

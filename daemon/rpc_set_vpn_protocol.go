@@ -62,8 +62,7 @@ func (r *RPC) SetVPNProtocol(
 
 			if e, ok := errors.AsType[*internal.ErrorWithCode](err); ok {
 				switch e.Code {
-				case internal.CodeDedicatedServersNoNordlynx,
-					internal.CodeDedicatedServersPq,
+				case internal.CodeDedicatedServersPq,
 					internal.CodeFeatureHidden:
 					errorCode = e.Code
 				}
