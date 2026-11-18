@@ -99,8 +99,9 @@ func (c *cmd) fileshareAutoCompleteTransfers(ctx *cli.Context, direction pb.Dire
 		// Autocomplete transfer files
 		for _, transfer := range transfers {
 			if transfer.Id == ctx.Args().First() {
-				fileshare.ForAllFiles(transfer.Files, func(f *pb.File) {
+				_ = fileshare.ForAllFiles(transfer.Files, func(f *pb.File) error {
 					fmt.Println(f.Path)
+					return nil
 				})
 			}
 		}
@@ -240,9 +241,10 @@ func calcTransferProgressPercent(tr *pb.Transfer) string {
 }
 
 func calcTransferSize(files []*pb.File) string {
-	var size uint64
-	fileshare.ForAllFiles(files, func(f *pb.File) {
-		size += f.Size
+	var size float64
+	_ = fileshare.ForAllFiles(files, func(f *pb.File) error {
+		size += float64(f.Size)
+		return nil
 	})
-	return units.HumanSize(float64(size))
+	return units.HumanSize(size)
 }

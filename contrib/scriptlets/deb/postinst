@@ -24,13 +24,17 @@ groupAddedMessage="By default the user '$DEFAULT_USER' was added to the '$NORDVP
 userModMessage="To allow other users to control the application run 'usermod -aG $NORDVPN_GROUP otheruser'."
 userDelMessage="To limit access exclusively to the root user, remove all users from the '$NORDVPN_GROUP' group."
 helpMessage="If you need help using the app, use the command 'nordvpn --help'."
+importantUpdateMessage=$'NordVPN updated with improved server communication security.\nPlease update other installations too, since older versions will stop working soon.'
+separatorLine="------------------------------------------------------------------------------------"
 
 # Colors only when output is a terminal that supports them
+COLOR_RED=""
 COLOR_BLUE=""
 COLOR_TEXT=""
 BOLD=""
 RESET_COLOR=""
 if [[ -t 1 && "$TERM" != "dumb" ]]; then
+    COLOR_RED=$'\e[1;31m' # bold; red
     COLOR_BLUE=$'\e[38;5;63m'
     COLOR_TEXT=$'\e[39m' # terminal's default text color
     BOLD=$'\e[1m'
@@ -170,6 +174,14 @@ case "$1" in
             echo "      $userDelMessage"
             echo "$helpMessage"
         fi
+
+        echo
+        echo "${COLOR_RED}${separatorLine}"
+        echo
+        echo "${importantUpdateMessage}"
+        echo
+        echo "${separatorLine}${RESET_COLOR}"
+        echo
     ;;
     abort-upgrade|abort-remove|abort-deconfigure)
     ;;

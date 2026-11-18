@@ -23,7 +23,6 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
-	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -687,15 +686,6 @@ func (s *Subscriber) handleTokenRenewDateChange(prev, curr *config.Config) error
 	return s.setTokenRenewDate(renewDate.Unix())
 }
 
-// autoConnectTargetChanged reports whether the auto-connect target differs between
-// two configs.
-func autoConnectTargetChanged(prev, curr config.AutoConnectData) bool {
-	return prev.ServerTag != curr.ServerTag ||
-		prev.Country != curr.Country ||
-		prev.City != curr.City ||
-		prev.Group != curr.Group
-}
-
 // handleAutoConnectChange reports the configured auto-connect target as user-preference
 // attributes whenever it changes.
 func (s *Subscriber) handleAutoConnectChange(prev, curr *config.Config) error {
@@ -710,38 +700,12 @@ func (s *Subscriber) handleAutoConnectChange(prev, curr *config.Config) error {
 	return s.reportAutoConnectTarget(curr.AutoConnectData)
 }
 
-// getTokenRenewDate extracts the token renewal date for the current user from config.
-// Returns empty string if config is nil or token data is not available.
-func getTokenRenewDate(cfg *config.Config) string {
-	if cfg == nil || cfg.TokensData == nil {
-		return ""
-	}
-
-	tokenData, ok := cfg.TokensData[cfg.AutoConnectData.ID]
-	if !ok {
-		return ""
-	}
-
-	return tokenData.TokenRenewDate
-}
-
 // setTokenRenewDate sets the token renewal date in moose context
 func (s *Subscriber) setTokenRenewDate(unixTimestamp int64) error {
 	if err := s.response(s.mooseFuncs.setTokenRenewDateCurrentState(int32(unixTimestamp))); err != nil {
 		return fmt.Errorf("setting token renew date in moose context (timestamp=%d): %w", unixTimestamp, err)
 	}
 	return nil
-}
-
-// uiItemType maps a UiItemsAction item type string to its moose enum.
-func uiItemType(itemType string) moose.NordvpnappUserInterfaceItemType {
-	switch itemType {
-	case "textbox":
-		return moose.NordvpnappUserInterfaceItemTypeTextBox
-	case "show":
-		return moose.NordvpnappUserInterfaceItemTypeTabOrScreen
-	}
-	return moose.NordvpnappUserInterfaceItemTypeButton
 }
 
 func (s *Subscriber) NotifyUiItemsClick(data events.UiItemsAction) error {
@@ -867,25 +831,6 @@ func (s *Subscriber) NotifyAllowlist(data events.DataAllowlist) error {
 		return fmt.Errorf("setting allowlist enabled value (enabled=%v): %w", enabled, err)
 	}
 	return nil
-}
-
-// sensitiveServerGroups lists server groups whose connections require stripping
-// sensitive fields from analytics.
-var sensitiveServerGroups = []config.ServerGroup{
-	config.ServerGroup_DEDICATED_IP,
-	config.ServerGroup_DEDICATED_SERVER,
-}
-
-// hasSensitiveServerGroup reports whether any group the chosen server belongs to
-// is on the sensitive list.
-// Note. Independent of the user-requested group.
-func hasSensitiveServerGroup(groups []config.ServerGroup) bool {
-	for _, g := range groups {
-		if slices.Contains(sensitiveServerGroups, g) {
-			return true
-		}
-	}
-	return false
 }
 
 func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
@@ -1374,20 +1319,17 @@ func (s *Subscriber) setVpnServiceExpiration(
 
 	date := expiry.Format(internal.YearMonthDateFormat)
 
+	var errs []error
 	if err := s.response(moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStateServiceExpiresAt(date)); err != nil {
-		return fmt.Errorf("setting VPN service expiration date (%q): %w", date, err)
+		errs = append(errs, fmt.Errorf("setting VPN service expiration date (%q): %w", date, err))
 	}
 
-	return nil
-}
+	isActive := time.Now().UTC().Before(expiry)
+	if err := s.response(moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStateIsActive(isActive)); err != nil {
+		errs = append(errs, fmt.Errorf("setting VPN service is active (%t): %w", isActive, err))
+	}
 
-func hasDedicatedServerService(services core.ServicesResponse) bool {
-	expirationChecker := internal.SystemTimeExpirationChecker{}
-	return slices.ContainsFunc(services,
-		func(sd core.ServiceData) bool {
-			return sd.Service.ID == auth.DedicatedServersServiceID && !expirationChecker.IsExpired(sd.ExpiresAt)
-		},
-	)
+	return errors.Join(errs...)
 }
 
 func (s *Subscriber) setDedicatedServerServiceStatus(hasDSService, hasDS bool) error {
@@ -1475,66 +1417,6 @@ func (s *Subscriber) fetchSubscriptions() error {
 	return orderErr
 }
 
-func findPayment(payments []core.PaymentResponse) (core.Payment, bool) {
-	// Sort by CreatedAt descending
-	slices.SortFunc(payments, func(a core.PaymentResponse, b core.PaymentResponse) int {
-		return -a.Payment.CreatedAt.Compare(b.Payment.CreatedAt)
-	})
-
-	// Find first element matching criteria
-	index := slices.IndexFunc(payments, isPaymentValid)
-	if index < 0 {
-		return core.Payment{}, false
-	}
-
-	return payments[index].Payment, true
-}
-
-func findOrder(p core.Payment, orders []core.Order) (core.Order, bool) {
-	// Find order matching the payment
-	if p.Subscription.MerchantID != 25 && p.Subscription.MerchantID != 3 {
-		return core.Order{}, false
-	}
-	index := slices.IndexFunc(orders, func(o core.Order) bool {
-		var cmpID int
-		switch p.Subscription.MerchantID {
-		case 3:
-			cmpID = o.ID
-		case 25:
-			cmpID = o.RemoteID
-		}
-		return p.Payer.OrderID == cmpID
-	})
-	if index < 0 {
-		return core.Order{}, false
-	}
-
-	return orders[index], true
-}
-
-func isPaymentValid(pr core.PaymentResponse) bool {
-	p := pr.Payment
-	return p.Status == "done" ||
-		p.Status == "chargeback" ||
-		p.Status == "refunded" ||
-		p.Status == "partially_refunded" ||
-		p.Status == "trial"
-}
-
-// countFunc returns a number of elements in slice matching criteria
-func countFunc[S ~[]E, E any](s S, f func(E) bool, stopAt int) int {
-	count := 0
-	for _, e := range s {
-		if f(e) {
-			count++
-		}
-		if stopAt >= 0 && count >= stopAt {
-			return count
-		}
-	}
-	return count
-}
-
 func (s *Subscriber) setSubscriptions(
 	payment core.Payment,
 	order core.Order,
@@ -1553,9 +1435,6 @@ func (s *Subscriber) setSubscriptions(
 		},
 		func() uint32 {
 			return moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStateFrequencyUnit(payment.Subscription.FrequencyUnit)
-		},
-		func() uint32 {
-			return moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStateIsActive(order.Status == "active")
 		},
 		func() uint32 {
 			return moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStateIsNewCustomer(validPaymentsCount == 1)
@@ -1642,6 +1521,9 @@ func (s *Subscriber) clearSubscriptions() error {
 		func() uint32 {
 			return moose.NordvpnappUnsetContextUserNordvpnappSubscriptionCurrentStateServiceExpiresAt()
 		},
+		func() uint32 {
+			return moose.NordvpnappUnsetContextUserNordvpnappSubscriptionHistory()
+		},
 		s.mooseFuncs.unsetDSIsActive,
 		s.mooseFuncs.unsetDSEnabled,
 	} {
@@ -1697,142 +1579,6 @@ const (
 	serverMaintenanceExceptionCode      int32 = 1000076
 )
 
-// vpnConnReasonToInternalType converts the VPN connection reason to the internal connection trigger
-func vpnConnReasonToInternalType(t events.VPNConnectionReason) moose.NordvpnappVpnConnectionTrigger {
-	switch t {
-	case events.VPNConnectionReasonServerMaintenance:
-		return moose.NordvpnappVpnConnectionTriggerServerMaintenance
-	case events.VPNConnectionReasonAutoConnect:
-		return moose.NordvpnappVpnConnectionTriggerAutoConnectUserSetting
-	default:
-		return moose.NordvpnappVpnConnectionTriggerNone
-	}
-}
-
-// eventTriggerDomainToInternalType converts the domain-specific event trigger type to the internal
-// representation
-func eventTriggerDomainToInternalType(trigger events.TypeEventTrigger) moose.NordvpnappEventTrigger {
-	switch trigger {
-	case events.TriggerUser:
-		return moose.NordvpnappEventTriggerUser
-	case events.TriggerApp:
-		fallthrough
-	default:
-		return moose.NordvpnappEventTriggerApp
-	}
-}
-
-// eventStatusToInternalType converts the event status type to the internal representation
-func eventStatusToInternalType(status events.TypeEventStatus) moose.NordvpnappEventStatus {
-	switch status {
-	case events.StatusSuccess:
-		return moose.NordvpnappEventStatusSuccess
-	case events.StatusFailure:
-		return moose.NordvpnappEventStatusFailureDueToRuntimeException
-	case events.StatusCanceled:
-		return moose.NordvpnappEventStatusFailureDueToUserInterrupt
-	case events.StatusAttempt:
-		fallthrough
-	default:
-		return moose.NordvpnappEventStatusAttempt
-	}
-}
-
-// connectionProtocolToInternalType converts the vpn protocol to the moose protocol, with NordLynx as UDP
-func connectionProtocolToInternalType(p config.VPNProtocol) moose.NordvpnappVpnConnectionProtocol {
-	//exhaustive:ignore
-	switch p {
-	case config.VPNProtocol_VPN_PROTOCOL_NORDLYNX, config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP:
-		return moose.NordvpnappVpnConnectionProtocolUdp
-	case config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP:
-		return moose.NordvpnappVpnConnectionProtocolTcp
-	case config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER:
-		return moose.NordvpnappVpnConnectionProtocolWebtunnel
-	}
-	return moose.NordvpnappVpnConnectionProtocolNone
-}
-
-// connectionTechnologyToInternalType converts the vpn protocol to the moose technology
-func connectionTechnologyToInternalType(p config.VPNProtocol) moose.NordvpnappVpnConnectionTechnology {
-	//exhaustive:ignore
-	switch p {
-	case config.VPNProtocol_VPN_PROTOCOL_NORDLYNX:
-		return moose.NordvpnappVpnConnectionTechnologyNordlynx
-	case config.VPNProtocol_VPN_PROTOCOL_OPENVPN_UDP, config.VPNProtocol_VPN_PROTOCOL_OPENVPN_TCP:
-		return moose.NordvpnappVpnConnectionTechnologyOpenvpn
-	case config.VPNProtocol_VPN_PROTOCOL_NORDWHISPER:
-		return moose.NordvpnappVpnConnectionTechnologyNordwhisper
-	}
-	return moose.NordvpnappVpnConnectionTechnologyNone
-}
-
-// serverListOriginToInternalType converts server list origin to the internal representation
-func serverListOriginToInternalType(sourceFromApi bool) moose.NordvpnappServerListSource {
-	if sourceFromApi {
-		return moose.NordvpnappServerListSourceRecommendedByApi
-	}
-
-	return moose.NordvpnappServerListSourceLocallyCachedServerList
-}
-
-// serverSelectionRuleToInternalType converts server selection rule to the internal representation
-func serverSelectionRuleToInternalType(rule config.ServerSelectionRule) moose.NordvpnappServerSelectionRule {
-	switch rule {
-	case config.ServerSelectionRule_RECOMMENDED:
-		return moose.NordvpnappServerSelectionRuleRecommended
-	case config.ServerSelectionRule_CITY:
-		return moose.NordvpnappServerSelectionRuleCity
-	case config.ServerSelectionRule_COUNTRY:
-		return moose.NordvpnappServerSelectionRuleCountry
-	case config.ServerSelectionRule_SPECIFIC_SERVER:
-		return moose.NordvpnappServerSelectionRuleSpecificServer
-	case config.ServerSelectionRule_GROUP:
-		return moose.NordvpnappServerSelectionRuleSpecialtyServer
-	case config.ServerSelectionRule_COUNTRY_WITH_GROUP:
-		return moose.NordvpnappServerSelectionRuleSpecialtyServerWithCountry
-	case config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP:
-		return moose.NordvpnappServerSelectionRuleSpecialtyServerWithSpecificServer
-	default:
-		return moose.NordvpnappServerSelectionRuleNone
-	}
-}
-
-// serverGroupToInternalType converts the internal config server group to the Moose representation
-func serverGroupToInternalType(group config.ServerGroup) moose.NordvpnappServerGroup {
-	switch group {
-	case config.ServerGroup_DOUBLE_VPN:
-		return moose.NordvpnappServerGroupDoubleVpn
-	case config.ServerGroup_ONION_OVER_VPN:
-		return moose.NordvpnappServerGroupOnionOverVpn
-	case config.ServerGroup_DEDICATED_IP:
-		return moose.NordvpnappServerGroupDedicatedIp
-	case config.ServerGroup_STANDARD_VPN_SERVERS:
-		return moose.NordvpnappServerGroupStandard
-	case config.ServerGroup_NW_OBFUSCATED:
-		return moose.NordvpnappServerGroupObfuscated
-	case config.ServerGroup_DEDICATED_SERVER:
-		return moose.NordvpnappServerGroupDedicatedServer
-	default:
-		return moose.NordvpnappServerGroupNone
-	}
-}
-
-// isAutoConnectForFastestServer reports whether the auto-connect configuration has no specific target
-func isAutoConnectForFastestServer(ac config.AutoConnectData) bool {
-	return ac.ServerTag == "" &&
-		ac.Country == "" &&
-		ac.City == "" &&
-		ac.Group == config.ServerGroup_UNDEFINED
-}
-
-// autoConnectConnectionPreference maps the auto-connect target to connection preference
-func autoConnectConnectionPreference(ac config.AutoConnectData) moose.NordvpnappConnectionPreference {
-	if isAutoConnectForFastestServer(ac) {
-		return moose.NordvpnappConnectionPreferenceFastest
-	}
-	return moose.NordvpnappConnectionPreferenceSpecific
-}
-
 // reportAutoConnectTarget reports the configured auto-connect target.
 func (s *Subscriber) reportAutoConnectTarget(ac config.AutoConnectData) error {
 	var errs []error
@@ -1858,34 +1604,4 @@ func (s *Subscriber) reportAutoConnectTarget(ac config.AutoConnectData) error {
 	}
 
 	return errors.Join(errs...)
-}
-
-// realTimeProtectionToInternalType converts real time protection to the internal representation
-func realTimeProtectionToInternalType(enabled bool) moose.NordvpnappOptBool {
-	if enabled {
-		return moose.NordvpnappOptBoolTrue
-	}
-
-	return moose.NordvpnappOptBoolFalse
-}
-
-func deviceTypeToInternalType(deviceType sysinfo.SystemDeviceType) moose.NordvpnappDeviceType {
-	var dt moose.NordvpnappDeviceType
-
-	switch deviceType {
-	case sysinfo.SystemDeviceTypeDesktop:
-		dt = moose.NordvpnappDeviceTypeDesktop
-	case sysinfo.SystemDeviceTypeServer:
-		dt = moose.NordvpnappDeviceTypeServer
-	case sysinfo.SystemDeviceTypeContainer:
-		dt = moose.NordvpnappDeviceTypeVirtualMachine
-	default:
-		dt = moose.NordvpnappDeviceTypeUndefined
-	}
-
-	return dt
-}
-
-func durationToConnectionFunnel(duration time.Duration) string {
-	return fmt.Sprintf("pause:%d", int(duration.Minutes()))
 }

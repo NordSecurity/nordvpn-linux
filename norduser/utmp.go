@@ -59,6 +59,8 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
+const utmpFilePath = "/var/run/utmp"
+
 type userData map[string]norduserState
 
 func isUserLoggedIn(username string) (bool, error) {
@@ -83,10 +85,12 @@ func isUserLoggedIn(username string) (bool, error) {
 	return false, nil
 }
 
-// getActiveUsers returns a map of [username]userType where type can be text or gui. If any of the given users login
+type utmpSessionGetter struct{}
+
+// getActiveUsersUTMP returns a map of [username]userType where type can be text or gui. If any of the given users login
 // processes will be detected to have a gui(done based on the environment), user type will be gui. Otherwise user type
 // will be text.
-func getActiveUsers() (userData, error) {
+func (u *utmpSessionGetter) getActiveUsers() (userData, error) {
 	var usersCArray *C.user
 	size := C.get_utmp_user_processes(&usersCArray)
 	switch size {
@@ -112,7 +116,7 @@ func getActiveUsers() (userData, error) {
 
 		desktopSession, err := findEnvVariableForPID(loginPID, "XDG_CURRENT_DESKTOP")
 		if err != nil {
-			log.Errorf("looking up XDG_CURRENT_DESKTOP for %s: %s", username, err)
+			log.ProcessMonitor.Errorf("looking up XDG_CURRENT_DESKTOP for %s: %s", username, err)
 			continue
 		}
 
@@ -126,3 +130,9 @@ func getActiveUsers() (userData, error) {
 
 	return users, nil
 }
+
+func (u *utmpSessionGetter) getDatabasePath() string {
+	return utmpFilePath
+}
+
+func (u *utmpSessionGetter) close() {}

@@ -36,9 +36,13 @@ func (r *RPC) Settings(ctx context.Context, in *pb.Empty) (*pb.SettingsResponse,
 		autoconnectParamsNotSet := cfg.AutoConnectData.Country == "" &&
 			cfg.AutoConnectData.City == "" &&
 			cfg.AutoConnectData.Group == config.ServerGroup_UNDEFINED
+		// TODO(LVPN-11319): remove ServerTag from config with v7
+		//nolint:staticcheck
 		if cfg.AutoConnect && cfg.AutoConnectData.ServerTag != "" && autoconnectParamsNotSet {
 			// use group tag as a second parameter once it is implemented
 			parameters := serverpicker.GetServerParameters(
+				// TODO(LVPN-11319): remove ServerTag from config with v7
+				//nolint:staticcheck
 				cfg.AutoConnectData.ServerTag,
 				cfg.AutoConnectData.ServerTag,
 				r.dm.GetCountryData().Countries,

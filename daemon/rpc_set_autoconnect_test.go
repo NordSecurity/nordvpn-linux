@@ -353,23 +353,23 @@ func TestAutoconnect_SavesCorrectAutoconnectData(t *testing.T) {
 			testName:    "group name is in tag",
 			serverGroup: "",
 			tag:         "double_vpn",
-			expected:    config.AutoConnectData{Group: config.ServerGroup_DOUBLE_VPN, ServerTag: "double_vpn"},
+			expected:    config.AutoConnectData{Group: config.ServerGroup_DOUBLE_VPN},
 		},
 		{
 			testName: "for country name",
 			tag:      "germany",
-			expected: config.AutoConnectData{Group: config.ServerGroup_UNDEFINED, Country: "Germany", CountryCode: "DE", ServerTag: "germany"},
+			expected: config.AutoConnectData{Group: config.ServerGroup_UNDEFINED, Country: "Germany", CountryCode: "DE"},
 		},
 		{
 			testName: "for country code and city name",
 			tag:      "de berlin",
-			expected: config.AutoConnectData{Group: config.ServerGroup_UNDEFINED, Country: "Germany", CountryCode: "DE", City: "Berlin", ServerTag: "de berlin"},
+			expected: config.AutoConnectData{Group: config.ServerGroup_UNDEFINED, Country: "Germany", CountryCode: "DE", City: "Berlin"},
 		},
 		{
 			testName:    "for country code, city name and group",
 			tag:         "de berlin",
 			serverGroup: "double_vpn",
-			expected:    config.AutoConnectData{Group: config.ServerGroup_DOUBLE_VPN, Country: "Germany", CountryCode: "DE", City: "Berlin", ServerTag: "de berlin"},
+			expected:    config.AutoConnectData{Group: config.ServerGroup_DOUBLE_VPN, Country: "Germany", CountryCode: "DE", City: "Berlin"},
 		},
 	}
 
@@ -417,7 +417,8 @@ func TestAutoconnect_SavesCorrectAutoconnectData(t *testing.T) {
 			assert.NotNil(t, resp)
 			assert.Equal(t, internal.CodeSuccess, resp.Type)
 
-			// keep this as long as `AutoConnectData.ServerTag` is not completely removed from the codebase
+			// TODO(LVPN-11319): remove ServerTag from config with v7
+			//nolint:staticcheck
 			assert.Equal(t, "", mockConfigManager.c.AutoConnectData.ServerTag)
 			assert.Equal(t, test.expected.Country, mockConfigManager.c.AutoConnectData.Country)
 			assert.Equal(t, test.expected.CountryCode, mockConfigManager.c.AutoConnectData.CountryCode)

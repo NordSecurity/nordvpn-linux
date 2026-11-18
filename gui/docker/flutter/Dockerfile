@@ -2,7 +2,7 @@
 FROM ubuntu:22.04
 
 LABEL org.opencontainers.image.source="https://github.com/NordSecurity/nordvpn-linux"
-LABEL org.opencontainers.image.description="Builds the GUI. Must be build for arm64 and amd64. e.g. ./docker/generate_docker_image.sh ghcr.io/nordsecurity/nordvpn-linux/flutter 3.44.7-1.0.1 linux/amd64,linux/arm64 docker/flutter"
+LABEL org.opencontainers.image.description="Builds the GUI. Must be build for arm64 and amd64. e.g. ./docker/generate_docker_image.sh ghcr.io/nordsecurity/nordvpn-linux/flutter 3.47.9-1.0.0 linux/amd64,linux/arm64 docker/flutter"
 
 # this is needed for dpkg not to be interactive
 ARG DEBIAN_FRONTEND=noninteractive
@@ -32,7 +32,7 @@ ARG USER_ID=1000
 ARG GROUP_ID=1000
 ARG USER_NAME=flutter_user
 ARG HOME=/home/${USER_NAME}
-ARG FLUTTER_VERSION=3.44.7
+ARG FLUTTER_VERSION=3.47.9
 
 # Ubuntu is shipped with pre-defined user and group, both using ID 1000.
 # Recreate the user and group with the desired name and ID to avoid conflicts.

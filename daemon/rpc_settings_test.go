@@ -36,6 +36,8 @@ func TestSettings_AutoconnectMigrationRunsOnlyOnce(t *testing.T) {
 	cm := mock.NewMockConfigManager()
 
 	cm.Cfg.AutoConnect = true
+	// TODO(LVPN-11319): remove ServerTag from config with v7
+	//nolint:staticcheck
 	cm.Cfg.AutoConnectData.ServerTag = "not-empty"
 	cm.Cfg.AutoConnectData.Country = ""
 	cm.Cfg.AutoConnectData.City = ""

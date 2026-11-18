@@ -40,6 +40,7 @@ linters:
           files:
             - $all
             - "!**/nordvpn-linux/log/*.go"
+            - "!**/app/log/*.go"
           deny:
             - pkg: "log"
               desc: "Use internal logger (github.com/NordSecurity/nordvpn-linux/log) instead"

@@ -273,6 +273,7 @@ func (dm *DataManager) Cities(
 	if err != nil {
 		return nil, err
 	}
+	countryName = serverpicker.UnitedKingdomServerTagFix(countryName)
 	countryCode := strings.ToUpper(countryName)
 	countryName = strings.ToLower(countryName)
 

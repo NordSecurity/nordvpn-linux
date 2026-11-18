@@ -477,6 +477,15 @@ func TestGroupConvert(t *testing.T) {
 func TestServerTagFromString(t *testing.T) {
 	category.Set(t, category.Unit)
 
+	unitedKingdom := core.Countries{
+		core.Country{
+			ID:     227,
+			Name:   "United Kingdom",
+			Code:   "GB",
+			Cities: []core.City{{ID: 2989907, Name: "London"}},
+		},
+	}
+
 	tests := []struct {
 		name      string
 		countries core.Countries
@@ -715,6 +724,37 @@ func TestServerTagFromString(t *testing.T) {
 			group:    config.ServerGroup_UNDEFINED,
 			expected: core.ServerTag{},
 			hasError: true,
+		},
+		{
+			name:      "gb country code",
+			countries: unitedKingdom,
+			tag:       "gb",
+			expected:  core.ServerTag{Action: core.ServerByCountry, ID: 227},
+		},
+		{
+			name:      "uk country code alias",
+			countries: unitedKingdom,
+			tag:       "uk",
+			expected:  core.ServerTag{Action: core.ServerByCountry, ID: 227},
+		},
+		{
+			name:      "gb country code with city",
+			countries: unitedKingdom,
+			tag:       "gb london",
+			expected:  core.ServerTag{Action: core.ServerByCity, ID: 2989907},
+		},
+		{
+			name:      "uk country code alias with city",
+			countries: unitedKingdom,
+			tag:       "uk london",
+			expected:  core.ServerTag{Action: core.ServerByCity, ID: 2989907},
+		},
+		{
+			name:      "uk country code alias with city from another country",
+			countries: unitedKingdom,
+			tag:       "uk madrid",
+			expected:  core.ServerTag{},
+			hasError:  true,
 		},
 	}
 	for _, test := range tests {
@@ -1204,6 +1244,42 @@ func TestNewSearchParams(t *testing.T) {
 			},
 		},
 		{
+			name:           "uk country code is converted to gb",
+			tag:            " uk ",
+			group:          "",
+			excludedServer: "",
+			expected: SearchParams{
+				Tag: "gb",
+			},
+		},
+		{
+			name:           "uk country code with city is converted to gb",
+			tag:            "uk london",
+			group:          "",
+			excludedServer: "",
+			expected: SearchParams{
+				Tag: "gb london",
+			},
+		},
+		{
+			name:           "tag is lowercased",
+			tag:            "GB London",
+			group:          "",
+			excludedServer: "",
+			expected: SearchParams{
+				Tag: "gb london",
+			},
+		},
+		{
+			name:           "uppercase uk country code with city is converted to gb",
+			tag:            "UK London",
+			group:          "",
+			excludedServer: "",
+			expected: SearchParams{
+				Tag: "gb london",
+			},
+		},
+		{
 			name:           "all empty",
 			tag:            "",
 			group:          "",
@@ -1287,15 +1363,50 @@ func TestPickServer_ServerSelectionOrder(t *testing.T) {
 func TestGetServerParameters_UnitedKingdomAlias(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	for _, tag := range []string{"uk", "UK"} {
-		t.Run(tag, func(t *testing.T) {
-			params := GetServerParameters(tag, "", core_test.CountriesList())
+	tests := []struct {
+		tag          string
+		expectedCity string
+	}{
+		{tag: "uk"},
+		{tag: "UK"},
+		{tag: "uk london", expectedCity: "London"},
+		{tag: "UK London", expectedCity: "London"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.tag, func(t *testing.T) {
+			params := GetServerParameters(test.tag, "", core_test.CountriesList())
 
 			assert.Equal(t, ServerParameters{
 				Group:       config.ServerGroup_UNDEFINED,
 				Country:     "United Kingdom",
+				City:        test.expectedCity,
 				CountryCode: "GB",
 			}, params)
+		})
+	}
+}
+
+func TestUnitedKingdomServerTagFix(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name     string
+		tag      string
+		expected string
+	}{
+		{name: "lowercase country code", tag: "uk", expected: "gb"},
+		{name: "uppercase country code", tag: "UK", expected: "gb"},
+		{name: "lowercase country code with city", tag: "uk london", expected: "gb london"},
+		{name: "uppercase country code with city", tag: "UK London", expected: "gb London"},
+		{name: "server name is unchanged", tag: "uk1234", expected: "uk1234"},
+		{name: "country starting with uk is unchanged", tag: "ukraine", expected: "ukraine"},
+		{name: "gb country code with city is unchanged", tag: "gb london", expected: "gb london"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			assert.Equal(t, test.expected, UnitedKingdomServerTagFix(test.tag))
 		})
 	}
 }
@@ -1542,6 +1653,102 @@ func TestPickServer_Fallback(t *testing.T) {
 			if len(test.expectedServerName) > 0 {
 				assert.Equal(t, test.expectedServerName, serverSelection.Server.Name)
 			}
+		})
+	}
+}
+
+func newUnitedKingdomServer(hostname string, groups ...core.Group) core.Server {
+	server := core.Server{
+		Name:         "United Kingdom #1",
+		Hostname:     hostname,
+		Status:       core.Online,
+		Technologies: core.Technologies{{ID: core.WireguardTech, Pivot: core.Pivot{Status: core.Online}}},
+		Groups:       groups,
+		Locations: core.Locations{
+			{Country: core.Country{Name: "United Kingdom", Code: "GB", City: core.City{Name: "London"}}},
+		},
+	}
+	server.Keys = server.GenerateKeys()
+	return server
+}
+
+func TestPickServer_UnitedKingdomFromAPI(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	ukServer := newUnitedKingdomServer("uk1.nordvpn.com")
+
+	for _, tag := range []string{"gb", "uk", "UK", "gb london", "uk london", "UK london"} {
+		t.Run(tag, func(t *testing.T) {
+			api := &core_test.MockServersAPI{ServersList: withoutKeys(core.Servers{ukServer})}
+
+			selection, err := PickServer(
+				api,
+				core.Servers{ukServer},
+				core_test.CountriesList(),
+				core.Insights{},
+				config.Config{VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX},
+				NewSearchParams(tag, "", ""),
+			)
+
+			require.NoError(t, err)
+			assert.True(t, selection.Remote)
+			assert.Equal(t, ukServer.Hostname, selection.Server.Hostname)
+			assert.Equal(t, 1, api.RecommendedCalls)
+		})
+	}
+}
+
+func TestFindLocally_UnitedKingdomWithGroup(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	doubleVPN := core.Group{ID: config.ServerGroup_DOUBLE_VPN, Title: "Double VPN"}
+	standard := core.Group{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN Servers"}
+	ukInGroup := newUnitedKingdomServer("uk1.nordvpn.com", doubleVPN)
+	servers := append(
+		core.Servers{ukInGroup, newUnitedKingdomServer("uk2.nordvpn.com", standard)},
+		core_test.ServersList("fr1.nordvpn.com")...,
+	)
+
+	for _, tag := range []string{"gb", "uk", "UK", "gb london", "uk london", "UK london"} {
+		t.Run(tag, func(t *testing.T) {
+			search := newTestServerSearch(
+				t,
+				config.VPNProtocol_VPN_PROTOCOL_NORDLYNX,
+				NewSearchParams(tag, "double_vpn", ""),
+				core_test.CountriesList(),
+				servers,
+			)
+
+			selected, err := search.findLocally(servers)
+
+			require.NoError(t, err)
+			require.Len(t, selected, 1)
+			assert.Equal(t, ukInGroup.Hostname, selected[0].Hostname)
+		})
+	}
+}
+
+func TestPickServer_UnitedKingdomFromLocalServers(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	ukServer := newUnitedKingdomServer("uk1.nordvpn.com")
+	servers := append(core.Servers{ukServer}, core_test.ServersList("fr1.nordvpn.com")...)
+
+	tags := []string{"gb", "GB", "uk", "UK", "gb london", "GB london", "uk london", "UK london", "UK London", "uk1", "UK1"}
+	for _, tag := range tags {
+		t.Run(tag, func(t *testing.T) {
+			selection, err := PickServer(
+				core_test.NewMockFailingServersAPI(core.ErrUnauthorized),
+				servers,
+				core_test.CountriesList(),
+				core.Insights{},
+				config.Config{VPNProtocol: config.VPNProtocol_VPN_PROTOCOL_NORDLYNX},
+				NewSearchParams(tag, "", ""),
+			)
+
+			require.NoError(t, err)
+			assert.False(t, selection.Remote)
+			assert.Equal(t, ukServer.Hostname, selection.Server.Hostname)
 		})
 	}
 }

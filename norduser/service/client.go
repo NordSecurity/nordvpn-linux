@@ -29,7 +29,7 @@ func (n NorduserGRPCClient) StartFileshare(uid uint32) error {
 
 	defer func() {
 		if err := clientConn.Close(); err != nil {
-			log.Error("failed to close client connection to nord user: ", err)
+			log.ProcessMonitor.Error("failed to close client connection to nord user: ", err)
 		}
 	}()
 
@@ -50,7 +50,7 @@ func (n NorduserGRPCClient) StopFileshare(uid uint32) error {
 
 	defer func() {
 		if err := clientConn.Close(); err != nil {
-			log.Error("failed to close client connection to nord user: ", err)
+			log.ProcessMonitor.Error("failed to close client connection to nord user: ", err)
 		}
 	}()
 

@@ -32,3 +32,11 @@ analyzer:
     - custom_lint
   errors:
     invalid_return_type_for_catch_error: error
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**

@@ -84,6 +84,9 @@ class _AddPortState extends State<AddPort> {
                       Expanded(
                         child: Input(
                           controller: _textControllerStart,
+                          semanticsLabel: widget.addPortRange
+                              ? "${t.ui.enterPortRange}, ${t.a11y.startPort}"
+                              : t.ui.enterPort,
                           validateInput: (_) =>
                               (error == _ErrorType.none) ||
                               (error == _ErrorType.end),
@@ -101,12 +104,15 @@ class _AddPortState extends State<AddPort> {
                           padding: EdgeInsets.only(
                             top: appTheme.verticalSpaceSmall,
                           ),
-                          child: Text(t.ui.to, style: appTheme.body),
+                          child: ExcludeSemantics(
+                            child: Text(t.ui.to, style: appTheme.body),
+                          ),
                         ),
                       if (widget.addPortRange)
                         Expanded(
                           child: Input(
                             controller: _textControllerEnd,
+                            semanticsLabel: t.a11y.endPort,
                             hintText: "0",
                             validateInput: (_) =>
                                 (error == _ErrorType.none) ||

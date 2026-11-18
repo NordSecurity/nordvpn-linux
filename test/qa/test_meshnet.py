@@ -4,7 +4,7 @@ import pytest
 import sh
 
 import lib
-from lib import daemon, fileshare, logging, login, meshnet, network, settings, ssh
+from lib import capture_utils, daemon, fileshare, logging, login, meshnet, network, settings, ssh
 from lib.shell import sh_no_tty
 
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
@@ -75,13 +75,18 @@ def test_mesh_removed_machine_by_other():
 def test_exitnode_permissions():
     """Manual TCs: LVPN-1261, LVPN-1262"""
 
-    peers = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
-    tester_hostname = peers.get_this_device().hostname
-    qapeer_hostname = peers.get_external_peer().hostname
+    def refresh_mesh_info():
+        peers = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
+        tester_hostname = peers.get_this_device().hostname
+        qapeer_hostname = peers.get_external_peer().hostname
+        return peers, tester_hostname, qapeer_hostname
+
+    peers, tester_hostname, qapeer_hostname = refresh_mesh_info()
 
     # Routing denied test
     meshnet.set_permissions(qapeer_hostname, routing=False, local=False, incoming=False, fileshare=False)
     ssh_client.exec_command("nordvpn mesh peer refresh")
+    peers, tester_hostname, qapeer_hostname = refresh_mesh_info()
     with pytest.raises(RuntimeError) as ex:
         ssh_client.exec_command(f"nordvpn mesh peer connect {tester_hostname}")
     assert (meshnet.MSG_ROUTING_FAIL % tester_hostname) in str(ex.value), "qa-peer should not be able to route traffic"
@@ -90,6 +95,7 @@ def test_exitnode_permissions():
     # Routing allowed test
     meshnet.set_permissions(qapeer_hostname, routing=True, local=False, incoming=False, fileshare=False)
     ssh_client.exec_command("nordvpn mesh peer refresh")
+    peers, tester_hostname, qapeer_hostname = refresh_mesh_info()
     with lib.Defer(lambda: ssh_client.exec_command("nordvpn disconnect")):
         connect_output = ssh_client.exec_command(f"nordvpn mesh peer connect {tester_hostname}")
         assert (meshnet.MSG_ROUTING_SUCCESS % tester_hostname) in connect_output, "qa-peer should be able to route traffic"
@@ -98,14 +104,21 @@ def test_exitnode_permissions():
     # Local allowed test
     meshnet.set_permissions(qapeer_hostname, routing=True, local=True, incoming=False, fileshare=False)
     ssh_client.exec_command("nordvpn mesh peer refresh")
+    peers, tester_hostname, qapeer_hostname = refresh_mesh_info()
     with lib.Defer(lambda: ssh_client.exec_command("nordvpn disconnect")):
         ssh_client.exec_command(f"nordvpn mesh peer connect {tester_hostname}")
+        qapeer_ip = peers.get_external_peer().ip
         tester_default_gateway = network.get_default_gateway()
-        assert ssh_client.network.ping(tester_default_gateway, retry=3), "qa-peer should be able to ping default gateway of tester"
+        cap = capture_utils.BackgroundCapture("any", display_filter=f"icmp and ip.src == {qapeer_ip} and ip.dst == {tester_default_gateway}",)
+        with lib.Defer(cap.stop):
+            cap.start()
+            assert ssh_client.network.ping(tester_default_gateway, retry=3), "qa-peer should be able to ping default gateway of tester"
+        assert len(cap.packets) > 0, "No ICMP packets captured from qa-peer to tester's default gateway over Meshnet"
 
     # Local denied test
     meshnet.set_permissions(qapeer_hostname, routing=True, local=False, incoming=False, fileshare=False)
     ssh_client.exec_command("nordvpn mesh peer refresh")
+    peers, tester_hostname, qapeer_hostname = refresh_mesh_info()
     with lib.Defer(lambda: ssh_client.exec_command("nordvpn disconnect")):
         ssh_client.exec_command(f"nordvpn mesh peer connect {tester_hostname}")
         tester_default_gateway = network.get_default_gateway()
@@ -114,16 +127,19 @@ def test_exitnode_permissions():
     # Incoming allowed test
     meshnet.set_permissions(qapeer_hostname, routing=False, local=False, incoming=True, fileshare=False)
     ssh_client.exec_command("nordvpn mesh peer refresh")
+    peers, tester_hostname, qapeer_hostname = refresh_mesh_info()
     assert ssh_client.network.ping(tester_hostname, retry=3), "qa-peer should be able to ping tester"
 
     # Incoming denied test
     meshnet.set_permissions(qapeer_hostname, routing=False, local=False, incoming=False, fileshare=False)
     ssh_client.exec_command("nordvpn mesh peer refresh")
+    peers, tester_hostname, qapeer_hostname = refresh_mesh_info()
     assert not ssh_client.network.ping(tester_hostname, retry=3), "qa-peer should not be able to ping tester"
 
     # Fileshare allowed test
     meshnet.set_permissions(qapeer_hostname, routing=False, local=False, incoming=False, fileshare=True)
     ssh_client.exec_command("nordvpn mesh peer refresh")
+    peers, tester_hostname, qapeer_hostname = refresh_mesh_info()
     transfer_started_msg = ssh_client.exec_command(f"nordvpn fileshare send --background {tester_hostname} /usr/bin/echo")
     last_qapeer_tsfr = fileshare.get_last_transfer(True, ssh_client)
     with lib.Defer(lambda: ssh_client.exec_command(f"nordvpn fileshare cancel {last_qapeer_tsfr}")):
@@ -132,6 +148,7 @@ def test_exitnode_permissions():
     # Fileshare denied test
     meshnet.set_permissions(qapeer_hostname, routing=False, local=False, incoming=False, fileshare=False)
     ssh_client.exec_command("nordvpn mesh peer refresh")
+    peers, tester_hostname, qapeer_hostname = refresh_mesh_info()
     with pytest.raises(RuntimeError) as ex:
         ssh_client.exec_command(f"nordvpn fileshare send --background {tester_hostname} /usr/bin/echo")
     assert "This peer does not allow file transfers from you." in str(ex.value), "qa-peer should not be able to send file to tester"

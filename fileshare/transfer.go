@@ -104,11 +104,15 @@ func SetTransferAllFileStatus(tr *pb.Transfer, status pb.Status) {
 	}
 }
 
-// ForAllFiles executes op for all files in files
-func ForAllFiles(files []*pb.File, op func(*pb.File)) {
+// ForAllFiles executes op for all files in files.
+// If op returns error then it will stop the iteration and ForAllFiles returns the error
+func ForAllFiles(files []*pb.File, op func(*pb.File) error) error {
 	for _, file := range files {
-		op(file)
+		if err := op(file); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 func FindTransferFileByPath(tr *pb.Transfer, filePath string) *pb.File {

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"math/bits"
 	"os"
 	"os/user"
 	"sort"
@@ -589,9 +590,19 @@ func (em *EventManager) acceptTransfer(
 	}
 
 	var totalSize uint64
-	ForAllFiles(files, func(f *pb.File) {
-		totalSize += f.Size
+	err = ForAllFiles(files, func(f *pb.File) error {
+		if newSize, carry := bits.Add64(totalSize, f.Size, 0); carry != 0 {
+			return ErrSizeLimitExceeded
+		} else {
+			totalSize = newSize
+		}
+		return nil
 	})
+
+	if err != nil {
+		log.Error("transfer size is too big", transferID, err)
+		return nil, err
+	}
 
 	statfs, err := em.filesystem.Statfs(path)
 	if err != nil {
@@ -600,7 +611,8 @@ func (em *EventManager) acceptTransfer(
 	}
 
 	// #nosec G115 - data returned by a OS filesystem call
-	if totalSize > statfs.Bavail*uint64(statfs.Bsize) {
+	availableMaxSize := statfs.Bavail * uint64(statfs.Bsize) / 10 * 9 // use max 90% from the total free disk available
+	if totalSize > availableMaxSize {
 		return nil, ErrSizeLimitExceeded
 	}
 

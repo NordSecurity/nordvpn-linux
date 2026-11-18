@@ -1,21 +1,21 @@
-name: Trigger GitLab pipeline
-on:
-  pull_request_target:
-    types: [labeled]
-  push:
-    branches-ignore:
-      - "main"
-    tags:
-      - "[0-9]+.[0-9]+.[0-9]+"
-permissions: {}
-jobs:
-  trigger-gitlab-pipeline:
-    uses: NordSecurity/trigger-gitlab-pipeline/.github/workflows/trigger-gitlab-pipeline.yml@272b0b859016b5c0ff2c3b7d70799270b0a047fb
-    secrets:
-      ci-api-v4-url: ${{ secrets.CI_API_V4_URL }}
-      access-token: ${{ secrets.ACCESS_TOKEN }}
-      trigger-token: ${{ secrets.TRIGGER_TOKEN }}
-      project-id: ${{ secrets.PROJECT_ID }}
-    with:
-      cancel-outdated-pipelines: ${{ github.ref_name != 'main' }}
-      triggered-ref: v1.8.9
+# name: Trigger GitLab pipeline
+# on:
+#   pull_request_target:
+#     types: [labeled]
+#   push:
+#     branches-ignore:
+#       - "main"
+#     tags:
+#       - "[0-9]+.[0-9]+.[0-9]+"
+# permissions: {}
+# jobs:
+#   trigger-gitlab-pipeline:
+#     uses: NordSecurity/trigger-gitlab-pipeline/.github/workflows/trigger-gitlab-pipeline.yml@272b0b859016b5c0ff2c3b7d70799270b0a047fb
+#     secrets:
+#       ci-api-v4-url: ${{ secrets.CI_API_V4_URL }}
+#       access-token: ${{ secrets.ACCESS_TOKEN }}
+#       trigger-token: ${{ secrets.TRIGGER_TOKEN }}
+#       project-id: ${{ secrets.PROJECT_ID }}
+#     with:
+#       cancel-outdated-pipelines: ${{ github.ref_name != 'main' }}
+#       triggered-ref: v1.8.9

@@ -1,5 +1,5 @@
 # Project-level configuration.
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.13)
 project(runner LANGUAGES CXX)
 
 set(BINARY_NAME "nordvpn-gui")
@@ -42,6 +42,14 @@ function(APPLY_STANDARD_SETTINGS TARGET)
   target_compile_options(${TARGET} PRIVATE -Wall -Werror)
   target_compile_options(${TARGET} PRIVATE "$<$<NOT:$<CONFIG:Debug>>:-O3>")
   target_compile_definitions(${TARGET} PRIVATE "$<$<NOT:$<CONFIG:Debug>>:NDEBUG>")
+  # hardening
+  target_compile_options(${TARGET} PRIVATE "$<$<CONFIG:Release>:-fstack-protector-strong>")
+  # some distributions already set it, redefining it is a build error with -Werror
+  if(NOT "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE}" MATCHES "_FORTIFY_SOURCE")
+    target_compile_definitions(${TARGET} PRIVATE "$<$<CONFIG:Release>:_FORTIFY_SOURCE=2>")
+  endif()
+  target_link_options(${TARGET} PRIVATE "$<$<CONFIG:Release>:-Wl,-z,relro,-z,now>")
+  target_link_options(${TARGET} PRIVATE "$<$<CONFIG:Release>:-s>")
 endfunction()
 
 # Flutter library and tool build rules.
@@ -90,7 +98,9 @@ set_target_properties(${BINARY_NAME}
 
 # Generated plugin build rules, which manage building the plugins and adding
 # them to the application.
+set(CMAKE_SKIP_BUILD_RPATH TRUE)
 include(flutter/generated_plugins.cmake)
+set(CMAKE_SKIP_BUILD_RPATH FALSE)
 
 
 # === Installation ===
