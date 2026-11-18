@@ -11,7 +11,7 @@ void runCustomDnsTests() async {
 
       expect(dnsScreen.isDnsEnabled(), isFalse);
       expect(dnsScreen.isAddDnsFormEnabled(), isFalse);
-      expect(dnsScreen.isAddButtonEnabled(), isFalse);
+      expect(dnsScreen.isAddButtonEnabled(), isTrue);
       expect(dnsScreen.isAddButtonVisible(), isTrue);
       expect(dnsScreen.isInputFieldEmpty(), isTrue);
       expect(dnsScreen.serversList(), findsNothing);
@@ -22,19 +22,23 @@ void runCustomDnsTests() async {
       expect(dnsScreen.isDisableRtpPopupDisplayed(), isFalse);
       expect(dnsScreen.isDnsEnabled(), isTrue);
       expect(dnsScreen.isAddDnsFormEnabled(), isTrue);
-      expect(dnsScreen.isAddButtonEnabled(), isFalse);
+      expect(dnsScreen.isAddButtonEnabled(), isTrue);
       expect(dnsScreen.isAddButtonVisible(), isTrue);
       expect(dnsScreen.serversList(), findsNothing);
 
       await dnsScreen.enterDnsAddress("1.2");
       await app.waitForUiUpdates();
-      expect(dnsScreen.isAddButtonEnabled(), isFalse);
+      await tester.tap(dnsScreen.addButton());
+      await app.waitForUiUpdates();
+      expect(dnsScreen.isInputFieldEmpty(), isFalse);
+      await app.refreshAppState();
+      expect(dnsScreen.serversList(), findsNothing);
 
       // enter a valid IP address
       final dnsServerAddress = "1.2.3.4";
+      await tester.tap(dnsScreen.addDnsInput());
       await dnsScreen.enterDnsAddress(dnsServerAddress);
       await app.waitForUiUpdates();
-      expect(dnsScreen.isAddButtonEnabled(), isTrue);
       expect(dnsScreen.isAddButtonVisible(), isTrue);
 
       // tap to add the server
@@ -43,10 +47,10 @@ void runCustomDnsTests() async {
       expect(dnsScreen.isAddButtonVisible(), isFalse);
       await app.waitForUiUpdates();
 
-      // the vales is added into the list and the add form fields are reset
+      // the value is added into the list and the add form fields are reset
       expect(dnsScreen.isDnsEnabled(), isTrue);
       expect(dnsScreen.isAddDnsFormEnabled(), isTrue);
-      expect(dnsScreen.isAddButtonEnabled(), isFalse);
+      expect(dnsScreen.isAddButtonEnabled(), isTrue);
       expect(dnsScreen.isAddButtonVisible(), isTrue);
       expect(dnsScreen.isInputFieldEmpty(), isTrue);
       await app.refreshAppState();
@@ -64,7 +68,6 @@ void runCustomDnsTests() async {
       await app.waitForUiUpdates();
       expect(dnsScreen.isDnsEnabled(), isFalse);
       expect(dnsScreen.isAddDnsFormEnabled(), isFalse);
-      expect(dnsScreen.isAddButtonEnabled(), isFalse);
       expect(dnsScreen.isAddButtonVisible(), isTrue);
       expect(dnsScreen.isInputFieldEmpty(), isTrue);
       expect(dnsScreen.serversList(), findsNothing);

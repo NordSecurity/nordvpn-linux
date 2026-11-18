@@ -111,6 +111,15 @@ class Translations$a11y$en {
 
 	/// en: 'NordVPN version $version'
 	String appVersion({required Object version}) => 'NordVPN version ${version}';
+
+	/// en: 'Warning. $message'
+	String warningMessage({required Object message}) => 'Warning. ${message}';
+
+	/// en: 'Start port'
+	String get startPort => 'Start port';
+
+	/// en: 'End port'
+	String get endPort => 'End port';
 }
 
 // Path: cities
@@ -121,386 +130,170 @@ class Translations$cities$en {
 
 	// Translations
 
-	/// en: 'Tirana'
-	String get tirana => 'Tirana';
-
-	/// en: 'Algiers'
-	String get algiers => 'Algiers';
+	/// en: 'Accra'
+	String get accra => 'Accra';
 
 	/// en: 'Addis Ababa'
 	String get addis_ababa => 'Addis Ababa';
 
-	/// en: 'Andorra la Vella'
-	String get andorra_la_vella => 'Andorra la Vella';
-
-	/// en: 'Buenos Aires'
-	String get buenos_aires => 'Buenos Aires';
-
-	/// en: 'Yerevan'
-	String get yerevan => 'Yerevan';
-
 	/// en: 'Adelaide'
 	String get adelaide => 'Adelaide';
 
-	/// en: 'Brisbane'
-	String get brisbane => 'Brisbane';
+	/// en: 'Albuquerque'
+	String get albuquerque => 'Albuquerque';
 
-	/// en: 'Melbourne'
-	String get melbourne => 'Melbourne';
+	/// en: 'Algiers'
+	String get algiers => 'Algiers';
 
-	/// en: 'Perth'
-	String get perth => 'Perth';
-
-	/// en: 'Sydney'
-	String get sydney => 'Sydney';
-
-	/// en: 'Vienna'
-	String get vienna => 'Vienna';
-
-	/// en: 'Baku'
-	String get baku => 'Baku';
-
-	/// en: 'Nassau'
-	String get nassau => 'Nassau';
-
-	/// en: 'Dhaka'
-	String get dhaka => 'Dhaka';
-
-	/// en: 'Brussels'
-	String get brussels => 'Brussels';
-
-	/// en: 'Belmopan'
-	String get belmopan => 'Belmopan';
-
-	/// en: 'Hamilton'
-	String get hamilton => 'Hamilton';
-
-	/// en: 'Thimphu'
-	String get thimphu => 'Thimphu';
-
-	/// en: 'La Paz'
-	String get la_paz => 'La Paz';
-
-	/// en: 'Novi Travnik'
-	String get novi_travnik => 'Novi Travnik';
-
-	/// en: 'Sao Paulo'
-	String get sao_paulo => 'Sao Paulo';
-
-	/// en: 'Bandar Seri Begawan'
-	String get bandar_seri_begawan => 'Bandar Seri Begawan';
-
-	/// en: 'Sofia'
-	String get sofia => 'Sofia';
-
-	/// en: 'Phnom Penh'
-	String get phnom_penh => 'Phnom Penh';
-
-	/// en: 'Montreal'
-	String get montreal => 'Montreal';
-
-	/// en: 'Toronto'
-	String get toronto => 'Toronto';
-
-	/// en: 'Vancouver'
-	String get vancouver => 'Vancouver';
-
-	/// en: 'George Town'
-	String get george_town => 'George Town';
-
-	/// en: 'Santiago'
-	String get santiago => 'Santiago';
-
-	/// en: 'Bogota'
-	String get bogota => 'Bogota';
-
-	/// en: 'San Jose'
-	String get san_jose => 'San Jose';
-
-	/// en: 'Zagreb'
-	String get zagreb => 'Zagreb';
-
-	/// en: 'Nicosia'
-	String get nicosia => 'Nicosia';
-
-	/// en: 'Prague'
-	String get prague => 'Prague';
-
-	/// en: 'Copenhagen'
-	String get copenhagen => 'Copenhagen';
-
-	/// en: 'Santo Domingo'
-	String get santo_domingo => 'Santo Domingo';
-
-	/// en: 'Quito'
-	String get quito => 'Quito';
-
-	/// en: 'Cairo'
-	String get cairo => 'Cairo';
-
-	/// en: 'San Salvador'
-	String get san_salvador => 'San Salvador';
-
-	/// en: 'Tallinn'
-	String get tallinn => 'Tallinn';
-
-	/// en: 'Helsinki'
-	String get helsinki => 'Helsinki';
-
-	/// en: 'Marseille'
-	String get marseille => 'Marseille';
-
-	/// en: 'Paris'
-	String get paris => 'Paris';
-
-	/// en: 'Tbilisi'
-	String get tbilisi => 'Tbilisi';
-
-	/// en: 'Berlin'
-	String get berlin => 'Berlin';
-
-	/// en: 'Frankfurt'
-	String get frankfurt => 'Frankfurt';
-
-	/// en: 'Hamburg'
-	String get hamburg => 'Hamburg';
-
-	/// en: 'Accra'
-	String get accra => 'Accra';
-
-	/// en: 'Athens'
-	String get athens => 'Athens';
-
-	/// en: 'Nuuk'
-	String get nuuk => 'Nuuk';
-
-	/// en: 'Hagatna'
-	String get hagatna => 'Hagatna';
-
-	/// en: 'Guatemala City'
-	String get guatemala_city => 'Guatemala City';
-
-	/// en: 'Tegucigalpa'
-	String get tegucigalpa => 'Tegucigalpa';
-
-	/// en: 'Hong Kong'
-	String get hong_kong => 'Hong Kong';
-
-	/// en: 'Budapest'
-	String get budapest => 'Budapest';
-
-	/// en: 'Reykjavik'
-	String get reykjavik => 'Reykjavik';
-
-	/// en: 'Mumbai'
-	String get mumbai => 'Mumbai';
-
-	/// en: 'Jakarta'
-	String get jakarta => 'Jakarta';
-
-	/// en: 'Dublin'
-	String get dublin => 'Dublin';
-
-	/// en: 'Douglas'
-	String get douglas => 'Douglas';
-
-	/// en: 'Tel Aviv'
-	String get tel_aviv => 'Tel Aviv';
-
-	/// en: 'Milan'
-	String get milan => 'Milan';
-
-	/// en: 'Palermo'
-	String get palermo => 'Palermo';
-
-	/// en: 'Rome'
-	String get rome => 'Rome';
-
-	/// en: 'Kingston'
-	String get kingston => 'Kingston';
-
-	/// en: 'Osaka'
-	String get osaka => 'Osaka';
-
-	/// en: 'Tokyo'
-	String get tokyo => 'Tokyo';
-
-	/// en: 'Saint Helier'
-	String get saint_helier => 'Saint Helier';
-
-	/// en: 'Astana'
-	String get astana => 'Astana';
-
-	/// en: 'Nairobi'
-	String get nairobi => 'Nairobi';
-
-	/// en: 'Vientiane'
-	String get vientiane => 'Vientiane';
-
-	/// en: 'Riga'
-	String get riga => 'Riga';
-
-	/// en: 'Beirut'
-	String get beirut => 'Beirut';
-
-	/// en: 'Vaduz'
-	String get vaduz => 'Vaduz';
-
-	/// en: 'Vilnius'
-	String get vilnius => 'Vilnius';
-
-	/// en: 'Luxembourg'
-	String get luxembourg => 'Luxembourg';
-
-	/// en: 'Kuala Lumpur'
-	String get kuala_lumpur => 'Kuala Lumpur';
-
-	/// en: 'Valletta'
-	String get valletta => 'Valletta';
-
-	/// en: 'Mexico'
-	String get mexico => 'Mexico';
-
-	/// en: 'Chisinau'
-	String get chisinau => 'Chisinau';
-
-	/// en: 'Monte Carlo'
-	String get monte_carlo => 'Monte Carlo';
-
-	/// en: 'Ulaanbaatar'
-	String get ulaanbaatar => 'Ulaanbaatar';
-
-	/// en: 'Podgorica'
-	String get podgorica => 'Podgorica';
-
-	/// en: 'Rabat'
-	String get rabat => 'Rabat';
-
-	/// en: 'Naypyidaw'
-	String get naypyidaw => 'Naypyidaw';
-
-	/// en: 'Kathmandu'
-	String get kathmandu => 'Kathmandu';
+	/// en: 'Amman'
+	String get amman => 'Amman';
 
 	/// en: 'Amsterdam'
 	String get amsterdam => 'Amsterdam';
 
-	/// en: 'Auckland'
-	String get auckland => 'Auckland';
+	/// en: 'Anchorage'
+	String get anchorage => 'Anchorage';
 
-	/// en: 'Lagos'
-	String get lagos => 'Lagos';
+	/// en: 'Andorra la Vella'
+	String get andorra_la_vella => 'Andorra la Vella';
 
-	/// en: 'Skopje'
-	String get skopje => 'Skopje';
+	/// en: 'Antananarivo'
+	String get antananarivo => 'Antananarivo';
 
-	/// en: 'Oslo'
-	String get oslo => 'Oslo';
+	/// en: 'Ashburn'
+	String get ashburn => 'Ashburn';
 
-	/// en: 'Karachi'
-	String get karachi => 'Karachi';
-
-	/// en: 'Panama City'
-	String get panama_city => 'Panama City';
-
-	/// en: 'Port Moresby'
-	String get port_moresby => 'Port Moresby';
+	/// en: 'Astana'
+	String get astana => 'Astana';
 
 	/// en: 'Asuncion'
 	String get asuncion => 'Asuncion';
 
-	/// en: 'Lima'
-	String get lima => 'Lima';
-
-	/// en: 'Manila'
-	String get manila => 'Manila';
-
-	/// en: 'Warsaw'
-	String get warsaw => 'Warsaw';
-
-	/// en: 'Lisbon'
-	String get lisbon => 'Lisbon';
-
-	/// en: 'San Juan'
-	String get san_juan => 'San Juan';
-
-	/// en: 'Bucharest'
-	String get bucharest => 'Bucharest';
-
-	/// en: 'Belgrade'
-	String get belgrade => 'Belgrade';
-
-	/// en: 'Singapore'
-	String get singapore => 'Singapore';
-
-	/// en: 'Bratislava'
-	String get bratislava => 'Bratislava';
-
-	/// en: 'Ljubljana'
-	String get ljubljana => 'Ljubljana';
-
-	/// en: 'Johannesburg'
-	String get johannesburg => 'Johannesburg';
-
-	/// en: 'Seoul'
-	String get seoul => 'Seoul';
-
-	/// en: 'Barcelona'
-	String get barcelona => 'Barcelona';
-
-	/// en: 'Madrid'
-	String get madrid => 'Madrid';
-
-	/// en: 'Colombo'
-	String get colombo => 'Colombo';
-
-	/// en: 'Stockholm'
-	String get stockholm => 'Stockholm';
-
-	/// en: 'Zurich'
-	String get zurich => 'Zurich';
-
-	/// en: 'Taipei'
-	String get taipei => 'Taipei';
-
-	/// en: 'Bangkok'
-	String get bangkok => 'Bangkok';
-
-	/// en: 'Port of Spain'
-	String get port_of_spain => 'Port of Spain';
-
-	/// en: 'Istanbul'
-	String get istanbul => 'Istanbul';
-
-	/// en: 'Kyiv'
-	String get kyiv => 'Kyiv';
-
-	/// en: 'Dubai'
-	String get dubai => 'Dubai';
-
-	/// en: 'Edinburgh'
-	String get edinburgh => 'Edinburgh';
-
-	/// en: 'Glasgow'
-	String get glasgow => 'Glasgow';
-
-	/// en: 'London'
-	String get london => 'London';
-
-	/// en: 'Manchester'
-	String get manchester => 'Manchester';
+	/// en: 'Athens'
+	String get athens => 'Athens';
 
 	/// en: 'Atlanta'
 	String get atlanta => 'Atlanta';
 
+	/// en: 'Auckland'
+	String get auckland => 'Auckland';
+
+	/// en: 'Baghdad'
+	String get baghdad => 'Baghdad';
+
+	/// en: 'Baku'
+	String get baku => 'Baku';
+
+	/// en: 'Baltimore'
+	String get baltimore => 'Baltimore';
+
+	/// en: 'Bandar Seri Begawan'
+	String get bandar_seri_begawan => 'Bandar Seri Begawan';
+
+	/// en: 'Bangkok'
+	String get bangkok => 'Bangkok';
+
+	/// en: 'Banjul'
+	String get banjul => 'Banjul';
+
+	/// en: 'Barcelona'
+	String get barcelona => 'Barcelona';
+
+	/// en: 'Beirut'
+	String get beirut => 'Beirut';
+
+	/// en: 'Belgrade'
+	String get belgrade => 'Belgrade';
+
+	/// en: 'Belmopan'
+	String get belmopan => 'Belmopan';
+
+	/// en: 'Berlin'
+	String get berlin => 'Berlin';
+
+	/// en: 'Billings'
+	String get billings => 'Billings';
+
+	/// en: 'Bishkek'
+	String get bishkek => 'Bishkek';
+
+	/// en: 'Bogota'
+	String get bogota => 'Bogota';
+
+	/// en: 'Boise'
+	String get boise => 'Boise';
+
+	/// en: 'Bordeaux'
+	String get bordeaux => 'Bordeaux';
+
+	/// en: 'Boston'
+	String get boston => 'Boston';
+
+	/// en: 'Bratislava'
+	String get bratislava => 'Bratislava';
+
+	/// en: 'Bridgetown'
+	String get bridgetown => 'Bridgetown';
+
+	/// en: 'Brisbane'
+	String get brisbane => 'Brisbane';
+
+	/// en: 'Brussels'
+	String get brussels => 'Brussels';
+
+	/// en: 'Bucharest'
+	String get bucharest => 'Bucharest';
+
+	/// en: 'Budapest'
+	String get budapest => 'Budapest';
+
+	/// en: 'Buenos Aires'
+	String get buenos_aires => 'Buenos Aires';
+
 	/// en: 'Buffalo'
 	String get buffalo => 'Buffalo';
+
+	/// en: 'Burlington'
+	String get burlington => 'Burlington';
+
+	/// en: 'Cairo'
+	String get cairo => 'Cairo';
+
+	/// en: 'Calgary'
+	String get calgary => 'Calgary';
+
+	/// en: 'Caracas'
+	String get caracas => 'Caracas';
+
+	/// en: 'Castries'
+	String get castries => 'Castries';
+
+	/// en: 'Charleston'
+	String get charleston => 'Charleston';
 
 	/// en: 'Charlotte'
 	String get charlotte => 'Charlotte';
 
+	/// en: 'Cheyenne'
+	String get cheyenne => 'Cheyenne';
+
 	/// en: 'Chicago'
 	String get chicago => 'Chicago';
+
+	/// en: 'Chisinau'
+	String get chisinau => 'Chisinau';
+
+	/// en: 'Colombo'
+	String get colombo => 'Colombo';
+
+	/// en: 'Columbus'
+	String get columbus => 'Columbus';
+
+	/// en: 'Copenhagen'
+	String get copenhagen => 'Copenhagen';
+
+	/// en: 'Dakar'
+	String get dakar => 'Dakar';
 
 	/// en: 'Dallas'
 	String get dallas => 'Dallas';
@@ -508,29 +301,365 @@ class Translations$cities$en {
 	/// en: 'Denver'
 	String get denver => 'Denver';
 
+	/// en: 'Des Moines'
+	String get des_moines => 'Des Moines';
+
 	/// en: 'Detroit'
 	String get detroit => 'Detroit';
+
+	/// en: 'Dhaka'
+	String get dhaka => 'Dhaka';
+
+	/// en: 'Dodoma'
+	String get dodoma => 'Dodoma';
+
+	/// en: 'Doha'
+	String get doha => 'Doha';
+
+	/// en: 'Douglas'
+	String get douglas => 'Douglas';
+
+	/// en: 'Dubai'
+	String get dubai => 'Dubai';
+
+	/// en: 'Dublin'
+	String get dublin => 'Dublin';
+
+	/// en: 'Dushanbe'
+	String get dushanbe => 'Dushanbe';
+
+	/// en: 'Edinburgh'
+	String get edinburgh => 'Edinburgh';
+
+	/// en: 'Fargo'
+	String get fargo => 'Fargo';
+
+	/// en: 'Frankfurt'
+	String get frankfurt => 'Frankfurt';
+
+	/// en: 'Freetown'
+	String get freetown => 'Freetown';
+
+	/// en: 'Fujairah'
+	String get fujairah => 'Fujairah';
+
+	/// en: 'Gaborone'
+	String get gaborone => 'Gaborone';
+
+	/// en: 'George Town'
+	String get george_town => 'George Town';
+
+	/// en: 'Georgetown'
+	String get georgetown => 'Georgetown';
+
+	/// en: 'Glasgow'
+	String get glasgow => 'Glasgow';
+
+	/// en: 'Guatemala City'
+	String get guatemala_city => 'Guatemala City';
+
+	/// en: 'Hagatna'
+	String get hagatna => 'Hagatna';
+
+	/// en: 'Hamburg'
+	String get hamburg => 'Hamburg';
+
+	/// en: 'Hamilton'
+	String get hamilton => 'Hamilton';
+
+	/// en: 'Hanoi'
+	String get hanoi => 'Hanoi';
+
+	/// en: 'Helsinki'
+	String get helsinki => 'Helsinki';
+
+	/// en: 'Ho Chi Minh City'
+	String get ho_chi_minh_city => 'Ho Chi Minh City';
+
+	/// en: 'Hong Kong'
+	String get hong_kong => 'Hong Kong';
+
+	/// en: 'Honolulu'
+	String get honolulu => 'Honolulu';
+
+	/// en: 'Houston'
+	String get houston => 'Houston';
+
+	/// en: 'Huntington'
+	String get huntington => 'Huntington';
+
+	/// en: 'Indianapolis'
+	String get indianapolis => 'Indianapolis';
+
+	/// en: 'Istanbul'
+	String get istanbul => 'Istanbul';
+
+	/// en: 'Jackson'
+	String get jackson => 'Jackson';
+
+	/// en: 'Jakarta'
+	String get jakarta => 'Jakarta';
+
+	/// en: 'Johannesburg'
+	String get johannesburg => 'Johannesburg';
+
+	/// en: 'Kabul'
+	String get kabul => 'Kabul';
 
 	/// en: 'Kansas City'
 	String get kansas_city => 'Kansas City';
 
+	/// en: 'Karachi'
+	String get karachi => 'Karachi';
+
+	/// en: 'Kathmandu'
+	String get kathmandu => 'Kathmandu';
+
+	/// en: 'Kingston'
+	String get kingston => 'Kingston';
+
+	/// en: 'Kuala Lumpur'
+	String get kuala_lumpur => 'Kuala Lumpur';
+
+	/// en: 'Kuwait City'
+	String get kuwait_city => 'Kuwait City';
+
+	/// en: 'Kyiv'
+	String get kyiv => 'Kyiv';
+
+	/// en: 'La Paz'
+	String get la_paz => 'La Paz';
+
+	/// en: 'Lagos'
+	String get lagos => 'Lagos';
+
+	/// en: 'Las Vegas'
+	String get las_vegas => 'Las Vegas';
+
+	/// en: 'Lewiston'
+	String get lewiston => 'Lewiston';
+
+	/// en: 'Lilongwe'
+	String get lilongwe => 'Lilongwe';
+
+	/// en: 'Lima'
+	String get lima => 'Lima';
+
+	/// en: 'Lisbon'
+	String get lisbon => 'Lisbon';
+
+	/// en: 'Little Rock'
+	String get little_rock => 'Little Rock';
+
+	/// en: 'Ljubljana'
+	String get ljubljana => 'Ljubljana';
+
+	/// en: 'London'
+	String get london => 'London';
+
 	/// en: 'Los Angeles'
 	String get los_angeles => 'Los Angeles';
 
-	/// en: 'Manassas'
-	String get manassas => 'Manassas';
+	/// en: 'Louisville'
+	String get louisville => 'Louisville';
+
+	/// en: 'Luanda'
+	String get luanda => 'Luanda';
+
+	/// en: 'Lusaka'
+	String get lusaka => 'Lusaka';
+
+	/// en: 'Luxembourg'
+	String get luxembourg => 'Luxembourg';
+
+	/// en: 'Madrid'
+	String get madrid => 'Madrid';
+
+	/// en: 'Male'
+	String get male => 'Male';
+
+	/// en: 'Manama'
+	String get manama => 'Manama';
+
+	/// en: 'Manchester'
+	String get manchester => 'Manchester';
+
+	/// en: 'Manila'
+	String get manila => 'Manila';
+
+	/// en: 'Maputo'
+	String get maputo => 'Maputo';
+
+	/// en: 'Marseille'
+	String get marseille => 'Marseille';
+
+	/// en: 'McAllen'
+	String get mcallen => 'McAllen';
+
+	/// en: 'Melbourne'
+	String get melbourne => 'Melbourne';
+
+	/// en: 'Mexico'
+	String get mexico => 'Mexico';
 
 	/// en: 'Miami'
 	String get miami => 'Miami';
 
+	/// en: 'Milan'
+	String get milan => 'Milan';
+
+	/// en: 'Milwaukee'
+	String get milwaukee => 'Milwaukee';
+
+	/// en: 'Minneapolis'
+	String get minneapolis => 'Minneapolis';
+
+	/// en: 'Mogadishu'
+	String get mogadishu => 'Mogadishu';
+
+	/// en: 'Monrovia'
+	String get monrovia => 'Monrovia';
+
+	/// en: 'Monte Carlo'
+	String get monte_carlo => 'Monte Carlo';
+
+	/// en: 'Montevideo'
+	String get montevideo => 'Montevideo';
+
+	/// en: 'Montgomery'
+	String get montgomery => 'Montgomery';
+
+	/// en: 'Montreal'
+	String get montreal => 'Montreal';
+
+	/// en: 'Moroni'
+	String get moroni => 'Moroni';
+
+	/// en: 'Mumbai'
+	String get mumbai => 'Mumbai';
+
+	/// en: 'Nairobi'
+	String get nairobi => 'Nairobi';
+
+	/// en: 'Nashua'
+	String get nashua => 'Nashua';
+
+	/// en: 'Nashville'
+	String get nashville => 'Nashville';
+
+	/// en: 'Nassau'
+	String get nassau => 'Nassau';
+
+	/// en: 'Naypyidaw'
+	String get naypyidaw => 'Naypyidaw';
+
+	/// en: 'NDjamena'
+	String get ndjamena => 'NDjamena';
+
+	/// en: 'New Haven'
+	String get new_haven => 'New Haven';
+
+	/// en: 'New Orleans'
+	String get new_orleans => 'New Orleans';
+
 	/// en: 'New York'
 	String get new_york => 'New York';
+
+	/// en: 'Nicosia'
+	String get nicosia => 'Nicosia';
+
+	/// en: 'Nouakchott'
+	String get nouakchott => 'Nouakchott';
+
+	/// en: 'Nuuk'
+	String get nuuk => 'Nuuk';
+
+	/// en: 'Oklahoma City'
+	String get oklahoma_city => 'Oklahoma City';
+
+	/// en: 'Omaha'
+	String get omaha => 'Omaha';
+
+	/// en: 'Osaka'
+	String get osaka => 'Osaka';
+
+	/// en: 'Oslo'
+	String get oslo => 'Oslo';
+
+	/// en: 'Ouagadougou'
+	String get ouagadougou => 'Ouagadougou';
+
+	/// en: 'Palermo'
+	String get palermo => 'Palermo';
+
+	/// en: 'Panama City'
+	String get panama_city => 'Panama City';
+
+	/// en: 'Paramaribo'
+	String get paramaribo => 'Paramaribo';
+
+	/// en: 'Paris'
+	String get paris => 'Paris';
+
+	/// en: 'Perth'
+	String get perth => 'Perth';
+
+	/// en: 'Phnom Penh'
+	String get phnom_penh => 'Phnom Penh';
 
 	/// en: 'Phoenix'
 	String get phoenix => 'Phoenix';
 
 	/// en: 'Pittsburgh'
 	String get pittsburgh => 'Pittsburgh';
+
+	/// en: 'Podgorica'
+	String get podgorica => 'Podgorica';
+
+	/// en: 'Port Louis'
+	String get port_louis => 'Port Louis';
+
+	/// en: 'Port Moresby'
+	String get port_moresby => 'Port Moresby';
+
+	/// en: 'Port of Spain'
+	String get port_of_spain => 'Port of Spain';
+
+	/// en: 'Portland'
+	String get portland => 'Portland';
+
+	/// en: 'Porto Novo'
+	String get porto_novo => 'Porto Novo';
+
+	/// en: 'Prague'
+	String get prague => 'Prague';
+
+	/// en: 'Praia'
+	String get praia => 'Praia';
+
+	/// en: 'Providence'
+	String get providence => 'Providence';
+
+	/// en: 'Quito'
+	String get quito => 'Quito';
+
+	/// en: 'Rabat'
+	String get rabat => 'Rabat';
+
+	/// en: 'Reykjavik'
+	String get reykjavik => 'Reykjavik';
+
+	/// en: 'Riga'
+	String get riga => 'Riga';
+
+	/// en: 'Rome'
+	String get rome => 'Rome';
+
+	/// en: 'Saint Helier'
+	String get saint_helier => 'Saint Helier';
+
+	/// en: 'Saint John'
+	String get saint_john => 'Saint John';
 
 	/// en: 'Saint Louis'
 	String get saint_louis => 'Saint Louis';
@@ -541,230 +670,140 @@ class Translations$cities$en {
 	/// en: 'San Francisco'
 	String get san_francisco => 'San Francisco';
 
-	/// en: 'Seattle'
-	String get seattle => 'Seattle';
+	/// en: 'San Jose'
+	String get san_jose => 'San Jose';
 
-	/// en: 'Montevideo'
-	String get montevideo => 'Montevideo';
+	/// en: 'San Juan'
+	String get san_juan => 'San Juan';
 
-	/// en: 'Tashkent'
-	String get tashkent => 'Tashkent';
-
-	/// en: 'Caracas'
-	String get caracas => 'Caracas';
-
-	/// en: 'Hanoi'
-	String get hanoi => 'Hanoi';
-
-	/// en: 'Ho Chi Minh City'
-	String get ho_chi_minh_city => 'Ho Chi Minh City';
-
-	/// en: 'Houston'
-	String get houston => 'Houston';
-
-	/// en: 'McAllen'
-	String get mcallen => 'McAllen';
-
-	/// en: 'Luanda'
-	String get luanda => 'Luanda';
-
-	/// en: 'Manama'
-	String get manama => 'Manama';
-
-	/// en: 'Amman'
-	String get amman => 'Amman';
-
-	/// en: 'Kuwait City'
-	String get kuwait_city => 'Kuwait City';
-
-	/// en: 'Maputo'
-	String get maputo => 'Maputo';
-
-	/// en: 'Dakar'
-	String get dakar => 'Dakar';
-
-	/// en: 'Tunis'
-	String get tunis => 'Tunis';
-
-	/// en: 'Boston'
-	String get boston => 'Boston';
-
-	/// en: 'Strasbourg'
-	String get strasbourg => 'Strasbourg';
-
-	/// en: 'Omaha'
-	String get omaha => 'Omaha';
-
-	/// en: 'Moroni'
-	String get moroni => 'Moroni';
-
-	/// en: 'Baghdad'
-	String get baghdad => 'Baghdad';
-
-	/// en: 'Tripoli'
-	String get tripoli => 'Tripoli';
-
-	/// en: 'Doha'
-	String get doha => 'Doha';
-
-	/// en: 'Kigali'
-	String get kigali => 'Kigali';
-
-	/// en: 'Nashville'
-	String get nashville => 'Nashville';
-
-	/// en: 'Kabul'
-	String get kabul => 'Kabul';
-
-	/// en: 'Mogadishu'
-	String get mogadishu => 'Mogadishu';
-
-	/// en: 'Nouakchott'
-	String get nouakchott => 'Nouakchott';
-
-	/// en: 'Ashburn'
-	String get ashburn => 'Ashburn';
-
-	/// en: 'Port Louis'
-	String get port_louis => 'Port Louis';
-
-	/// en: 'Dushanbe'
-	String get dushanbe => 'Dushanbe';
-
-	/// en: 'Lewiston'
-	String get lewiston => 'Lewiston';
-
-	/// en: 'New Orleans'
-	String get new_orleans => 'New Orleans';
-
-	/// en: 'Oklahoma City'
-	String get oklahoma_city => 'Oklahoma City';
-
-	/// en: 'Portland'
-	String get portland => 'Portland';
-
-	/// en: 'Des Moines'
-	String get des_moines => 'Des Moines';
-
-	/// en: 'Honolulu'
-	String get honolulu => 'Honolulu';
-
-	/// en: 'Huntington'
-	String get huntington => 'Huntington';
-
-	/// en: 'Bordeaux'
-	String get bordeaux => 'Bordeaux';
-
-	/// en: 'Burlington'
-	String get burlington => 'Burlington';
-
-	/// en: 'Charleston'
-	String get charleston => 'Charleston';
-
-	/// en: 'Cheyenne'
-	String get cheyenne => 'Cheyenne';
-
-	/// en: 'Fargo'
-	String get fargo => 'Fargo';
-
-	/// en: 'Providence'
-	String get providence => 'Providence';
-
-	/// en: 'Columbus'
-	String get columbus => 'Columbus';
-
-	/// en: 'Trenton'
-	String get trenton => 'Trenton';
-
-	/// en: 'Jackson'
-	String get jackson => 'Jackson';
-
-	/// en: 'New Haven'
-	String get new_haven => 'New Haven';
-
-	/// en: 'Sioux Falls'
-	String get sioux_falls => 'Sioux Falls';
-
-	/// en: 'Wichita'
-	String get wichita => 'Wichita';
-
-	/// en: 'Nashua'
-	String get nashua => 'Nashua';
-
-	/// en: 'Las Vegas'
-	String get las_vegas => 'Las Vegas';
-
-	/// en: 'Little Rock'
-	String get little_rock => 'Little Rock';
-
-	/// en: 'Louisville'
-	String get louisville => 'Louisville';
-
-	/// en: 'Milwaukee'
-	String get milwaukee => 'Milwaukee';
-
-	/// en: 'Minneapolis'
-	String get minneapolis => 'Minneapolis';
-
-	/// en: 'Montgomery'
-	String get montgomery => 'Montgomery';
-
-	/// en: 'Indianapolis'
-	String get indianapolis => 'Indianapolis';
-
-	/// en: 'Boise'
-	String get boise => 'Boise';
-
-	/// en: 'Baltimore'
-	String get baltimore => 'Baltimore';
-
-	/// en: 'Billings'
-	String get billings => 'Billings';
-
-	/// en: 'Albuquerque'
-	String get albuquerque => 'Albuquerque';
-
-	/// en: 'Anchorage'
-	String get anchorage => 'Anchorage';
-
-	/// en: 'Wilmington'
-	String get wilmington => 'Wilmington';
-
-	/// en: 'Fujairah'
-	String get fujairah => 'Fujairah';
-
-	/// en: 'Bridgetown'
-	String get bridgetown => 'Bridgetown';
-
-	/// en: 'Sarajevo'
-	String get sarajevo => 'Sarajevo';
-
-	/// en: 'NDjamena'
-	String get ndjamena => 'NDjamena';
-
-	/// en: 'Yamoussoukro'
-	String get yamoussoukro => 'Yamoussoukro';
-
-	/// en: 'Suva'
-	String get suva => 'Suva';
-
-	/// en: 'Paramaribo'
-	String get paramaribo => 'Paramaribo';
-
-	/// en: 'Dodoma'
-	String get dodoma => 'Dodoma';
+	/// en: 'San Salvador'
+	String get san_salvador => 'San Salvador';
 
 	/// en: 'Sanaa'
 	String get sanaa => 'Sanaa';
 
-	/// en: 'Lome'
-	String get lome => 'Lome';
+	/// en: 'Santiago'
+	String get santiago => 'Santiago';
 
-	/// en: 'Calgary'
-	String get calgary => 'Calgary';
+	/// en: 'Santo Domingo'
+	String get santo_domingo => 'Santo Domingo';
 
-	/// en: 'Saint John'
-	String get saint_john => 'Saint John';
+	/// en: 'Sao Paulo'
+	String get sao_paulo => 'Sao Paulo';
+
+	/// en: 'Sarajevo'
+	String get sarajevo => 'Sarajevo';
+
+	/// en: 'Seattle'
+	String get seattle => 'Seattle';
+
+	/// en: 'Seoul'
+	String get seoul => 'Seoul';
+
+	/// en: 'Singapore'
+	String get singapore => 'Singapore';
+
+	/// en: 'Sioux Falls'
+	String get sioux_falls => 'Sioux Falls';
+
+	/// en: 'Skopje'
+	String get skopje => 'Skopje';
+
+	/// en: 'Sofia'
+	String get sofia => 'Sofia';
+
+	/// en: 'Stockholm'
+	String get stockholm => 'Stockholm';
+
+	/// en: 'Strasbourg'
+	String get strasbourg => 'Strasbourg';
+
+	/// en: 'Suva'
+	String get suva => 'Suva';
+
+	/// en: 'Sydney'
+	String get sydney => 'Sydney';
+
+	/// en: 'Taipei'
+	String get taipei => 'Taipei';
+
+	/// en: 'Tallinn'
+	String get tallinn => 'Tallinn';
+
+	/// en: 'Tashkent'
+	String get tashkent => 'Tashkent';
+
+	/// en: 'Tbilisi'
+	String get tbilisi => 'Tbilisi';
+
+	/// en: 'Tegucigalpa'
+	String get tegucigalpa => 'Tegucigalpa';
+
+	/// en: 'Tel Aviv'
+	String get tel_aviv => 'Tel Aviv';
+
+	/// en: 'Thimphu'
+	String get thimphu => 'Thimphu';
+
+	/// en: 'Tirana'
+	String get tirana => 'Tirana';
+
+	/// en: 'Tokyo'
+	String get tokyo => 'Tokyo';
+
+	/// en: 'Toronto'
+	String get toronto => 'Toronto';
+
+	/// en: 'Trenton'
+	String get trenton => 'Trenton';
+
+	/// en: 'Tripoli'
+	String get tripoli => 'Tripoli';
+
+	/// en: 'Tunis'
+	String get tunis => 'Tunis';
+
+	/// en: 'Ulaanbaatar'
+	String get ulaanbaatar => 'Ulaanbaatar';
+
+	/// en: 'Vaduz'
+	String get vaduz => 'Vaduz';
+
+	/// en: 'Valletta'
+	String get valletta => 'Valletta';
+
+	/// en: 'Vancouver'
+	String get vancouver => 'Vancouver';
+
+	/// en: 'Victoria'
+	String get victoria => 'Victoria';
+
+	/// en: 'Vienna'
+	String get vienna => 'Vienna';
+
+	/// en: 'Vientiane'
+	String get vientiane => 'Vientiane';
+
+	/// en: 'Vilnius'
+	String get vilnius => 'Vilnius';
+
+	/// en: 'Warsaw'
+	String get warsaw => 'Warsaw';
+
+	/// en: 'Wichita'
+	String get wichita => 'Wichita';
+
+	/// en: 'Wilmington'
+	String get wilmington => 'Wilmington';
+
+	/// en: 'Yerevan'
+	String get yerevan => 'Yerevan';
+
+	/// en: 'Zagreb'
+	String get zagreb => 'Zagreb';
+
+	/// en: 'Zurich'
+	String get zurich => 'Zurich';
 }
 
 // Path: countries
@@ -775,14 +814,23 @@ class Translations$countries$en {
 
 	// Translations
 
+	/// en: 'Andorra'
+	String get AD => 'Andorra';
+
+	/// en: 'United Arab Emirates'
+	String get AE => 'United Arab Emirates';
+
+	/// en: 'Afghanistan'
+	String get AF => 'Afghanistan';
+
+	/// en: 'Antigua and Barbuda'
+	String get AG => 'Antigua and Barbuda';
+
 	/// en: 'Albania'
 	String get AL => 'Albania';
 
-	/// en: 'Algeria'
-	String get DZ => 'Algeria';
-
-	/// en: 'Andorra'
-	String get AD => 'Andorra';
+	/// en: 'Armenia'
+	String get AM => 'Armenia';
 
 	/// en: 'Angola'
 	String get AO => 'Angola';
@@ -790,23 +838,20 @@ class Translations$countries$en {
 	/// en: 'Argentina'
 	String get AR => 'Argentina';
 
-	/// en: 'Armenia'
-	String get AM => 'Armenia';
+	/// en: 'Austria'
+	String get AT => 'Austria';
 
 	/// en: 'Australia'
 	String get AU => 'Australia';
 
-	/// en: 'Austria'
-	String get AT => 'Austria';
-
 	/// en: 'Azerbaijan'
 	String get AZ => 'Azerbaijan';
 
-	/// en: 'Bahamas'
-	String get BS => 'Bahamas';
+	/// en: 'Bosnia and Herzegovina'
+	String get BA => 'Bosnia and Herzegovina';
 
-	/// en: 'Bahrain'
-	String get BH => 'Bahrain';
+	/// en: 'Barbados'
+	String get BB => 'Barbados';
 
 	/// en: 'Bangladesh'
 	String get BD => 'Bangladesh';
@@ -814,38 +859,47 @@ class Translations$countries$en {
 	/// en: 'Belgium'
 	String get BE => 'Belgium';
 
-	/// en: 'Belize'
-	String get BZ => 'Belize';
-
-	/// en: 'Bermuda'
-	String get BM => 'Bermuda';
-
-	/// en: 'Bhutan'
-	String get BT => 'Bhutan';
-
-	/// en: 'Bolivia'
-	String get BO => 'Bolivia';
-
-	/// en: 'Bosnia and Herzegovina'
-	String get BA => 'Bosnia and Herzegovina';
-
-	/// en: 'Brazil'
-	String get BR => 'Brazil';
-
-	/// en: 'Brunei Darussalam'
-	String get BN => 'Brunei Darussalam';
+	/// en: 'Burkina Faso'
+	String get BF => 'Burkina Faso';
 
 	/// en: 'Bulgaria'
 	String get BG => 'Bulgaria';
 
-	/// en: 'Cambodia'
-	String get KH => 'Cambodia';
+	/// en: 'Bahrain'
+	String get BH => 'Bahrain';
+
+	/// en: 'Benin'
+	String get BJ => 'Benin';
+
+	/// en: 'Bermuda'
+	String get BM => 'Bermuda';
+
+	/// en: 'Brunei Darussalam'
+	String get BN => 'Brunei Darussalam';
+
+	/// en: 'Bolivia'
+	String get BO => 'Bolivia';
+
+	/// en: 'Brazil'
+	String get BR => 'Brazil';
+
+	/// en: 'Bahamas'
+	String get BS => 'Bahamas';
+
+	/// en: 'Bhutan'
+	String get BT => 'Bhutan';
+
+	/// en: 'Botswana'
+	String get BW => 'Botswana';
+
+	/// en: 'Belize'
+	String get BZ => 'Belize';
 
 	/// en: 'Canada'
 	String get CA => 'Canada';
 
-	/// en: 'Cayman Islands'
-	String get KY => 'Cayman Islands';
+	/// en: 'Switzerland'
+	String get CH => 'Switzerland';
 
 	/// en: 'Chile'
 	String get CL => 'Chile';
@@ -856,8 +910,8 @@ class Translations$countries$en {
 	/// en: 'Costa Rica'
 	String get CR => 'Costa Rica';
 
-	/// en: 'Croatia'
-	String get HR => 'Croatia';
+	/// en: 'Cape Verde'
+	String get CV => 'Cape Verde';
 
 	/// en: 'Cyprus'
 	String get CY => 'Cyprus';
@@ -865,65 +919,80 @@ class Translations$countries$en {
 	/// en: 'Czech Republic'
 	String get CZ => 'Czech Republic';
 
+	/// en: 'Germany'
+	String get DE => 'Germany';
+
 	/// en: 'Denmark'
 	String get DK => 'Denmark';
 
 	/// en: 'Dominican Republic'
 	String get DO => 'Dominican Republic';
 
+	/// en: 'Algeria'
+	String get DZ => 'Algeria';
+
 	/// en: 'Ecuador'
 	String get EC => 'Ecuador';
-
-	/// en: 'Egypt'
-	String get EG => 'Egypt';
-
-	/// en: 'El Salvador'
-	String get SV => 'El Salvador';
 
 	/// en: 'Estonia'
 	String get EE => 'Estonia';
 
+	/// en: 'Egypt'
+	String get EG => 'Egypt';
+
+	/// en: 'Spain'
+	String get ES => 'Spain';
+
+	/// en: 'Ethiopia'
+	String get ET => 'Ethiopia';
+
 	/// en: 'Finland'
 	String get FI => 'Finland';
+
+	/// en: 'Fiji'
+	String get FJ => 'Fiji';
 
 	/// en: 'France'
 	String get FR => 'France';
 
+	/// en: 'United Kingdom'
+	String get GB => 'United Kingdom';
+
 	/// en: 'Georgia'
 	String get GE => 'Georgia';
-
-	/// en: 'Germany'
-	String get DE => 'Germany';
 
 	/// en: 'Ghana'
 	String get GH => 'Ghana';
 
-	/// en: 'Greece'
-	String get GR => 'Greece';
-
 	/// en: 'Greenland'
 	String get GL => 'Greenland';
 
-	/// en: 'Guam'
-	String get GU => 'Guam';
+	/// en: 'Gambia'
+	String get GM => 'Gambia';
+
+	/// en: 'Greece'
+	String get GR => 'Greece';
 
 	/// en: 'Guatemala'
 	String get GT => 'Guatemala';
 
-	/// en: 'Honduras'
-	String get HN => 'Honduras';
+	/// en: 'Guam'
+	String get GU => 'Guam';
+
+	/// en: 'Guyana'
+	String get GY => 'Guyana';
 
 	/// en: 'Hong Kong'
 	String get HK => 'Hong Kong';
 
+	/// en: 'Honduras'
+	String get HN => 'Honduras';
+
+	/// en: 'Croatia'
+	String get HR => 'Croatia';
+
 	/// en: 'Hungary'
 	String get HU => 'Hungary';
-
-	/// en: 'Iceland'
-	String get IS => 'Iceland';
-
-	/// en: 'India'
-	String get IN => 'India';
 
 	/// en: 'Indonesia'
 	String get ID => 'Indonesia';
@@ -931,47 +1000,77 @@ class Translations$countries$en {
 	/// en: 'Ireland'
 	String get IE => 'Ireland';
 
+	/// en: 'Israel'
+	String get IL => 'Israel';
+
 	/// en: 'Isle of Man'
 	String get IM => 'Isle of Man';
 
-	/// en: 'Israel'
-	String get IL => 'Israel';
+	/// en: 'India'
+	String get IN => 'India';
+
+	/// en: 'Iraq'
+	String get IQ => 'Iraq';
+
+	/// en: 'Iceland'
+	String get IS => 'Iceland';
 
 	/// en: 'Italy'
 	String get IT => 'Italy';
 
-	/// en: 'Jamaica'
-	String get JM => 'Jamaica';
-
-	/// en: 'Japan'
-	String get JP => 'Japan';
-
 	/// en: 'Jersey'
 	String get JE => 'Jersey';
+
+	/// en: 'Jamaica'
+	String get JM => 'Jamaica';
 
 	/// en: 'Jordan'
 	String get JO => 'Jordan';
 
-	/// en: 'Kazakhstan'
-	String get KZ => 'Kazakhstan';
+	/// en: 'Japan'
+	String get JP => 'Japan';
 
 	/// en: 'Kenya'
 	String get KE => 'Kenya';
 
+	/// en: 'Kyrgyzstan'
+	String get KG => 'Kyrgyzstan';
+
+	/// en: 'Cambodia'
+	String get KH => 'Cambodia';
+
+	/// en: 'Comoros'
+	String get KM => 'Comoros';
+
+	/// en: 'South Korea'
+	String get KR => 'South Korea';
+
 	/// en: 'Kuwait'
 	String get KW => 'Kuwait';
+
+	/// en: 'Cayman Islands'
+	String get KY => 'Cayman Islands';
+
+	/// en: 'Kazakhstan'
+	String get KZ => 'Kazakhstan';
 
 	/// en: 'Lao People's Democratic Republic'
 	String get LA => 'Lao People\'s Democratic Republic';
 
-	/// en: 'Latvia'
-	String get LV => 'Latvia';
-
 	/// en: 'Lebanon'
 	String get LB => 'Lebanon';
 
+	/// en: 'Saint Lucia'
+	String get LC => 'Saint Lucia';
+
 	/// en: 'Liechtenstein'
 	String get LI => 'Liechtenstein';
+
+	/// en: 'Sri Lanka'
+	String get LK => 'Sri Lanka';
+
+	/// en: 'Liberia'
+	String get LR => 'Liberia';
 
 	/// en: 'Lithuania'
 	String get LT => 'Lithuania';
@@ -979,80 +1078,104 @@ class Translations$countries$en {
 	/// en: 'Luxembourg'
 	String get LU => 'Luxembourg';
 
-	/// en: 'Malaysia'
-	String get MY => 'Malaysia';
+	/// en: 'Latvia'
+	String get LV => 'Latvia';
 
-	/// en: 'Malta'
-	String get MT => 'Malta';
-
-	/// en: 'Mexico'
-	String get MX => 'Mexico';
-
-	/// en: 'Moldova'
-	String get MD => 'Moldova';
-
-	/// en: 'Monaco'
-	String get MC => 'Monaco';
-
-	/// en: 'Mongolia'
-	String get MN => 'Mongolia';
-
-	/// en: 'Montenegro'
-	String get ME => 'Montenegro';
+	/// en: 'Libyan Arab Jamahiriya'
+	String get LY => 'Libyan Arab Jamahiriya';
 
 	/// en: 'Morocco'
 	String get MA => 'Morocco';
 
-	/// en: 'Mozambique'
-	String get MZ => 'Mozambique';
+	/// en: 'Monaco'
+	String get MC => 'Monaco';
 
-	/// en: 'Myanmar'
-	String get MM => 'Myanmar';
+	/// en: 'Moldova'
+	String get MD => 'Moldova';
 
-	/// en: 'Nepal'
-	String get NP => 'Nepal';
+	/// en: 'Montenegro'
+	String get ME => 'Montenegro';
 
-	/// en: 'Netherlands'
-	String get NL => 'Netherlands';
-
-	/// en: 'New Zealand'
-	String get NZ => 'New Zealand';
-
-	/// en: 'Nigeria'
-	String get NG => 'Nigeria';
+	/// en: 'Madagascar'
+	String get MG => 'Madagascar';
 
 	/// en: 'North Macedonia'
 	String get MK => 'North Macedonia';
 
+	/// en: 'Myanmar'
+	String get MM => 'Myanmar';
+
+	/// en: 'Mongolia'
+	String get MN => 'Mongolia';
+
+	/// en: 'Mauritania'
+	String get MR => 'Mauritania';
+
+	/// en: 'Malta'
+	String get MT => 'Malta';
+
+	/// en: 'Mauritius'
+	String get MU => 'Mauritius';
+
+	/// en: 'Maldives'
+	String get MV => 'Maldives';
+
+	/// en: 'Malawi'
+	String get MW => 'Malawi';
+
+	/// en: 'Mexico'
+	String get MX => 'Mexico';
+
+	/// en: 'Malaysia'
+	String get MY => 'Malaysia';
+
+	/// en: 'Mozambique'
+	String get MZ => 'Mozambique';
+
+	/// en: 'Nigeria'
+	String get NG => 'Nigeria';
+
+	/// en: 'Netherlands'
+	String get NL => 'Netherlands';
+
 	/// en: 'Norway'
 	String get NO => 'Norway';
 
-	/// en: 'Pakistan'
-	String get PK => 'Pakistan';
+	/// en: 'Nepal'
+	String get NP => 'Nepal';
+
+	/// en: 'New Zealand'
+	String get NZ => 'New Zealand';
 
 	/// en: 'Panama'
 	String get PA => 'Panama';
 
-	/// en: 'Papua New Guinea'
-	String get PG => 'Papua New Guinea';
-
-	/// en: 'Paraguay'
-	String get PY => 'Paraguay';
-
 	/// en: 'Peru'
 	String get PE => 'Peru';
+
+	/// en: 'Papua New Guinea'
+	String get PG => 'Papua New Guinea';
 
 	/// en: 'Philippines'
 	String get PH => 'Philippines';
 
+	/// en: 'Pakistan'
+	String get PK => 'Pakistan';
+
 	/// en: 'Poland'
 	String get PL => 'Poland';
+
+	/// en: 'Puerto Rico'
+	String get PR => 'Puerto Rico';
 
 	/// en: 'Portugal'
 	String get PT => 'Portugal';
 
-	/// en: 'Puerto Rico'
-	String get PR => 'Puerto Rico';
+	/// en: 'Paraguay'
+	String get PY => 'Paraguay';
+
+	/// en: 'Qatar'
+	String get QA => 'Qatar';
 
 	/// en: 'Romania'
 	String get RO => 'Romania';
@@ -1060,59 +1183,62 @@ class Translations$countries$en {
 	/// en: 'Serbia'
 	String get RS => 'Serbia';
 
-	/// en: 'Senegal'
-	String get SN => 'Senegal';
-
-	/// en: 'Singapore'
-	String get SG => 'Singapore';
-
-	/// en: 'Slovakia'
-	String get SK => 'Slovakia';
-
-	/// en: 'Slovenia'
-	String get SI => 'Slovenia';
-
-	/// en: 'South Africa'
-	String get ZA => 'South Africa';
-
-	/// en: 'South Korea'
-	String get KR => 'South Korea';
-
-	/// en: 'Spain'
-	String get ES => 'Spain';
-
-	/// en: 'Sri Lanka'
-	String get LK => 'Sri Lanka';
+	/// en: 'Seychelles'
+	String get SC => 'Seychelles';
 
 	/// en: 'Sweden'
 	String get SE => 'Sweden';
 
-	/// en: 'Switzerland'
-	String get CH => 'Switzerland';
+	/// en: 'Singapore'
+	String get SG => 'Singapore';
 
-	/// en: 'Taiwan'
-	String get TW => 'Taiwan';
+	/// en: 'Slovenia'
+	String get SI => 'Slovenia';
+
+	/// en: 'Slovakia'
+	String get SK => 'Slovakia';
+
+	/// en: 'Sierra Leone'
+	String get SL => 'Sierra Leone';
+
+	/// en: 'Senegal'
+	String get SN => 'Senegal';
+
+	/// en: 'Somalia'
+	String get SO => 'Somalia';
+
+	/// en: 'Suriname'
+	String get SR => 'Suriname';
+
+	/// en: 'El Salvador'
+	String get SV => 'El Salvador';
+
+	/// en: 'Chad'
+	String get TD => 'Chad';
 
 	/// en: 'Thailand'
 	String get TH => 'Thailand';
 
-	/// en: 'Trinidad and Tobago'
-	String get TT => 'Trinidad and Tobago';
-
-	/// en: 'Turkey'
-	String get TR => 'Turkey';
+	/// en: 'Tajikistan'
+	String get TJ => 'Tajikistan';
 
 	/// en: 'Tunisia'
 	String get TN => 'Tunisia';
 
+	/// en: 'Turkey'
+	String get TR => 'Turkey';
+
+	/// en: 'Trinidad and Tobago'
+	String get TT => 'Trinidad and Tobago';
+
+	/// en: 'Taiwan'
+	String get TW => 'Taiwan';
+
+	/// en: 'Tanzania'
+	String get TZ => 'Tanzania';
+
 	/// en: 'Ukraine'
 	String get UA => 'Ukraine';
-
-	/// en: 'United Arab Emirates'
-	String get AE => 'United Arab Emirates';
-
-	/// en: 'United Kingdom'
-	String get GB => 'United Kingdom';
 
 	/// en: 'United States'
 	String get US => 'United States';
@@ -1128,6 +1254,15 @@ class Translations$countries$en {
 
 	/// en: 'Vietnam'
 	String get VN => 'Vietnam';
+
+	/// en: 'Yemen'
+	String get YE => 'Yemen';
+
+	/// en: 'South Africa'
+	String get ZA => 'South Africa';
+
+	/// en: 'Zambia'
+	String get ZM => 'Zambia';
 }
 
 // Path: daemon
@@ -2226,6 +2361,12 @@ class Translations$ui$en {
 
 	/// en: 'Wait a while before trying again. Retrying now can make the waiting period longer. If the issue persists, check our help guide for other possible causes. [Open help guide](https://support.nordvpn.com/hc/en-us/articles/47181405478417-I-get-the-Session-Limit-Reached-error-on-NordVPN?utm_medium=app&utm_source=nordvpn-linux-gui&utm_campaign=ens_error-session_limit&nm=app&ns=nordvpn-linux-gui&nc=ens_error-session_limit)'
 	String get connectionLimitReachedBody => 'Wait a while before trying again. Retrying now can make the waiting period longer. If the issue persists, check our help guide for other possible causes.\n[Open help guide](https://support.nordvpn.com/hc/en-us/articles/47181405478417-I-get-the-Session-Limit-Reached-error-on-NordVPN?utm_medium=app&utm_source=nordvpn-linux-gui&utm_campaign=ens_error-session_limit&nm=app&ns=nordvpn-linux-gui&nc=ens_error-session_limit)';
+
+	/// en: '${technology: String} is not available with your current auto-connect settings'
+	String incompatibleProtocolWithAutoConnectTitle({required String technology}) => '${technology} is not available with your current auto-connect settings';
+
+	/// en: 'Set auto-connect to a different location or turn it off, then try again.'
+	String get incompatibleProtocolWithAutoConnectDesc => 'Set auto-connect to a different location or turn it off, then try again.';
 }
 
 /// The flat map containing all translations for locale <en>.
@@ -2255,339 +2396,384 @@ extension on Translations {
 			'a11y.selected' => 'Selected',
 			'a11y.notSelected' => 'Not selected',
 			'a11y.appVersion' => ({required Object version}) => 'NordVPN version ${version}',
-			'cities.tirana' => 'Tirana',
-			'cities.algiers' => 'Algiers',
-			'cities.addis_ababa' => 'Addis Ababa',
-			'cities.andorra_la_vella' => 'Andorra la Vella',
-			'cities.buenos_aires' => 'Buenos Aires',
-			'cities.yerevan' => 'Yerevan',
-			'cities.adelaide' => 'Adelaide',
-			'cities.brisbane' => 'Brisbane',
-			'cities.melbourne' => 'Melbourne',
-			'cities.perth' => 'Perth',
-			'cities.sydney' => 'Sydney',
-			'cities.vienna' => 'Vienna',
-			'cities.baku' => 'Baku',
-			'cities.nassau' => 'Nassau',
-			'cities.dhaka' => 'Dhaka',
-			'cities.brussels' => 'Brussels',
-			'cities.belmopan' => 'Belmopan',
-			'cities.hamilton' => 'Hamilton',
-			'cities.thimphu' => 'Thimphu',
-			'cities.la_paz' => 'La Paz',
-			'cities.novi_travnik' => 'Novi Travnik',
-			'cities.sao_paulo' => 'Sao Paulo',
-			'cities.bandar_seri_begawan' => 'Bandar Seri Begawan',
-			'cities.sofia' => 'Sofia',
-			'cities.phnom_penh' => 'Phnom Penh',
-			'cities.montreal' => 'Montreal',
-			'cities.toronto' => 'Toronto',
-			'cities.vancouver' => 'Vancouver',
-			'cities.george_town' => 'George Town',
-			'cities.santiago' => 'Santiago',
-			'cities.bogota' => 'Bogota',
-			'cities.san_jose' => 'San Jose',
-			'cities.zagreb' => 'Zagreb',
-			'cities.nicosia' => 'Nicosia',
-			'cities.prague' => 'Prague',
-			'cities.copenhagen' => 'Copenhagen',
-			'cities.santo_domingo' => 'Santo Domingo',
-			'cities.quito' => 'Quito',
-			'cities.cairo' => 'Cairo',
-			'cities.san_salvador' => 'San Salvador',
-			'cities.tallinn' => 'Tallinn',
-			'cities.helsinki' => 'Helsinki',
-			'cities.marseille' => 'Marseille',
-			'cities.paris' => 'Paris',
-			'cities.tbilisi' => 'Tbilisi',
-			'cities.berlin' => 'Berlin',
-			'cities.frankfurt' => 'Frankfurt',
-			'cities.hamburg' => 'Hamburg',
+			'a11y.warningMessage' => ({required Object message}) => 'Warning. ${message}',
+			'a11y.startPort' => 'Start port',
+			'a11y.endPort' => 'End port',
 			'cities.accra' => 'Accra',
-			'cities.athens' => 'Athens',
-			'cities.nuuk' => 'Nuuk',
-			'cities.hagatna' => 'Hagatna',
-			'cities.guatemala_city' => 'Guatemala City',
-			'cities.tegucigalpa' => 'Tegucigalpa',
-			'cities.hong_kong' => 'Hong Kong',
-			'cities.budapest' => 'Budapest',
-			'cities.reykjavik' => 'Reykjavik',
-			'cities.mumbai' => 'Mumbai',
-			'cities.jakarta' => 'Jakarta',
-			'cities.dublin' => 'Dublin',
-			'cities.douglas' => 'Douglas',
-			'cities.tel_aviv' => 'Tel Aviv',
-			'cities.milan' => 'Milan',
-			'cities.palermo' => 'Palermo',
-			'cities.rome' => 'Rome',
-			'cities.kingston' => 'Kingston',
-			'cities.osaka' => 'Osaka',
-			'cities.tokyo' => 'Tokyo',
-			'cities.saint_helier' => 'Saint Helier',
-			'cities.astana' => 'Astana',
-			'cities.nairobi' => 'Nairobi',
-			'cities.vientiane' => 'Vientiane',
-			'cities.riga' => 'Riga',
-			'cities.beirut' => 'Beirut',
-			'cities.vaduz' => 'Vaduz',
-			'cities.vilnius' => 'Vilnius',
-			'cities.luxembourg' => 'Luxembourg',
-			'cities.kuala_lumpur' => 'Kuala Lumpur',
-			'cities.valletta' => 'Valletta',
-			'cities.mexico' => 'Mexico',
-			'cities.chisinau' => 'Chisinau',
-			'cities.monte_carlo' => 'Monte Carlo',
-			'cities.ulaanbaatar' => 'Ulaanbaatar',
-			'cities.podgorica' => 'Podgorica',
-			'cities.rabat' => 'Rabat',
-			'cities.naypyidaw' => 'Naypyidaw',
-			'cities.kathmandu' => 'Kathmandu',
+			'cities.addis_ababa' => 'Addis Ababa',
+			'cities.adelaide' => 'Adelaide',
+			'cities.albuquerque' => 'Albuquerque',
+			'cities.algiers' => 'Algiers',
+			'cities.amman' => 'Amman',
 			'cities.amsterdam' => 'Amsterdam',
-			'cities.auckland' => 'Auckland',
-			'cities.lagos' => 'Lagos',
-			'cities.skopje' => 'Skopje',
-			'cities.oslo' => 'Oslo',
-			'cities.karachi' => 'Karachi',
-			'cities.panama_city' => 'Panama City',
-			'cities.port_moresby' => 'Port Moresby',
+			'cities.anchorage' => 'Anchorage',
+			'cities.andorra_la_vella' => 'Andorra la Vella',
+			'cities.antananarivo' => 'Antananarivo',
+			'cities.ashburn' => 'Ashburn',
+			'cities.astana' => 'Astana',
 			'cities.asuncion' => 'Asuncion',
-			'cities.lima' => 'Lima',
-			'cities.manila' => 'Manila',
-			'cities.warsaw' => 'Warsaw',
-			'cities.lisbon' => 'Lisbon',
-			'cities.san_juan' => 'San Juan',
-			'cities.bucharest' => 'Bucharest',
-			'cities.belgrade' => 'Belgrade',
-			'cities.singapore' => 'Singapore',
-			'cities.bratislava' => 'Bratislava',
-			'cities.ljubljana' => 'Ljubljana',
-			'cities.johannesburg' => 'Johannesburg',
-			'cities.seoul' => 'Seoul',
-			'cities.barcelona' => 'Barcelona',
-			'cities.madrid' => 'Madrid',
-			'cities.colombo' => 'Colombo',
-			'cities.stockholm' => 'Stockholm',
-			'cities.zurich' => 'Zurich',
-			'cities.taipei' => 'Taipei',
-			'cities.bangkok' => 'Bangkok',
-			'cities.port_of_spain' => 'Port of Spain',
-			'cities.istanbul' => 'Istanbul',
-			'cities.kyiv' => 'Kyiv',
-			'cities.dubai' => 'Dubai',
-			'cities.edinburgh' => 'Edinburgh',
-			'cities.glasgow' => 'Glasgow',
-			'cities.london' => 'London',
-			'cities.manchester' => 'Manchester',
+			'cities.athens' => 'Athens',
 			'cities.atlanta' => 'Atlanta',
+			'cities.auckland' => 'Auckland',
+			'cities.baghdad' => 'Baghdad',
+			'cities.baku' => 'Baku',
+			'cities.baltimore' => 'Baltimore',
+			'cities.bandar_seri_begawan' => 'Bandar Seri Begawan',
+			'cities.bangkok' => 'Bangkok',
+			'cities.banjul' => 'Banjul',
+			'cities.barcelona' => 'Barcelona',
+			'cities.beirut' => 'Beirut',
+			'cities.belgrade' => 'Belgrade',
+			'cities.belmopan' => 'Belmopan',
+			'cities.berlin' => 'Berlin',
+			'cities.billings' => 'Billings',
+			'cities.bishkek' => 'Bishkek',
+			'cities.bogota' => 'Bogota',
+			'cities.boise' => 'Boise',
+			'cities.bordeaux' => 'Bordeaux',
+			'cities.boston' => 'Boston',
+			'cities.bratislava' => 'Bratislava',
+			'cities.bridgetown' => 'Bridgetown',
+			'cities.brisbane' => 'Brisbane',
+			'cities.brussels' => 'Brussels',
+			'cities.bucharest' => 'Bucharest',
+			'cities.budapest' => 'Budapest',
+			'cities.buenos_aires' => 'Buenos Aires',
 			'cities.buffalo' => 'Buffalo',
+			'cities.burlington' => 'Burlington',
+			'cities.cairo' => 'Cairo',
+			'cities.calgary' => 'Calgary',
+			'cities.caracas' => 'Caracas',
+			'cities.castries' => 'Castries',
+			'cities.charleston' => 'Charleston',
 			'cities.charlotte' => 'Charlotte',
+			'cities.cheyenne' => 'Cheyenne',
 			'cities.chicago' => 'Chicago',
+			'cities.chisinau' => 'Chisinau',
+			'cities.colombo' => 'Colombo',
+			'cities.columbus' => 'Columbus',
+			'cities.copenhagen' => 'Copenhagen',
+			'cities.dakar' => 'Dakar',
 			'cities.dallas' => 'Dallas',
 			'cities.denver' => 'Denver',
+			'cities.des_moines' => 'Des Moines',
 			'cities.detroit' => 'Detroit',
+			'cities.dhaka' => 'Dhaka',
+			'cities.dodoma' => 'Dodoma',
+			'cities.doha' => 'Doha',
+			'cities.douglas' => 'Douglas',
+			'cities.dubai' => 'Dubai',
+			'cities.dublin' => 'Dublin',
+			'cities.dushanbe' => 'Dushanbe',
+			'cities.edinburgh' => 'Edinburgh',
+			'cities.fargo' => 'Fargo',
+			'cities.frankfurt' => 'Frankfurt',
+			'cities.freetown' => 'Freetown',
+			'cities.fujairah' => 'Fujairah',
+			'cities.gaborone' => 'Gaborone',
+			'cities.george_town' => 'George Town',
+			'cities.georgetown' => 'Georgetown',
+			'cities.glasgow' => 'Glasgow',
+			'cities.guatemala_city' => 'Guatemala City',
+			'cities.hagatna' => 'Hagatna',
+			'cities.hamburg' => 'Hamburg',
+			'cities.hamilton' => 'Hamilton',
+			'cities.hanoi' => 'Hanoi',
+			'cities.helsinki' => 'Helsinki',
+			'cities.ho_chi_minh_city' => 'Ho Chi Minh City',
+			'cities.hong_kong' => 'Hong Kong',
+			'cities.honolulu' => 'Honolulu',
+			'cities.houston' => 'Houston',
+			'cities.huntington' => 'Huntington',
+			'cities.indianapolis' => 'Indianapolis',
+			'cities.istanbul' => 'Istanbul',
+			'cities.jackson' => 'Jackson',
+			'cities.jakarta' => 'Jakarta',
+			'cities.johannesburg' => 'Johannesburg',
+			'cities.kabul' => 'Kabul',
 			'cities.kansas_city' => 'Kansas City',
+			'cities.karachi' => 'Karachi',
+			'cities.kathmandu' => 'Kathmandu',
+			'cities.kingston' => 'Kingston',
+			'cities.kuala_lumpur' => 'Kuala Lumpur',
+			'cities.kuwait_city' => 'Kuwait City',
+			'cities.kyiv' => 'Kyiv',
+			'cities.la_paz' => 'La Paz',
+			'cities.lagos' => 'Lagos',
+			'cities.las_vegas' => 'Las Vegas',
+			'cities.lewiston' => 'Lewiston',
+			'cities.lilongwe' => 'Lilongwe',
+			'cities.lima' => 'Lima',
+			'cities.lisbon' => 'Lisbon',
+			'cities.little_rock' => 'Little Rock',
+			'cities.ljubljana' => 'Ljubljana',
+			'cities.london' => 'London',
 			'cities.los_angeles' => 'Los Angeles',
-			'cities.manassas' => 'Manassas',
+			'cities.louisville' => 'Louisville',
+			'cities.luanda' => 'Luanda',
+			'cities.lusaka' => 'Lusaka',
+			'cities.luxembourg' => 'Luxembourg',
+			'cities.madrid' => 'Madrid',
+			'cities.male' => 'Male',
+			'cities.manama' => 'Manama',
+			'cities.manchester' => 'Manchester',
+			'cities.manila' => 'Manila',
+			'cities.maputo' => 'Maputo',
+			'cities.marseille' => 'Marseille',
+			'cities.mcallen' => 'McAllen',
+			'cities.melbourne' => 'Melbourne',
+			'cities.mexico' => 'Mexico',
 			'cities.miami' => 'Miami',
+			'cities.milan' => 'Milan',
+			'cities.milwaukee' => 'Milwaukee',
+			'cities.minneapolis' => 'Minneapolis',
+			'cities.mogadishu' => 'Mogadishu',
+			'cities.monrovia' => 'Monrovia',
+			'cities.monte_carlo' => 'Monte Carlo',
+			'cities.montevideo' => 'Montevideo',
+			'cities.montgomery' => 'Montgomery',
+			'cities.montreal' => 'Montreal',
+			'cities.moroni' => 'Moroni',
+			'cities.mumbai' => 'Mumbai',
+			'cities.nairobi' => 'Nairobi',
+			'cities.nashua' => 'Nashua',
+			'cities.nashville' => 'Nashville',
+			'cities.nassau' => 'Nassau',
+			'cities.naypyidaw' => 'Naypyidaw',
+			'cities.ndjamena' => 'NDjamena',
+			'cities.new_haven' => 'New Haven',
+			'cities.new_orleans' => 'New Orleans',
 			'cities.new_york' => 'New York',
+			'cities.nicosia' => 'Nicosia',
+			'cities.nouakchott' => 'Nouakchott',
+			'cities.nuuk' => 'Nuuk',
+			'cities.oklahoma_city' => 'Oklahoma City',
+			'cities.omaha' => 'Omaha',
+			'cities.osaka' => 'Osaka',
+			'cities.oslo' => 'Oslo',
+			'cities.ouagadougou' => 'Ouagadougou',
+			'cities.palermo' => 'Palermo',
+			'cities.panama_city' => 'Panama City',
+			'cities.paramaribo' => 'Paramaribo',
+			'cities.paris' => 'Paris',
+			'cities.perth' => 'Perth',
+			'cities.phnom_penh' => 'Phnom Penh',
 			'cities.phoenix' => 'Phoenix',
 			'cities.pittsburgh' => 'Pittsburgh',
+			'cities.podgorica' => 'Podgorica',
+			'cities.port_louis' => 'Port Louis',
+			'cities.port_moresby' => 'Port Moresby',
+			'cities.port_of_spain' => 'Port of Spain',
+			'cities.portland' => 'Portland',
+			'cities.porto_novo' => 'Porto Novo',
+			'cities.prague' => 'Prague',
+			'cities.praia' => 'Praia',
+			'cities.providence' => 'Providence',
+			'cities.quito' => 'Quito',
+			'cities.rabat' => 'Rabat',
+			'cities.reykjavik' => 'Reykjavik',
+			'cities.riga' => 'Riga',
+			'cities.rome' => 'Rome',
+			'cities.saint_helier' => 'Saint Helier',
+			'cities.saint_john' => 'Saint John',
 			'cities.saint_louis' => 'Saint Louis',
 			'cities.salt_lake_city' => 'Salt Lake City',
 			'cities.san_francisco' => 'San Francisco',
-			'cities.seattle' => 'Seattle',
-			'cities.montevideo' => 'Montevideo',
-			'cities.tashkent' => 'Tashkent',
-			'cities.caracas' => 'Caracas',
-			'cities.hanoi' => 'Hanoi',
-			'cities.ho_chi_minh_city' => 'Ho Chi Minh City',
-			'cities.houston' => 'Houston',
-			'cities.mcallen' => 'McAllen',
-			'cities.luanda' => 'Luanda',
-			'cities.manama' => 'Manama',
-			'cities.amman' => 'Amman',
-			'cities.kuwait_city' => 'Kuwait City',
-			'cities.maputo' => 'Maputo',
-			'cities.dakar' => 'Dakar',
-			'cities.tunis' => 'Tunis',
-			'cities.boston' => 'Boston',
-			'cities.strasbourg' => 'Strasbourg',
-			'cities.omaha' => 'Omaha',
-			'cities.moroni' => 'Moroni',
-			'cities.baghdad' => 'Baghdad',
-			'cities.tripoli' => 'Tripoli',
-			'cities.doha' => 'Doha',
-			'cities.kigali' => 'Kigali',
-			'cities.nashville' => 'Nashville',
-			'cities.kabul' => 'Kabul',
-			'cities.mogadishu' => 'Mogadishu',
-			'cities.nouakchott' => 'Nouakchott',
-			'cities.ashburn' => 'Ashburn',
-			'cities.port_louis' => 'Port Louis',
-			'cities.dushanbe' => 'Dushanbe',
-			'cities.lewiston' => 'Lewiston',
-			'cities.new_orleans' => 'New Orleans',
-			'cities.oklahoma_city' => 'Oklahoma City',
-			'cities.portland' => 'Portland',
-			'cities.des_moines' => 'Des Moines',
-			'cities.honolulu' => 'Honolulu',
-			'cities.huntington' => 'Huntington',
-			'cities.bordeaux' => 'Bordeaux',
-			'cities.burlington' => 'Burlington',
-			'cities.charleston' => 'Charleston',
-			'cities.cheyenne' => 'Cheyenne',
-			'cities.fargo' => 'Fargo',
-			'cities.providence' => 'Providence',
-			'cities.columbus' => 'Columbus',
-			'cities.trenton' => 'Trenton',
-			'cities.jackson' => 'Jackson',
-			'cities.new_haven' => 'New Haven',
-			'cities.sioux_falls' => 'Sioux Falls',
-			'cities.wichita' => 'Wichita',
-			'cities.nashua' => 'Nashua',
-			'cities.las_vegas' => 'Las Vegas',
-			'cities.little_rock' => 'Little Rock',
-			'cities.louisville' => 'Louisville',
-			'cities.milwaukee' => 'Milwaukee',
-			'cities.minneapolis' => 'Minneapolis',
-			'cities.montgomery' => 'Montgomery',
-			'cities.indianapolis' => 'Indianapolis',
-			'cities.boise' => 'Boise',
-			'cities.baltimore' => 'Baltimore',
-			'cities.billings' => 'Billings',
-			'cities.albuquerque' => 'Albuquerque',
-			'cities.anchorage' => 'Anchorage',
-			'cities.wilmington' => 'Wilmington',
-			'cities.fujairah' => 'Fujairah',
-			'cities.bridgetown' => 'Bridgetown',
-			'cities.sarajevo' => 'Sarajevo',
-			'cities.ndjamena' => 'NDjamena',
-			'cities.yamoussoukro' => 'Yamoussoukro',
-			'cities.suva' => 'Suva',
-			'cities.paramaribo' => 'Paramaribo',
-			'cities.dodoma' => 'Dodoma',
+			'cities.san_jose' => 'San Jose',
+			'cities.san_juan' => 'San Juan',
+			'cities.san_salvador' => 'San Salvador',
 			'cities.sanaa' => 'Sanaa',
-			'cities.lome' => 'Lome',
-			'cities.calgary' => 'Calgary',
-			'cities.saint_john' => 'Saint John',
-			'countries.AL' => 'Albania',
-			'countries.DZ' => 'Algeria',
+			'cities.santiago' => 'Santiago',
+			'cities.santo_domingo' => 'Santo Domingo',
+			'cities.sao_paulo' => 'Sao Paulo',
+			'cities.sarajevo' => 'Sarajevo',
+			'cities.seattle' => 'Seattle',
+			'cities.seoul' => 'Seoul',
+			'cities.singapore' => 'Singapore',
+			'cities.sioux_falls' => 'Sioux Falls',
+			'cities.skopje' => 'Skopje',
+			'cities.sofia' => 'Sofia',
+			'cities.stockholm' => 'Stockholm',
+			'cities.strasbourg' => 'Strasbourg',
+			'cities.suva' => 'Suva',
+			'cities.sydney' => 'Sydney',
+			'cities.taipei' => 'Taipei',
+			'cities.tallinn' => 'Tallinn',
+			'cities.tashkent' => 'Tashkent',
+			'cities.tbilisi' => 'Tbilisi',
+			'cities.tegucigalpa' => 'Tegucigalpa',
+			'cities.tel_aviv' => 'Tel Aviv',
+			'cities.thimphu' => 'Thimphu',
+			'cities.tirana' => 'Tirana',
+			'cities.tokyo' => 'Tokyo',
+			'cities.toronto' => 'Toronto',
+			'cities.trenton' => 'Trenton',
+			'cities.tripoli' => 'Tripoli',
+			'cities.tunis' => 'Tunis',
+			'cities.ulaanbaatar' => 'Ulaanbaatar',
+			'cities.vaduz' => 'Vaduz',
+			'cities.valletta' => 'Valletta',
+			'cities.vancouver' => 'Vancouver',
+			'cities.victoria' => 'Victoria',
+			'cities.vienna' => 'Vienna',
+			'cities.vientiane' => 'Vientiane',
+			'cities.vilnius' => 'Vilnius',
+			'cities.warsaw' => 'Warsaw',
+			'cities.wichita' => 'Wichita',
+			'cities.wilmington' => 'Wilmington',
+			'cities.yerevan' => 'Yerevan',
+			'cities.zagreb' => 'Zagreb',
+			'cities.zurich' => 'Zurich',
 			'countries.AD' => 'Andorra',
+			'countries.AE' => 'United Arab Emirates',
+			'countries.AF' => 'Afghanistan',
+			'countries.AG' => 'Antigua and Barbuda',
+			'countries.AL' => 'Albania',
+			'countries.AM' => 'Armenia',
 			'countries.AO' => 'Angola',
 			'countries.AR' => 'Argentina',
-			'countries.AM' => 'Armenia',
-			'countries.AU' => 'Australia',
 			'countries.AT' => 'Austria',
+			'countries.AU' => 'Australia',
 			'countries.AZ' => 'Azerbaijan',
-			'countries.BS' => 'Bahamas',
-			'countries.BH' => 'Bahrain',
+			'countries.BA' => 'Bosnia and Herzegovina',
+			'countries.BB' => 'Barbados',
 			'countries.BD' => 'Bangladesh',
 			'countries.BE' => 'Belgium',
-			'countries.BZ' => 'Belize',
-			'countries.BM' => 'Bermuda',
-			'countries.BT' => 'Bhutan',
-			'countries.BO' => 'Bolivia',
-			'countries.BA' => 'Bosnia and Herzegovina',
-			'countries.BR' => 'Brazil',
-			'countries.BN' => 'Brunei Darussalam',
+			'countries.BF' => 'Burkina Faso',
 			'countries.BG' => 'Bulgaria',
-			'countries.KH' => 'Cambodia',
+			'countries.BH' => 'Bahrain',
+			'countries.BJ' => 'Benin',
+			'countries.BM' => 'Bermuda',
+			'countries.BN' => 'Brunei Darussalam',
+			'countries.BO' => 'Bolivia',
+			'countries.BR' => 'Brazil',
+			'countries.BS' => 'Bahamas',
+			'countries.BT' => 'Bhutan',
+			'countries.BW' => 'Botswana',
+			'countries.BZ' => 'Belize',
 			'countries.CA' => 'Canada',
-			'countries.KY' => 'Cayman Islands',
+			'countries.CH' => 'Switzerland',
 			'countries.CL' => 'Chile',
 			'countries.CO' => 'Colombia',
 			'countries.CR' => 'Costa Rica',
-			'countries.HR' => 'Croatia',
+			'countries.CV' => 'Cape Verde',
 			'countries.CY' => 'Cyprus',
 			'countries.CZ' => 'Czech Republic',
+			'countries.DE' => 'Germany',
 			'countries.DK' => 'Denmark',
 			'countries.DO' => 'Dominican Republic',
+			'countries.DZ' => 'Algeria',
 			'countries.EC' => 'Ecuador',
-			'countries.EG' => 'Egypt',
-			'countries.SV' => 'El Salvador',
 			'countries.EE' => 'Estonia',
+			'countries.EG' => 'Egypt',
+			'countries.ES' => 'Spain',
+			'countries.ET' => 'Ethiopia',
 			'countries.FI' => 'Finland',
+			'countries.FJ' => 'Fiji',
 			'countries.FR' => 'France',
+			'countries.GB' => 'United Kingdom',
 			'countries.GE' => 'Georgia',
-			'countries.DE' => 'Germany',
 			'countries.GH' => 'Ghana',
-			'countries.GR' => 'Greece',
 			'countries.GL' => 'Greenland',
-			'countries.GU' => 'Guam',
+			'countries.GM' => 'Gambia',
+			'countries.GR' => 'Greece',
 			'countries.GT' => 'Guatemala',
-			'countries.HN' => 'Honduras',
+			'countries.GU' => 'Guam',
+			'countries.GY' => 'Guyana',
 			'countries.HK' => 'Hong Kong',
+			'countries.HN' => 'Honduras',
+			'countries.HR' => 'Croatia',
 			'countries.HU' => 'Hungary',
-			'countries.IS' => 'Iceland',
-			'countries.IN' => 'India',
 			'countries.ID' => 'Indonesia',
 			'countries.IE' => 'Ireland',
-			'countries.IM' => 'Isle of Man',
 			'countries.IL' => 'Israel',
+			'countries.IM' => 'Isle of Man',
+			'countries.IN' => 'India',
+			'countries.IQ' => 'Iraq',
+			'countries.IS' => 'Iceland',
 			'countries.IT' => 'Italy',
-			'countries.JM' => 'Jamaica',
-			'countries.JP' => 'Japan',
 			'countries.JE' => 'Jersey',
+			'countries.JM' => 'Jamaica',
 			'countries.JO' => 'Jordan',
-			'countries.KZ' => 'Kazakhstan',
+			'countries.JP' => 'Japan',
 			'countries.KE' => 'Kenya',
+			'countries.KG' => 'Kyrgyzstan',
+			'countries.KH' => 'Cambodia',
+			'countries.KM' => 'Comoros',
+			'countries.KR' => 'South Korea',
 			'countries.KW' => 'Kuwait',
+			'countries.KY' => 'Cayman Islands',
+			'countries.KZ' => 'Kazakhstan',
 			'countries.LA' => 'Lao People\'s Democratic Republic',
-			'countries.LV' => 'Latvia',
 			'countries.LB' => 'Lebanon',
+			'countries.LC' => 'Saint Lucia',
 			'countries.LI' => 'Liechtenstein',
+			'countries.LK' => 'Sri Lanka',
+			'countries.LR' => 'Liberia',
 			'countries.LT' => 'Lithuania',
 			'countries.LU' => 'Luxembourg',
-			'countries.MY' => 'Malaysia',
-			'countries.MT' => 'Malta',
-			'countries.MX' => 'Mexico',
-			'countries.MD' => 'Moldova',
-			'countries.MC' => 'Monaco',
-			'countries.MN' => 'Mongolia',
-			'countries.ME' => 'Montenegro',
+			'countries.LV' => 'Latvia',
+			'countries.LY' => 'Libyan Arab Jamahiriya',
 			'countries.MA' => 'Morocco',
-			'countries.MZ' => 'Mozambique',
-			'countries.MM' => 'Myanmar',
-			'countries.NP' => 'Nepal',
-			'countries.NL' => 'Netherlands',
-			'countries.NZ' => 'New Zealand',
-			'countries.NG' => 'Nigeria',
+			'countries.MC' => 'Monaco',
+			'countries.MD' => 'Moldova',
+			'countries.ME' => 'Montenegro',
+			'countries.MG' => 'Madagascar',
 			'countries.MK' => 'North Macedonia',
+			'countries.MM' => 'Myanmar',
+			'countries.MN' => 'Mongolia',
+			'countries.MR' => 'Mauritania',
+			'countries.MT' => 'Malta',
+			'countries.MU' => 'Mauritius',
+			'countries.MV' => 'Maldives',
+			'countries.MW' => 'Malawi',
+			'countries.MX' => 'Mexico',
+			'countries.MY' => 'Malaysia',
+			'countries.MZ' => 'Mozambique',
+			'countries.NG' => 'Nigeria',
+			'countries.NL' => 'Netherlands',
 			'countries.NO' => 'Norway',
-			'countries.PK' => 'Pakistan',
+			'countries.NP' => 'Nepal',
+			'countries.NZ' => 'New Zealand',
 			'countries.PA' => 'Panama',
-			'countries.PG' => 'Papua New Guinea',
-			'countries.PY' => 'Paraguay',
 			'countries.PE' => 'Peru',
+			'countries.PG' => 'Papua New Guinea',
 			'countries.PH' => 'Philippines',
+			'countries.PK' => 'Pakistan',
 			'countries.PL' => 'Poland',
-			'countries.PT' => 'Portugal',
 			'countries.PR' => 'Puerto Rico',
+			'countries.PT' => 'Portugal',
+			'countries.PY' => 'Paraguay',
+			'countries.QA' => 'Qatar',
 			'countries.RO' => 'Romania',
 			'countries.RS' => 'Serbia',
-			'countries.SN' => 'Senegal',
-			'countries.SG' => 'Singapore',
-			'countries.SK' => 'Slovakia',
-			'countries.SI' => 'Slovenia',
-			'countries.ZA' => 'South Africa',
-			'countries.KR' => 'South Korea',
-			'countries.ES' => 'Spain',
-			'countries.LK' => 'Sri Lanka',
+			'countries.SC' => 'Seychelles',
 			'countries.SE' => 'Sweden',
-			'countries.CH' => 'Switzerland',
-			'countries.TW' => 'Taiwan',
+			'countries.SG' => 'Singapore',
+			'countries.SI' => 'Slovenia',
+			'countries.SK' => 'Slovakia',
+			'countries.SL' => 'Sierra Leone',
+			'countries.SN' => 'Senegal',
+			'countries.SO' => 'Somalia',
+			'countries.SR' => 'Suriname',
+			'countries.SV' => 'El Salvador',
+			'countries.TD' => 'Chad',
 			'countries.TH' => 'Thailand',
-			'countries.TT' => 'Trinidad and Tobago',
-			'countries.TR' => 'Turkey',
+			'countries.TJ' => 'Tajikistan',
 			'countries.TN' => 'Tunisia',
+			'countries.TR' => 'Turkey',
+			'countries.TT' => 'Trinidad and Tobago',
+			'countries.TW' => 'Taiwan',
+			'countries.TZ' => 'Tanzania',
 			'countries.UA' => 'Ukraine',
-			'countries.AE' => 'United Arab Emirates',
-			'countries.GB' => 'United Kingdom',
 			'countries.US' => 'United States',
 			'countries.UY' => 'Uruguay',
 			'countries.UZ' => 'Uzbekistan',
 			'countries.VE' => 'Venezuela',
 			'countries.VN' => 'Vietnam',
+			'countries.YE' => 'Yemen',
+			'countries.ZA' => 'South Africa',
+			'countries.ZM' => 'Zambia',
 			'daemon.code_3001_title' => 'Unauthorized',
 			'daemon.code_3001_msg' => 'We couldn\'t log you in. Make sure your credentials are correct. If you have turned on MFA, log in using the \'nordvpn login\' command.',
 			'daemon.code_3003_title' => 'Format error',
@@ -2703,6 +2889,8 @@ extension on Translations {
 			'ui.allowlist' => 'Allowlist',
 			'ui.dns' => 'DNS',
 			'ui.settings' => 'Settings',
+			_ => null,
+		} ?? switch (path) {
 			'ui.launchAppAtStartup' => 'Launch at Startup',
 			'ui.vpnProtocol' => 'VPN Protocol',
 			'ui.notificationsStatus' => 'VPN Connection Status Notifications',
@@ -2748,8 +2936,6 @@ extension on Translations {
 			'ui.knowledgeBase' => 'Knowledge Base',
 			'ui.routing' => 'Routing',
 			'ui.connectToVpn' => 'Connect to VPN',
-			_ => null,
-		} ?? switch (path) {
 			'ui.connecting' => 'Connecting',
 			'ui.findingServer' => 'Finding server...',
 			'ui.noResultsFound' => 'No results found. Try another keyword.',
@@ -2949,6 +3135,8 @@ extension on Translations {
 			'ui.cannotStopFWWhileKSOnDesc' => 'Firewall is needed for Kill Switch to work. Turn off Kill Switch first in VPN connection settings.',
 			'ui.connectionLimitReachedTitle' => 'Too many connection attempts',
 			'ui.connectionLimitReachedBody' => 'Wait a while before trying again. Retrying now can make the waiting period longer. If the issue persists, check our help guide for other possible causes.\n[Open help guide](https://support.nordvpn.com/hc/en-us/articles/47181405478417-I-get-the-Session-Limit-Reached-error-on-NordVPN?utm_medium=app&utm_source=nordvpn-linux-gui&utm_campaign=ens_error-session_limit&nm=app&ns=nordvpn-linux-gui&nc=ens_error-session_limit)',
+			'ui.incompatibleProtocolWithAutoConnectTitle' => ({required String technology}) => '${technology} is not available with your current auto-connect settings',
+			'ui.incompatibleProtocolWithAutoConnectDesc' => 'Set auto-connect to a different location or turn it off, then try again.',
 			_ => null,
 		};
 	}

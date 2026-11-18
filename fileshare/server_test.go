@@ -859,7 +859,7 @@ func TestAcceptDirectory(t *testing.T) {
 			filePaths:             []string{"outer", "nested/a"},
 			expectedAcceptedFiles: []string{outerFile1ID, outerFile2ID, nestedFileID},
 			expectedCanceledFiles: []string{nestedInnerFileID},
-			filesystemSpace:       35,
+			filesystemSpace:       40,
 		},
 	}
 

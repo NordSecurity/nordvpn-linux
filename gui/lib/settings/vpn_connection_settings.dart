@@ -170,10 +170,13 @@ final class VpnConnectionSettings extends ConsumerWidget {
         vpnStatus.whenOrNull(data: (status) => status.isConnecting()) ?? false;
 
     List<({String label, VpnProtocol value})> protocols = [
-      (label: t.ui.nordLynx, value: VpnProtocol.nordlynx),
-      (label: t.ui.nordWhisper, value: VpnProtocol.nordWhisper),
-      (label: t.ui.openVpnTcp, value: VpnProtocol.openVpnTcp),
-      (label: t.ui.openVpnUdp, value: VpnProtocol.openVpnUdp),
+      for (final protocol in [
+        VpnProtocol.nordlynx,
+        VpnProtocol.nordWhisper,
+        VpnProtocol.openVpnTcp,
+        VpnProtocol.openVpnUdp,
+      ])
+        (label: protocol.displayName(), value: protocol),
     ];
 
     return Column(

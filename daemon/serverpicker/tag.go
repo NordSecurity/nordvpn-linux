@@ -13,13 +13,19 @@ import (
 
 var tagRegExp = regexp.MustCompile(`^([a-zA-Z]{2})-?([a-zA-Z]*)(\d+)$`)
 
-// UnitedKingdomServerTagFix converts "uk" server tag to "gb". This is done for server picking purposes. Servers
-// returned by the core API use GB country code but we also want to allow the UK country code.
+// UnitedKingdomServerTagFix converts the "uk" country code in a server tag
+// ("uk" or "uk <city>") to "gb". This is done for server picking purposes.
+// Servers returned by the core API use GB country code but we also want to
+// allow the UK country code.
 func UnitedKingdomServerTagFix(tag string) string {
-	if strings.EqualFold(tag, "uk") {
-		return "gb"
+	code, city, hasCity := strings.Cut(tag, " ")
+	if !strings.EqualFold(code, "uk") {
+		return tag
 	}
-	return tag
+	if hasCity {
+		return "gb " + city
+	}
+	return "gb"
 }
 
 func IsServerTag(tag string) bool {
@@ -72,8 +78,6 @@ func serverTagFromString(
 		}
 		return core.ServerTag{Action: core.ServerByUnknown, ID: 0}, nil
 	}
-
-	tag = UnitedKingdomServerTagFix(tag)
 
 	if country, city := FindCountryAndCity(tag, countries); country != nil {
 		if city != nil {

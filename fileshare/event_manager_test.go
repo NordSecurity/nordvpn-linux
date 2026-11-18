@@ -415,14 +415,14 @@ func TestAcceptTransfer(t *testing.T) {
 			transfer:    exampleUUID,
 			expectedErr: nil,
 			files:       []string{},
-			sizeLimit:   6,
+			sizeLimit:   10,
 		},
 		{
 			testName:    "accept files success",
 			transfer:    exampleUUID,
 			expectedErr: nil,
 			files:       []string{"test/file_A"},
-			sizeLimit:   1,
+			sizeLimit:   10,
 		},
 		{
 			testName:    "transfer doesn't exist",
@@ -486,6 +486,35 @@ func TestAcceptTransfer(t *testing.T) {
 			assert.Equal(t, test.expectedErr, err)
 		})
 	}
+}
+
+func TestAcceptTransferFailsForVeryLargeFiles(t *testing.T) {
+	transferID := exampleUUID
+
+	mockSystemEnvironment := newMockSystemEnvironment(t)
+	mockSystemEnvironment.freeSpace = 100
+
+	eventManager := NewEventManager(false,
+		&mockMeshClient{},
+		&mockSystemEnvironment.mockEventManagerOsInfo,
+		&mockSystemEnvironment.mockEventManagerFilesystem,
+		"")
+	storage := &mockStorage{transfers: map[string]*pb.Transfer{}}
+	eventManager.SetStorage(storage)
+	storage.transfers[transferID] = &pb.Transfer{
+		Id:        transferID,
+		Direction: pb.Direction_INCOMING,
+		Status:    pb.Status_REQUESTED,
+		Path:      "/test",
+		Files: []*pb.File{
+			{Path: "test/file_A", Id: "fileA", Size: math.MaxUint64 - 1},
+			{Path: "test/file_B", Id: "fileB", Size: 100},
+		},
+	}
+	eventManager.SetFileshare(&mockEventManagerFileshare{})
+
+	_, err := eventManager.AcceptTransfer(transferID, mockSystemEnvironment.destinationDirectory, []string{"test/file_A", "test/file_B"})
+	assert.Equal(t, ErrSizeLimitExceeded, err)
 }
 
 func TestAcceptTransfer_Outgoing(t *testing.T) {

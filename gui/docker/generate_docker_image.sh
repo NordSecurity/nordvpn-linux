@@ -1,27 +1,56 @@
 #!/usr/bin/env bash
-set -euox pipefail
+set -euo pipefail
 
-# build a docker image if it doesn't exists
+PUSH_TO_REGISTRY=false
+if [ "${1:-}" = "--push" ]; then
+	PUSH_TO_REGISTRY=true
+	shift
+fi
+
 if [ "$#" -ne 4 ]; then
-    echo "missing parameters. Expected: image name, version, platform(e.g. linux/amd64,linux/arm64) and folder containing Dockerfile"
-    exit 1
+	echo "Usage: $0 [--push] <image name> <version> <platforms> <dockerfile folder>"
+	exit 1
 fi
 
 IMAGE_NAME=$1
 IMAGE_VERSION=$2
-PLATFORM=$3
-DOCKER_FILE_FOLDER=$4
+PLATFORMS=$3
+DOCKERFILE_FOLDER=$4
+IMAGE="$IMAGE_NAME:$IMAGE_VERSION"
 
-pushd ${DOCKER_FILE_FOLDER}
-# check if multi-platform build is supported
-if docker info -f '{{ .DriverStatus }}' | grep -vq containerd; then
-    echo "Enable multi-platform build for docker https://docs.docker.com/build/building/multi-platform/#simple-multi-platform-build-using-emulation"
-    exit 1
+if [ "$PUSH_TO_REGISTRY" = true ]; then
+	# never overwrite an image that is already in the registry
+	if docker buildx imagetools inspect "$IMAGE" >/dev/null 2>&1; then
+		echo "$IMAGE already exists in the registry, skipping"
+		exit 0
+	fi
+	OUTPUT=--push
+else
+	# local docker can hold only one platform per image
+	if [[ "$PLATFORMS" == *,* ]]; then
+		echo "without --push only one platform can be built, e.g. linux/amd64"
+		exit 1
+	fi
+	OUTPUT=--load
 fi
 
-echo Generating image $IMAGE_NAME:$IMAGE_VERSION for ${PLATFORM} from ${DOCKER_FILE_FOLDER}
-docker build --platform ${PLATFORM} -t ${IMAGE_NAME}:${IMAGE_VERSION} .
+# the default docker builder cannot build for several platforms at once,
+# so we need to use a separate builder that can
+# it will be created only on the first run
+BUILDER=nordvpn-multiplatform
+if ! docker buildx inspect "$BUILDER" >/dev/null 2>&1; then
+	docker buildx create --name "$BUILDER" --driver docker-container
+fi
 
-popd
+echo "Building $IMAGE for $PLATFORMS"
+docker buildx build \
+	--builder "$BUILDER" \
+	--platform "$PLATFORMS" \
+	--tag "$IMAGE" \
+	"$OUTPUT" \
+	"$DOCKERFILE_FOLDER"
 
-#TODO: upload the images
+if [ "$PUSH_TO_REGISTRY" = true ]; then
+	# list the digest of each platform's image
+	docker buildx imagetools inspect "$IMAGE"
+fi

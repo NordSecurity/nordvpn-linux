@@ -1,3 +1,4 @@
 #!/bin/sh
 
-kill -s USR1 $(ps aux | grep -e "snap.*nordvpnd" | grep -v grep | awk '{print $2}')
+pids=$(pgrep -f "^${SNAP}/bin/nordvpnd( |$)") || exit 0
+kill -s USR1 $pids || true

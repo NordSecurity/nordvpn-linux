@@ -61,6 +61,8 @@ func (c *cmd) SetAutoConnect(ctx *cli.Context) error {
 	}
 
 	switch resp.Type {
+	case internal.CodeFeatureHidden:
+		return formatError(argsParseError(ctx))
 	case internal.CodeConfigError:
 		return formatError(ErrConfig)
 	case internal.CodeFailure, internal.CodeEmptyPayloadError:
@@ -80,9 +82,8 @@ func (c *cmd) SetAutoConnect(ctx *cli.Context) error {
 		return c.SetAutoConnect(ctx)
 	case internal.CodeTokenRenewError:
 		return formatError(errors.New(client.AccountTokenRenewError))
-	case internal.CodeExpiredAccessToken:
-		fallthrough
-	case internal.CodeRevokedAccessToken:
+	case internal.CodeExpiredAccessToken,
+		internal.CodeRevokedAccessToken:
 		return formatError(errors.New(client.AccessTokenExpired))
 	case internal.CodeDedicatedIPRenewError:
 		link := client.SubscriptionDedicatedIPURL
@@ -113,6 +114,8 @@ func (c *cmd) SetAutoConnect(ctx *cli.Context) error {
 		return errors.New(AutoConnectToSpecificServer)
 	case internal.CodeSuccess:
 		color.Green(fmt.Sprintf(MsgSetSuccess, "Auto-connect", nstrings.GetBoolLabel(flag)))
+	default:
+		return formatError(errors.New(internal.UnhandledMessage))
 	}
 	return nil
 }

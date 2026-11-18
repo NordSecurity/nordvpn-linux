@@ -38,6 +38,7 @@ type RPC struct {
 	serversAPI          core.ServersAPI
 	credentialsAPI      core.CredentialsAPI
 	dedicatedServersAPI core.DedicatedServersAPI
+	subscriptionAPI     core.SubscriptionAPI
 	cdn                 core.CDN
 	repo                *RepoAPI
 	authentication      core.Authentication
@@ -79,6 +80,7 @@ func NewRPC(
 	serversAPI core.ServersAPI,
 	credentialsAPI core.CredentialsAPI,
 	dedicatedServersAPI core.DedicatedServersAPI,
+	subscriptionAPI core.SubscriptionAPI,
 	cdn core.CDN,
 	repo *RepoAPI,
 	authentication core.Authentication,
@@ -111,6 +113,7 @@ func NewRPC(
 		serversAPI:                serversAPI,
 		credentialsAPI:            credentialsAPI,
 		dedicatedServersAPI:       dedicatedServersAPI,
+		subscriptionAPI:           subscriptionAPI,
 		cdn:                       cdn,
 		repo:                      repo,
 		authentication:            authentication,

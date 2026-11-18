@@ -54,16 +54,23 @@ static void nordvpn_application_activate(GApplication* application) {
   hints.min_height = 700;
   gtk_window_set_geometry_hints(window, NULL, &hints, GDK_HINT_MIN_SIZE);
 
-  // Creates the window hidden to reduce size flickering. The size and display are handled by flutter
-  gtk_widget_realize(GTK_WIDGET(window));
-  gtk_widget_hide(GTK_WIDGET(window));
+  // Keep in sync with windowDefaultSize in lib/constants.dart. Set before the
+  // view is realized, so flutter's first frame is full size, not 1x1 and then
+  // resized when X11 maps the window.
+  gtk_window_set_default_size(window, 900, 700);
 
   g_autoptr(FlDartProject) project = fl_dart_project_new();
   fl_dart_project_set_dart_entrypoint_arguments(project, self->dart_entrypoint_arguments);
+  // Impeller became the default renderer on Linux in Flutter 3.47 but still
+  // has rendering issues. Canonical disables it in Ubuntu's Flutter apps too:
+  // https://github.com/canonical/ubuntu-desktop-provision/pull/1618
+  fl_dart_project_set_enable_impeller(project, FALSE);
 
   FlView* view = fl_view_new(project);
   gtk_widget_show(GTK_WIDGET(view));
   gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(view));
+  // Realized but not shown, because window_manager shows the window from Dart.
+  gtk_widget_realize(GTK_WIDGET(view));
 
   fl_register_plugins(FL_PLUGIN_REGISTRY(view));
 

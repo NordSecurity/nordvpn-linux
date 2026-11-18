@@ -94,34 +94,35 @@ final class SettingsWrapperWidget extends StatelessWidget {
     bool enabled = true,
     EdgeInsetsGeometry? padding,
     Color? color,
+    bool mergeSemantics = true,
   }) {
     final settingsTheme = context.settingsTheme;
 
-    return MergeSemantics(
-      child: Semantics(
-        button: onTap != null,
-        enabled: enabled,
-        child: AdvancedListTile(
-          key: key ?? UniqueKey(),
-          leading: iconName != null ? DynamicThemeImage(iconName) : null,
-          title: Expanded(
-            child: Text(
-              title,
-              style: titleStyle ?? settingsTheme.itemTitleStyle,
-            ),
-          ),
-          subtitle: subtitle != null
-              ? Text(subtitle, style: settingsTheme.itemSubtitleStyle)
-              : subtitleWidget,
-          center: center,
-          trailing: trailing,
-          onTap: onTap,
-          trailingLocation: trailingLocation,
-          enabled: enabled,
-          padding: padding ?? settingsTheme.itemPadding,
-          color: color,
+    final tile = AdvancedListTile(
+      key: key ?? UniqueKey(),
+      leading: iconName != null ? DynamicThemeImage(iconName) : null,
+      title: Expanded(
+        child: ExcludeSemantics(
+          excluding: !mergeSemantics,
+          child: Text(title, style: titleStyle ?? settingsTheme.itemTitleStyle),
         ),
       ),
+      subtitle: subtitle != null
+          ? Text(subtitle, style: settingsTheme.itemSubtitleStyle)
+          : subtitleWidget,
+      center: center,
+      trailing: trailing,
+      onTap: onTap,
+      trailingLocation: trailingLocation,
+      enabled: enabled,
+      padding: padding ?? settingsTheme.itemPadding,
+      color: color,
+    );
+
+    if (!mergeSemantics) return tile;
+
+    return MergeSemantics(
+      child: Semantics(button: onTap != null, enabled: enabled, child: tile),
     );
   }
 }

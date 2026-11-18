@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nordvpn/constants.dart';
 import 'package:nordvpn/data/models/app_settings.dart';
@@ -62,6 +63,15 @@ class _CustomDnsState extends ConsumerState<CustomDns> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(vpnSettingsControllerProvider, (previous, next) {
+      final before = previous?.value;
+      final after = next.value;
+      if (before == null || after == null) return;
+      if (!_isCustomDnsEnabled(before) && _isCustomDnsEnabled(after)) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _announceWarning());
+      }
+    });
+
     return ref
         .watch(vpnSettingsControllerProvider)
         .when(
@@ -77,8 +87,7 @@ class _CustomDnsState extends ConsumerState<CustomDns> {
 
     // NOTE: If the toggle was changed in UI, then it stays on even when user
     // clears Custom DNS by using daemon
-    final isCustomDnsEnabled =
-        settings.customDns || settings.customDnsServers.isNotEmpty;
+    final isCustomDnsEnabled = _isCustomDnsEnabled(settings);
 
     return SettingsWrapperWidget(
       useSeparator: false,
@@ -114,35 +123,50 @@ class _CustomDnsState extends ConsumerState<CustomDns> {
               titleStyle: appTheme.caption,
               subtitleWidget: ScalerResponsiveBox(
                 maxWidth: customDnsTheme.dnsInputWidth,
-                child: Input(
-                  key: UniqueKey(),
-                  hintText: "0.0.0.0",
-                  submitDisplay: SubmitDisplay.never,
-                  controller: _controller,
-                  validateInput: (value) => _isValid(settings),
-                  onSubmitted: (value) async {
-                    _buttonController.triggerTap();
-                  },
-                  submitText: t.ui.add,
-                  onErrorMessage: (value) => _errorMessage(value, settings),
+                child: Semantics(
+                  container: true,
+                  child: Input(
+                    key: UniqueKey(),
+                    semanticsLabel: t.ui.enterDnsAddress,
+                    hintText: "0.0.0.0",
+                    submitDisplay: SubmitDisplay.never,
+                    controller: _controller,
+                    validateInput: (value) => _isValid(settings),
+                    onSubmitted: (value) async {
+                      _buttonController.triggerTap();
+                    },
+                    submitText: t.ui.add,
+                    onErrorMessage: (value) => _errorMessage(value, settings),
+                  ),
                 ),
               ),
               trailingLocation: TrailingLocation.center,
-              trailing: ValueListenableBuilder<TextEditingValue>(
-                valueListenable: _controller,
-                builder: (context, value, child) {
-                  final isValid = _isValid(settings);
-                  return LoadingTextButton(
-                    key: CustomDnsKeys.dnsAddButton,
-                    controller: _buttonController,
-                    onPressed: isValid ? () => _addServer(settings) : null,
-                    child: Text(t.ui.add, style: appTheme.body),
-                  );
-                },
+              trailing: TextButtonTheme(
+                data: TextButtonThemeData(
+                  style: Theme.of(context).textButtonTheme.style?.copyWith(
+                    backgroundColor: WidgetStateProperty.resolveWith((states) {
+                      if (states.contains(WidgetState.focused)) {
+                        return Theme.of(context).hoverColor;
+                      }
+                      return null;
+                    }),
+                  ),
+                ),
+                child: LoadingTextButton(
+                  key: CustomDnsKeys.dnsAddButton,
+                  controller: _buttonController,
+                  onPressed: () => _onAddPressed(settings),
+                  child: Text(
+                    t.ui.add,
+                    semanticsLabel: "${t.ui.enterDnsAddress} - ${t.ui.add}",
+                    style: appTheme.body,
+                  ),
+                ),
               ),
               enabled:
                   isCustomDnsEnabled &&
                   settings.customDnsServers.length < maxCustomDnsServers,
+              mergeSemantics: false,
             );
           case _CustomDnsSections.warningMessage:
             return SettingsWrapperWidget.buildListItem(
@@ -210,6 +234,21 @@ class _CustomDnsState extends ConsumerState<CustomDns> {
     super.dispose();
   }
 
+  bool _isCustomDnsEnabled(ApplicationSettings settings) =>
+      settings.customDns || settings.customDnsServers.isNotEmpty;
+
+  void _announceWarning() =>
+      _announce(t.a11y.warningMessage(message: t.ui.customDnsWarning));
+
+  void _announce(String message) {
+    if (!mounted || !MediaQuery.supportsAnnounceOf(context)) return;
+    SemanticsService.sendAnnouncement(
+      View.of(context),
+      message,
+      Directionality.of(context),
+    );
+  }
+
   bool _isAddressValid(String value) {
     return ipv4Regex.hasMatch(value);
   }
@@ -229,6 +268,15 @@ class _CustomDnsState extends ConsumerState<CustomDns> {
     return value.isNotEmpty &&
         _isAddressValid(value) &&
         !settings.customDnsServers.contains(value);
+  }
+
+  Future<void> _onAddPressed(ApplicationSettings settings) async {
+    if (_controller.text.isEmpty) return;
+    if (!_isValid(settings)) {
+      _announce(t.ui.invalidFormat);
+      return;
+    }
+    await _addServer(settings);
   }
 
   Future<void> _addServer(ApplicationSettings settings) async {

@@ -17,6 +17,6 @@ COPY --from=builder /usr/bin/protoc-gen-go_grpc /usr/bin/
 COPY --from=builder /tmp/protoc /usr/
 COPY requirements.txt /tmp/requirements.txt
 
-RUN apk add --no-cache bash libc6-compat libstdc++ python3 py3-pip
+RUN apk add --no-cache bash libc6-compat libstdc++ python3 py3-pip git
 RUN python3 -m pip install --break-system-packages --no-cache-dir -r /tmp/requirements.txt && \
 	rm -rf /tmp/*

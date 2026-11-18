@@ -37,7 +37,7 @@ type SearchParams struct {
 
 func NewSearchParams(tag, group string, excludedServer string) SearchParams {
 	return SearchParams{
-		Tag:            strings.TrimSpace(tag),
+		Tag:            UnitedKingdomServerTagFix(strings.ToLower(strings.TrimSpace(tag))),
 		Group:          strings.TrimSpace(group),
 		ExcludedServer: strings.TrimSpace(excludedServer),
 	}

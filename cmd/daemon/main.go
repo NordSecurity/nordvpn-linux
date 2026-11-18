@@ -647,6 +647,7 @@ func main() {
 		clientAPI,
 		clientAPI,
 		clientAPI,
+		clientAPI,
 		cdnAPI,
 		repoAPI,
 		core.NewOAuth2(httpClientWithRotator, daemon.BaseURL, validator),
@@ -700,13 +701,14 @@ func main() {
 	}
 
 	norduserMonitor := norduser.NewNorduserProcessMonitor(norduserService)
+	norduserMonitorCtx, norduserMonitorCancelFunc := context.WithCancel(context.Background())
 	go func() {
 		if snapconf.IsUnderSnap() {
 			if err := norduserMonitor.StartSnap(); err != nil {
 				log.Error("Error when starting norduser monitor for snap:", err.Error())
 			}
 		} else {
-			if err := norduserMonitor.Start(); err != nil {
+			if err := norduserMonitor.Start(norduserMonitorCtx); err != nil {
 				log.Error("Error when starting norduser monitor:", err.Error())
 			}
 		}
@@ -792,8 +794,11 @@ func main() {
 		}
 	}()
 
+	purchasesSubject := &subs.Subject[[]core.Purchase]{}
+	purchasesSubject.Subscribe(analytics.NotifyPurchases)
+
 	rpc.StartKillSwitch()
-	rpc.StartJobs(statePublisher, heartBeatSubject)
+	rpc.StartJobs(statePublisher, heartBeatSubject, purchasesSubject)
 	rpc.StartRemoteConfigLoaderJob(rcConfig)
 	meshService.StartJobs()
 	if internal.IsSystemd() {
@@ -830,6 +835,7 @@ func main() {
 	log.Info("Received signal:", sig)
 	ensMonitor.Stop()
 	s.Stop()
+	norduserMonitorCancelFunc()
 	norduserService.StopAll()
 
 	httpCancel()

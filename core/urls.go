@@ -46,8 +46,11 @@ const (
 	// urlOrders defines URL to list user's orders
 	urlOrders = UsersURL + "/orders"
 
-	// urlOrders defines URL to list user's payments
+	// urlPayments defines URL to list user's payments
 	urlPayments = UsersURL + "/payments"
+
+	// urlPurchases defines URL to list user's purchases
+	urlPurchases = UsersURL + "/purchases"
 
 	// CredentialsURL defines url to generate openvpn credentials
 	CredentialsURL = ServicesURL + "/credentials"

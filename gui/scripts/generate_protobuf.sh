@@ -46,12 +46,6 @@ for i in ${PROTO_FILES}; do
     pushd $DIR > /dev/null
     mkdir -p "$PROTO_OUT"
 
-    # create a symlink for google files, not to create it each time, for each folder.
-    # this can be removed when https://github.com/google/protobuf.dart/issues/483 is fixed
-    if [ ! -L "$PROTO_OUT/google" ]; then
-        ln -s "../google" "$PROTO_OUT/google"
-    fi
-
     # using protoc --dart_out="$PROTO_OUT" "$FILE" "$GOOGLE_PROTO_ROOT_DIR/google/protobuf/timestamp.proto" creates google multiple times
     protoc --dart_out="$PROTO_OUT" "$FILE"
 

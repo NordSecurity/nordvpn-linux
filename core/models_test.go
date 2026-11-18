@@ -615,6 +615,28 @@ func TestServerVersion(t *testing.T) {
 	assert.Equal(t, "2.1.0", server.Version())
 }
 
+func TestServer_GenerateKeys(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	server := Server{
+		Hostname: "uk1.nordvpn.com",
+		Groups:   Groups{{Title: "Double VPN"}},
+		Locations: Locations{
+			{Country: Country{Name: "United Kingdom", Code: "GB", City: City{Name: "London"}}},
+		},
+	}
+
+	assert.ElementsMatch(t, []string{
+		"united_kingdom",
+		"gb",
+		"united_kingdom london",
+		"gb london",
+		"london",
+		"uk1",
+		"double_vpn",
+	}, server.GenerateKeys())
+}
+
 func TestServer_IsVirtualLocation(t *testing.T) {
 	category.Set(t, category.Unit)
 

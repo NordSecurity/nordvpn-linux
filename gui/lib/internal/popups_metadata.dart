@@ -252,7 +252,14 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code, {Object? userData}) {
             ref.read(uiEventRepositoryProvider).reportSessionLimitLearnMore(),
       ],
     ),
-
+    DaemonStatusCode.protocolIsIncompatibleWithAutoconnect => InfoPopupMetadata(
+      id: DaemonStatusCode.protocolIsIncompatibleWithAutoconnect,
+      title: t.ui.incompatibleProtocolWithAutoConnectTitle(
+        technology: (userData as String?) ?? t.ui.protocol,
+      ),
+      message: (_) => t.ui.incompatibleProtocolWithAutoConnectDesc,
+      buttonText: t.ui.close,
+    ),
     // not matched, display generic error message
     _ => infoForDaemonCode(code),
   };

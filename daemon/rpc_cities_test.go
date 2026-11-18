@@ -21,6 +21,17 @@ func TestRPCCities(t *testing.T) {
 	category.Set(t, category.Unit)
 	defer testsCleanup()
 
+	ukServers := core.Servers{
+		{
+			Hostname:     "uk1.nordvpn.com",
+			Status:       core.Online,
+			Technologies: core.Technologies{{ID: core.WireguardTech, Pivot: core.Pivot{Status: core.Online}}},
+			Locations: core.Locations{
+				{Country: core.Country{Name: "United Kingdom", Code: "GB", City: core.City{Name: "London"}}},
+			},
+		},
+	}
+
 	tests := []struct {
 		name        string
 		cm          config.Manager
@@ -57,6 +68,36 @@ func TestRPCCities(t *testing.T) {
 			statusCode:  internal.CodeSuccess,
 			expected: []*pb.ServerGroup{
 				{Name: "Algiers"},
+			},
+		},
+		{
+			name:        "results for gb country code",
+			cm:          newMockConfigManager(),
+			servers:     ukServers,
+			countryName: "gb",
+			statusCode:  internal.CodeSuccess,
+			expected: []*pb.ServerGroup{
+				{Name: "London"},
+			},
+		},
+		{
+			name:        "results for uk country code alias",
+			cm:          newMockConfigManager(),
+			servers:     ukServers,
+			countryName: "uk",
+			statusCode:  internal.CodeSuccess,
+			expected: []*pb.ServerGroup{
+				{Name: "London"},
+			},
+		},
+		{
+			name:        "results for uppercase uk country code alias",
+			cm:          newMockConfigManager(),
+			servers:     ukServers,
+			countryName: "UK",
+			statusCode:  internal.CodeSuccess,
+			expected: []*pb.ServerGroup{
+				{Name: "London"},
 			},
 		},
 	}

@@ -11,7 +11,8 @@
 set -euxo pipefail
 
 NAME=nordvpn
-HASH=$(git rev-parse --short HEAD)
+# support git worktrees
+HASH=$(git rev-parse --short HEAD 2>/dev/null || echo "unkn")
 
 format_date_utc() {
   local date_input="$1"
@@ -20,7 +21,12 @@ format_date_utc() {
 }
 
 get_head_commit_date() {
-  format_date_utc "$(git log -1 --format=%aI HEAD)"
+  local commit_date
+  if commit_date=$(git log -1 --format=%aI HEAD 2>/dev/null); then
+    format_date_utc "$commit_date"
+  else
+    date -u +"%Y-%m-%dT%H:%M:%SZ"
+  fi
 }
 
 # Determine environment: keep prod if explicitly set, otherwise assign dev
@@ -37,10 +43,10 @@ if [[ "${CI_COMMIT_TAG:-}" =~ ${VERSION_PATTERN} ]]; then
     VERSION="${CI_COMMIT_TAG}+${REVISION}"
   fi
 
-  if git rev-parse "${CI_COMMIT_TAG}" >/dev/null 2>&1; then
-    VERSION_DATE="$(format_date_utc "$(git log -1 --format=%aI "${CI_COMMIT_TAG}")")"
+  if tag_date=$(git log -1 --format=%aI "${CI_COMMIT_TAG}" 2>/dev/null); then
+    VERSION_DATE="$(format_date_utc "$tag_date")"
   else
-    echo "Warning: Git tag '${CI_COMMIT_TAG}' not found, using git HEAD instead"
+    echo "Warning: Git tag '${CI_COMMIT_TAG}' not found, falling back"
     VERSION_DATE="$(get_head_commit_date)"
   fi
 else

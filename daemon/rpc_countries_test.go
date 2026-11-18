@@ -50,6 +50,7 @@ func TestRPCCountries(t *testing.T) {
 				{Name: "Germany"},
 				{Name: "Italy"},
 				{Name: "Lithuania"},
+				{Name: "United_States"},
 			},
 		},
 	}
