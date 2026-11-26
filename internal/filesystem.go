@@ -346,11 +346,12 @@ func FileExists(path string) bool {
 // FileWritable checks if the given file exists and is writable by its owner
 func FileWritable(path string) bool {
 	info, err := os.Stat(path)
-	if err == nil && info.Mode().Perm()&0o200 == 0o200 {
-		return true
-	} else {
-		return false
-	}
+	return err == nil && IsFileWritable(info)
+}
+
+// IsFileWritable checks if the file given as `os.FileInfo` is writable by its owner
+func IsFileWritable(info os.FileInfo) bool {
+	return info.Mode().Perm()&0o200 == 0o200
 }
 
 // IsSymLink check if file name is sym link

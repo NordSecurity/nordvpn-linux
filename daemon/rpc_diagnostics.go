@@ -58,7 +58,7 @@ func (r *RPC) CollectDiagnostics(
 		})
 	}
 
-	outputRoot, err := os.OpenRoot(caller.outputDir)
+	outputRoot, err := openOutputRoot(caller.user.HomeDir, caller.uid)
 	if err != nil {
 		log.Diagnostics.Error("failed to open root output dir:", err)
 		return srv.Send(&pb.DiagnosticsProgress{
@@ -196,19 +196,15 @@ const (
 	daemonSupervisorSystemd
 )
 
-// diagnosticsCaller bundles the identity of the client that invoked
-// CollectDiagnostics (resolved from the gRPC peer credentials) together with
-// the directory where the diagnostics zip should be written.
+// diagnosticsCaller bundles the identity of the client that invoked CollectDiagnostics
 type diagnosticsCaller struct {
-	user      *user.User
-	uid       uint32
-	gid       uint32
-	outputDir string
+	user *user.User
+	uid  uint32
+	gid  uint32
 }
 
 // resolveDiagnosticsCaller extracts the caller's UID/GID from the gRPC
-// context, looks up their user record, and picks the directory where the
-// diagnostics zip will land.
+// context and looks up their user record
 func resolveDiagnosticsCaller(ctx context.Context) (*diagnosticsCaller, error) {
 	cred, err := internal.UcredFromContext(ctx)
 	if err != nil {
@@ -219,31 +215,50 @@ func resolveDiagnosticsCaller(ctx context.Context) (*diagnosticsCaller, error) {
 		return nil, fmt.Errorf("failed to lookup user: %w", err)
 	}
 	return &diagnosticsCaller{
-		user:      userInfo,
-		uid:       cred.Uid,
-		gid:       cred.Gid,
-		outputDir: resolveOutputDir(userInfo.HomeDir),
+		user: userInfo,
+		uid:  cred.Uid,
+		gid:  cred.Gid,
 	}, nil
 }
 
-// resolveOutputDir picks the directory for the diagnostics zip: the user's
-// Downloads folder when present, falling back to their home directory. If
-// the chosen directory is a symlink, /tmp is used instead to avoid writing
-// through user-controlled symlinks.
-func resolveOutputDir(homeDir string) string {
+func openOutputRoot(homeDir string, uid uint32) (*os.Root, error) {
 	if snapconf.IsUnderSnap() {
-		return snapconf.LogsDir()
+		return os.OpenRoot(snapconf.LogsDir())
 	}
-	outputDir := homeDir
-	downloadsDir := filepath.Join(homeDir, "Downloads")
-	if internal.FileWritable(downloadsDir) && !internal.IsSymLink(downloadsDir) {
-		outputDir = downloadsDir
+	for _, dir := range []string{filepath.Join(homeDir, "Downloads"), homeDir} {
+		if root, err := openUserOwnedDir(dir, uid); err == nil {
+			return root, nil
+		} else {
+			log.Warnf("failed to open dir '%s': %v", dir, err)
+		}
 	}
-	if !internal.FileWritable(outputDir) || internal.IsSymLink(outputDir) {
-		outputDir = "/tmp"
+	return os.OpenRoot("/tmp")
+}
+
+func openUserOwnedDir(dir string, uid uint32) (*os.Root, error) {
+	root, err := os.OpenRoot(dir)
+	if err != nil {
+		return nil, err
 	}
 
-	return outputDir
+	info, err := root.Stat(".")
+	if err != nil {
+		_ = root.Close()
+		return nil, err
+	}
+
+	stat, ok := info.Sys().(*syscall.Stat_t)
+	if !ok || stat.Uid != uid {
+		_ = root.Close()
+		return nil, fmt.Errorf("%s: not owned by the requesting user", dir)
+	}
+
+	if !internal.IsFileWritable(info) {
+		_ = root.Close()
+		return nil, fmt.Errorf("%s: not writable by its owner", dir)
+	}
+
+	return root, nil
 }
 
 // detectDaemonSupervisor probes the host to figure out which supervisor is

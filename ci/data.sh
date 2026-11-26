@@ -9,9 +9,9 @@ go run \
 	"${WORKDIR}"/cmd/downloader/main.go "${WORKDIR}"/dist/data/
 
 # prefetch templates
-wget -O "${WORKDIR}"/dist/data/ovpn_template.xslt https://downloads.nordcdn.com/configs/templates/v2/ovpn/1.0/template.xslt 
+wget -O "${WORKDIR}"/dist/data/ovpn_template.xslt https://downloads.nordcdn.com/configs/templates/v2/ovpn/1.0/template.xslt
 wget -O "${WORKDIR}"/dist/data/cybersec.dat https://downloads.nordcdn.com/configs/dns/cybersec.json
- 
+
 chmod 0700 "${WORKDIR}"/dist/data
 chmod 0600 "${WORKDIR}"/dist/data/*
 
@@ -25,7 +25,7 @@ for filename in "${files[@]}"; do
     entry_name=$(basename "${filename}" .md)
     entry_tag=${entry_name%_*}
     entry_date=${entry_name#*_}
-    
+
     # Check if entry_date is the same as entry_tag (no timestamp in filename)
     if [[ "${entry_date}" == "${entry_tag}" ]]; then
         # Use file modification time as fallback
@@ -67,6 +67,7 @@ cp "${gomodcache}"/github.com/urfave/cli/v2@"${cli_version}"/autocomplete/bash_a
 	"${WORKDIR}"/dist/autocomplete/bash_autocomplete
 cp "${gomodcache}"/github.com/urfave/cli/v2@"${cli_version}"/autocomplete/zsh_autocomplete \
 	"${WORKDIR}"/dist/autocomplete/zsh_autocomplete
-git apply contrib/patches/bash_autocomplete.diff
-git apply contrib/patches/zsh_autocomplete.diff
 
+# git apply does not inform about not-applied/skipped patches on untracked files
+patch -p1 -N -f -i "${WORKDIR}"/contrib/patches/bash_autocomplete.diff
+patch -p1 -N -f -i "${WORKDIR}"/contrib/patches/zsh_autocomplete.diff

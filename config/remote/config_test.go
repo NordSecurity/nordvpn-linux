@@ -8,8 +8,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestVersionMatch(t *testing.T) {
@@ -321,8 +323,9 @@ func (m *mockFileSystem) readFile(name string) ([]byte, error) {
 	return nil, fmt.Errorf("file not found: %s", name)
 }
 
-func (m *mockFileSystem) writeFile(name string, content []byte, mode os.FileMode) error {
+func (m *mockFileSystem) writeFile(dir, name string, content []byte, mode os.FileMode) error {
 	m.writeCalls++
+	name = filepath.Join(dir, name)
 
 	// Use custom function if provided
 	if m.writeFn != nil {
@@ -379,115 +382,92 @@ func TestHandleIncludeFiles(t *testing.T) {
 		name        string
 		fileName    string
 		srcBasePath string
-		trgBasePath string
 		mainJson    string
 		hashJson    string
 		expectError bool
 		readErr     error
-		writeErr    error
 	}{
 		{
 			name:        "sunny day",
 			fileName:    "test.json",
 			srcBasePath: "s",
-			trgBasePath: "t",
 			mainJson:    libtelioJsonConfInc1File,
 			hashJson:    libtelioJsonConfInc1HashFile,
-			expectError: false,
-			readErr:     nil,
-			writeErr:    nil,
+		},
+		{
+			name:        "sunny day in subdirectory",
+			fileName:    "include/libtelio-4.2.0.json",
+			srcBasePath: "s",
+			mainJson:    libtelioJsonConfInc1File,
+			hashJson:    libtelioJsonConfInc1HashFile,
 		},
 		{
 			name:        "invalid file name",
 			fileName:    "test.txt",
 			srcBasePath: "s",
-			trgBasePath: "t",
-			mainJson:    "",
-			hashJson:    "",
 			expectError: true,
-			readErr:     nil,
-			writeErr:    nil,
+		},
+		{
+			name:        "parent dir traversal",
+			fileName:    "../../../../etc/bash_completion.d/nordvpn.json",
+			srcBasePath: "s",
+			mainJson:    libtelioJsonConfInc1File,
+			hashJson:    libtelioJsonConfInc1HashFile,
+			expectError: true,
+		},
+		{
+			name:        "absolute path",
+			fileName:    "/etc/bash_completion.d/nordvpn.json",
+			srcBasePath: "s",
+			mainJson:    libtelioJsonConfInc1File,
+			hashJson:    libtelioJsonConfInc1HashFile,
+			expectError: true,
 		},
 		{
 			name:        "invalid main json",
 			fileName:    "test.json",
 			srcBasePath: "s",
-			trgBasePath: "t",
 			mainJson:    "invalid json",
-			hashJson:    "",
 			expectError: true,
-			readErr:     nil,
-			writeErr:    nil,
 		},
 		{
 			name:        "invalid hash json",
 			fileName:    "test.json",
 			srcBasePath: "s",
-			trgBasePath: "t",
 			mainJson:    "{}",
 			hashJson:    "invalid json",
 			expectError: true,
-			readErr:     nil,
-			writeErr:    nil,
 		},
 		{
 			name:        "hash does not match",
 			fileName:    "test.json",
 			srcBasePath: "s",
-			trgBasePath: "t",
 			mainJson:    "{}",
 			hashJson:    "{\"hash\":\"aaa\"}",
 			expectError: true,
-			readErr:     nil,
-			writeErr:    nil,
 		},
 		{
 			name:        "file read error",
 			fileName:    "test.json",
 			srcBasePath: "s",
-			trgBasePath: "t",
-			mainJson:    "",
-			hashJson:    "",
 			expectError: true,
 			readErr:     errors.New("error"),
-			writeErr:    nil,
-		},
-		{
-			name:        "file write error",
-			fileName:    "test.json",
-			srcBasePath: "s",
-			trgBasePath: "t",
-			mainJson:    "",
-			hashJson:    "",
-			expectError: true,
-			readErr:     nil,
-			writeErr:    errors.New("error"),
-		},
-		{
-			name:        "src same as trg - error",
-			fileName:    "test.json",
-			srcBasePath: "same",
-			trgBasePath: "same",
-			mainJson:    "",
-			hashJson:    "",
-			expectError: true,
-			readErr:     nil,
-			writeErr:    nil,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			frw := newMockReaderWriter(test.mainJson, test.hashJson, test.readErr, test.writeErr)
-			incf, err := handleIncludeFiles(test.srcBasePath, test.trgBasePath, test.fileName, frw, frw)
+			frw := newMockReaderWriter(test.mainJson, test.hashJson, test.readErr, nil)
+			incf, err := handleIncludeFiles(test.srcBasePath, test.fileName, frw)
 			if test.expectError {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, len(test.mainJson), len(incf))
+				assert.Equal(t, test.mainJson, string(incf.content))
+				assert.Equal(t, test.hashJson, string(incf.hash))
 				assert.Equal(t, 2, frw.readCalls)
-				assert.Equal(t, 2, frw.writeCalls)
 			}
+			assert.Equal(t, 0, frw.writeCalls)
 		})
 	}
 }
@@ -1527,4 +1507,185 @@ func TestFeatureLoadFieldValidationErrors(t *testing.T) {
 			assert.Equal(t, LoadErrorFieldValidation, loadErr.Kind)
 		})
 	}
+}
+
+func fileIncludeJson(value string) string {
+	return fmt.Sprintf(`{"version":1,"configs":[{"name":"x","value_type":"file","settings":[{"value":%q,"app_version":"*","weight":1}]}]}`, value)
+}
+
+func TestDownload_TraversalIncludeIsNeverWritten(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	mainJson := fileIncludeJson("../../../../etc/bash_completion.d/nordvpn.json")
+	incJson := `"$(touch /tmp/should_not_land_here)"`
+	cdn := &mockFileSystem{files: map[string][]byte{
+		"cdn/test.json":                           []byte(mainJson),
+		"cdn/test-hash.json":                      fmt.Appendf(nil, `{"hash": "%s"}`, hash([]byte(mainJson+incJson))),
+		"etc/bash_completion.d/nordvpn.json":      []byte(incJson),
+		"etc/bash_completion.d/nordvpn-hash.json": fmt.Appendf(nil, `{"hash": "%s"}`, hash([]byte(incJson))),
+	}}
+	fw := &mockFileSystem{}
+	f := &Feature{name: "test"}
+
+	ok, err := f.download(cdn, fw, &mockValidator{}, "cdn", "local", &fileOpsDefaultImpl{})
+
+	assert.False(t, ok)
+	assert.ErrorContains(t, err, "include file path is not local")
+	assert.Equal(t, 0, fw.writeCalls)
+}
+
+func TestDownload_NothingWrittenWhenMainHashFails(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	mainJson := fileIncludeJson("include/libtelio.json")
+	incJson := `{"a": 1}`
+	cdn := &mockFileSystem{files: map[string][]byte{
+		"cdn/test.json":                  []byte(mainJson),
+		"cdn/test-hash.json":             fmt.Appendf(nil, `{"hash": "%s"}`, hash([]byte(mainJson))),
+		"cdn/include/libtelio.json":      []byte(incJson),
+		"cdn/include/libtelio-hash.json": fmt.Appendf(nil, `{"hash": "%s"}`, hash([]byte(incJson))),
+	}}
+	fw := &mockFileSystem{}
+	f := &Feature{name: "test"}
+
+	ok, err := f.download(cdn, fw, &mockValidator{}, "cdn", "local", &fileOpsDefaultImpl{})
+
+	assert.False(t, ok)
+	assert.ErrorContains(t, err, "main file integrity problem")
+	assert.Equal(t, 0, fw.writeCalls)
+}
+
+func TestDownload_WritesIncludesAfterVerification(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	mainJson := fileIncludeJson("include/libtelio.json")
+	incJson := `{"a": 1}`
+	incHash := fmt.Appendf(nil, `{"hash": "%s"}`, hash([]byte(incJson)))
+	cdn := &mockFileSystem{files: map[string][]byte{
+		"cdn/test.json":                  []byte(mainJson),
+		"cdn/test-hash.json":             fmt.Appendf(nil, `{"hash": "%s"}`, hash([]byte(mainJson+incJson))),
+		"cdn/include/libtelio.json":      []byte(incJson),
+		"cdn/include/libtelio-hash.json": incHash,
+	}}
+	target := t.TempDir()
+	f := &Feature{name: "test"}
+
+	ok, err := f.download(cdn, jsonFileReaderWriter{}, &mockValidator{}, "cdn", target, &fileOpsDefaultImpl{})
+
+	require.NoError(t, err)
+	assert.True(t, ok)
+	got, err := os.ReadFile(filepath.Join(target, "include", "libtelio.json"))
+	require.NoError(t, err)
+	assert.Equal(t, incJson, string(got))
+	got, err = os.ReadFile(filepath.Join(target, "include", "libtelio-hash.json"))
+	require.NoError(t, err)
+	assert.Equal(t, incHash, got)
+	assert.FileExists(t, filepath.Join(target, "test.json"))
+	assert.FileExists(t, filepath.Join(target, "test-hash.json"))
+}
+
+func TestDownload_PreexistingHardlinkIsNotWrittenThrough(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	mainJson := fileIncludeJson("include/libtelio.json")
+	incJson := `{"b": 2}`
+	cdnFiles := map[string][]byte{
+		"cdn/test.json":                  []byte(mainJson),
+		"cdn/test-hash.json":             fmt.Appendf(nil, `{"hash": "%s"}`, hash([]byte(mainJson+incJson))),
+		"cdn/include/libtelio.json":      []byte(incJson),
+		"cdn/include/libtelio-hash.json": fmt.Appendf(nil, `{"hash": "%s"}`, hash([]byte(incJson))),
+	}
+
+	tests := []struct {
+		name        string
+		planted     string
+		wantContent string
+	}{
+		{
+			name:        "main file",
+			planted:     "test.json" + tmpExt,
+			wantContent: mainJson,
+		},
+		{
+			name:        "main hash file",
+			planted:     "test-hash.json" + tmpExt,
+			wantContent: string(cdnFiles["cdn/test-hash.json"]),
+		},
+		{
+			name:        "include file",
+			planted:     "include/libtelio.json" + tmpExt,
+			wantContent: incJson,
+		},
+		{
+			name:        "include hash file",
+			planted:     "include/libtelio-hash.json" + tmpExt,
+			wantContent: string(cdnFiles["cdn/include/libtelio-hash.json"]),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpDir := t.TempDir()
+			target := filepath.Join(tmpDir, "conf")
+			victim := filepath.Join(tmpDir, "victim")
+			const victimContent = "do not touch"
+			require.NoError(t, os.WriteFile(victim, []byte(victimContent), internal.PermUserRW))
+
+			planted := filepath.Join(target, tt.planted)
+			require.NoError(t, os.MkdirAll(filepath.Dir(planted), internal.PermUserRWX))
+			require.NoError(t, os.Link(victim, planted))
+
+			f := &Feature{name: "test"}
+			ok, err := f.download(&mockFileSystem{files: cdnFiles}, jsonFileReaderWriter{}, &mockValidator{}, "cdn", target, &fileOpsDefaultImpl{})
+
+			require.NoError(t, err)
+			assert.True(t, ok)
+
+			got, err := os.ReadFile(victim)
+			require.NoError(t, err)
+			assert.Equal(t, victimContent, string(got))
+
+			got, err = os.ReadFile(strings.TrimSuffix(planted, tmpExt))
+			require.NoError(t, err)
+			assert.Equal(t, tt.wantContent, string(got))
+		})
+	}
+}
+
+func TestLoad_UsesVerifiedIncludeContent(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	mainJson := fileIncludeJson("include/libtelio.json")
+	incJson := `{"c": 3}`
+	mainHash := hash([]byte(mainJson + incJson))
+	tmpDir := t.TempDir()
+	incPath := filepath.Join(tmpDir, "include", "libtelio.json")
+	files := map[string][]byte{
+		filepath.Join(tmpDir, "test.json"):      []byte(mainJson),
+		filepath.Join(tmpDir, "test-hash.json"): fmt.Appendf(nil, `{"hash": "%s"}`, mainHash),
+		incPath:                                 []byte(incJson),
+		filepath.Join(tmpDir, "include", "libtelio-hash.json"): fmt.Appendf(nil, `{"hash": "%s"}`, hash([]byte(incJson))),
+	}
+	incReads := 0
+	fr := &mockFileSystem{readFn: func(name string) ([]byte, error) {
+		if name == incPath {
+			incReads++
+			if incReads > 1 {
+				return []byte(`{"tampered": true}`), nil
+			}
+		}
+		content, ok := files[name]
+		if !ok {
+			return nil, os.ErrNotExist
+		}
+		return content, nil
+	}}
+	f := &Feature{name: "test"}
+
+	require.NoError(t, f.load(tmpDir, fr, &mockValidator{}, &fileOpsDefaultImpl{}))
+
+	assert.Equal(t, 1, incReads)
+	require.Len(t, f.params["x"].Settings, 1)
+	assert.Equal(t, incJson, f.params["x"].Settings[0].incValue)
+	assert.Equal(t, mainHash, f.hash)
 }
