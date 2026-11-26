@@ -380,18 +380,11 @@ def test_connect_to_city(vpn_protocol, city):
 def test_connect_to_unavailable_groups(vpn_protocol):
     """Manual TC: LVPN-8517"""
 
-    # TODO: LVPN-257
-    time.sleep(3)
-
     lib.set_vpn_protocol(vpn_protocol)
 
     unavailable_groups = daemon.get_unavailable_groups()
 
     for group in unavailable_groups:
-        # TODO(LVPN-10935)
-        if group == "Obfuscated" and vpn_protocol == "nordwhisper":
-            continue
-
         with pytest.raises(sh.ErrorReturnCode_1) as ex:
             sh.nordvpn(get_alias(), group)
 
@@ -403,17 +396,14 @@ def test_connect_to_unavailable_groups(vpn_protocol):
 def test_connect_to_unavailable_servers(vpn_protocol):
     """Manual TC: LVPN-422"""
 
-    # TODO: LVPN-257
-    time.sleep(3)
-
     lib.set_vpn_protocol(vpn_protocol)
 
     unavailable_groups = daemon.get_unavailable_groups()
 
     for group in unavailable_groups:
+        if group == "Obfuscated_Servers": # API is not returning Obfuscated_Servers anymore, so skip it.
+            continue
         server_info = server.get_hostname_by(group_name=group)
-        if group == "Obfuscated_Servers" and (not server_info  or not server_info.hostname):
-            pytest.skip("no server returned from the API")
         name = server_info.hostname.split(".")[0]
 
         with pytest.raises(sh.ErrorReturnCode_1) as ex:

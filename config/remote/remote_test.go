@@ -15,9 +15,11 @@ import (
 	devents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -254,7 +256,8 @@ func (m *mockedFileManager) getEntry(name string) (time.Time, error) {
 	return time.Time{}, fmt.Errorf("file not found %s", name)
 }
 
-func (m *mockedFileManager) writeFile(name string, content []byte, mode os.FileMode) error {
+func (m *mockedFileManager) writeFile(dir, name string, content []byte, mode os.FileMode) error {
+	name = filepath.Join(dir, name)
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	now := time.Now()
@@ -950,3 +953,106 @@ var nordvpnInvalidFieldValuesJsonConfFile = `
   ]
 }
 `
+
+func TestJsonFileReaderWriter_StaysInsideDir(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name        string
+		dir         string
+		file        string
+		setup       func(t *testing.T, tmpDir string)
+		expectError bool
+		verify      func(t *testing.T, tmpDir string)
+	}{
+		{
+			name: "writes into subdirectory",
+			dir:  "conf",
+			file: "include/a.json.bu",
+			verify: func(t *testing.T, tmpDir string) {
+				info, err := os.Stat(filepath.Join(tmpDir, "conf", "include", "a.json.bu"))
+				require.NoError(t, err)
+				assert.Equal(t, os.FileMode(internal.PermUserRW), info.Mode().Perm())
+			},
+		},
+		{
+			name:        "does not create missing parents of target dir",
+			dir:         "missing/conf",
+			file:        "a.json.bu",
+			expectError: true,
+			verify: func(t *testing.T, tmpDir string) {
+				assert.NoDirExists(t, filepath.Join(tmpDir, "missing"))
+			},
+		},
+		{
+			name:        "refuses parent traversal",
+			dir:         "conf",
+			file:        "../escaped/a.json.bu",
+			expectError: true,
+			verify: func(t *testing.T, tmpDir string) {
+				assert.NoDirExists(t, filepath.Join(tmpDir, "escaped"))
+			},
+		},
+		{
+			name:        "refuses absolute path",
+			dir:         "conf",
+			file:        "{tmpDir}/outside/a.json.bu",
+			expectError: true,
+			verify: func(t *testing.T, tmpDir string) {
+				assert.NoDirExists(t, filepath.Join(tmpDir, "outside"))
+			},
+		},
+		{
+			name: "replaces symlinked file instead of writing through it",
+			dir:  "conf",
+			file: "a.json.bu",
+			setup: func(t *testing.T, tmpDir string) {
+				require.NoError(t, os.Mkdir(filepath.Join(tmpDir, "conf"), 0o700))
+				victim := filepath.Join(tmpDir, "conf", "victim")
+				require.NoError(t, os.WriteFile(victim, []byte("original"), 0o600))
+				require.NoError(t, os.Symlink(victim, filepath.Join(tmpDir, "conf", "a.json.bu")))
+			},
+			verify: func(t *testing.T, tmpDir string) {
+				got, err := os.ReadFile(filepath.Join(tmpDir, "conf", "victim"))
+				require.NoError(t, err)
+				assert.Equal(t, "original", string(got))
+				info, err := os.Lstat(filepath.Join(tmpDir, "conf", "a.json.bu"))
+				require.NoError(t, err)
+				assert.True(t, info.Mode().IsRegular())
+			},
+		},
+		{
+			name: "refuses symlinked directory leading outside",
+			dir:  "conf",
+			file: "include/new/a.json.bu",
+			setup: func(t *testing.T, tmpDir string) {
+				require.NoError(t, os.Mkdir(filepath.Join(tmpDir, "conf"), 0o700))
+				require.NoError(t, os.Mkdir(filepath.Join(tmpDir, "outside"), 0o700))
+				require.NoError(t, os.Symlink(filepath.Join(tmpDir, "outside"), filepath.Join(tmpDir, "conf", "include")))
+			},
+			expectError: true,
+			verify: func(t *testing.T, tmpDir string) {
+				assert.NoDirExists(t, filepath.Join(tmpDir, "outside", "new"))
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			tmpDir := t.TempDir()
+			if test.setup != nil {
+				test.setup(t, tmpDir)
+			}
+
+			file := strings.ReplaceAll(test.file, "{tmpDir}", tmpDir)
+			err := jsonFileReaderWriter{}.writeFile(filepath.Join(tmpDir, test.dir), file, []byte("{}"), internal.PermUserRW)
+
+			if test.expectError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+			test.verify(t, tmpDir)
+		})
+	}
+}

@@ -1,6 +1,6 @@
 # Generated with git diff --no-index dist/autocomplete/bash_autocomplete dist/autocomplete/bash_autocomplete_nordvpn > contrib/patches/bash_autocomplete
 diff --git a/dist/autocomplete/bash_autocomplete b/dist/autocomplete/bash_autocomplete
-index fea6ee33..a4cf0db3 100644
+index fea6ee33..81bcf012 100644
 --- a/dist/autocomplete/bash_autocomplete
 +++ b/dist/autocomplete/bash_autocomplete
 @@ -26,10 +26,21 @@ _cli_bash_autocomplete() {
@@ -12,13 +12,13 @@ index fea6ee33..a4cf0db3 100644
 +    if [[ $opts == "nordvpn_autocomplete_filepaths" ]]; then
 +      compopt -o bashdefault -o default
 +    else
-+      # Case-insensitive prefix matching. `compgen -W` matches case-sensitively
-+      # and honors neither `nocasematch` nor readline's `completion-ignore-case`,
-+      # so awk does the case-folded prefix filter while preserving each
-+      # candidate's canonical casing (e.g. "ger" -> "Germany"). IFS is pinned to
-+      # newlines so candidates containing spaces stay intact.
-+      local IFS=$'\n'
-+      COMPREPLY=($(compgen -W "${opts}" | awk -v c="${cur}" 'BEGIN{c=tolower(c)} tolower(substr($0,1,length(c)))==c'))
++      # Don't use "compgen -W ...", it will execute code in candidate names.
++      local cand quoted_cand lowercase_cur="${cur,,}"
++      while IFS= read -r cand; do
++        [[ -z "${cand}" ]] && continue
++        printf -v quoted_cand '%q' "${cand}"
++        [[ "${quoted_cand,,}" == "${lowercase_cur}"* ]] && COMPREPLY+=("${quoted_cand}")
++      done <<< "${opts}"
 +    fi
      return 0
    fi

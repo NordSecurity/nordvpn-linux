@@ -111,7 +111,7 @@ type RemoteConfigNotifier interface {
 
 // fileStoreOps aggregates file relevant operations under a common interface
 type fileStoreOps interface {
-	writeFile(name string, content []byte, mode os.FileMode) error
+	writeFile(dir, name string, content []byte, mode os.FileMode) error
 	readFile(name string) ([]byte, error)
 }
 
@@ -157,21 +157,58 @@ func NewCdnRemoteConfig(buildTarget config.BuildTarget, remotePath, localPath st
 
 type jsonFileReaderWriter struct{}
 
-func (w jsonFileReaderWriter) writeFile(name string, content []byte, mode os.FileMode) error {
-	return internal.FileWrite(name, content, mode)
+// writeFile writes the file under dir, refusing any path or symlink that resolves outside of it.
+// Any existing entry at name is replaced by a newly created file
+func (w jsonFileReaderWriter) writeFile(dir, name string, content []byte, mode os.FileMode) (retErr error) {
+	parentRoot, err := os.OpenRoot(filepath.Dir(dir))
+	if err != nil {
+		return fmt.Errorf("opening target parent dir: %w", err)
+	}
+	defer func() { _ = parentRoot.Close() }()
+
+	if err := parentRoot.MkdirAll(filepath.Base(dir), internal.PermUserRWX); err != nil {
+		return fmt.Errorf("creating target dir: %w", err)
+	}
+
+	root, err := parentRoot.OpenRoot(filepath.Base(dir))
+	if err != nil {
+		return fmt.Errorf("opening target dir: %w", err)
+	}
+	defer func() { _ = root.Close() }()
+
+	if parent := filepath.Dir(name); parent != "." {
+		if err := root.MkdirAll(parent, internal.PermUserRWX); err != nil {
+			return fmt.Errorf("creating parent dirs: %w", err)
+		}
+	}
+
+	// remove stale file, if present
+	if err := root.Remove(name); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return fmt.Errorf("removing stale file: %w", err)
+	}
+
+	file, err := root.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_EXCL, mode)
+	if err != nil {
+		return fmt.Errorf("opening file: %w", err)
+	}
+	defer func() { retErr = errors.Join(retErr, file.Close()) }()
+
+	if _, err := file.Write(content); err != nil {
+		return fmt.Errorf("writing file: %w", err)
+	}
+
+	if err := file.Sync(); err != nil {
+		return fmt.Errorf("syncing file: %w", err)
+	}
+	return nil
 }
+
 func (w jsonFileReaderWriter) readFile(name string) ([]byte, error) {
 	// try to prevent overloading
 	if err := internal.IsFileTooBig(name); err != nil {
 		return nil, fmt.Errorf("reading file: %w", err)
 	}
 	return internal.FileRead(name)
-}
-
-type noopWriter struct{}
-
-func (w noopWriter) writeFile(name string, content []byte, mode os.FileMode) error {
-	return nil
 }
 
 type jsonValidator struct{}

@@ -89,7 +89,7 @@ func (v *NordValidator) Validate(code int, headers http.Header, body []byte) err
 	// Get expected digest value and check if it matches the X-Digest
 	// For some errors backend uses a checksum of empty response even though actual body exists
 	if xDigest != string(hashFunc(body)) &&
-		(code >= 200 && code < 300 || xDigest != string(hashFunc([]byte{}))) {
+		(code >= 200 && code < 400 || xDigest != string(hashFunc([]byte{}))) {
 		return fmt.Errorf("X-Digest value does not match the checksum of response body")
 	}
 

@@ -532,6 +532,84 @@ func TestOpenVerifiedUserFile(t *testing.T) {
 	}
 }
 
+func TestOpenOutputRoot(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	uid := uint32(os.Getuid())
+
+	tests := []struct {
+		name string
+		// setup prepares the home directory
+		setup func(t *testing.T, home string) (callerUID uint32, expectedDir string)
+	}{
+		{
+			name: "uses Downloads when it is owned by the caller",
+			setup: func(t *testing.T, home string) (uint32, string) {
+				downloads := filepath.Join(home, "Downloads")
+				require.NoError(t, os.Mkdir(downloads, 0o755))
+				return uid, downloads
+			},
+		},
+		{
+			name: "falls back to home when Downloads is missing",
+			setup: func(t *testing.T, home string) (uint32, string) {
+				return uid, home
+			},
+		},
+		{
+			name: "falls back to home when Downloads symlinks to a directory the caller doesn't own",
+			setup: func(t *testing.T, home string) (uint32, string) {
+				require.NoError(t, os.Symlink(foreignOwnedDir(t), filepath.Join(home, "Downloads")))
+				return uid, home
+			},
+		},
+		{
+			name: "follows a Downloads symlink to a directory the caller owns",
+			setup: func(t *testing.T, home string) (uint32, string) {
+				require.NoError(t, os.Symlink(t.TempDir(), filepath.Join(home, "Downloads")))
+				return uid, filepath.Join(home, "Downloads")
+			},
+		},
+		{
+			name: "falls back to home when Downloads is not writable by its owner",
+			setup: func(t *testing.T, home string) (uint32, string) {
+				require.NoError(t, os.Mkdir(filepath.Join(home, "Downloads"), 0o555))
+				return uid, home
+			},
+		},
+		{
+			name: "falls back to /tmp when neither directory is owned by the caller",
+			setup: func(t *testing.T, home string) (uint32, string) {
+				require.NoError(t, os.Mkdir(filepath.Join(home, "Downloads"), 0o755))
+				return uid + 12345, "/tmp"
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			home := t.TempDir()
+			callerUID, expectedDir := tc.setup(t, home)
+
+			root, err := openOutputRoot(home, callerUID)
+			require.NoError(t, err)
+			defer func() { _ = root.Close() }()
+
+			assert.Equal(t, expectedDir, root.Name())
+		})
+	}
+}
+
+func foreignOwnedDir(t *testing.T) string {
+	t.Helper()
+	dir := t.TempDir()
+	if err := os.Chown(dir, 12345, 12345); err == nil {
+		return dir
+	}
+	// fallback if can't chown
+	return "/"
+}
+
 func TestAddUserFileToZip_RegressionRootFileDisclosure(t *testing.T) {
 	category.Set(t, category.Unit)
 

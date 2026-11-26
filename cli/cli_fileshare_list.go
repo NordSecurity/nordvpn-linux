@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 	"text/tabwriter"
+	"unicode"
 
 	"github.com/NordSecurity/nordvpn-linux/fileshare"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
@@ -129,6 +130,24 @@ func (c *cmd) FileshareAutoCompleteTransfersCancel(ctx *cli.Context) {
 	})
 }
 
+// sanitizeForTerminal makes peer-controlled-text (e.g. received file names) safe to print.
+func sanitizeForTerminal(text string) string {
+	var builder strings.Builder
+	for _, r := range text {
+		switch {
+		case r == '\\':
+			builder.WriteString(`\\`)
+		case unicode.IsControl(r):
+			fmt.Fprintf(&builder, `\x%02x`, r)
+		case unicode.In(r, unicode.Bidi_Control, unicode.Zl, unicode.Zp):
+			fmt.Fprintf(&builder, `\u%04x`, r)
+		default:
+			builder.WriteRune(r)
+		}
+	}
+	return builder.String()
+}
+
 func transferToOutputString(transfer *pb.Transfer) string {
 	var builder strings.Builder
 	const (
@@ -150,7 +169,7 @@ func transferToOutputString(transfer *pb.Transfer) string {
 				uint16(float64(file.Transferred)/float64(file.Size)*100))
 		}
 		fmt.Fprintf(tableWriter, "%s\t%s\t%s%s\t\n",
-			file.GetPath(),
+			sanitizeForTerminal(file.GetPath()),
 			units.HumanSize(float64(file.GetSize())),
 			fileshare.GetTransferFileStatus(file, transfer.Direction == pb.Direction_INCOMING),
 			progress,
@@ -210,12 +229,12 @@ func buildTransferTable(writer *tabwriter.Writer, transfers []*pb.Transfer, dire
 
 		fmt.Fprintf(writer, "%s\t%s\t%d\t%s\t%s%s\t%s\t\n",
 			transfer.GetId(),
-			transfer.GetPeer(),
+			sanitizeForTerminal(transfer.GetPeer()),
 			fileCount,
 			fileSize,
 			fileshare.GetTransferStatus(transfer),
 			progress,
-			transfer.GetPath(),
+			sanitizeForTerminal(transfer.GetPath()),
 		)
 	}
 
